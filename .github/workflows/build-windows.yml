@@ -33,6 +33,21 @@ jobs:
           $h = (Get-FileHash out/BattleLauncher.exe -Algorithm SHA256).Hash.ToLower()
           Set-Content -Path out/BattleLauncher.exe.sha256 -Value "$h  BattleLauncher.exe" -NoNewline
 
+      # Честные скриншоты самого лаунчера для Microsoft Store: служебный режим --screenshot открывает
+      # настоящие окна (с выдуманными данными, без сети) и сохраняет их в PNG.
+      - name: Скриншоты лаунчера
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force shots | Out-Null
+          $p = Start-Process out/BattleLauncher.exe -ArgumentList '--screenshot=shots' -PassThru
+          if (-not $p.WaitForExit(120000)) { $p.Kill(); throw 'Скриншоты: лаунчер не завершился за 2 минуты' }
+          Get-ChildItem shots
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: launcher-screenshots
+          path: shots/*.png
+
       # Пакет для Microsoft Store (MSIX). Store сам подписывает его своим сертификатом, поэтому здесь
       # пакет не подписывается. Логотипы рисуются из иконки приложения.
       - name: MSIX для Microsoft Store
