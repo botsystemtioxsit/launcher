@@ -42,6 +42,7 @@ static class SelfUpdate
 
     public static async Task<UpdateInfo?> Check(CancellationToken ct = default)
     {
+        if (Packaged.IsPackaged) return null; // обновления из Store приходят через Store
         using var doc = JsonDocument.Parse(await Net.GetText($"https://api.github.com/repos/{Catalog.Owner}/{Repo}/releases/latest", ct));
         var root = doc.RootElement;
         var tag = (root.GetProperty("tag_name").GetString() ?? "").TrimStart('v');

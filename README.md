@@ -1,4 +1,4 @@
-# БАТТЛ Лаунчер
+# TIOXSIT Launcher
 
 Нативное приложение для Windows (C# / .NET 8, WPF) — не Electron и не браузер.
 Один файл `BattleLauncher.exe`, .NET внутри, ничего ставить не нужно.

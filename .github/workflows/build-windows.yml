@@ -33,12 +33,72 @@ jobs:
           $h = (Get-FileHash out/BattleLauncher.exe -Algorithm SHA256).Hash.ToLower()
           Set-Content -Path out/BattleLauncher.exe.sha256 -Value "$h  BattleLauncher.exe" -NoNewline
 
+      # Честные скриншоты самого лаунчера для Microsoft Store: служебный режим --screenshot открывает
+      # настоящие окна (с выдуманными данными, без сети) и сохраняет их в PNG.
+      - name: Скриншоты лаунчера
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force shots | Out-Null
+          $p = Start-Process out/BattleLauncher.exe -ArgumentList '--screenshot=shots' -PassThru
+          if (-not $p.WaitForExit(120000)) { $p.Kill(); throw 'Скриншоты: лаунчер не завершился за 2 минуты' }
+          Get-ChildItem shots
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: launcher-screenshots
+          path: shots/*.png
+
+      # Копия снимков в служебной ветке ci-screenshots — чтобы их можно было забрать без входа в Actions
+      - name: Снимки в ветку ci-screenshots
+        if: github.ref != 'refs/heads/main'
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'shots-branch'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Copy-Item shots/*.png $dir
+          Set-Location $dir
+          git init -q
+          git config user.name 'github-actions'
+          git config user.email 'github-actions@users.noreply.github.com'
+          git checkout -q -b ci-screenshots
+          git add .
+          git commit -q -m 'Скриншоты лаунчера'
+          git remote add origin "https://x-access-token:$($env:GH_TOKEN)@github.com/${{ github.repository }}.git"
+          git push -q --force origin ci-screenshots
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Пакет для Microsoft Store (MSIX). Store сам подписывает его своим сертификатом, поэтому здесь
+      # пакет не подписывается. Логотипы — готовые файлы из Launcher/Store/Assets.
+      - name: MSIX для Microsoft Store
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path Launcher/Launcher.csproj -Pattern '<Version>(.+)</Version>').Matches[0].Groups[1].Value
+          $parts = $v.Split('.'); while ($parts.Count -lt 3) { $parts += '0' }
+          $msixVersion = "$($parts[0]).$($parts[1]).$($parts[2]).0"
+          New-Item -ItemType Directory -Force store/Assets | Out-Null
+          Copy-Item out/BattleLauncher.exe store/
+          (Get-Content Launcher/Store/AppxManifest.xml -Raw).Replace('@VERSION@', $msixVersion) | Set-Content store/AppxManifest.xml -Encoding utf8
+          # логотипы — готовые файлы владельца из Launcher/Store/Assets
+          Copy-Item Launcher/Store/Assets/*.png store/Assets/
+          New-Item -ItemType Directory -Force out | Out-Null
+          # картинки для карточки приложения в Partner Center (загружаются вручную)
+          Copy-Item Launcher/Store/listing/*.png out/
+          $makeappx = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter makeappx.exe | Where-Object { $_.FullName -match 'x64' } | Sort-Object FullName | Select-Object -Last 1
+          & $makeappx.FullName pack /d store /p out/TIOXSITLauncher.msix /o
+          if ($LASTEXITCODE -ne 0) { throw "makeappx завершился с кодом $LASTEXITCODE" }
+
       # Не из main — просто проверка, что всё собирается; файл лежит в артефактах запуска.
       - uses: actions/upload-artifact@v4
         if: github.ref != 'refs/heads/main'
         with:
           name: BattleLauncher
-          path: out/BattleLauncher.exe*
+          path: |
+            out/BattleLauncher.exe*
+            out/TIOXSITLauncher.msix
+            out/icon-300x300.png
+            out/boxart-1080x1080.png
+            out/poster-720x1080.png
 
       # Из main — выпуск: релиз v<версия из Launcher.csproj>. Версию поднимай в csproj:
       # пока она та же, файлы в релизе просто перезаписываются.
@@ -51,7 +111,7 @@ jobs:
           $v = (Select-String -Path Launcher/Launcher.csproj -Pattern '<Version>(.+)</Version>').Matches[0].Groups[1].Value
           gh release view "v$v" *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 --clobber
+            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITLauncher.msix --clobber
           } else {
-            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 --title "Лаунчер $v" --notes "Один файл BattleLauncher.exe — скачай и запусти."
+            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITLauncher.msix --title "Лаунчер $v" --notes "Один файл BattleLauncher.exe — скачай и запусти."
           }

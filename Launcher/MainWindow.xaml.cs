@@ -1,8 +1,10 @@
 using System.Net.Http;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace BattleLauncher;
@@ -33,6 +35,15 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        try
+        {
+            // в .ico несколько размеров; WPF по умолчанию берёт первый (мелкий), поэтому выбираем самый крупный
+            var dec = new IconBitmapDecoder(new Uri("pack://application:,,,/Assets/icon.ico"), BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+            var best = dec.Frames.OrderByDescending(f => f.PixelWidth).First();
+            LoginLogo.Source = best;
+            SideLogo.Source = best;
+        }
+        catch { /* без логотипа тоже работаем */ }
         toastTimer.Tick += (_, _) => { toastTimer.Stop(); ToastBox.Visibility = Visibility.Collapsed; };
         VersionText.Text = "Версия " + SelfUpdate.CurrentVersion;
         Loaded += async (_, _) => await StartAsync();
@@ -41,6 +52,7 @@ public partial class MainWindow : Window
 
     async Task StartAsync()
     {
+        if (App.ScreenshotDir != null) { await ScreenshotRun(App.ScreenshotDir); return; }
         await RefreshActiveProfile();
         Render();
         _ = CheckSelfUpdateLoop();
@@ -367,6 +379,7 @@ public partial class MainWindow : Window
 
     async Task LoadApps(bool force)
     {
+        if (App.ScreenshotDir != null) return; // в режиме скриншотов список приложений задан вручную
         var me = store.Active;
         if (me == null) return;
         RefreshBtn.IsEnabled = false;
@@ -514,9 +527,62 @@ public partial class MainWindow : Window
         catch (Exception ex) { Toast("Не получилось запустить: " + ex.Message); }
     }
 
+    // ---------- служебный режим: скриншоты для Microsoft Store ----------
+    // Показывает настоящие окна лаунчера с выдуманными данными и сохраняет их в PNG. Сети не касается.
+    async Task ScreenshotRun(string dir)
+    {
+        Directory.CreateDirectory(dir);
+        Width = 1616; Height = 939;
+        await Capture(Path.Combine(dir, "launcher-1-login.png"), () =>
+        {
+            store.Accounts.Clear(); store.ActiveId = null; Render();
+            LoginView.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
+            ((FrameworkElement)LoginView.Content).LayoutTransform = new ScaleTransform(0.82, 0.82);
+        });
+        await Capture(Path.Combine(dir, "launcher-2-apps.png"), () =>
+        {
+            store.Upsert(new Profile("100200300", "Alex", "superadmin", "active", "PLR-7K3M9Q"));
+            apps = new List<AppInfo>
+            {
+                new() { Def = Catalog.Apps[0], Allowed = true, Installed = new InstalledApp("1.0.4", "demo.exe", null), Latest = "1.0.5", UpdateAvailable = true },
+                new() { Def = Catalog.Apps[1], Allowed = true, Latest = "1.0.6" },
+            };
+            Render();
+            RenderApps();
+        });
+        Application.Current.Shutdown();
+    }
+
+    async Task Capture(string path, Action prepare)
+    {
+        prepare();
+        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+        await Task.Delay(500);
+        // Снимаем окно в натуральном размере, но с удвоенным разрешением (k = 2): так картинка получается чёткой
+        // и без растяжения, а размер окна на экране сборочной машины не важен.
+        UpdateLayout();
+        var content = (FrameworkElement)Content;
+        double w = content.ActualWidth, h = content.ActualHeight;
+        const double k = 2;
+        var visual = new DrawingVisual();
+        using (var dc = visual.RenderOpen())
+        {
+            dc.DrawRectangle(Background, null, new Rect(0, 0, w, h));
+            // Viewbox задан явно: иначе кисть растягивает «видимое содержимое» на весь прямоугольник
+            dc.DrawRectangle(new VisualBrush(content) { Viewbox = new Rect(0, 0, w, h), ViewboxUnits = BrushMappingMode.Absolute, Stretch = Stretch.Fill }, null, new Rect(0, 0, w, h));
+        }
+        var bmp = new RenderTargetBitmap((int)(w * k), (int)(h * k), 96 * k, 96 * k, PixelFormats.Pbgra32);
+        bmp.Render(visual);
+        var enc = new PngBitmapEncoder();
+        enc.Frames.Add(BitmapFrame.Create(bmp));
+        await using var fs = File.Create(path);
+        enc.Save(fs);
+    }
+
     // ---------- самообновление ----------
     async Task CheckSelfUpdateLoop()
     {
+        if (App.ScreenshotDir != null) return;
         while (true)
         {
             try

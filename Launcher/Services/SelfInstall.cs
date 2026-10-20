@@ -11,8 +11,9 @@ namespace BattleLauncher;
 // Самообновление (SelfUpdate) потом меняет файл уже в папке установки.
 static class SelfInstall
 {
-    const string AppName = "БАТТЛ Лаунчер";
-    const string Publisher = "botsystemtioxsit";
+    const string AppName = "TIOXSIT Launcher";
+    const string Publisher = "TIOXSIT";
+    const string LegacyName = "БАТТЛ Лаунчер"; // так лаунчер назывался до 1.2.1: старые ярлыки убираем при установке
     const string RegKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\BattleLauncher";
 
     static readonly string InstallDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "BattleLauncher");
@@ -56,6 +57,8 @@ static class SelfInstall
     {
         Directory.CreateDirectory(InstallDir);
         File.Copy(src, InstalledExe, true);
+        foreach (var dir in new[] { Environment.GetFolderPath(Environment.SpecialFolder.Programs), Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) })
+            try { File.Delete(Path.Combine(dir, LegacyName + ".lnk")); } catch { }
         MakeShortcut(StartMenuLink);
         MakeShortcut(DesktopLink);
         WriteRegistry();
