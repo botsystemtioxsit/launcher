@@ -48,6 +48,26 @@ jobs:
           name: launcher-screenshots
           path: shots/*.png
 
+      # Копия снимков в служебной ветке ci-screenshots — чтобы их можно было забрать без входа в Actions
+      - name: Снимки в ветку ci-screenshots
+        if: github.ref != 'refs/heads/main'
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'shots-branch'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Copy-Item shots/*.png $dir
+          Set-Location $dir
+          git init -q
+          git config user.name 'github-actions'
+          git config user.email 'github-actions@users.noreply.github.com'
+          git checkout -q -b ci-screenshots
+          git add .
+          git commit -q -m 'Скриншоты лаунчера'
+          git remote add origin "https://x-access-token:$($env:GH_TOKEN)@github.com/${{ github.repository }}.git"
+          git push -q --force origin ci-screenshots
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       # Пакет для Microsoft Store (MSIX). Store сам подписывает его своим сертификатом, поэтому здесь
       # пакет не подписывается. Логотипы рисуются из иконки приложения.
       - name: MSIX для Microsoft Store
