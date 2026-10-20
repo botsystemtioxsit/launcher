@@ -1,0 +1,56 @@
+{
+  "name": "battle-launcher",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Лаунчер Тролль-Баттл: вход в аккаунт, установка и обновление игры и админ-панели.",
+  "author": {
+    "name": "botsystemtioxsit",
+    "email": "botsystemtioxsit@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/botsystemtioxsit/launcher",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "check": "node scripts/check.js",
+    "build:win": "electron-builder --win"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.tioxsit.launcher",
+    "productName": "БАТТЛ Лаунчер",
+    "publish": {
+      "provider": "github",
+      "owner": "botsystemtioxsit",
+      "repo": "launcher",
+      "releaseType": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "lib/**",
+      "renderer/**",
+      "build/icon.png",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "BattleLauncher-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+name: Build Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'main.js'
+      - 'preload.js'
+      - 'lib/**'
+      - 'renderer/**'
+      - 'build/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/build-windows.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - name: Проверка файлов и чистых функций
+        run: npm run check
+
+      # Сборку и публикацию делает electron-builder: релиз с тегом v<version>
+      # (см. build.publish в package.json), установщик и latest.yml, по которому
+      # лаунчер сам обновляется. Версию поднимай в package.json — пока она та же,
+      # что в последнем релизе, новый релиз не создаётся (файлы перезаписываются).
+      - name: Build and publish .exe installer
+        run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
