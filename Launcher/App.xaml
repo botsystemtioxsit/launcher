@@ -14,10 +14,6 @@
     <SolidColorBrush x:Key="Red" Color="#E5484D"/>
     <SolidColorBrush x:Key="Green" Color="#3FB97A"/>
 
-    <Style TargetType="TextBlock">
-      <Setter Property="Foreground" Value="{StaticResource Text}"/>
-    </Style>
-
     <Style TargetType="Button">
       <Setter Property="Foreground" Value="{StaticResource Text}"/>
       <Setter Property="Background" Value="{StaticResource Panel2}"/>
@@ -30,7 +26,7 @@
           <ControlTemplate TargetType="Button">
             <Border x:Name="bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                     BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}">
-              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">

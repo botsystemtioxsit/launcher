@@ -35,6 +35,15 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        try
+        {
+            // в .ico несколько размеров; WPF по умолчанию берёт первый (мелкий), поэтому выбираем самый крупный
+            var dec = new IconBitmapDecoder(new Uri("pack://application:,,,/Assets/icon.ico"), BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+            var best = dec.Frames.OrderByDescending(f => f.PixelWidth).First();
+            LoginLogo.Source = best;
+            SideLogo.Source = best;
+        }
+        catch { /* без логотипа тоже работаем */ }
         toastTimer.Tick += (_, _) => { toastTimer.Stop(); ToastBox.Visibility = Visibility.Collapsed; };
         VersionText.Text = "Версия " + SelfUpdate.CurrentVersion;
         Loaded += async (_, _) => await StartAsync();
@@ -544,9 +553,12 @@ public partial class MainWindow : Window
         prepare();
         await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
         await Task.Delay(500);
-        UpdateLayout();
+        // рисуем в фиксированном размере 1600x900, независимо от размера окна на экране сборочной машины
+        const int w = 1600, h = 900;
         var content = (FrameworkElement)Content;
-        int w = (int)content.ActualWidth, h = (int)content.ActualHeight;
+        content.Measure(new Size(w, h));
+        content.Arrange(new Rect(0, 0, w, h));
+        content.UpdateLayout();
         var visual = new DrawingVisual();
         using (var dc = visual.RenderOpen())
         {
