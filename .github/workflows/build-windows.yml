@@ -1,0 +1,57 @@
+name: Build Windows launcher
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Launcher/**'
+      - '.github/workflows/build-windows.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # Один самодостаточный .exe: .NET внутри, ставить ничего на компьютер не нужно.
+      - name: Publish
+        run: >
+          dotnet publish Launcher/Launcher.csproj -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out
+
+      - name: Checksum
+        shell: pwsh
+        run: |
+          $h = (Get-FileHash out/BattleLauncher.exe -Algorithm SHA256).Hash.ToLower()
+          Set-Content -Path out/BattleLauncher.exe.sha256 -Value "$h  BattleLauncher.exe" -NoNewline
+
+      # Не из main — просто проверка, что всё собирается; файл лежит в артефактах запуска.
+      - uses: actions/upload-artifact@v4
+        if: github.ref != 'refs/heads/main'
+        with:
+          name: BattleLauncher
+          path: out/BattleLauncher.exe*
+
+      # Из main — выпуск: релиз v<версия из Launcher.csproj>. Версию поднимай в csproj:
+      # пока она та же, файлы в релизе просто перезаписываются.
+      - name: Release
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $v = (Select-String -Path Launcher/Launcher.csproj -Pattern '<Version>(.+)</Version>').Matches[0].Groups[1].Value
+          gh release view "v$v" *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 --clobber
+          } else {
+            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 --title "Лаунчер $v" --notes "Один файл BattleLauncher.exe — скачай и запусти."
+          }

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>BattleLauncher</AssemblyName>
+    <RootNamespace>BattleLauncher</RootNamespace>
+    <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+    <!-- Версию поднимать при каждом изменении: по ней лаунчер понимает, что вышло обновление -->
+    <Version>1.2.0</Version>
+    <Product>БАТТЛ Лаунчер</Product>
+    <Company>botsystemtioxsit</Company>
+    <Authors>botsystemtioxsit</Authors>
+    <Copyright>botsystemtioxsit</Copyright>
+    <Description>Лаунчер Тролль-Баттл: вход в аккаунт, установка и обновление приложений проекта</Description>
+    <AssemblyTitle>БАТТЛ Лаунчер</AssemblyTitle>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <Resource Include="Assets\icon.ico" />
+  </ItemGroup>
+
+</Project>
