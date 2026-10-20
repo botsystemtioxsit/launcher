@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Манифест пакета для Microsoft Store. Версия подставляется сборкой (Version="x.y.z.0":
+     последнее число у Store всегда 0). Identity — из Partner Center → Идентификационные данные продукта. -->
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+         xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
+         IgnorableNamespaces="uap rescap desktop6">
+  <Identity Name="TIOXSIT.TIOXSITLauncher"
+            Publisher="CN=B8B19380-679F-4FF6-919B-57F0EC1835E0"
+            Version="@VERSION@"
+            ProcessorArchitecture="x64" />
+  <Properties>
+    <DisplayName>TIOXSIT Launcher</DisplayName>
+    <PublisherDisplayName>TIOXSIT</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <!-- Лаунчер запускает установщики других приложений проекта: их записи в реестр и файлы
+         должны попадать в настоящую систему, а не в «песочницу» пакета -->
+    <desktop6:RegistryWriteVirtualization>disabled</desktop6:RegistryWriteVirtualization>
+    <desktop6:FileSystemWriteVirtualization>disabled</desktop6:FileSystemWriteVirtualization>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.22621.0" />
+  </Dependencies>
+  <Resources>
+    <Resource Language="ru-ru" />
+    <Resource Language="en-us" />
+  </Resources>
+  <Applications>
+    <Application Id="App" Executable="BattleLauncher.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="TIOXSIT Launcher"
+                          Description="Вход в аккаунт, установка и обновление приложений проекта Тролль-Баттл"
+                          BackgroundColor="transparent"
+                          Square150x150Logo="Assets\Square150x150Logo.png"
+                          Square44x44Logo="Assets\Square44x44Logo.png" />
+    </Application>
+  </Applications>
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+    <rescap:Capability Name="unvirtualizedResources" />
+  </Capabilities>
+</Package>

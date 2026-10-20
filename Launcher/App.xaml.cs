@@ -23,9 +23,13 @@ public partial class App : Application
         // Остатки прошлой версии после самообновления — убираем при следующем запуске.
         SelfUpdate.CleanupLeftovers();
 
-        // Скачанный файл предлагает поставить себя на компьютер (ярлыки, список приложений)
-        if (SelfInstall.OfferInstall()) { Shutdown(); return; }
-        SelfInstall.RefreshRegistry();
+        // Скачанный файл предлагает поставить себя на компьютер (ярлыки, список приложений).
+        // Из Microsoft Store это не нужно: там всё делает сам Store.
+        if (!Packaged.IsPackaged)
+        {
+            if (SelfInstall.OfferInstall()) { Shutdown(); return; }
+            SelfInstall.RefreshRegistry();
+        }
         base.OnStartup(e);
     }
 }
