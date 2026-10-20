@@ -46,6 +46,8 @@ class Account
 class AccountStore
 {
     const int Max = 10;
+    // служебный режим --screenshot: ничего не читаем и не пишем на диск, чтобы не тронуть настоящие аккаунты
+    public static bool NoDisk;
     static readonly string FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BattleLauncher", "launcher.json");
 
     public List<Account> Accounts { get; set; } = new();
@@ -56,6 +58,7 @@ class AccountStore
 
     public static AccountStore Load()
     {
+        if (NoDisk) return new AccountStore();
         try
         {
             var s = JsonSerializer.Deserialize<AccountStore>(File.ReadAllText(FilePath)) ?? new AccountStore();
@@ -68,6 +71,7 @@ class AccountStore
 
     public void Save()
     {
+        if (NoDisk) return;
         Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
         var tmp = FilePath + ".tmp";
         File.WriteAllText(tmp, JsonSerializer.Serialize(this));

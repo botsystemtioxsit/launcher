@@ -7,10 +7,23 @@ public partial class App : Application
 {
     Mutex? single;
 
+    // --screenshot=<папка>: служебный режим, лаунчер сам сохраняет свои окна (с выдуманными данными) в PNG и выходит.
+    // Нужен, чтобы сделать честные скриншоты для Microsoft Store на настоящей Windows (см. build-windows.yml).
+    public static string? ScreenshotDir;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         // Программа удаления из списка «Установленные приложения»
         if (e.Args.Contains("--uninstall")) { SelfInstall.Uninstall(); Shutdown(); return; }
+
+        var shot = e.Args.FirstOrDefault(a => a.StartsWith("--screenshot=", StringComparison.Ordinal));
+        if (shot != null)
+        {
+            ScreenshotDir = shot["--screenshot=".Length..];
+            AccountStore.NoDisk = true;
+            base.OnStartup(e);
+            return;
+        }
 
         // Одно окно лаунчера. Короткое ожидание нужно после установки и самообновления:
         // прежний процесс ещё может секунду-другую держать замок.
