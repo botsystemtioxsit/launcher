@@ -533,7 +533,12 @@ public partial class MainWindow : Window
     {
         Directory.CreateDirectory(dir);
         Width = 1616; Height = 939;
-        await Capture(Path.Combine(dir, "launcher-1-login.png"), () => { store.Accounts.Clear(); store.ActiveId = null; Render(); });
+        await Capture(Path.Combine(dir, "launcher-1-login.png"), () =>
+        {
+            store.Accounts.Clear(); store.ActiveId = null; Render();
+            LoginView.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
+            ((FrameworkElement)LoginView.Content).LayoutTransform = new ScaleTransform(0.82, 0.82);
+        });
         await Capture(Path.Combine(dir, "launcher-2-apps.png"), () =>
         {
             store.Upsert(new Profile("100200300", "Alex", "superadmin", "active", "PLR-7K3M9Q"));
@@ -553,19 +558,20 @@ public partial class MainWindow : Window
         prepare();
         await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
         await Task.Delay(500);
-        // рисуем в фиксированном размере 1600x900, независимо от размера окна на экране сборочной машины
-        const int w = 1600, h = 900;
+        // Снимаем окно в натуральном размере, но с удвоенным разрешением (k = 2): так картинка получается чёткой
+        // и без растяжения, а размер окна на экране сборочной машины не важен.
+        UpdateLayout();
         var content = (FrameworkElement)Content;
-        content.Measure(new Size(w, h));
-        content.Arrange(new Rect(0, 0, w, h));
-        content.UpdateLayout();
+        double w = content.ActualWidth, h = content.ActualHeight;
+        const double k = 2;
         var visual = new DrawingVisual();
         using (var dc = visual.RenderOpen())
         {
             dc.DrawRectangle(Background, null, new Rect(0, 0, w, h));
-            dc.DrawRectangle(new VisualBrush(content), null, new Rect(0, 0, w, h));
+            // Viewbox задан явно: иначе кисть растягивает «видимое содержимое» на весь прямоугольник
+            dc.DrawRectangle(new VisualBrush(content) { Viewbox = new Rect(0, 0, w, h), ViewboxUnits = BrushMappingMode.Absolute, Stretch = Stretch.Fill }, null, new Rect(0, 0, w, h));
         }
-        var bmp = new RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
+        var bmp = new RenderTargetBitmap((int)(w * k), (int)(h * k), 96 * k, 96 * k, PixelFormats.Pbgra32);
         bmp.Render(visual);
         var enc = new PngBitmapEncoder();
         enc.Frames.Add(BitmapFrame.Create(bmp));
