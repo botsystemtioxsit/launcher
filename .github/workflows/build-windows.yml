@@ -69,7 +69,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Пакет для Microsoft Store (MSIX). Store сам подписывает его своим сертификатом, поэтому здесь
-      # пакет не подписывается. Логотипы рисуются из иконки приложения.
+      # пакет не подписывается. Логотипы — готовые файлы из Launcher/Store/Assets.
       - name: MSIX для Microsoft Store
         shell: pwsh
         run: |
@@ -79,24 +79,11 @@ jobs:
           New-Item -ItemType Directory -Force store/Assets | Out-Null
           Copy-Item out/BattleLauncher.exe store/
           (Get-Content Launcher/Store/AppxManifest.xml -Raw).Replace('@VERSION@', $msixVersion) | Set-Content store/AppxManifest.xml -Encoding utf8
-          Add-Type -AssemblyName System.Drawing
-          $icon = New-Object System.Drawing.Icon('Launcher/Assets/icon.ico', 256, 256)
-          $src = $icon.ToBitmap()
-          function Save-Logo($name, $size) {
-            $bmp = New-Object System.Drawing.Bitmap($size, $size)
-            $g = [System.Drawing.Graphics]::FromImage($bmp)
-            $g.InterpolationMode = 'HighQualityBicubic'; $g.SmoothingMode = 'HighQuality'
-            $g.DrawImage($src, 0, 0, $size, $size)
-            $g.Dispose(); $bmp.Save("store/Assets/$name.png", [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
-          }
-          Save-Logo 'StoreLogo' 50
-          Save-Logo 'Square44x44Logo' 44
-          Save-Logo 'Square150x150Logo' 150
+          # логотипы — готовые файлы владельца из Launcher/Store/Assets
+          Copy-Item Launcher/Store/Assets/*.png store/Assets/
           New-Item -ItemType Directory -Force out | Out-Null
-          # 300x300 — иконка для карточки приложения в Partner Center (загружается вручную)
-          $big = New-Object System.Drawing.Bitmap(300, 300)
-          $g = [System.Drawing.Graphics]::FromImage($big); $g.InterpolationMode = 'HighQualityBicubic'; $g.DrawImage($src, 0, 0, 300, 300); $g.Dispose()
-          $big.Save('out/TIOXSITLauncher-icon-300.png', [System.Drawing.Imaging.ImageFormat]::Png)
+          # картинки для карточки приложения в Partner Center (загружаются вручную)
+          Copy-Item Launcher/Store/listing/*.png out/
           $makeappx = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter makeappx.exe | Where-Object { $_.FullName -match 'x64' } | Sort-Object FullName | Select-Object -Last 1
           & $makeappx.FullName pack /d store /p out/TIOXSITLauncher.msix /o
           if ($LASTEXITCODE -ne 0) { throw "makeappx завершился с кодом $LASTEXITCODE" }
@@ -109,7 +96,9 @@ jobs:
           path: |
             out/BattleLauncher.exe*
             out/TIOXSITLauncher.msix
-            out/TIOXSITLauncher-icon-300.png
+            out/icon-300x300.png
+            out/boxart-1080x1080.png
+            out/poster-720x1080.png
 
       # Из main — выпуск: релиз v<версия из Launcher.csproj>. Версию поднимай в csproj:
       # пока она та же, файлы в релизе просто перезаписываются.

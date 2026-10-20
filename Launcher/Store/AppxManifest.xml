@@ -32,7 +32,9 @@
                           Description="Вход в аккаунт, установка и обновление приложений проекта Тролль-Баттл"
                           BackgroundColor="transparent"
                           Square150x150Logo="Assets\Square150x150Logo.png"
-                          Square44x44Logo="Assets\Square44x44Logo.png" />
+                          Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Square71x71Logo="Assets\Square71x71Logo.png" />
+      </uap:VisualElements>
     </Application>
   </Applications>
   <Capabilities>
