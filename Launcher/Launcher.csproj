@@ -10,9 +10,13 @@
     <RootNamespace>BattleLauncher</RootNamespace>
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     <!-- Версию поднимать при каждом изменении: по ней лаунчер понимает, что вышло обновление -->
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Product>БАТТЛ Лаунчер</Product>
     <Company>botsystemtioxsit</Company>
+    <Authors>botsystemtioxsit</Authors>
+    <Copyright>botsystemtioxsit</Copyright>
+    <Description>Лаунчер Тролль-Баттл: вход в аккаунт, установка и обновление приложений проекта</Description>
+    <AssemblyTitle>БАТТЛ Лаунчер</AssemblyTitle>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 

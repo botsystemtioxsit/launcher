@@ -45,8 +45,9 @@
 
             <!-- 3. Код устройства -->
             <TextBlock Text="— или —" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,20,0,10"/>
-            <TextBlock Text="По коду устройства" FontWeight="SemiBold" Margin="0,0,0,2"/>
-            <TextBlock Text="Без почты: покажем код, владелец аккаунта вводит его в админ-панели («Аккаунт» → «Подключить устройство по коду»). Это устройство он сможет отозвать в любой момент." TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,0,0,8"/>
+            <TextBlock Text="По коду устройства (через бота)" FontWeight="SemiBold" Margin="0,0,0,2"/>
+            <TextBlock TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,0,0,8"
+                       Text="Без почты. Нажми кнопку — появится код. Открой в Telegram бота TerminalBot и отправь ему этот код обычным сообщением — лаунчер сразу войдёт в твой аккаунт. Устройство можно отозвать в админ-панели («Аккаунт»)."/>
             <Button x:Name="PairBtn" Content="Подключить по коду" Click="PairBtn_Click"/>
             <TextBlock x:Name="PairCode" FontSize="30" FontWeight="ExtraBold" Foreground="{StaticResource Accent}" HorizontalAlignment="Center" Margin="0,12,0,0" Visibility="Collapsed"/>
 

@@ -220,7 +220,7 @@ public partial class MainWindow : Window
             targetId = await Rtdb.FindAccountByEmail(email, ct);
             if (targetId == null) { LoginFail("Эта почта не привязана ни к одному аккаунту. Привяжи её в игре: Настройки → Аккаунт."); return; }
             requestId = await Rtdb.CreateLoginRequest(targetId, ct);
-            LoginInfo("⏳ Заявка отправлена. Нажми «Разрешить» в сообщении Telegram-бота, в игре (Сообщество → Запросы) или в админ-панели (Аккаунт). Ждём 5 минут.");
+            LoginInfo("⏳ Заявка отправлена. Открой в Telegram бота TerminalBot и нажми «Разрешить» в его сообщении (можно и в игре: Сообщество → Запросы, или в админ-панели: Аккаунт). Ждём 5 минут.");
 
             var deadline = DateTime.UtcNow.AddSeconds(RequestTtlSeconds);
             while (DateTime.UtcNow < deadline)
@@ -294,7 +294,7 @@ public partial class MainWindow : Window
             }
             PairCode.Text = code;
             PairCode.Visibility = Visibility.Visible;
-            LoginInfo("Продиктуй или перешли этот код владельцу аккаунта — он вводит его в админ-панели («Аккаунт» → «Подключить устройство по коду»). Код живёт 5 минут.");
+            LoginInfo("Открой в Telegram бота TerminalBot и отправь ему этот код сообщением — вход произойдёт сам. Код живёт 5 минут.");
 
             var deadline = DateTime.UtcNow.AddSeconds(RequestTtlSeconds);
             while (DateTime.UtcNow < deadline)
