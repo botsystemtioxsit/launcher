@@ -1,3 +1,4 @@
+using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -90,7 +91,7 @@ public partial class MainWindow : Window
             var acc = a;
             var row = new Border
             {
-                Background = Res("Panel2"), CornerRadius = new CornerRadius(10), Padding = new Thickness(12, 10), Margin = new Thickness(0, 0, 0, 8),
+                Background = Res("Panel2"), CornerRadius = new CornerRadius(10), Padding = new Thickness(12, 10, 12, 10), Margin = new Thickness(0, 0, 0, 8),
                 BorderThickness = new Thickness(1), BorderBrush = acc.Id == store.ActiveId ? Res("Accent") : Res("Line"), Cursor = Cursors.Hand,
             };
             var grid = new Grid();
