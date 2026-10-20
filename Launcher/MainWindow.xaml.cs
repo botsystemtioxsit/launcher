@@ -47,25 +47,53 @@ public partial class MainWindow : Window
     }
 
     // ---------- аккаунты ----------
+    // Перечитывает текущую сессию из базы: роль могла смениться, аккаунт — заблокироваться, токен — отозваться,
+    // устройство — быть отозвано владельцем. «Нет связи» — не повод разлогинивать: остаются сохранённые данные.
     async Task RefreshActiveProfile()
     {
         var acc = store.Active;
         if (acc == null) return;
         try
         {
+            if (acc.IsToken)
+            {
+                var token = Secrets.Unprotect(acc.TokenProtected);
+                var info = token == null ? null : await Rtdb.GetAccessToken(token);
+                if (token == null || info == null || (info.ExpiresAt is long exp && exp <= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()))
+                {
+                    store.Remove(acc.Id);
+                    sessionNote = "Токен доступа отозван или истёк.";
+                    return;
+                }
+                store.UpsertToken(token, info.Label);
+                return;
+            }
             var p = await Rtdb.GetProfile(acc.Id);
-            if (p.Status == "banned") { store.Remove(acc.Id); return; }
+            if (p.Status == "banned") { store.Remove(acc.Id); sessionNote = "Аккаунт заблокирован."; return; }
+            if (acc.Paired && !await Rtdb.IsDeviceTrusted(acc.Id, Rtdb.DeviceKeyOf(store.DeviceId())))
+            {
+                store.Remove(acc.Id);
+                sessionNote = "Владелец отозвал доступ этому устройству — войди заново.";
+                return;
+            }
             store.Upsert(p);
         }
         catch { /* нет сети — остаются сохранённые данные */ }
     }
+
+    string? sessionNote; // почему нас выбросило на экран входа — показываем один раз
 
     void Render()
     {
         var me = store.Active;
         LoginView.Visibility = me == null ? Visibility.Visible : Visibility.Collapsed;
         MainView.Visibility = me == null ? Visibility.Collapsed : Visibility.Visible;
-        if (me == null) { RenderLogin(); return; }
+        if (me == null)
+        {
+            RenderLogin();
+            if (sessionNote != null) { LoginError.Text = sessionNote; LoginError.Visibility = Visibility.Visible; sessionNote = null; }
+            return;
+        }
         AppsSub.Text = $"Ты вошёл как {me.Display} · {me.RoleName}";
         MeBox.Children.Clear();
         MeBox.Children.Add(Avatar(me, 52));
@@ -134,12 +162,14 @@ public partial class MainWindow : Window
     static Brush Res(string key) => (Brush)Application.Current.FindResource(key);
 
     // ---------- вход ----------
-    void SetLoginBusy(bool on)
+    // Три способа, как в админ-панели (Telegram-вход есть только внутри самого Telegram, на компьютере его нет):
+    // заявка по почте, токен доступа, код устройства. За раз идёт один.
+    void SetLoginBusy(bool on, bool cancellable = true)
     {
-        LoginBtn.IsEnabled = !on;
-        EmailBox.IsEnabled = !on;
-        LoginCancelBtn.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
-        LoginBtn.Content = on ? "Ждём подтверждения…" : "Запросить вход";
+        LoginBtn.IsEnabled = TokenBtn.IsEnabled = PairBtn.IsEnabled = !on;
+        EmailBox.IsEnabled = TokenBox.IsEnabled = !on;
+        LoginCancelBtn.Visibility = on && cancellable ? Visibility.Visible : Visibility.Collapsed;
+        if (!on) PairCode.Visibility = Visibility.Collapsed;
     }
 
     void LoginFail(string text)
@@ -150,47 +180,63 @@ public partial class MainWindow : Window
         SetLoginBusy(false);
     }
 
-    void EmailBox_KeyDown(object sender, KeyEventArgs e)
+    void LoginInfo(string text)
     {
-        if (e.Key == Key.Enter && LoginBtn.IsEnabled) LoginBtn_Click(sender, e);
+        LoginError.Visibility = Visibility.Collapsed;
+        LoginStatus.Text = text;
+        LoginStatus.Visibility = Visibility.Visible;
     }
 
-    async void LoginBtn_Click(object sender, RoutedEventArgs e)
+    void LoginDone()
+    {
+        EmailBox.Text = TokenBox.Text = "";
+        LoginStatus.Visibility = Visibility.Collapsed;
+        SetLoginBusy(false);
+        Render();
+    }
+
+    CancellationToken StartLogin()
     {
         LoginError.Visibility = Visibility.Collapsed;
         LoginStatus.Visibility = Visibility.Collapsed;
+        loginCts?.Cancel();
+        loginCts = new CancellationTokenSource();
+        return loginCts.Token;
+    }
+
+    void EmailBox_KeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Enter && LoginBtn.IsEnabled) LoginBtn_Click(sender, e); }
+    void TokenBox_KeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Enter && TokenBtn.IsEnabled) TokenBtn_Click(sender, e); }
+
+    // --- 1. заявка по почте ---
+    async void LoginBtn_Click(object sender, RoutedEventArgs e)
+    {
         var email = EmailBox.Text.Trim();
         if (!Rtdb.IsValidEmail(email)) { LoginFail("Впиши email целиком."); return; }
+        var ct = StartLogin();
         SetLoginBusy(true);
-        loginCts?.Cancel();
-        var cts = loginCts = new CancellationTokenSource();
         string? targetId = null, requestId = null;
         try
         {
-            targetId = await Rtdb.FindAccountByEmail(email, cts.Token);
+            targetId = await Rtdb.FindAccountByEmail(email, ct);
             if (targetId == null) { LoginFail("Эта почта не привязана ни к одному аккаунту. Привяжи её в игре: Настройки → Аккаунт."); return; }
-            requestId = await Rtdb.CreateLoginRequest(targetId, cts.Token);
-            LoginStatus.Text = "⏳ Заявка отправлена. Нажми «Разрешить» в сообщении Telegram-бота, в игре (Сообщество → Запросы) или в админ-панели (Аккаунт). Ждём 5 минут.";
-            LoginStatus.Visibility = Visibility.Visible;
+            requestId = await Rtdb.CreateLoginRequest(targetId, ct);
+            LoginInfo("⏳ Заявка отправлена. Нажми «Разрешить» в сообщении Telegram-бота, в игре (Сообщество → Запросы) или в админ-панели (Аккаунт). Ждём 5 минут.");
 
             var deadline = DateTime.UtcNow.AddSeconds(RequestTtlSeconds);
             while (DateTime.UtcNow < deadline)
             {
-                await Task.Delay(2000, cts.Token);
+                await Task.Delay(2000, ct);
                 string? status = null;
-                try { status = await Rtdb.GetLoginRequestStatus(targetId, requestId, cts.Token); }
+                try { status = await Rtdb.GetLoginRequestStatus(targetId, requestId, ct); }
                 catch (HttpRequestException) { /* сеть моргнула — спросим снова */ }
                 if (status == "approved")
                 {
                     await Rtdb.RemoveLoginRequest(targetId, requestId); // заявка одноразовая — убираем за собой
                     requestId = null;
-                    var profile = await Rtdb.GetProfile(targetId, cts.Token);
+                    var profile = await Rtdb.GetProfile(targetId, ct);
                     if (profile.Status == "banned") { LoginFail("Аккаунт заблокирован."); return; }
-                    store.Upsert(profile);
-                    EmailBox.Text = "";
-                    SetLoginBusy(false);
-                    LoginStatus.Visibility = Visibility.Collapsed;
-                    Render();
+                    store.Upsert(profile, paired: false);
+                    LoginDone();
                     return;
                 }
                 if (status == "denied")
@@ -209,6 +255,74 @@ public partial class MainWindow : Window
         {
             // заявка, которую никто не подтвердил, не должна висеть в базе
             if (targetId != null && requestId != null) await Rtdb.RemoveLoginRequest(targetId, requestId);
+        }
+    }
+
+    // --- 2. токен доступа ---
+    async void TokenBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var token = TokenBox.Text.Trim();
+        if (!Net.SafeId.IsMatch(token)) { LoginFail("Впиши токен целиком."); return; }
+        var ct = StartLogin();
+        SetLoginBusy(true, cancellable: false);
+        try
+        {
+            var info = await Rtdb.GetAccessToken(token, ct);
+            if (info == null) { LoginFail("Токен не найден или уже отозван Супердоступом."); return; }
+            if (info.ExpiresAt is long exp && exp <= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) { LoginFail("Срок действия токена истёк — попроси у Супердоступа новый."); return; }
+            store.UpsertToken(token, info.Label);
+            LoginDone();
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { LoginFail("Не удалось проверить токен: " + ex.Message); }
+    }
+
+    // --- 3. код устройства ---
+    async void PairBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var ct = StartLogin();
+        SetLoginBusy(true);
+        string? code = null;
+        try
+        {
+            var deviceKey = Rtdb.DeviceKeyOf(store.DeviceId());
+            for (var attempt = 0; ; attempt++)
+            {
+                code = Rtdb.RandomPairingCode();
+                try { await Rtdb.CreatePairing(code, deviceKey, ct); break; }
+                catch (InvalidOperationException) when (attempt < 3) { code = null; } // код уже занят — берём другой
+            }
+            PairCode.Text = code;
+            PairCode.Visibility = Visibility.Visible;
+            LoginInfo("Продиктуй или перешли этот код владельцу аккаунта — он вводит его в админ-панели («Аккаунт» → «Подключить устройство по коду»). Код живёт 5 минут.");
+
+            var deadline = DateTime.UtcNow.AddSeconds(RequestTtlSeconds);
+            while (DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(2000, ct);
+                (string? Status, string? TelegramId) r = (null, null);
+                try { r = await Rtdb.GetPairing(code, ct); }
+                catch (HttpRequestException) { continue; }
+                if (r.Status == "approved" && r.TelegramId != null)
+                {
+                    await Rtdb.RemovePairing(code);
+                    code = null;
+                    var profile = await Rtdb.GetProfile(r.TelegramId, ct);
+                    if (profile.Status == "banned") { LoginFail("Аккаунт заблокирован."); return; }
+                    store.Upsert(profile, paired: true);
+                    LoginDone();
+                    return;
+                }
+                if (r.Status == "denied") { await Rtdb.RemovePairing(code); code = null; LoginFail("Отклонено."); return; }
+                if (r.Status == null) { code = null; LoginFail("Код пропал — попробуй ещё раз."); return; }
+            }
+            LoginFail("Время ожидания истекло, попробуй ещё раз.");
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { LoginFail("Не удалось создать код: " + ex.Message); }
+        finally
+        {
+            if (code != null) await Rtdb.RemovePairing(code);
         }
     }
 

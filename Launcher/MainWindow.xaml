@@ -20,24 +20,42 @@
 
     <Grid Grid.Row="1">
       <!-- Вход -->
-      <Grid x:Name="LoginView" Visibility="Collapsed">
-        <Border Width="420" VerticalAlignment="Center" HorizontalAlignment="Center" Background="{StaticResource Panel}"
+      <ScrollViewer x:Name="LoginView" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+        <Border Width="440" Margin="0,24" VerticalAlignment="Center" HorizontalAlignment="Center" Background="{StaticResource Panel}"
                 BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="14" Padding="24">
           <StackPanel>
             <Image Source="Assets/icon.ico" Width="64" Height="64" HorizontalAlignment="Center"/>
             <TextBlock Text="БАТТЛ Лаунчер" FontSize="24" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,10,0,4"/>
             <TextBlock TextWrapping="Wrap" TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,0,0,14"
-                       Text="Войди в свой аккаунт — тот же, что в игре. Почта должна быть привязана в игре: Настройки → Аккаунт."/>
+                       Text="Войди в свой аккаунт — тот же, что в игре и админ-панели."/>
             <StackPanel x:Name="SavedAccounts" Margin="0,0,0,12"/>
-            <TextBlock Text="Email аккаунта" Foreground="{StaticResource Muted}" FontSize="12" Margin="2,0,0,4"/>
+
+            <!-- 1. Заявка по почте -->
+            <TextBlock Text="По почте" FontWeight="SemiBold" Margin="0,4,0,2"/>
+            <TextBlock Text="Почта должна быть привязана в игре (Настройки → Аккаунт). Заявку подтвердишь сам, без пароля." TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,0,0,8"/>
             <TextBox x:Name="EmailBox" Margin="0,0,0,10" KeyDown="EmailBox_KeyDown"/>
             <Button x:Name="LoginBtn" Content="Запросить вход" Style="{StaticResource Primary}" Click="LoginBtn_Click"/>
-            <Button x:Name="LoginCancelBtn" Content="Отменить" Style="{StaticResource Ghost}" Margin="0,8,0,0" Visibility="Collapsed" Click="LoginCancelBtn_Click"/>
+
+            <!-- 2. Токен доступа -->
+            <TextBlock Text="— или —" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,20,0,10"/>
+            <TextBlock Text="По токену доступа" FontWeight="SemiBold" Margin="0,0,0,2"/>
+            <TextBlock Text="Токен выдаёт Супердоступ. Входит сразу, без заявки и без аккаунта; открывает только админ-панель." TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,0,0,8"/>
+            <TextBox x:Name="TokenBox" Margin="0,0,0,10" KeyDown="TokenBox_KeyDown"/>
+            <Button x:Name="TokenBtn" Content="Войти по токену" Click="TokenBtn_Click"/>
+
+            <!-- 3. Код устройства -->
+            <TextBlock Text="— или —" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,20,0,10"/>
+            <TextBlock Text="По коду устройства" FontWeight="SemiBold" Margin="0,0,0,2"/>
+            <TextBlock Text="Без почты: покажем код, владелец аккаунта вводит его в админ-панели («Аккаунт» → «Подключить устройство по коду»). Это устройство он сможет отозвать в любой момент." TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,0,0,8"/>
+            <Button x:Name="PairBtn" Content="Подключить по коду" Click="PairBtn_Click"/>
+            <TextBlock x:Name="PairCode" FontSize="30" FontWeight="ExtraBold" Foreground="{StaticResource Accent}" HorizontalAlignment="Center" Margin="0,12,0,0" Visibility="Collapsed"/>
+
+            <Button x:Name="LoginCancelBtn" Content="Отменить" Style="{StaticResource Ghost}" Margin="0,14,0,0" Visibility="Collapsed" Click="LoginCancelBtn_Click"/>
             <TextBlock x:Name="LoginStatus" TextWrapping="Wrap" Foreground="{StaticResource Accent}" Margin="0,12,0,0" Visibility="Collapsed"/>
             <TextBlock x:Name="LoginError" TextWrapping="Wrap" Foreground="{StaticResource Red}" Margin="0,12,0,0" Visibility="Collapsed"/>
           </StackPanel>
         </Border>
-      </Grid>
+      </ScrollViewer>
 
       <!-- Основное окно -->
       <Grid x:Name="MainView" Visibility="Collapsed">
