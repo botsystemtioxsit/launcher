@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using Microsoft.Win32;
 
@@ -90,11 +91,25 @@ static class SelfInstall
         k.SetValue("NoRepair", 1, RegistryValueKind.DWord);
     }
 
-    // После самообновления версия в списке программ должна быть актуальной
+    [DllImport("shell32.dll")]
+    static extern void SHChangeNotify(int eventId, uint flags, IntPtr item1, IntPtr item2);
+
+    // После самообновления версия в списке программ должна быть актуальной, а значок — новым:
+    // при первом запуске новой версии ярлыки пересоздаются и Windows просят сбросить кэш значков
+    // (иначе Пуск и рабочий стол могут месяцами показывать старую картинку).
     public static void RefreshRegistry()
     {
         if (!IsInstalledCopy) return;
-        try { WriteRegistry(); } catch { /* не критично */ }
+        try
+        {
+            var previous = InstalledVersion();
+            WriteRegistry();
+            if (previous == SelfUpdate.CurrentVersion) return;
+            if (File.Exists(StartMenuLink)) MakeShortcut(StartMenuLink);
+            if (File.Exists(DesktopLink)) MakeShortcut(DesktopLink);
+            SHChangeNotify(0x08000000 /* SHCNE_ASSOCCHANGED */, 0, IntPtr.Zero, IntPtr.Zero);
+        }
+        catch { /* не критично */ }
     }
 
     public static void Uninstall()
