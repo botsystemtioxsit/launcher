@@ -4,7 +4,7 @@
 «TIOXSIT Launcher» — **нативное** Windows-приложение (C# / .NET 8 / WPF, один самодостаточный
 `BattleLauncher.exe`). Не Electron, не веб-обёртка — владелец это прямо запретил; не
 возвращать веб-технологии в сам лаунчер. Аккаунты + установка/обновление/запуск/удаление
-«Тролль-Баттл» (репо `index.html`) и «БАТТЛ Админ» (репо `battle-admin-bot`). Тот же Firebase
+«Тролль-Баттл» (репо `index.html`) и «БАТТЛ Админ» (репо `battle-admin-bot`) и «ВидеоЧат» (репо `videochat`, Electron-обёртка, как игра; ProductName «ВидеоЧат», видят все аккаунты игры, кроме токен-сессии). Тот же Firebase
 (`zolotaya-kletka`, Spark, **без биллинга, никогда**), только REST, без SDK и без Firebase Auth.
 
 ## Layout (`Launcher/`)

@@ -15,8 +15,10 @@ static class Catalog
     {
         new("troll-battle", "Тролль-Баттл", "Голосовые баттлы в отдельном окне — та же игра, что в Telegram.",
             "index.html", "Тролль-Баттл", null),
-        new("battle-admin", "БАТТЛ Админ", "Панель администратора: игроки, заявки, журнал, бэкапы.",
+        new("battle-admin", "БАТТЛ Админ", "Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат.",
             "battle-admin-bot", "БАТТЛ Админ", new[] { "moderator", "admin", "superadmin", "token" }),
+        new("videochat", "ВидеоЧат", "Случайные видеоразговоры. Аккаунт тот же, что в «Тролль-Баттле».",
+            "videochat", "ВидеоЧат", null),
     };
 
     public static AppDef? ById(string id) => Apps.FirstOrDefault(a => a.Id == id);
