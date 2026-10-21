@@ -10,7 +10,7 @@
     <RootNamespace>BattleLauncher</RootNamespace>
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     <!-- Версию поднимать при каждом изменении: по ней лаунчер понимает, что вышло обновление -->
-    <Version>1.2.6</Version>
+    <Version>1.2.7</Version>
     <Product>TIOXSIT Launcher</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
