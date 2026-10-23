@@ -54,6 +54,7 @@ public partial class MainWindow : Window
         {
             if (!started)
             {
+                Log("init webview");
                 var data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TIOXSITTerminal", "WebView2");
                 var env = await CoreWebView2Environment.CreateAsync(null, data);
                 await Web.EnsureCoreWebView2Async(env);
@@ -76,6 +77,7 @@ public partial class MainWindow : Window
                 };
                 await cw.AddScriptToExecuteOnDocumentCreatedAsync(SeedScript());
                 started = true;
+                Log("webview ready");
             }
             Web.Visibility = Visibility.Visible;
             if (App.ScreenshotDir != null) { await Screenshot(App.ScreenshotDir); return; }
@@ -122,16 +124,24 @@ public partial class MainWindow : Window
     }
 
     // служебный режим --screenshot: открыть страницу и сохранить окно в PNG (на CI)
+    static void Log(string m)
+    {
+        try { if (App.ScreenshotDir != null) { Directory.CreateDirectory(App.ScreenshotDir); File.AppendAllText(Path.Combine(App.ScreenshotDir, "terminal-log.txt"), DateTime.Now.ToString("HH:mm:ss ") + m + "\n"); } } catch { }
+    }
+
     async Task Screenshot(string dir)
     {
+        Log("screenshot start");
         Directory.CreateDirectory(dir);
         var done = new TaskCompletionSource();
         Web.CoreWebView2.NavigationCompleted += (_, _) => done.TrySetResult();
         Web.CoreWebView2.Navigate(PanelUrl);
         await Task.WhenAny(done.Task, Task.Delay(30000));
+        Log("navigated or timeout");
         await Task.Delay(6000);
         using var fs = File.Create(Path.Combine(dir, "terminal-web.png"));
         await Web.CoreWebView2.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, fs);
+        Log("captured");
         Application.Current.Shutdown();
     }
 }
