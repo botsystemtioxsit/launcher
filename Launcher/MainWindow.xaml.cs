@@ -106,7 +106,7 @@ public partial class MainWindow : Window
             if (sessionNote != null) { LoginError.Text = sessionNote; LoginError.Visibility = Visibility.Visible; sessionNote = null; }
             return;
         }
-        AppsSub.Text = $"Ты вошёл как {me.Display} · {me.RoleName}";
+        AppsSub.Text = $"Ты вошёл как {me.Display} · {me.RoleName}\nСейчас можно скачать браузерные версии (приложение в отдельном окне). Полноценные EXE-версии появятся позже.";
         MeBox.Children.Clear();
         MeBox.Children.Add(Avatar(me, 52));
         var info = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -421,7 +421,7 @@ public partial class MainWindow : Window
         else
         {
             badges.Children.Add(a.Installed != null
-                ? Badge("Установлено" + (a.Installed.Version != null ? " " + a.Installed.Version : ""), Res("Green"), null)
+                ? Badge("Установлено" + (a.Installed.Version != null ? " " + a.Installed.Version : "") + " (браузерная)", Res("Green"), null)
                 : Badge("Не установлено", Res("Muted"), null));
             if (a.Latest != null)
                 badges.Children.Add(a.UpdateAvailable ? Badge("Доступно " + a.Latest, Res("OnAccent"), Res("Accent")) : Badge("Последняя " + a.Latest, Res("Muted"), null));
@@ -447,12 +447,30 @@ public partial class MainWindow : Window
             }
             else
             {
-                var install = MakeButton("Установить", "Primary", async () => await InstallApp(a, "Установлено"));
+                var install = MakeButton("Скачать браузерную версию", "Primary", async () => await InstallApp(a, "Установлено"));
                 install.IsEnabled = a.Latest != null;
                 actions.Children.Add(install);
             }
         }
-        grid.Children.Add(actions);
+        // Справа: кнопки браузерной версии, под ними — заблокированная «EXE-версия» (нативных приложений пока нет;
+        // когда будут, эта кнопка начнёт качать их)
+        var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
+        Grid.SetColumn(right, 1);
+        actions.HorizontalAlignment = HorizontalAlignment.Right;
+        right.Children.Add(actions);
+        if (a.Allowed)
+        {
+            var exe = MakeButton("🔒 Скачать EXE-версию", "Ghost", () => Task.CompletedTask);
+            exe.IsEnabled = false;
+            exe.FontSize = 12;
+            exe.Padding = new Thickness(10, 5, 10, 5);
+            exe.Margin = new Thickness(0, 8, 0, 0);
+            exe.HorizontalAlignment = HorizontalAlignment.Right;
+            exe.ToolTip = "Полноценная EXE-версия пока не готова. Она появится, когда мы выпустим нативные приложения.";
+            ToolTipService.SetShowOnDisabled(exe, true);
+            right.Children.Add(exe);
+        }
+        grid.Children.Add(right);
         card.Child = grid;
         return card;
     }
@@ -546,6 +564,7 @@ public partial class MainWindow : Window
             {
                 new() { Def = Catalog.Apps[0], Allowed = true, Installed = new InstalledApp("1.0.4", "demo.exe", null), Latest = "1.0.5", UpdateAvailable = true },
                 new() { Def = Catalog.Apps[1], Allowed = true, Latest = "1.0.6" },
+                new() { Def = Catalog.Apps[2], Allowed = true, Latest = "1.0.2" },
             };
             Render();
             RenderApps();
