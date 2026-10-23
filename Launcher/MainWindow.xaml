@@ -86,7 +86,7 @@
               <Button x:Name="RefreshBtn" DockPanel.Dock="Right" Content="Проверить обновления" Style="{StaticResource Ghost}" VerticalAlignment="Top" Click="RefreshBtn_Click"/>
               <StackPanel>
                 <TextBlock Text="Приложения" FontSize="22" FontWeight="SemiBold"/>
-                <TextBlock x:Name="AppsSub" Foreground="{StaticResource Muted}" Margin="0,4,0,0"/>
+                <TextBlock x:Name="AppsSub" Foreground="{StaticResource Muted}" Margin="0,4,16,0" TextWrapping="Wrap"/>
               </StackPanel>
             </DockPanel>
             <ScrollViewer VerticalScrollBarVisibility="Auto">

@@ -564,6 +564,7 @@ public partial class MainWindow : Window
             {
                 new() { Def = Catalog.Apps[0], Allowed = true, Installed = new InstalledApp("1.0.4", "demo.exe", null), Latest = "1.0.5", UpdateAvailable = true },
                 new() { Def = Catalog.Apps[1], Allowed = true, Latest = "1.0.6" },
+                new() { Def = Catalog.Apps[2], Allowed = true, Latest = "1.0.2" },
             };
             Render();
             RenderApps();
