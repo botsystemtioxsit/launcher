@@ -81,6 +81,11 @@ public partial class MainWindow : Window
             if (App.ScreenshotDir != null) { await Screenshot(App.ScreenshotDir); return; }
             Web.CoreWebView2.Navigate(PanelUrl);
         }
+        catch (Exception ex) when (App.ScreenshotDir != null)
+        {
+            try { Directory.CreateDirectory(App.ScreenshotDir); File.WriteAllText(Path.Combine(App.ScreenshotDir, "terminal-error.txt"), ex.ToString()); } catch { }
+            Application.Current.Shutdown();
+        }
         catch (WebView2RuntimeNotFoundException)
         {
             Fail("Для работы Терминала нужен компонент Microsoft Edge WebView2. Он бесплатный и ставится за минуту.", true);

@@ -10,7 +10,7 @@
     <RootNamespace>TioxsitTerminal</RootNamespace>
     <ApplicationIcon>..\Launcher\Assets\icon.ico</ApplicationIcon>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Product>TIOXSIT Terminal</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>

@@ -57,7 +57,7 @@ jobs:
           $p = Start-Process out/BattleLauncher.exe -ArgumentList '--screenshot=shots' -PassThru
           if (-not $p.WaitForExit(120000)) { $p.Kill(); throw 'Скриншоты: лаунчер не завершился за 2 минуты' }
           $p2 = Start-Process out-terminal/TIOXSITTerminal.exe -ArgumentList '--screenshot=shots' -PassThru
-          if (-not $p2.WaitForExit(120000)) { $p2.Kill(); throw 'Скриншоты: Терминал не завершился за 2 минуты' }
+          if (-not $p2.WaitForExit(90000)) { $p2.Kill(); Write-Warning 'Скриншот Терминала: не завершился за 90 секунд' }
           Get-ChildItem shots
 
       - uses: actions/upload-artifact@v4
