@@ -1,0 +1,5 @@
+03:19:30 init webview
+03:19:34 webview ready
+03:19:34 screenshot start
+03:19:36 navigated or timeout
+03:19:42 captured
