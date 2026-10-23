@@ -1,0 +1,40 @@
+<Window x:Class="TioxsitTerminal.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="TIOXSIT Terminal" Width="1200" Height="760" MinWidth="900" MinHeight="560"
+        Background="{StaticResource Bg}" Foreground="{StaticResource Text}" Icon="Assets/icon.ico"
+        FontFamily="Segoe UI" FontSize="14" WindowStartupLocation="CenterScreen">
+  <Grid>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition x:Name="SideCol" Width="220"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+
+      <Border x:Name="Side" Grid.Column="0" Background="{StaticResource Panel}" BorderBrush="{StaticResource Line}" BorderThickness="0,0,1,0" Padding="12,18">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Bottom">
+            <TextBlock x:Name="MeName" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+            <TextBlock x:Name="MeRole" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,0,0,8"/>
+            <Button Content="Выйти" Style="{StaticResource Ghost}" Padding="10,5" FontSize="12" HorizontalAlignment="Left" Click="Logout_Click"/>
+            <TextBlock x:Name="VersionText" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,10,0,0"/>
+          </StackPanel>
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="6,0,0,18">
+              <Image x:Name="Logo" Width="30" Height="30"/>
+              <TextBlock Text="ТЕРМИНАЛ" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+            </StackPanel>
+            <StackPanel x:Name="NavPanel"/>
+          </StackPanel>
+        </DockPanel>
+      </Border>
+
+      <Border x:Name="ContentHost" Grid.Column="1" Padding="28,24"/>
+    </Grid>
+
+    <Border x:Name="ToastBox" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,20" Visibility="Collapsed"
+            Background="{StaticResource Panel2}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="10" Padding="18,10" MaxWidth="700">
+      <TextBlock x:Name="ToastText" TextWrapping="Wrap"/>
+    </Border>
+  </Grid>
+</Window>

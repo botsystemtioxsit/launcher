@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'Launcher/**'
+      - 'Terminal/**'
       - '.github/workflows/build-windows.yml'
 
 permissions:
@@ -33,6 +34,20 @@ jobs:
           $h = (Get-FileHash out/BattleLauncher.exe -Algorithm SHA256).Hash.ToLower()
           Set-Content -Path out/BattleLauncher.exe.sha256 -Value "$h  BattleLauncher.exe" -NoNewline
 
+      # Терминал (админ-панель в виде настоящего приложения) — тоже один самодостаточный .exe, в том же релизе
+      - name: Publish Terminal
+        run: >
+          dotnet publish Terminal/Terminal.csproj -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-terminal
+
+      - name: Checksum Terminal
+        shell: pwsh
+        run: |
+          Copy-Item out-terminal/TIOXSITTerminal.exe out/TIOXSITTerminal.exe
+          $h = (Get-FileHash out/TIOXSITTerminal.exe -Algorithm SHA256).Hash.ToLower()
+          Set-Content -Path out/TIOXSITTerminal.exe.sha256 -Value "$h  TIOXSITTerminal.exe" -NoNewline
+
       # Честные скриншоты самого лаунчера для Microsoft Store: служебный режим --screenshot открывает
       # настоящие окна (с выдуманными данными, без сети) и сохраняет их в PNG.
       - name: Скриншоты лаунчера
@@ -41,6 +56,8 @@ jobs:
           New-Item -ItemType Directory -Force shots | Out-Null
           $p = Start-Process out/BattleLauncher.exe -ArgumentList '--screenshot=shots' -PassThru
           if (-not $p.WaitForExit(120000)) { $p.Kill(); throw 'Скриншоты: лаунчер не завершился за 2 минуты' }
+          $p2 = Start-Process out-terminal/TIOXSITTerminal.exe -ArgumentList '--screenshot=shots' -PassThru
+          if (-not $p2.WaitForExit(120000)) { $p2.Kill(); throw 'Скриншоты: Терминал не завершился за 2 минуты' }
           Get-ChildItem shots
 
       - uses: actions/upload-artifact@v4
@@ -95,6 +112,7 @@ jobs:
           name: BattleLauncher
           path: |
             out/BattleLauncher.exe*
+            out/TIOXSITTerminal.exe*
             out/TIOXSITLauncher.msix
             out/icon-300x300.png
             out/boxart-1080x1080.png
@@ -111,7 +129,7 @@ jobs:
           $v = (Select-String -Path Launcher/Launcher.csproj -Pattern '<Version>(.+)</Version>').Matches[0].Groups[1].Value
           gh release view "v$v" *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITLauncher.msix --clobber
+            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITLauncher.msix out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 --clobber
           } else {
-            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITLauncher.msix --title "Лаунчер $v" --notes "Один файл BattleLauncher.exe — скачай и запусти."
+            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITLauncher.msix out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 --title "Лаунчер $v" --notes "BattleLauncher.exe — лаунчер (скачай и запусти). TIOXSITTerminal.exe — Терминал, админ-панель в виде приложения."
           }

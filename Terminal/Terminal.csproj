@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>TIOXSITTerminal</AssemblyName>
+    <RootNamespace>TioxsitTerminal</RootNamespace>
+    <ApplicationIcon>..\Launcher\Assets\icon.ico</ApplicationIcon>
+    <!-- Версию поднимать при каждом изменении -->
+    <Version>0.1.0</Version>
+    <Product>TIOXSIT Terminal</Product>
+    <Company>TIOXSIT</Company>
+    <Authors>TIOXSIT</Authors>
+    <Copyright>TIOXSIT</Copyright>
+    <Description>Терминал — админ-панель проекта Тролль-Баттл в виде настоящего Windows-приложения</Description>
+    <AssemblyTitle>TIOXSIT Terminal</AssemblyTitle>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <!-- Общий с лаунчером код: сеть, база, аккаунты (тот же файл сессии, поэтому вход из лаунчера работает и здесь) -->
+    <Compile Include="..\Launcher\Services\Net.cs" Link="Shared\Net.cs" />
+    <Compile Include="..\Launcher\Services\Rtdb.cs" Link="Shared\Rtdb.cs" />
+    <Compile Include="..\Launcher\Services\AccountStore.cs" Link="Shared\AccountStore.cs" />
+    <Compile Include="..\Launcher\Services\Catalog.cs" Link="Shared\Catalog.cs" />
+    <Resource Include="..\Launcher\Assets\icon.ico" Link="Assets\icon.ico" />
+  </ItemGroup>
+
+</Project>
