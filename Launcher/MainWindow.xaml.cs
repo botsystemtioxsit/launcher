@@ -25,6 +25,9 @@ public partial class MainWindow : Window
         public string? Latest;
         public bool UpdateAvailable;
         public string? Error;
+        public NativeInfo? Native;          // установленная EXE-версия (если есть)
+        public NativeRelease? NativeLatest; // EXE-версия в последнем релизе лаунчера
+        public bool NativeUpdate;
     }
 
     List<AppInfo> apps = new();
@@ -106,7 +109,7 @@ public partial class MainWindow : Window
             if (sessionNote != null) { LoginError.Text = sessionNote; LoginError.Visibility = Visibility.Visible; sessionNote = null; }
             return;
         }
-        AppsSub.Text = $"Ты вошёл как {me.Display} · {me.RoleName}\nСейчас можно скачать браузерные версии (приложение в отдельном окне). Полноценные EXE-версии появятся позже.";
+        AppsSub.Text = $"Ты вошёл как {me.Display} · {me.RoleName}\nБраузерная версия — приложение в отдельном окне. Настоящая EXE-версия пока есть только у админ-панели (Терминал), остальные появятся позже.";
         MeBox.Children.Clear();
         MeBox.Children.Add(Avatar(me, 52));
         var info = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -397,6 +400,12 @@ public partial class MainWindow : Window
         catch { info.Error = "Не удалось узнать последнюю версию (нет связи с GitHub?)"; }
         if (info.Installed?.Version != null && info.Latest != null)
             info.UpdateAvailable = Net.CompareVersions(info.Latest, info.Installed.Version) > 0;
+        if (def.NativeExe != null)
+        {
+            info.Native = await Task.Run(() => NativeInstaller.Find(def));
+            try { info.NativeLatest = await NativeInstaller.Latest(def, force); } catch { /* нет связи — кнопка просто не включится */ }
+            info.NativeUpdate = info.Native != null && info.NativeLatest != null && info.Native.Sha != info.NativeLatest.Sha;
+        }
         return info;
     }
 
@@ -426,6 +435,8 @@ public partial class MainWindow : Window
             if (a.Latest != null)
                 badges.Children.Add(a.UpdateAvailable ? Badge("Доступно " + a.Latest, Res("OnAccent"), Res("Accent")) : Badge("Последняя " + a.Latest, Res("Muted"), null));
         }
+        if (a.Allowed && a.Native != null)
+            badges.Children.Add(Badge("EXE установлен " + a.Native.Version + (a.NativeUpdate ? " · есть обновление" : ""), Res("Green"), null));
         left.Children.Add(badges);
         if (a.Error != null) left.Children.Add(new TextBlock { Text = a.Error, Foreground = Res("Red"), Margin = new Thickness(0, 6, 0, 0), TextWrapping = TextWrapping.Wrap });
         grid.Children.Add(left);
@@ -452,23 +463,54 @@ public partial class MainWindow : Window
                 actions.Children.Add(install);
             }
         }
-        // Справа: кнопки браузерной версии, под ними — заблокированная «EXE-версия» (нативных приложений пока нет;
-        // когда будут, эта кнопка начнёт качать их)
+        // Справа: кнопки браузерной версии, под ними — кнопки EXE-версии (настоящая программа без браузера).
+        // EXE-версия пока есть только у админ-панели («TIOXSIT Terminal»); у остальных кнопка заблокирована.
         var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
         Grid.SetColumn(right, 1);
         actions.HorizontalAlignment = HorizontalAlignment.Right;
         right.Children.Add(actions);
         if (a.Allowed)
         {
-            var exe = MakeButton("🔒 Скачать EXE-версию", "Ghost", () => Task.CompletedTask);
-            exe.IsEnabled = false;
-            exe.FontSize = 12;
-            exe.Padding = new Thickness(10, 5, 10, 5);
-            exe.Margin = new Thickness(0, 8, 0, 0);
-            exe.HorizontalAlignment = HorizontalAlignment.Right;
-            exe.ToolTip = "Полноценная EXE-версия пока не готова. Она появится, когда мы выпустим нативные приложения.";
-            ToolTipService.SetShowOnDisabled(exe, true);
-            right.Children.Add(exe);
+            var exeRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 8, 0, 0) };
+            var exeKey = a.Def.Id + ":exe";
+            Button Small(string text, string? style, Func<Task> click)
+            {
+                var b2 = MakeButton(text, style, click);
+                b2.FontSize = 12;
+                b2.Padding = new Thickness(10, 5, 10, 5);
+                return b2;
+            }
+            if (a.Def.NativeExe == null)
+            {
+                var locked = Small("🔒 Скачать EXE-версию", "Ghost", () => Task.CompletedTask);
+                locked.IsEnabled = false;
+                locked.ToolTip = "Полноценная EXE-версия пока не готова. Она появится, когда мы выпустим нативное приложение.";
+                ToolTipService.SetShowOnDisabled(locked, true);
+                exeRow.Children.Add(locked);
+            }
+            else if (busy.TryGetValue(exeKey, out var eb))
+            {
+                exeRow.Children.Add(new TextBlock { Text = eb.Installing ? "Работаю…" : $"Скачиваю EXE {eb.Percent ?? 0}%", Foreground = Res("Muted"), FontSize = 12, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
+                exeRow.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = eb.Percent ?? 0, IsIndeterminate = eb.Installing });
+            }
+            else if (a.Native != null)
+            {
+                exeRow.Children.Add(Small("Запустить EXE", "Primary", () => LaunchNative(a)));
+                if (a.NativeUpdate) exeRow.Children.Add(Small("Обновить EXE", null, () => InstallNative(a, "Обновлено")));
+                exeRow.Children.Add(Small("Удалить EXE", "Danger", () => UninstallNative(a)));
+            }
+            else
+            {
+                var dl = Small("Скачать EXE-версию", null, () => InstallNative(a, "Установлено"));
+                dl.IsEnabled = a.NativeLatest != null;
+                if (a.NativeLatest == null)
+                {
+                    dl.ToolTip = "EXE-версии пока нет в последнем релизе (или нет связи с GitHub).";
+                    ToolTipService.SetShowOnDisabled(dl, true);
+                }
+                exeRow.Children.Add(dl);
+            }
+            right.Children.Add(exeRow);
         }
         grid.Children.Add(right);
         card.Child = grid;
@@ -533,6 +575,51 @@ public partial class MainWindow : Window
         finally { busy.Remove(id); await LoadApps(true); }
     }
 
+    // ---------- EXE-версия ----------
+    async Task InstallNative(AppInfo a, string okText)
+    {
+        var key = a.Def.Id + ":exe";
+        if (busy.ContainsKey(key)) return;
+        busy[key] = (false, 0);
+        RenderApps();
+        try
+        {
+            if (!await RequireAllowed(a.Def)) return;
+            var rel = await NativeInstaller.Latest(a.Def, true) ?? throw new InvalidOperationException("EXE-версии пока нет в последнем релизе");
+            var progress = new Progress<int?>(p => { busy[key] = p == null ? (true, null) : (false, p); RenderApps(); });
+            await NativeInstaller.Install(a.Def, rel, progress);
+            Toast($"{okText}: {a.Def.NativeName}");
+        }
+        catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
+        finally { busy.Remove(key); await LoadApps(true); }
+    }
+
+    async Task UninstallNative(AppInfo a)
+    {
+        var key = a.Def.Id + ":exe";
+        if (busy.ContainsKey(key) || a.Native == null) return;
+        if (MessageBox.Show(this, $"Удалить «{a.Def.NativeName}» с этого компьютера?", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        try
+        {
+            await Task.Run(() => NativeInstaller.Uninstall(a.Def));
+            Toast($"Удалено: {a.Def.NativeName}");
+        }
+        catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
+        await LoadApps(true);
+    }
+
+    async Task LaunchNative(AppInfo a)
+    {
+        try
+        {
+            if (!await RequireAllowed(a.Def)) return;
+            var found = await Task.Run(() => NativeInstaller.Find(a.Def));
+            if (found == null) { Toast("EXE-версия не установлена"); await LoadApps(true); return; }
+            NativeInstaller.Launch(found);
+        }
+        catch (Exception ex) { Toast("Не получилось запустить: " + ex.Message); }
+    }
+
     async Task Launch(AppInfo a)
     {
         try
@@ -563,7 +650,7 @@ public partial class MainWindow : Window
             apps = new List<AppInfo>
             {
                 new() { Def = Catalog.Apps[0], Allowed = true, Installed = new InstalledApp("1.0.4", "demo.exe", null), Latest = "1.0.5", UpdateAvailable = true },
-                new() { Def = Catalog.Apps[1], Allowed = true, Latest = "1.0.6" },
+                new() { Def = Catalog.Apps[1], Allowed = true, Latest = "1.0.6", NativeLatest = new NativeRelease("1.6.0", "", "") },
                 new() { Def = Catalog.Apps[2], Allowed = true, Latest = "1.0.2" },
             };
             Render();
