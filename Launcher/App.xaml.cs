@@ -15,6 +15,8 @@ public partial class App : Application
     {
         // Программа удаления из списка «Установленные приложения»
         if (e.Args.Contains("--uninstall")) { SelfInstall.Uninstall(); Shutdown(); return; }
+        var un = e.Args.FirstOrDefault(a => a.StartsWith("--uninstall-native=", StringComparison.Ordinal));
+        if (un != null) { NativeInstaller.UninstallById(un["--uninstall-native=".Length..]); Shutdown(); return; }
 
         var shot = e.Args.FirstOrDefault(a => a.StartsWith("--screenshot=", StringComparison.Ordinal));
         if (shot != null)

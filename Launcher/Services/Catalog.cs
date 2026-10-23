@@ -1,6 +1,6 @@
 namespace BattleLauncher;
 
-record AppDef(string Id, string Name, string Desc, string Repo, string ProductName, string[]? Roles)
+record AppDef(string Id, string Name, string Desc, string Repo, string ProductName, string[]? Roles, string? NativeExe = null, string? NativeName = null)
 {
     // null в Roles — любой аккаунт игры, но не сессия по токену доступа (у неё нет игрока)
     public bool IsAllowed(string role) => Roles == null ? role != "token" : Roles.Contains(role);
@@ -16,7 +16,8 @@ static class Catalog
         new("troll-battle", "Тролль-Баттл", "Голосовые баттлы в отдельном окне — та же игра, что в Telegram.",
             "index.html", "Тролль-Баттл", null),
         new("battle-admin", "БАТТЛ Админ", "Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат.",
-            "battle-admin-bot", "БАТТЛ Админ", new[] { "moderator", "admin", "superadmin", "token" }),
+            "battle-admin-bot", "БАТТЛ Админ", new[] { "moderator", "admin", "superadmin", "token" },
+            NativeExe: "TIOXSITTerminal.exe", NativeName: "TIOXSIT Terminal"),
         new("videochat", "ВидеоЧат", "Случайные видеоразговоры. Аккаунт тот же, что в «Тролль-Баттле».",
             "videochat", "ВидеоЧат", null),
     };
