@@ -75,7 +75,8 @@ public partial class MainWindow : Window
                         or CoreWebView2WebErrorStatus.ConnectionAborted or CoreWebView2WebErrorStatus.Disconnected or CoreWebView2WebErrorStatus.Timeout)
                         Fail("Нет связи — не удалось открыть админ-панель. Проверь интернет и нажми «Повторить».", false);
                 };
-                await cw.AddScriptToExecuteOnDocumentCreatedAsync(SeedScript());
+                var seed = SeedScript();
+                if (seed.Length > 0) await cw.AddScriptToExecuteOnDocumentCreatedAsync(seed);
                 started = true;
                 Log("webview ready");
             }
