@@ -109,8 +109,10 @@ class Store(ctx: Context) {
         save()
     }
 
-    fun upsert(p: Profile, paired: Boolean) =
-        put(Account(p.id, "account", p.name, p.role, p.playerId, paired, null))
+    fun upsert(p: Profile, paired: Boolean? = null) {
+        val prev = accounts.firstOrNull { it.id == p.id }
+        put(Account(p.id, "account", p.name, p.role, p.playerId, paired ?: prev?.paired ?: false, null))
+    }
 
     fun upsertToken(token: String, label: String) {
         val id = "t_" + MessageDigest.getInstance("SHA-256").digest(token.toByteArray()).joinToString("") { "%02x".format(it) }.take(16)
