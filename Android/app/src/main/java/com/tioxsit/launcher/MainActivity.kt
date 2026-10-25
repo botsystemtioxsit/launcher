@@ -1,0 +1,418 @@
+package com.tioxsit.launcher
+
+import android.app.Activity
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.os.Bundle
+import android.text.InputType
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
+import android.widget.Toast
+
+// Весь интерфейс лаунчера: вход (почта / токен / код устройства), аккаунты, список приложений.
+// Данные из базы и GitHub выводятся только как текст.
+class MainActivity : Activity() {
+    companion object {
+        const val BG = 0xFF0B0B0F.toInt()
+        const val PANEL = 0xFF14141B.toInt()
+        const val PANEL2 = 0xFF1B1B25.toInt()
+        const val LINE = 0xFF2A2A38.toInt()
+        const val TEXT = 0xFFECECF3.toInt()
+        const val MUTED = 0xFF8D8DA3.toInt()
+        const val ACCENT = 0xFFF5C451.toInt()
+        const val ON_ACCENT = 0xFF1A1405.toInt()
+        const val RED = 0xFFE5484D.toInt()
+        const val GREEN = 0xFF3FB97A.toInt()
+        const val REQUEST_TTL_MS = 5 * 60 * 1000L
+    }
+
+    private lateinit var store: Store
+    @Volatile private var loginGen = 0
+    @Volatile private var screenGen = 0
+    private var mainShown = false
+
+    private data class Row(val def: AppDef, val installed: String?, val latest: ApkRelease?, val error: String?, var progress: Int? = null)
+    private var rows: List<Row> = emptyList()
+    private var launcherUpdate: ApkRelease? = null
+    private var appsBox: LinearLayout? = null
+    private var bannerBox: LinearLayout? = null
+
+    private fun dp(v: Int) = (v * resources.displayMetrics.density + 0.5f).toInt()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        store = Store(this)
+        render()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // вернулись из установщика или из настроек — обновим, что стоит
+        if (mainShown && rows.isNotEmpty()) loadApps(false)
+    }
+
+    // ---------- мелкие помощники интерфейса ----------
+    private fun tv(text: String, size: Float = 14f, color: Int = TEXT, bold: Boolean = false): TextView = TextView(this).apply {
+        this.text = text
+        textSize = size
+        setTextColor(color)
+        if (bold) setTypeface(typeface, Typeface.BOLD)
+    }
+
+    private fun shape(fill: Int, radiusDp: Int = 12, stroke: Int? = null) = GradientDrawable().apply {
+        setColor(fill)
+        cornerRadius = dp(radiusDp).toFloat()
+        if (stroke != null) setStroke(dp(1), stroke)
+    }
+
+    private fun button(text: String, primary: Boolean = false, danger: Boolean = false, onClick: () -> Unit): Button = Button(this).apply {
+        this.text = text
+        isAllCaps = false
+        textSize = 14f
+        setTextColor(if (primary) ON_ACCENT else if (danger) RED else TEXT)
+        background = shape(if (primary) ACCENT else PANEL2, 10, if (primary) null else LINE)
+        setPadding(dp(16), dp(10), dp(16), dp(10))
+        stateListAnimator = null
+        setOnClickListener { onClick() }
+    }
+
+    private fun field(hint: String, password: Boolean = false): EditText = EditText(this).apply {
+        this.hint = hint
+        setHintTextColor(MUTED)
+        setTextColor(TEXT)
+        textSize = 15f
+        setSingleLine()
+        inputType = if (password) InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        else InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+        background = shape(PANEL2, 10, LINE)
+        setPadding(dp(14), dp(12), dp(14), dp(12))
+    }
+
+    private fun card(): LinearLayout = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        background = shape(PANEL, 14, LINE)
+        setPadding(dp(16), dp(14), dp(16), dp(14))
+    }
+
+    private fun lp(top: Int = 0, width: Int = ViewGroup.LayoutParams.MATCH_PARENT) =
+        LinearLayout.LayoutParams(width, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(top) }
+
+    private fun screen(build: (LinearLayout) -> Unit) {
+        val col = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(24), dp(18), dp(32))
+        }
+        build(col)
+        setContentView(ScrollView(this).apply {
+            setBackgroundColor(BG)
+            isFillViewport = true
+            addView(col)
+        })
+    }
+
+    private fun toast(text: String) = runOnUiThread { Toast.makeText(this, text, Toast.LENGTH_LONG).show() }
+
+    private fun ownVersion(): String = try { packageManager.getPackageInfo(packageName, 0).versionName ?: "?" } catch (e: Exception) { "?" }
+
+    private fun render() {
+        screenGen++
+        loginGen++
+        if (store.active == null) showLogin() else showMain()
+    }
+
+    // ---------- вход ----------
+    private fun showLogin() {
+        mainShown = false
+        screen { col ->
+            col.addView(tv("TIOXSIT Launcher", 26f, TEXT, true))
+            col.addView(tv("Вход. Один аккаунт на все приложения проекта.", 14f, MUTED), lp(4))
+
+            val status = tv("", 13f, ACCENT).apply { visibility = View.GONE }
+            val error = tv("", 13f, RED).apply { visibility = View.GONE }
+            val code = tv("", 34f, ACCENT, true).apply { gravity = Gravity.CENTER; visibility = View.GONE }
+            val cancel = button("Отменить") { loginGen++; render() }.apply { visibility = View.GONE }
+
+            fun busy(on: Boolean) = runOnUiThread { cancel.visibility = if (on) View.VISIBLE else View.GONE }
+            fun info(t: String) = runOnUiThread { error.visibility = View.GONE; status.text = t; status.visibility = View.VISIBLE }
+            fun fail(t: String) = runOnUiThread { status.visibility = View.GONE; code.visibility = View.GONE; error.text = t; error.visibility = View.VISIBLE; busy(false) }
+            fun done() = runOnUiThread { render() }
+            fun begin(): Int { loginGen++; error.visibility = View.GONE; status.visibility = View.GONE; code.visibility = View.GONE; busy(true); return loginGen }
+
+            // 1. заявка по почте
+            val email = field("твой email")
+            col.addView(tv("Вход по почте", 16f, TEXT, true), lp(22))
+            col.addView(tv("Заявку подтверждаешь сам в Telegram, без пароля и без письма.", 13f, MUTED), lp(2))
+            col.addView(email, lp(8))
+            col.addView(button("Запросить вход", primary = true) {
+                val addr = email.text.toString().trim()
+                if (!Rtdb.isValidEmail(addr)) { fail("Впиши email целиком."); return@button }
+                val gen = begin()
+                Thread { emailLogin(gen, addr, ::info, ::fail, ::done) }.start()
+            }, lp(8))
+
+            // 2. токен доступа
+            val token = field("токен доступа", password = true)
+            col.addView(tv("Токен доступа", 16f, TEXT, true), lp(22))
+            col.addView(tv("Если Супердоступ выдал тебе токен — он входит сразу, без аккаунта. Видна только админ-панель.", 13f, MUTED), lp(2))
+            col.addView(token, lp(8))
+            col.addView(button("Войти по токену") {
+                val t = token.text.toString().trim()
+                if (!Net.SAFE_ID.matches(t)) { fail("Впиши токен целиком."); return@button }
+                val gen = begin()
+                Thread { tokenLogin(gen, t, ::fail, ::done) }.start()
+            }, lp(8))
+
+            // 3. код устройства
+            col.addView(tv("Подключить по коду", 16f, TEXT, true), lp(22))
+            col.addView(tv("Телефон показывает код, ты отправляешь его боту в Telegram — и вход происходит сам.", 13f, MUTED), lp(2))
+            col.addView(button("Показать код") {
+                val gen = begin()
+                Thread { pairLogin(gen, ::info, ::fail, ::done) { c -> runOnUiThread { code.text = c; code.visibility = if (c.isEmpty()) View.GONE else View.VISIBLE } } }.start()
+            }, lp(8))
+            col.addView(code, lp(10))
+            col.addView(status, lp(12))
+            col.addView(error, lp(12))
+            col.addView(cancel, lp(10))
+
+            // сохранённые аккаунты
+            if (store.accounts.isNotEmpty()) {
+                col.addView(tv("Сохранённые аккаунты", 16f, TEXT, true), lp(28))
+                store.accounts.forEach { a ->
+                    col.addView(button("${a.display} · ${a.roleName}") { store.setActive(a.id); render() }, lp(8))
+                }
+            }
+            col.addView(tv("Версия ${ownVersion()}", 11f, MUTED), lp(24))
+        }
+    }
+
+    private fun emailLogin(gen: Int, email: String, info: (String) -> Unit, fail: (String) -> Unit, done: () -> Unit) {
+        var targetId: String? = null
+        var requestId: String? = null
+        try {
+            targetId = Rtdb.findAccountByEmail(email)
+            if (targetId == null) { fail("Эта почта не привязана ни к одному аккаунту. Привяжи её в игре: Настройки → Аккаунт."); return }
+            requestId = Rtdb.createLoginRequest(targetId)
+            info("⏳ Заявка отправлена. Открой в Telegram бота TerminalBot и нажми «Разрешить» в его сообщении (можно и в игре: Сообщество → Запросы, или в админ-панели: Аккаунт). Ждём 5 минут.")
+            val deadline = System.currentTimeMillis() + REQUEST_TTL_MS
+            while (System.currentTimeMillis() < deadline) {
+                Thread.sleep(2000)
+                if (gen != loginGen) return
+                val status = try { Rtdb.loginRequestStatus(targetId, requestId) } catch (e: java.io.IOException) { null }
+                if (status == "approved") {
+                    Rtdb.removeLoginRequest(targetId, requestId); requestId = null
+                    val p = Rtdb.getProfile(targetId)
+                    if (p.status == "banned") { fail("Аккаунт заблокирован."); return }
+                    store.upsert(p, paired = false)
+                    done(); return
+                }
+                if (status == "denied") { Rtdb.removeLoginRequest(targetId, requestId); requestId = null; fail("Вход отклонён на другом устройстве."); return }
+            }
+            fail("Время ожидания истекло, попробуй ещё раз.")
+        } catch (e: Exception) {
+            if (gen == loginGen) fail("Не удалось отправить заявку: " + (e.message ?: e.javaClass.simpleName))
+        } finally {
+            // заявка, которую никто не подтвердил, не должна висеть в базе
+            if (targetId != null && requestId != null) Rtdb.removeLoginRequest(targetId, requestId)
+        }
+    }
+
+    private fun tokenLogin(gen: Int, token: String, fail: (String) -> Unit, done: () -> Unit) {
+        try {
+            val info = Rtdb.getAccessToken(token)
+            if (gen != loginGen) return
+            if (info == null) { fail("Токен не найден или уже отозван Супердоступом."); return }
+            if (info.expiresAt != null && info.expiresAt <= System.currentTimeMillis()) { fail("Срок действия токена истёк — попроси у Супердоступа новый."); return }
+            store.upsertToken(token, info.label)
+            done()
+        } catch (e: Exception) {
+            if (gen == loginGen) fail("Не удалось проверить токен: " + (e.message ?: e.javaClass.simpleName))
+        }
+    }
+
+    private fun pairLogin(gen: Int, info: (String) -> Unit, fail: (String) -> Unit, done: () -> Unit, showCode: (String) -> Unit) {
+        var code: String? = null
+        try {
+            val deviceKey = Rtdb.deviceKeyOf(store.deviceId())
+            var attempt = 0
+            while (true) {
+                code = Rtdb.randomPairingCode()
+                try { Rtdb.createPairing(code, deviceKey); break }
+                catch (e: Rtdb.CodeTaken) { code = null; if (++attempt > 3) throw e }
+            }
+            showCode(code!!)
+            info("Открой в Telegram бота TerminalBot и отправь ему этот код сообщением — вход произойдёт сам. Код живёт 5 минут.")
+            val deadline = System.currentTimeMillis() + REQUEST_TTL_MS
+            while (System.currentTimeMillis() < deadline) {
+                Thread.sleep(2000)
+                if (gen != loginGen) return
+                val r = try { Rtdb.getPairing(code!!) } catch (e: java.io.IOException) { continue }
+                if (r.first == "approved" && r.second != null) {
+                    Rtdb.removePairing(code!!); code = null
+                    val p = Rtdb.getProfile(r.second!!)
+                    if (p.status == "banned") { fail("Аккаунт заблокирован."); return }
+                    store.upsert(p, paired = true)
+                    done(); return
+                }
+                if (r.first == "denied") { Rtdb.removePairing(code!!); code = null; fail("Отклонено."); return }
+                if (r.first == null) { code = null; fail("Код пропал — попробуй ещё раз."); return }
+            }
+            fail("Время ожидания истекло, попробуй ещё раз.")
+        } catch (e: Exception) {
+            if (gen == loginGen) fail("Не удалось создать код: " + (e.message ?: e.javaClass.simpleName))
+        } finally {
+            if (code != null) Rtdb.removePairing(code)
+        }
+    }
+
+    // ---------- главный экран ----------
+    private fun showMain() {
+        val me = store.active ?: return
+        mainShown = true
+        screen { col ->
+            // шапка: аккаунт
+            val head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+            val avatar = TextView(this).apply {
+                text = (me.display.trim().take(2)).uppercase()
+                setTextColor(ON_ACCENT); setTypeface(typeface, Typeface.BOLD); gravity = Gravity.CENTER
+                background = shape(ACCENT, 22)
+                layoutParams = LinearLayout.LayoutParams(dp(44), dp(44))
+            }
+            head.addView(avatar)
+            val who = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
+            who.addView(tv(me.display, 16f, TEXT, true))
+            who.addView(tv(me.roleName, 12f, MUTED))
+            head.addView(who, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            col.addView(head)
+
+            val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            actions.addView(button("Другой аккаунт") { store.signOut(); render() }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            actions.addView(button("Выйти", danger = true) {
+                store.active?.let { store.remove(it.id) }; render()
+            }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(8) })
+            col.addView(actions, lp(12))
+
+            val banner = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            bannerBox = banner
+            col.addView(banner, lp(14))
+
+            col.addView(tv("Приложения", 20f, TEXT, true), lp(18))
+            val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            appsBox = list
+            col.addView(list, lp(8))
+            col.addView(button("Обновить список") { loadApps(true) }, lp(12))
+            col.addView(tv("TIOXSIT Launcher · версия ${ownVersion()}", 11f, MUTED), lp(20))
+        }
+        drawApps()
+        loadApps(false)
+    }
+
+    private fun loadApps(force: Boolean) {
+        val me = store.active ?: return
+        val gen = screenGen
+        Thread {
+            val list = Catalog.apps.filter { it.isAllowed(me.role) }.map { def ->
+                val installed = def.pkg?.let { Installer.installedVersion(this, it) }
+                var latest: ApkRelease? = null
+                var err: String? = null
+                if (def.pkg != null && def.apk != null) {
+                    try { latest = Installer.latest(def.repo, def.apk, force) }
+                    catch (e: Exception) { err = "Не удалось узнать последнюю версию (нет связи с GitHub?)" }
+                }
+                Row(def, installed, latest, err)
+            }
+            var upd: ApkRelease? = null
+            try {
+                val l = Installer.latest(Catalog.LAUNCHER_REPO, Catalog.LAUNCHER_APK, force)
+                if (Net.compareVersions(l.version, ownVersion()) > 0) upd = l
+            } catch (_: Exception) { }
+            runOnUiThread {
+                if (gen != screenGen) return@runOnUiThread
+                rows = list
+                launcherUpdate = upd
+                drawApps()
+            }
+        }.start()
+    }
+
+    private fun drawApps() {
+        val box = appsBox ?: return
+        box.removeAllViews()
+        val banner = bannerBox
+        banner?.removeAllViews()
+        launcherUpdate?.let { u ->
+            val c = card().apply { background = shape(PANEL2, 14, ACCENT) }
+            c.addView(tv("Вышла новая версия лаунчера: ${u.version}", 15f, ACCENT, true))
+            c.addView(button("Обновить лаунчер", primary = true) { installRelease(u, null) }, lp(10))
+            banner?.addView(c)
+        }
+        if (rows.isEmpty()) {
+            box.addView(tv("Загрузка…", 14f, MUTED))
+            return
+        }
+        rows.forEach { box.addView(appCard(it), lp(10)) }
+    }
+
+    private fun appCard(r: Row): View {
+        val c = card()
+        c.addView(tv(r.def.name, 17f, TEXT, true))
+        c.addView(tv(r.def.desc, 13f, MUTED), lp(3))
+        val pkg = r.def.pkg
+        if (pkg == null) {
+            c.addView(tv("Версия для Android пока в разработке.", 13f, MUTED), lp(10))
+            return c
+        }
+        val installed = r.installed
+        val latest = r.latest
+        val stateText = when {
+            r.error != null -> r.error
+            installed == null && latest != null -> "Не установлено · последняя версия ${latest.version}"
+            installed != null && latest != null && Net.compareVersions(latest.version, installed) > 0 -> "Установлено $installed · доступно ${latest.version}"
+            installed != null -> "Установлено $installed · последняя версия"
+            else -> ""
+        }
+        c.addView(tv(stateText ?: "", 13f, if (r.error != null) RED else if (installed != null && latest != null && Net.compareVersions(latest.version, installed) > 0) ACCENT else GREEN), lp(8))
+        if (r.progress != null) {
+            c.addView(tv("Скачиваю… ${r.progress}%", 13f, ACCENT), lp(8))
+            return c
+        }
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        fun add(b: Button) = row.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(6) })
+        if (installed == null) {
+            if (latest != null) add(button("Установить", primary = true) { installRelease(latest, r) })
+        } else {
+            if (latest != null && Net.compareVersions(latest.version, installed) > 0) add(button("Обновить", primary = true) { installRelease(latest, r) })
+            add(button("Открыть", primary = latest == null || Net.compareVersions(latest.version, installed) <= 0) {
+                if (!Installer.launch(this, pkg)) toast("Не удалось открыть приложение")
+            })
+            add(button("Удалить", danger = true) { Installer.uninstall(this, pkg) })
+        }
+        c.addView(row, lp(10))
+        return c
+    }
+
+    private fun installRelease(rel: ApkRelease, row: Row?) {
+        if (!Installer.canInstall(this)) {
+            toast("Разреши лаунчеру устанавливать приложения и нажми «Установить» ещё раз.")
+            Installer.openInstallPermission(this)
+            return
+        }
+        Thread {
+            try {
+                Installer.downloadAndInstall(this, rel) { p ->
+                    runOnUiThread { row?.progress = p; if (row != null) drawApps() }
+                }
+                runOnUiThread { row?.progress = null; drawApps() }
+            } catch (e: Exception) {
+                toast("Не получилось: " + (e.message ?: e.javaClass.simpleName))
+                runOnUiThread { row?.progress = null; drawApps() }
+            }
+        }.start()
+    }
+}

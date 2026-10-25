@@ -2,3 +2,7 @@ bin/
 obj/
 out/
 *.user
+Android/**/build/
+Android/.gradle/
+Android/local.properties
+*.apk
