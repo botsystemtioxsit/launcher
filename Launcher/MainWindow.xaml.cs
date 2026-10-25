@@ -464,7 +464,7 @@ public partial class MainWindow : Window
             }
         }
         // Справа: кнопки браузерной версии, под ними — кнопки EXE-версии (настоящая программа без браузера).
-        // EXE-версия пока есть только у админ-панели («TIOXSIT Terminal»); у остальных кнопка заблокирована.
+        // EXE-версия пока есть только у админ-панели («Терминал»); у остальных кнопка заблокирована.
         var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
         Grid.SetColumn(right, 1);
         actions.HorizontalAlignment = HorizontalAlignment.Right;

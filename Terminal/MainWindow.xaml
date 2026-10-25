@@ -2,10 +2,11 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="БАТТЛ — Админ-панель" Width="1280" Height="800" MinWidth="420" MinHeight="500"
+        Title="Терминал" Width="1280" Height="800" MinWidth="420" MinHeight="500"
         Background="#0E1013" Icon="Assets/icon.ico" FontFamily="Segoe UI" FontSize="14" WindowStartupLocation="CenterScreen">
   <Grid Background="#0E1013">
     <wv2:WebView2 x:Name="Web" Visibility="Hidden"/>
+    <TextBlock x:Name="Loading" Text="Загрузка панели…" Foreground="#8D8DA3" FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Center"/>
     <StackPanel x:Name="Problem" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="460">
       <TextBlock x:Name="ProblemText" Foreground="#ECECF3" FontSize="15" TextWrapping="Wrap" Margin="0,0,0,16"/>
       <StackPanel Orientation="Horizontal">

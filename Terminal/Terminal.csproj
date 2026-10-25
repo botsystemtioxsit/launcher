@@ -10,13 +10,13 @@
     <RootNamespace>TioxsitTerminal</RootNamespace>
     <ApplicationIcon>..\Launcher\Assets\icon.ico</ApplicationIcon>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>0.2.3</Version>
-    <Product>TIOXSIT Terminal</Product>
+    <Version>0.3.0</Version>
+    <Product>Терминал</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
     <Copyright>TIOXSIT</Copyright>
     <Description>Терминал — та же админ-панель проекта Тролль-Баттл в виде Windows-приложения</Description>
-    <AssemblyTitle>TIOXSIT Terminal</AssemblyTitle>
+    <AssemblyTitle>Терминал</AssemblyTitle>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 

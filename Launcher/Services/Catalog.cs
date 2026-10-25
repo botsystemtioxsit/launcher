@@ -17,7 +17,7 @@ static class Catalog
             "index.html", "Тролль-Баттл", null),
         new("battle-admin", "БАТТЛ Админ", "Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат.",
             "battle-admin-bot", "БАТТЛ Админ", new[] { "moderator", "admin", "superadmin", "token" },
-            NativeExe: "TIOXSITTerminal.exe", NativeName: "TIOXSIT Terminal"),
+            NativeExe: "TIOXSITTerminal.exe", NativeName: "Терминал"),
         new("videochat", "ВидеоЧат", "Случайные видеоразговоры. Аккаунт тот же, что в «Тролль-Баттле».",
             "videochat", "ВидеоЧат", null),
     };
