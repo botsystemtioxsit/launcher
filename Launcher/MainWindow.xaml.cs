@@ -1,6 +1,8 @@
 using System.Net.Http;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -47,6 +49,7 @@ public partial class MainWindow : Window
             SideLogo.Source = best;
         }
         catch { /* без логотипа тоже работаем */ }
+        loginTimer.Tick += (_, _) => LoginTick();
         toastTimer.Tick += (_, _) => { toastTimer.Stop(); ToastBox.Visibility = Visibility.Collapsed; };
         VersionText.Text = "Версия " + SelfUpdate.CurrentVersion;
         Loaded += async (_, _) => await StartAsync();
@@ -59,6 +62,7 @@ public partial class MainWindow : Window
         await RefreshActiveProfile();
         Render();
         _ = CheckSelfUpdateLoop();
+        _ = CheckAppUpdatesLoop();
     }
 
     // ---------- аккаунты ----------
@@ -109,7 +113,7 @@ public partial class MainWindow : Window
             if (sessionNote != null) { LoginError.Text = sessionNote; LoginError.Visibility = Visibility.Visible; sessionNote = null; }
             return;
         }
-        AppsSub.Text = $"Ты вошёл как {me.Display} · {me.RoleName}\nБраузерная версия — приложение в отдельном окне. Настоящая EXE-версия пока есть только у админ-панели (Терминал), остальные появятся позже.";
+        AppsSub.Text = $"Ты вошёл как {me.Display} · {me.RoleName}\nОблегчённая версия — приложение в отдельном окне (Electron). Desktop-версия (EXE) — настоящая программа; кнопка включится сама, как только версия выйдет.";
         MeBox.Children.Clear();
         MeBox.Children.Add(Avatar(me, 52));
         var info = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -179,17 +183,41 @@ public partial class MainWindow : Window
     // ---------- вход ----------
     // Три способа, как в админ-панели (Telegram-вход есть только внутри самого Telegram, на компьютере его нет):
     // заявка по почте, токен доступа, код устройства. За раз идёт один.
+    readonly DispatcherTimer loginTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    DateTime loginDeadline;
+
     void SetLoginBusy(bool on, bool cancellable = true)
     {
         LoginBtn.IsEnabled = TokenBtn.IsEnabled = PairBtn.IsEnabled = !on;
         EmailBox.IsEnabled = TokenBox.IsEnabled = !on;
         LoginCancelBtn.Visibility = on && cancellable ? Visibility.Visible : Visibility.Collapsed;
-        if (!on) PairCode.Visibility = Visibility.Collapsed;
+        if (on)
+        {
+            // сразу, как нажали кнопку: плашка со «крутилкой» наверху, чтобы было видно, что процесс пошёл
+            LoginStatus.Text = "Отправляю запрос…";
+            LoginCountdown.Text = "";
+            LoginBusyBox.Visibility = Visibility.Visible;
+            LoginView.ScrollToTop();
+        }
+        else
+        {
+            PairCode.Visibility = Visibility.Collapsed;
+            LoginBusyBox.Visibility = Visibility.Collapsed;
+            loginTimer.Stop();
+        }
+    }
+
+    void LoginTick()
+    {
+        var left = loginDeadline - DateTime.UtcNow;
+        if (left < TimeSpan.Zero) left = TimeSpan.Zero;
+        LoginCountdown.Text = $"Ждём подтверждения · осталось {(int)left.TotalMinutes}:{left.Seconds:00}";
     }
 
     void LoginFail(string text)
     {
-        LoginStatus.Visibility = Visibility.Collapsed;
+        LoginBusyBox.Visibility = Visibility.Collapsed;
+        loginTimer.Stop();
         LoginError.Text = text;
         LoginError.Visibility = Visibility.Visible;
         SetLoginBusy(false);
@@ -199,13 +227,18 @@ public partial class MainWindow : Window
     {
         LoginError.Visibility = Visibility.Collapsed;
         LoginStatus.Text = text;
-        LoginStatus.Visibility = Visibility.Visible;
+        LoginBusyBox.Visibility = Visibility.Visible;
+        LoginView.ScrollToTop();
+        loginDeadline = DateTime.UtcNow.AddSeconds(RequestTtlSeconds);
+        LoginTick();
+        loginTimer.Start();
     }
 
     void LoginDone()
     {
         EmailBox.Text = TokenBox.Text = "";
-        LoginStatus.Visibility = Visibility.Collapsed;
+        LoginBusyBox.Visibility = Visibility.Collapsed;
+        loginTimer.Stop();
         SetLoginBusy(false);
         Render();
     }
@@ -213,7 +246,8 @@ public partial class MainWindow : Window
     CancellationToken StartLogin()
     {
         LoginError.Visibility = Visibility.Collapsed;
-        LoginStatus.Visibility = Visibility.Collapsed;
+        LoginBusyBox.Visibility = Visibility.Collapsed;
+        loginTimer.Stop();
         loginCts?.Cancel();
         loginCts = new CancellationTokenSource();
         return loginCts.Token;
@@ -345,7 +379,7 @@ public partial class MainWindow : Window
     {
         loginCts?.Cancel();
         SetLoginBusy(false);
-        LoginStatus.Visibility = Visibility.Collapsed;
+        LoginBusyBox.Visibility = Visibility.Collapsed;
     }
 
     // ---------- навигация ----------
@@ -386,6 +420,7 @@ public partial class MainWindow : Window
         var me = store.Active;
         if (me == null) return;
         RefreshBtn.IsEnabled = false;
+        await Catalog.Refresh(force); // список приложений и их версий читается из catalog.json — без обновления лаунчера
         var list = await Task.WhenAll(Catalog.Apps.Select(def => Describe(def, me.Role, force)));
         apps = list.ToList();
         RefreshBtn.IsEnabled = true;
@@ -430,13 +465,13 @@ public partial class MainWindow : Window
         else
         {
             badges.Children.Add(a.Installed != null
-                ? Badge("Установлено" + (a.Installed.Version != null ? " " + a.Installed.Version : "") + " (браузерная)", Res("Green"), null)
+                ? Badge("Установлено" + (a.Installed.Version != null ? " " + a.Installed.Version : "") + " (облегчённая)", Res("Green"), null)
                 : Badge("Не установлено", Res("Muted"), null));
             if (a.Latest != null)
                 badges.Children.Add(a.UpdateAvailable ? Badge("Доступно " + a.Latest, Res("OnAccent"), Res("Accent")) : Badge("Последняя " + a.Latest, Res("Muted"), null));
         }
         if (a.Allowed && a.Native != null)
-            badges.Children.Add(Badge("EXE установлен " + a.Native.Version + (a.NativeUpdate ? " · есть обновление" : ""), Res("Green"), null));
+            badges.Children.Add(Badge("Desktop установлен " + a.Native.Version + (a.NativeUpdate ? " · есть обновление" : ""), Res("Green"), null));
         left.Children.Add(badges);
         if (a.Error != null) left.Children.Add(new TextBlock { Text = a.Error, Foreground = Res("Red"), Margin = new Thickness(0, 6, 0, 0), TextWrapping = TextWrapping.Wrap });
         grid.Children.Add(left);
@@ -458,7 +493,7 @@ public partial class MainWindow : Window
             }
             else
             {
-                var install = MakeButton("Скачать браузерную версию", "Primary", async () => await InstallApp(a, "Установлено"));
+                var install = MakeButton("Скачать облегчённую версию", "Primary", async () => await InstallApp(a, "Установлено"));
                 install.IsEnabled = a.Latest != null;
                 actions.Children.Add(install);
             }
@@ -482,30 +517,30 @@ public partial class MainWindow : Window
             }
             if (a.Def.NativeExe == null)
             {
-                var locked = Small("🔒 Скачать EXE-версию", "Ghost", () => Task.CompletedTask);
+                var locked = Small("🔒 Скачать Desktop-версию (EXE)", "Ghost", () => Task.CompletedTask);
                 locked.IsEnabled = false;
-                locked.ToolTip = "Полноценная EXE-версия пока не готова. Она появится, когда мы выпустим нативное приложение.";
+                locked.ToolTip = "Desktop-версии этого приложения нет в каталоге.";
                 ToolTipService.SetShowOnDisabled(locked, true);
                 exeRow.Children.Add(locked);
             }
             else if (busy.TryGetValue(exeKey, out var eb))
             {
-                exeRow.Children.Add(new TextBlock { Text = eb.Installing ? "Работаю…" : $"Скачиваю EXE {eb.Percent ?? 0}%", Foreground = Res("Muted"), FontSize = 12, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
+                exeRow.Children.Add(new TextBlock { Text = eb.Installing ? "Работаю…" : $"Скачиваю Desktop {eb.Percent ?? 0}%", Foreground = Res("Muted"), FontSize = 12, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
                 exeRow.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = eb.Percent ?? 0, IsIndeterminate = eb.Installing });
             }
             else if (a.Native != null)
             {
-                exeRow.Children.Add(Small("Запустить EXE", "Primary", () => LaunchNative(a)));
-                if (a.NativeUpdate) exeRow.Children.Add(Small("Обновить EXE", null, () => InstallNative(a, "Обновлено")));
-                exeRow.Children.Add(Small("Удалить EXE", "Danger", () => UninstallNative(a)));
+                exeRow.Children.Add(Small("Запустить Desktop", "Primary", () => LaunchNative(a)));
+                if (a.NativeUpdate) exeRow.Children.Add(Small("Обновить Desktop", null, () => InstallNative(a, "Обновлено")));
+                exeRow.Children.Add(Small("Удалить Desktop", "Danger", () => UninstallNative(a)));
             }
             else
             {
-                var dl = Small("Скачать EXE-версию", null, () => InstallNative(a, "Установлено"));
+                var dl = Small("Скачать Desktop-версию (EXE)", null, () => InstallNative(a, "Установлено"));
                 dl.IsEnabled = a.NativeLatest != null;
                 if (a.NativeLatest == null)
                 {
-                    dl.ToolTip = "EXE-версии пока нет в последнем релизе (или нет связи с GitHub).";
+                    dl.ToolTip = "Desktop-версия ещё не вышла (или нет связи с GitHub). Кнопка включится сама, когда она появится — обновлять лаунчер не нужно.";
                     ToolTipService.SetShowOnDisabled(dl, true);
                 }
                 exeRow.Children.Add(dl);
@@ -703,6 +738,63 @@ public partial class MainWindow : Window
             }
             catch { /* нет связи — попробуем через час */ }
             await Task.Delay(TimeSpan.FromHours(1));
+        }
+    }
+
+    // ---------- уведомления о новых версиях приложений ----------
+    // Раз в полчаса, пока лаунчер открыт: вышла новая версия установленного приложения или появилась Desktop-версия,
+    // которой раньше не было. Показываем сообщение и мигаем значком в панели задач, если окно свёрнуто.
+    readonly HashSet<string> notified = new();
+    readonly Dictionary<string, bool> nativeSeen = new();
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct FLASHWINFO { public uint cbSize; public IntPtr hwnd; public uint dwFlags; public uint uCount; public uint dwTimeout; }
+    [DllImport("user32.dll")] static extern bool FlashWindowEx(ref FLASHWINFO pwfi);
+
+    void FlashTaskbar()
+    {
+        try
+        {
+            var fi = new FLASHWINFO { hwnd = new WindowInteropHelper(this).Handle, dwFlags = 3 | 12, uCount = 5, dwTimeout = 0 };
+            fi.cbSize = (uint)Marshal.SizeOf(fi);
+            FlashWindowEx(ref fi);
+        }
+        catch { /* мигание — только приятное дополнение */ }
+    }
+
+    async Task CheckAppUpdatesLoop()
+    {
+        if (App.ScreenshotDir != null) return;
+        await Task.Delay(TimeSpan.FromMinutes(1));
+        while (true)
+        {
+            try
+            {
+                var me = store.Active;
+                if (me != null)
+                {
+                    await Catalog.Refresh();
+                    var list = (await Task.WhenAll(Catalog.Apps.Select(def => Describe(def, me.Role, false)))).ToList();
+                    var news = new List<string>();
+                    foreach (var a in list.Where(x => x.Allowed))
+                    {
+                        if (a.Installed != null && a.UpdateAvailable && notified.Add($"{a.Def.Id}:{a.Latest}")) news.Add($"{a.Def.Name} {a.Latest}");
+                        if (a.Native != null && a.NativeUpdate && a.NativeLatest != null && notified.Add($"{a.Def.Id}:exe:{a.NativeLatest.Sha}")) news.Add($"{a.Def.NativeName} (Desktop)");
+                        var has = a.NativeLatest != null;
+                        if (nativeSeen.TryGetValue(a.Def.Id, out var had) && !had && has && a.Native == null) news.Add($"Появилась Desktop-версия: {a.Def.Name}");
+                        nativeSeen[a.Def.Id] = has;
+                    }
+                    apps = list;
+                    if (AppsView.Visibility == Visibility.Visible && busy.Count == 0) RenderApps();
+                    if (news.Count > 0)
+                    {
+                        Toast("Новое: " + string.Join(", ", news) + ". Открой «Приложения» и обнови.");
+                        FlashTaskbar();
+                    }
+                }
+            }
+            catch { /* нет связи — попробуем через полчаса */ }
+            await Task.Delay(TimeSpan.FromMinutes(30));
         }
     }
 

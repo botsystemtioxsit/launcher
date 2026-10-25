@@ -17,10 +17,10 @@ object Installer {
 
     // Последняя сборка: релиз с фиксированным тегом android-latest, версия — в его описании («Версия 1.0.5, …»),
     // контрольная сумма — в поле digest у файла.
-    fun latest(repo: String, apk: String, force: Boolean = false): ApkRelease {
-        val key = "$repo/$apk"
+    fun latest(repo: String, apk: String, force: Boolean = false, tag: String = "android-latest"): ApkRelease {
+        val key = "$repo/$tag/$apk"
         cache[key]?.let { if (!force && System.currentTimeMillis() - it.first < CACHE_MS) return it.second }
-        val json = JSONObject(Net.get("https://api.github.com/repos/${Catalog.OWNER}/$repo/releases/tags/android-latest"))
+        val json = JSONObject(Net.get("https://api.github.com/repos/${Catalog.OWNER}/$repo/releases/tags/$tag"))
         val body = json.optString("body", "")
         val version = Regex("""[Вв]ерсия\s+(\d+(?:\.\d+)+)""").find(body)?.groupValues?.get(1)
             ?: throw IllegalStateException("В релизе нет версии")

@@ -1,0 +1,31 @@
+{
+  "apps": [
+    {
+      "id": "troll-battle",
+      "name": "Тролль-Баттл",
+      "desc": "Голосовые баттлы — та же игра, что в Telegram.",
+      "roles": null,
+      "lite": { "repo": "index.html", "productName": "Тролль-Баттл", "site": "https://botsystemtioxsit.github.io/index.html/" },
+      "desktop": { "repo": "launcher", "tag": "latest", "asset": "TIOXSITTrollBattle.exe", "name": "Тролль-Баттл (Desktop)" },
+      "android": { "repo": "index.html", "tag": "android-latest", "asset": "troll-battle.apk", "package": "com.tioxsit.trollbattle.icontest" }
+    },
+    {
+      "id": "battle-admin",
+      "name": "БАТТЛ Админ",
+      "desc": "Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат.",
+      "roles": ["moderator", "admin", "superadmin", "token"],
+      "lite": { "repo": "battle-admin-bot", "productName": "БАТТЛ Админ", "site": "https://botsystemtioxsit.github.io/battle-admin-bot/public/admin.html" },
+      "desktop": { "repo": "launcher", "tag": "latest", "asset": "TIOXSITTerminal.exe", "name": "Терминал" },
+      "android": { "repo": "battle-admin-bot", "tag": "android-latest", "asset": "battle-admin.apk", "package": "com.tioxsit.battleadmin.icontest" }
+    },
+    {
+      "id": "videochat",
+      "name": "ВидеоЧат",
+      "desc": "Случайные видеоразговоры. Аккаунт тот же, что в «Тролль-Баттле».",
+      "roles": null,
+      "lite": { "repo": "videochat", "productName": "ВидеоЧат", "site": null },
+      "desktop": { "repo": "launcher", "tag": "latest", "asset": "TIOXSITVideoChat.exe", "name": "ВидеоЧат (Desktop)" },
+      "android": null
+    }
+  ]
+}
