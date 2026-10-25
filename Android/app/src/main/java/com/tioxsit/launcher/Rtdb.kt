@@ -120,4 +120,12 @@ object Rtdb {
     fun removePairing(code: String) {
         try { checkId(code); Net.send("DELETE", "$DB/devicePairings/$code.json", null) } catch (_: Exception) { }
     }
+
+    // Запись о доверенном устройстве живёт, пока владелец не нажал «Отозвать» в панели.
+    // Сетевые ошибки пробрасываются (не путать «нет связи» с «отозвано»).
+    fun isDeviceTrusted(userId: String, deviceKey: String): Boolean {
+        checkId(userId)
+        require(Regex("^[0-9a-f]{64}$").matches(deviceKey)) { "Некорректный ключ устройства" }
+        return scalar("users/$userId/trustedDevices/$deviceKey/sig") != null
+    }
 }

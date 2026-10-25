@@ -10,6 +10,7 @@ data class AppDef(
     val pkg: String?,          // null — Android-версии пока нет
     val apk: String?,
     val roles: Set<String>?,   // null — любой аккаунт игры, но не сессия по токену
+    val site: String? = null,  // «браузерная версия» — адрес страницы
 ) {
     fun isAllowed(role: String) = if (roles == null) role != "token" else role in roles
 }
@@ -21,9 +22,11 @@ object Catalog {
 
     val apps = listOf(
         AppDef("troll-battle", "Тролль-Баттл", "Голосовые баттлы — та же игра, что в Telegram.",
-            "index.html", "com.tioxsit.trollbattle.icontest", "troll-battle.apk", null),
+            "index.html", "com.tioxsit.trollbattle.icontest", "troll-battle.apk", null,
+            site = "https://botsystemtioxsit.github.io/index.html/"),
         AppDef("battle-admin", "БАТТЛ Админ", "Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат.",
-            "battle-admin-bot", "com.tioxsit.battleadmin.icontest", "battle-admin.apk", setOf("moderator", "admin", "superadmin", "token")),
+            "battle-admin-bot", "com.tioxsit.battleadmin.icontest", "battle-admin.apk", setOf("moderator", "admin", "superadmin", "token"),
+            site = "https://botsystemtioxsit.github.io/battle-admin-bot/public/admin.html"),
         AppDef("videochat", "ВидеоЧат", "Случайные видеоразговоры. Аккаунт тот же, что в «Тролль-Баттле».",
             "videochat", null, null, null),
     )

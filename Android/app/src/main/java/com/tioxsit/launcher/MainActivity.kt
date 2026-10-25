@@ -1,6 +1,11 @@
 package com.tioxsit.launcher
 
 import android.app.Activity
+import android.app.AlertDialog
+import android.content.Intent
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -43,6 +48,17 @@ class MainActivity : Activity() {
     private var launcherUpdate: ApkRelease? = null
     private var appsBox: LinearLayout? = null
     private var bannerBox: LinearLayout? = null
+    private var tab = "apps"
+    private var contentBox: LinearLayout? = null
+    private var sessionNote: String? = null
+    private val handler = Handler(Looper.getMainLooper())
+    private val periodic = object : Runnable {
+        override fun run() {
+            // раз в 5 минут, пока лаунчер открыт: новые версии приложений и самого лаунчера
+            if (mainShown && tab == "apps") loadApps(true)
+            handler.postDelayed(this, 5 * 60 * 1000L)
+        }
+    }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density + 0.5f).toInt()
 
@@ -50,6 +66,52 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         store = Store(this)
         render()
+        // роль могла смениться, аккаунт — заблокироваться, токен — отозваться, устройство — быть отозвано
+        if (store.active != null) {
+            Thread {
+                val note = refreshActiveProfile()
+                runOnUiThread { if (note != null) sessionNote = note; render() }
+            }.start()
+        }
+        handler.postDelayed(periodic, 5 * 60 * 1000L)
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacks(periodic)
+        super.onDestroy()
+    }
+
+    // Перечитывает текущую сессию из базы. «Нет связи» — не повод разлогинивать: остаются сохранённые данные.
+    // Возвращает причину, если из аккаунта пришлось выйти.
+    private fun refreshActiveProfile(): String? {
+        val acc = store.active ?: return null
+        try {
+            if (acc.isToken) {
+                val token = Secrets.unprotect(acc.tokenProtected)
+                val info = if (token == null) null else Rtdb.getAccessToken(token)
+                if (token == null || info == null || (info.expiresAt != null && info.expiresAt <= System.currentTimeMillis())) {
+                    store.remove(acc.id)
+                    return "Токен доступа отозван или истёк."
+                }
+                store.upsertToken(token, info.label)
+                return null
+            }
+            val p = Rtdb.getProfile(acc.id)
+            if (p.status == "banned") { store.remove(acc.id); return "Аккаунт заблокирован." }
+            if (acc.paired && !Rtdb.isDeviceTrusted(acc.id, Rtdb.deviceKeyOf(store.deviceId()))) {
+                store.remove(acc.id)
+                return "Владелец отозвал доступ этому устройству — войди заново."
+            }
+            store.upsert(p)
+        } catch (_: Exception) { /* нет сети — остаются сохранённые данные */ }
+        return null
+    }
+
+    private fun requireAllowed(def: AppDef): Boolean {
+        val me = store.active
+        if (me == null) { render(); toast("Аккаунт больше недоступен — войди заново."); return false }
+        if (!def.isAllowed(me.role)) { toast("Для этого приложения нет доступа у твоего аккаунта."); loadApps(false); return false }
+        return true
     }
 
     override fun onResume() {
@@ -132,10 +194,11 @@ class MainActivity : Activity() {
         mainShown = false
         screen { col ->
             col.addView(tv("TIOXSIT Launcher", 26f, TEXT, true))
-            col.addView(tv("Вход. Один аккаунт на все приложения проекта.", 14f, MUTED), lp(4))
+            col.addView(tv("Войди в свой аккаунт — тот же, что в игре и админ-панели.", 14f, MUTED), lp(4))
 
             val status = tv("", 13f, ACCENT).apply { visibility = View.GONE }
             val error = tv("", 13f, RED).apply { visibility = View.GONE }
+            sessionNote?.let { error.text = it; error.visibility = View.VISIBLE; sessionNote = null }
             val code = tv("", 34f, ACCENT, true).apply { gravity = Gravity.CENTER; visibility = View.GONE }
             val cancel = button("Отменить") { loginGen++; render() }.apply { visibility = View.GONE }
 
@@ -277,42 +340,122 @@ class MainActivity : Activity() {
     private fun showMain() {
         val me = store.active ?: return
         mainShown = true
-        screen { col ->
-            // шапка: аккаунт
-            val head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-            val avatar = TextView(this).apply {
-                text = (me.display.trim().take(2)).uppercase()
-                setTextColor(ON_ACCENT); setTypeface(typeface, Typeface.BOLD); gravity = Gravity.CENTER
-                background = shape(ACCENT, 22)
-                layoutParams = LinearLayout.LayoutParams(dp(44), dp(44))
-            }
-            head.addView(avatar)
-            val who = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
-            who.addView(tv(me.display, 16f, TEXT, true))
-            who.addView(tv(me.roleName, 12f, MUTED))
-            head.addView(who, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            col.addView(head)
-
-            val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-            actions.addView(button("Другой аккаунт") { store.signOut(); render() }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            actions.addView(button("Выйти", danger = true) {
-                store.active?.let { store.remove(it.id) }; render()
-            }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(8) })
-            col.addView(actions, lp(12))
-
-            val banner = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-            bannerBox = banner
-            col.addView(banner, lp(14))
-
-            col.addView(tv("Приложения", 20f, TEXT, true), lp(18))
-            val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-            appsBox = list
-            col.addView(list, lp(8))
-            col.addView(button("Обновить список") { loadApps(true) }, lp(12))
-            col.addView(tv("TIOXSIT Launcher · версия ${ownVersion()}", 11f, MUTED), lp(20))
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(22), dp(18), dp(24))
         }
-        drawApps()
-        loadApps(false)
+        contentBox = content
+        val scroll = ScrollView(this).apply { addView(content) }
+
+        // нижнее меню: Приложения / Аккаунт
+        val nav = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setBackgroundColor(PANEL)
+            setPadding(dp(8), dp(6), dp(8), dp(6))
+        }
+        fun navBtn(id: String, label: String): TextView = TextView(this).apply {
+            text = label
+            gravity = Gravity.CENTER
+            textSize = 14f
+            setPadding(0, dp(12), 0, dp(12))
+            setTextColor(if (tab == id) ACCENT else MUTED)
+            if (tab == id) setTypeface(typeface, Typeface.BOLD)
+            setOnClickListener { if (tab != id) { tab = id; showMain() } }
+        }
+        nav.addView(navBtn("apps", "Приложения"), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        nav.addView(navBtn("account", "Аккаунт"), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(BG)
+            addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+            addView(View(this@MainActivity).apply { setBackgroundColor(LINE) }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)))
+            addView(nav)
+        }
+        setContentView(root)
+
+        if (tab == "account") {
+            appsBox = null; bannerBox = null
+            showAccountTab(content, me)
+        } else {
+            showAppsTab(content, me)
+            drawApps()
+            loadApps(false)
+        }
+    }
+
+    private fun avatarView(a: Account, sizeDp: Int): TextView = TextView(this).apply {
+        text = a.display.trim().take(2).uppercase()
+        setTextColor(ON_ACCENT); setTypeface(typeface, Typeface.BOLD); gravity = Gravity.CENTER
+        background = shape(ACCENT, sizeDp / 2)
+        layoutParams = LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp))
+    }
+
+    private fun showAppsTab(col: LinearLayout, me: Account) {
+        val banner = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        bannerBox = banner
+        col.addView(banner)
+        col.addView(tv("Приложения", 22f, TEXT, true), lp(if (launcherUpdate != null) 14 else 0))
+        col.addView(tv("Ты вошёл как ${me.display} · ${me.roleName}", 13f, MUTED), lp(4))
+        col.addView(tv("Приложения ставятся из GitHub и обновляются отсюда. Для каждого есть и браузерная версия.", 13f, MUTED), lp(2))
+        val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        appsBox = list
+        col.addView(list, lp(10))
+        col.addView(button("Проверить обновления") { loadApps(true) }, lp(14))
+        col.addView(tv("TIOXSIT Launcher · версия ${ownVersion()}", 11f, MUTED), lp(20))
+    }
+
+    private fun showAccountTab(col: LinearLayout, me: Account) {
+        col.addView(tv("Аккаунт", 22f, TEXT, true))
+        col.addView(tv("Можно держать несколько аккаунтов и переключаться между ними.", 13f, MUTED), lp(4))
+
+        val meCard = card()
+        val head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        head.addView(avatarView(me, 52))
+        val who = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), 0, 0, 0) }
+        who.addView(tv(me.display, 16f, TEXT, true))
+        who.addView(tv(me.roleName + if (me.playerId.isNotEmpty()) " · " + me.playerId else "", 13f, MUTED))
+        head.addView(who)
+        meCard.addView(head)
+        col.addView(meCard, lp(14))
+
+        col.addView(tv("Все аккаунты", 14f, MUTED, true), lp(22))
+        store.accounts.forEach { a ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                background = shape(PANEL2, 10, if (a.id == store.activeId) ACCENT else LINE)
+                setPadding(dp(12), dp(10), dp(8), dp(10))
+                setOnClickListener {
+                    if (a.id != store.activeId) {
+                        store.setActive(a.id)
+                        Thread {
+                            val note = refreshActiveProfile()
+                            runOnUiThread { if (note != null) sessionNote = note; render() }
+                        }.start()
+                    }
+                }
+            }
+            row.addView(avatarView(a, 34))
+            val meta = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
+            meta.addView(tv(a.display, 14f, TEXT, true))
+            meta.addView(tv(a.roleName + if (a.playerId.isNotEmpty()) " · " + a.playerId else "", 12f, MUTED))
+            row.addView(meta, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            if (a.id != store.activeId) {
+                row.addView(tv("×", 22f, MUTED).apply {
+                    setPadding(dp(14), 0, dp(10), 0)
+                    setOnClickListener { store.remove(a.id); showMain() }
+                })
+            }
+            col.addView(row, lp(8))
+        }
+
+        val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        actions.addView(button("+ Добавить аккаунт") { store.signOut(); render() }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        actions.addView(button("Выйти", danger = true) { store.active?.let { store.remove(it.id) }; render() },
+            LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(8) })
+        col.addView(actions, lp(14))
+        col.addView(tv("TIOXSIT Launcher · версия ${ownVersion()}", 11f, MUTED), lp(24))
     }
 
     private fun loadApps(force: Boolean) {
@@ -351,7 +494,7 @@ class MainActivity : Activity() {
         launcherUpdate?.let { u ->
             val c = card().apply { background = shape(PANEL2, 14, ACCENT) }
             c.addView(tv("Вышла новая версия лаунчера: ${u.version}", 15f, ACCENT, true))
-            c.addView(button("Обновить лаунчер", primary = true) { installRelease(u, null) }, lp(10))
+            c.addView(button("Обновить лаунчер", primary = true) { installRelease(u, null, "") }, lp(10))
             banner?.addView(c)
         }
         if (rows.isEmpty()) {
@@ -387,19 +530,30 @@ class MainActivity : Activity() {
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         fun add(b: Button) = row.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(6) })
         if (installed == null) {
-            if (latest != null) add(button("Установить", primary = true) { installRelease(latest, r) })
+            if (latest != null) add(button("Установить", primary = true) { installRelease(latest, r, "Установка начата") })
         } else {
-            if (latest != null && Net.compareVersions(latest.version, installed) > 0) add(button("Обновить", primary = true) { installRelease(latest, r) })
+            if (latest != null && Net.compareVersions(latest.version, installed) > 0) add(button("Обновить", primary = true) { installRelease(latest, r, "Обновление начато") })
             add(button("Открыть", primary = latest == null || Net.compareVersions(latest.version, installed) <= 0) {
-                if (!Installer.launch(this, pkg)) toast("Не удалось открыть приложение")
+                if (!requireAllowed(r.def)) return@button
+                if (!Installer.launch(this, pkg)) { toast("Приложение не установлено"); loadApps(true) }
             })
-            add(button("Удалить", danger = true) { Installer.uninstall(this, pkg) })
+            add(button("Удалить", danger = true) {
+                AlertDialog.Builder(this).setMessage("Удалить «${r.def.name}» с этого телефона?")
+                    .setPositiveButton("Удалить") { _, _ -> Installer.uninstall(this, pkg) }
+                    .setNegativeButton("Отмена", null).show()
+            })
         }
         c.addView(row, lp(10))
+        r.def.site?.let { url ->
+            c.addView(button("Открыть браузерную версию") {
+                try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) { toast("Не удалось открыть браузер") }
+            }, lp(8))
+        }
         return c
     }
 
-    private fun installRelease(rel: ApkRelease, row: Row?) {
+    private fun installRelease(rel: ApkRelease, row: Row?, okText: String = "") {
+        if (row != null && !requireAllowed(row.def)) return
         if (!Installer.canInstall(this)) {
             toast("Разреши лаунчеру устанавливать приложения и нажми «Установить» ещё раз.")
             Installer.openInstallPermission(this)
@@ -410,6 +564,7 @@ class MainActivity : Activity() {
                 Installer.downloadAndInstall(this, rel) { p ->
                     runOnUiThread { row?.progress = p; if (row != null) drawApps() }
                 }
+                if (okText.isNotEmpty() && row != null) toast("$okText: ${row.def.name}. Подтверди установку в окне Android.")
                 runOnUiThread { row?.progress = null; drawApps() }
             } catch (e: Exception) {
                 toast("Не получилось: " + (e.message ?: e.javaClass.simpleName))
