@@ -21,7 +21,7 @@ static class NativeInstaller
     static (DateTime At, NativeRelease? Value)? cache;
     static readonly TimeSpan CacheFor = TimeSpan.FromMinutes(5);
 
-    static string FolderName(AppDef d) => (d.NativeName ?? d.Name).Replace(" ", "");
+    static string FolderName(AppDef d) => d.NativeExe != null ? Path.GetFileNameWithoutExtension(d.NativeExe) : (d.NativeName ?? d.Name).Replace(" ", "");
     public static string DirFor(AppDef d) => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", FolderName(d));
     static string RegKey(AppDef d) => RegBase + "TIOXSIT_" + d.Id;
     static string StartLink(AppDef d) => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), (d.NativeName ?? d.Name) + ".lnk");
@@ -120,6 +120,9 @@ static class NativeInstaller
         {
             try { File.Delete(tmp); } catch { }
         }
+        // старое название ярлыка («TIOXSIT Terminal») убираем, чтобы не было двух значков
+        try { File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "TIOXSIT Terminal.lnk")); } catch { }
+        try { File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "TIOXSIT Terminal.lnk")); } catch { }
         MakeShortcut(StartLink(d), exe, d.NativeName ?? d.Name);
         MakeShortcut(DesktopLink(d), exe, d.NativeName ?? d.Name);
         var version = FileVersionInfo.GetVersionInfo(exe).ProductVersion ?? "";

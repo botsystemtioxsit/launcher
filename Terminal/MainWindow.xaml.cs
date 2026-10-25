@@ -28,12 +28,17 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        Title = "БАТТЛ — Админ-панель";
+        Title = "Терминал";
         Loaded += async (_, _) => await StartAsync();
     }
 
+    int loadToken;
+
     void Fail(string text, bool runtime)
     {
+        Log("FAIL: " + text);
+        loadToken++;
+        Loading.Visibility = Visibility.Collapsed;
         Web.Visibility = Visibility.Hidden;
         ProblemText.Text = text;
         RuntimeBtn.Visibility = runtime ? Visibility.Visible : Visibility.Collapsed;
@@ -50,13 +55,16 @@ public partial class MainWindow : Window
     async Task StartAsync()
     {
         Problem.Visibility = Visibility.Collapsed;
+        Loading.Visibility = Visibility.Visible;
         try
         {
             if (!started)
             {
                 Log("init webview");
                 var data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TIOXSITTerminal", "WebView2");
-                var env = await CoreWebView2Environment.CreateAsync(null, data);
+                // без аппаратного ускорения: на части видеокарт/виртуальных машин окно WebView2 остаётся чёрным
+                var opts = new CoreWebView2EnvironmentOptions("--disable-gpu --disable-gpu-compositing");
+                var env = await CoreWebView2Environment.CreateAsync(null, data, opts);
                 await Web.EnsureCoreWebView2Async(env);
                 var cw = Web.CoreWebView2;
                 cw.Settings.AreDevToolsEnabled = false;
@@ -69,20 +77,52 @@ public partial class MainWindow : Window
                     if (!Uri.TryCreate(a.Uri, UriKind.Absolute, out var u)) { a.Cancel = true; return; }
                     if (u.Host != "botsystemtioxsit.github.io" && u.Scheme != "about" && u.Scheme != "data") { a.Cancel = true; OpenOutside(a.Uri); }
                 };
-                cw.NavigationCompleted += (_, a) =>
+                cw.ProcessFailed += (_, a) =>
                 {
-                    if (!a.IsSuccess && a.WebErrorStatus is CoreWebView2WebErrorStatus.CannotConnect or CoreWebView2WebErrorStatus.HostNameNotResolved
-                        or CoreWebView2WebErrorStatus.ConnectionAborted or CoreWebView2WebErrorStatus.Disconnected or CoreWebView2WebErrorStatus.Timeout)
-                        Fail("Нет связи — не удалось открыть админ-панель. Проверь интернет и нажми «Повторить».", false);
+                    Log("process failed: " + a.ProcessFailedKind);
+                    Dispatcher.Invoke(() => { try { cw.Reload(); } catch { } });
+                };
+                cw.NavigationCompleted += async (_, a) =>
+                {
+                    Log("navigation completed: ok=" + a.IsSuccess + " status=" + a.WebErrorStatus);
+                    if (!a.IsSuccess)
+                    {
+                        if (App.ScreenshotDir == null)
+                            Fail("Не удалось открыть админ-панель (" + a.WebErrorStatus + "). Проверь интернет и нажми «Повторить».", false);
+                        return;
+                    }
+                    if (App.ScreenshotDir != null) return;
+                    Loading.Visibility = Visibility.Collapsed;
+                    Web.Visibility = Visibility.Visible;
+                    // самопроверка: если через 4 секунды страница пустая — скажем об этом, а не покажем чёрный экран
+                    var token = loadToken;
+                    await Task.Delay(4000);
+                    if (token != loadToken) return;
+                    try
+                    {
+                        var len = await cw.ExecuteScriptAsync("(document.body&&document.body.innerText||'').trim().length");
+                        Log("page text length: " + len);
+                        if (int.TryParse(len, out var n) && n < 20)
+                            Fail("Панель открылась пустой. Нажми «Повторить». Если не помогает — пришли мне этот текст:\n" + LogTail(), false);
+                    }
+                    catch (Exception ex) { Log("selfcheck error: " + ex.Message); }
                 };
                 var seed = SeedScript();
                 if (seed.Length > 0) await cw.AddScriptToExecuteOnDocumentCreatedAsync(seed);
                 started = true;
                 Log("webview ready");
             }
-            Web.Visibility = Visibility.Visible;
-            if (App.ScreenshotDir != null) { await Screenshot(App.ScreenshotDir); return; }
+            if (App.ScreenshotDir != null) { Web.Visibility = Visibility.Visible; await Screenshot(App.ScreenshotDir); return; }
+            loadToken++;
+            Log("navigate");
             Web.CoreWebView2.Navigate(PanelUrl);
+            var t = loadToken;
+            // если за 30 секунд страница так и не загрузилась — не оставляем пустое окно
+            _ = Task.Delay(30000).ContinueWith(_ => Dispatcher.Invoke(() =>
+            {
+                if (t == loadToken && Loading.Visibility == Visibility.Visible)
+                    Fail("Админ-панель не загрузилась за 30 секунд. Проверь интернет и нажми «Повторить».\n" + LogTail(), false);
+            }));
         }
         catch (Exception ex) when (App.ScreenshotDir != null)
         {
@@ -95,7 +135,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Fail("Не получилось открыть админ-панель: " + ex.Message, false);
+            Fail("Не получилось открыть админ-панель: " + ex.Message + "\n" + ex.GetType().Name, false);
         }
     }
 
@@ -125,9 +165,24 @@ public partial class MainWindow : Window
     }
 
     // служебный режим --screenshot: открыть страницу и сохранить окно в PNG (на CI)
+    static readonly string LogFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TIOXSITTerminal", "log.txt");
+
     static void Log(string m)
     {
-        try { if (App.ScreenshotDir != null) { Directory.CreateDirectory(App.ScreenshotDir); File.AppendAllText(Path.Combine(App.ScreenshotDir, "terminal-log.txt"), DateTime.Now.ToString("HH:mm:ss ") + m + "\n"); } } catch { }
+        try
+        {
+            var line = DateTime.Now.ToString("HH:mm:ss ") + m + "\n";
+            if (App.ScreenshotDir != null) { Directory.CreateDirectory(App.ScreenshotDir); File.AppendAllText(Path.Combine(App.ScreenshotDir, "terminal-log.txt"), line); return; }
+            Directory.CreateDirectory(Path.GetDirectoryName(LogFile)!);
+            if (File.Exists(LogFile) && new FileInfo(LogFile).Length > 100_000) File.Delete(LogFile);
+            File.AppendAllText(LogFile, line);
+        }
+        catch { }
+    }
+
+    static string LogTail()
+    {
+        try { return string.Join("\n", File.ReadAllLines(LogFile).TakeLast(6)); } catch { return ""; }
     }
 
     async Task Screenshot(string dir)
