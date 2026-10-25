@@ -196,23 +196,25 @@ class MainActivity : Activity() {
         var targetId: String? = null
         var requestId: String? = null
         try {
-            targetId = Rtdb.findAccountByEmail(email)
-            if (targetId == null) { fail("Эта почта не привязана ни к одному аккаунту. Привяжи её в игре: Настройки → Аккаунт."); return }
-            requestId = Rtdb.createLoginRequest(targetId)
+            val tid = Rtdb.findAccountByEmail(email)
+            if (tid == null) { fail("Эта почта не привязана ни к одному аккаунту. Привяжи её в игре: Настройки → Аккаунт."); return }
+            targetId = tid
+            val rid = Rtdb.createLoginRequest(tid)
+            requestId = rid
             info("⏳ Заявка отправлена. Открой в Telegram бота TerminalBot и нажми «Разрешить» в его сообщении (можно и в игре: Сообщество → Запросы, или в админ-панели: Аккаунт). Ждём 5 минут.")
             val deadline = System.currentTimeMillis() + REQUEST_TTL_MS
             while (System.currentTimeMillis() < deadline) {
                 Thread.sleep(2000)
                 if (gen != loginGen) return
-                val status = try { Rtdb.loginRequestStatus(targetId, requestId) } catch (e: java.io.IOException) { null }
+                val status = try { Rtdb.loginRequestStatus(tid, rid) } catch (e: java.io.IOException) { null }
                 if (status == "approved") {
-                    Rtdb.removeLoginRequest(targetId, requestId); requestId = null
-                    val p = Rtdb.getProfile(targetId)
+                    Rtdb.removeLoginRequest(tid, rid); requestId = null
+                    val p = Rtdb.getProfile(tid)
                     if (p.status == "banned") { fail("Аккаунт заблокирован."); return }
                     store.upsert(p, paired = false)
                     done(); return
                 }
-                if (status == "denied") { Rtdb.removeLoginRequest(targetId, requestId); requestId = null; fail("Вход отклонён на другом устройстве."); return }
+                if (status == "denied") { Rtdb.removeLoginRequest(tid, rid); requestId = null; fail("Вход отклонён на другом устройстве."); return }
             }
             fail("Время ожидания истекло, попробуй ещё раз.")
         } catch (e: Exception) {
