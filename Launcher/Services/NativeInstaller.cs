@@ -12,13 +12,13 @@ record NativeInfo(string Version, string Exe, string? Sha);
 record NativeRelease(string Tag, string Url, string Sha);
 
 // EXE-версии приложений (настоящие Windows-программы без браузера). Сейчас такая есть только у админ-панели —
-// «TIOXSIT Terminal»: лежит в релизе самого лаунчера рядом с BattleLauncher.exe (файл + .sha256).
+// Desktop-версия приложения: файл .exe + .sha256 в релизе репозитория, указанного в catalog.json (сейчас — «Терминал» в релизе лаунчера).
 // Ставится в %LOCALAPPDATA%\Programs\<имя>, с ярлыками и записью в «Установленные приложения».
 static class NativeInstaller
 {
     const string RegBase = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\";
     const string Publisher = "TIOXSIT";
-    static (DateTime At, NativeRelease? Value)? cache;
+    static readonly Dictionary<string, (DateTime At, NativeRelease? Value)> cache = new();
     static readonly TimeSpan CacheFor = TimeSpan.FromMinutes(5);
 
     static string FolderName(AppDef d) => d.NativeExe != null ? Path.GetFileNameWithoutExtension(d.NativeExe) : (d.NativeName ?? d.Name).Replace(" ", "");
@@ -48,8 +48,17 @@ static class NativeInstaller
     public static async Task<NativeRelease?> Latest(AppDef d, bool force = false, CancellationToken ct = default)
     {
         if (d.NativeExe == null) return null;
-        if (!force && cache is { } c && DateTime.UtcNow - c.At < CacheFor) return c.Value;
-        using var doc = JsonDocument.Parse(await Net.GetText($"https://api.github.com/repos/{Catalog.Owner}/launcher/releases/latest", ct));
+        if (!force && cache.TryGetValue(d.Id, out var c) && DateTime.UtcNow - c.At < CacheFor) return c.Value;
+        var which = d.NativeTag == "latest" ? "latest" : "tags/" + d.NativeTag;
+        string text;
+        try { text = await Net.GetText($"https://api.github.com/repos/{Catalog.Owner}/{d.NativeRepo}/releases/{which}", ct); }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            // релиза (или всего репозитория) пока нет — Desktop-версия ещё не вышла; кнопка просто остаётся закрытой
+            cache[d.Id] = (DateTime.UtcNow, null);
+            return null;
+        }
+        using var doc = JsonDocument.Parse(text);
         var root = doc.RootElement;
         var tag = (root.GetProperty("tag_name").GetString() ?? "").TrimStart('v');
         string? exeUrl = null, shaUrl = null;
@@ -61,12 +70,12 @@ static class NativeInstaller
             else if (name == d.NativeExe + ".sha256") shaUrl = url;
         }
         NativeRelease? rel = null;
-        if (exeUrl != null && shaUrl != null && Net.IsTrustedDownload(exeUrl, "launcher"))
+        if (exeUrl != null && shaUrl != null && Net.IsTrustedDownload(exeUrl, d.NativeRepo))
         {
             var sha = (await Net.GetText(shaUrl, ct)).Trim().Split(' ', '\t')[0].ToLowerInvariant();
             rel = new NativeRelease(tag, exeUrl, sha);
         }
-        cache = (DateTime.UtcNow, rel);
+        cache[d.Id] = (DateTime.UtcNow, rel);
         return rel;
     }
 
@@ -86,7 +95,7 @@ static class NativeInstaller
     public static async Task Install(AppDef d, NativeRelease rel, IProgress<int?> progress, CancellationToken ct = default)
     {
         if (d.NativeExe == null) throw new InvalidOperationException("У этого приложения нет EXE-версии");
-        if (!Net.IsTrustedDownload(rel.Url, "launcher")) throw new InvalidOperationException("Недоверенный адрес загрузки");
+        if (!Net.IsTrustedDownload(rel.Url, d.NativeRepo)) throw new InvalidOperationException("Недоверенный адрес загрузки");
         var dir = DirFor(d);
         var exe = Path.Combine(dir, d.NativeExe);
         if (IsRunning(exe)) throw new InvalidOperationException($"Закрой «{d.NativeName}» и повтори.");

@@ -1,16 +1,21 @@
 package com.tioxsit.launcher
 
-// Что умеет ставить лаунчер на Android. Только эти приложения и только из релизов этих репозиториев
-// (тег android-latest, файл-APK).
+import org.json.JSONObject
+
+// Что умеет ставить лаунчер на Android. Список живёт в catalog.json в репозитории launcher и читается при каждом
+// открытии и обновлении списка: новое приложение или новая версия появляется без обновления самого лаунчера.
+// Если у приложения в релизе ещё нет APK, кнопка остаётся закрытой и включается сама, когда файл появится.
+// Встроенный список — запасной, на случай, если сети нет.
 data class AppDef(
     val id: String,
     val name: String,
     val desc: String,
-    val repo: String,
-    val pkg: String?,          // null — Android-версии пока нет
+    val repo: String,          // репозиторий APK
+    val pkg: String?,          // null — Android-версии пока нет в каталоге
     val apk: String?,
+    val tag: String,           // тег релиза с APK
     val roles: Set<String>?,   // null — любой аккаунт игры, но не сессия по токену
-    val site: String? = null,  // «браузерная версия» — адрес страницы
+    val site: String? = null,  // облегчённая версия — страница в браузере
 ) {
     fun isAllowed(role: String) = if (roles == null) role != "token" else role in roles
 }
@@ -20,14 +25,58 @@ object Catalog {
     const val LAUNCHER_REPO = "launcher"
     const val LAUNCHER_APK = "TIOXSITLauncher.apk"
 
-    val apps = listOf(
+    private val SAFE = Regex("^[A-Za-z0-9._-]{1,100}$")
+    private var lastFetch = 0L
+
+    @Volatile var apps: List<AppDef> = defaults()
+        private set
+
+    private fun defaults() = listOf(
         AppDef("troll-battle", "Тролль-Баттл", "Голосовые баттлы — та же игра, что в Telegram.",
-            "index.html", "com.tioxsit.trollbattle.icontest", "troll-battle.apk", null,
+            "index.html", "com.tioxsit.trollbattle.icontest", "troll-battle.apk", "android-latest", null,
             site = "https://botsystemtioxsit.github.io/index.html/"),
         AppDef("battle-admin", "БАТТЛ Админ", "Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат.",
-            "battle-admin-bot", "com.tioxsit.battleadmin.icontest", "battle-admin.apk", setOf("moderator", "admin", "superadmin", "token"),
+            "battle-admin-bot", "com.tioxsit.battleadmin.icontest", "battle-admin.apk", "android-latest",
+            setOf("moderator", "admin", "superadmin", "token"),
             site = "https://botsystemtioxsit.github.io/battle-admin-bot/public/admin.html"),
         AppDef("videochat", "ВидеоЧат", "Случайные видеоразговоры. Аккаунт тот же, что в «Тролль-Баттле».",
-            "videochat", null, null, null),
+            "videochat", null, null, "android-latest", null),
     )
+
+    fun refresh(force: Boolean = false) {
+        if (!force && System.currentTimeMillis() - lastFetch < 5 * 60 * 1000L) return
+        try {
+            val parsed = parse(Net.get("https://raw.githubusercontent.com/$OWNER/launcher/main/catalog.json"))
+            if (parsed.isNotEmpty()) apps = parsed
+            lastFetch = System.currentTimeMillis()
+        } catch (_: Exception) { /* нет сети или файл повреждён — остаётся прежний список */ }
+    }
+
+    // Всё из файла проверяется: имена репозиториев/файлов/пакетов — только безопасные символы, ссылки — только https.
+    fun parse(json: String): List<AppDef> {
+        val out = ArrayList<AppDef>()
+        val arr = JSONObject(json).optJSONArray("apps") ?: return out
+        for (i in 0 until arr.length()) {
+            try {
+                val a = arr.getJSONObject(i)
+                val id = a.getString("id")
+                if (!Net.SAFE_ID.matches(id)) continue
+                val lite = a.optJSONObject("lite")
+                val android = a.optJSONObject("android")
+                var roles: Set<String>? = null
+                a.optJSONArray("roles")?.let { r -> roles = (0 until r.length()).map { r.getString(it) }.filter { SAFE.matches(it) }.toSet() }
+                val site = lite?.optString("site", "")?.takeIf { it.startsWith("https://") }
+                var repo = lite?.optString("repo", "") ?: ""
+                var pkg: String? = null; var apk: String? = null; var tag = "android-latest"
+                if (android != null) {
+                    val r = android.optString("repo", ""); val p = android.optString("package", ""); val f = android.optString("asset", "")
+                    val t = android.optString("tag", "android-latest")
+                    if (SAFE.matches(r) && SAFE.matches(p) && SAFE.matches(f) && SAFE.matches(t)) { repo = r; pkg = p; apk = f; tag = t }
+                }
+                if (!SAFE.matches(repo)) continue
+                out.add(AppDef(id, a.getString("name").take(60), a.optString("desc", "").take(200), repo, pkg, apk, tag, roles, site))
+            } catch (_: Exception) { /* одну битую запись пропускаем */ }
+        }
+        return out
+    }
 }
