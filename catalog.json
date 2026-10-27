@@ -25,7 +25,7 @@
     },
     {
       "id": "battle-admin",
-      "name": "БАТТЛ Админ",
+      "name": "Ghost Shell Terminal",
       "desc": "Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат.",
       "roles": [
         "moderator",

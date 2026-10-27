@@ -41,7 +41,7 @@ object Catalog {
         AppDef("troll-battle", "Тролль-Баттл", "Голосовые баттлы — та же игра, что в Telegram.",
             "index.html", "com.tioxsit.trollbattle.icontest", "troll-battle.apk", "android-latest", null,
             site = "https://botsystemtioxsit.github.io/index.html/"),
-        AppDef("battle-admin", "БАТТЛ Админ", "Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат.",
+        AppDef("battle-admin", "Ghost Shell Terminal", "Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат.",
             "battle-admin-bot", "com.tioxsit.battleadmin.icontest", "battle-admin.apk", "android-latest",
             setOf("moderator", "admin", "superadmin", "token"),
             site = "https://botsystemtioxsit.github.io/battle-admin-bot/public/admin.html"),
