@@ -15,14 +15,28 @@ object Installer {
     private val cache = HashMap<String, Pair<Long, ApkRelease>>()
     private const val CACHE_MS = 5 * 60 * 1000L // без токена у GitHub лимит 60 запросов в час
 
-    // Последняя сборка: релиз с фиксированным тегом android-latest, версия — в его описании («Версия 1.0.5, …»),
-    // контрольная сумма — в поле digest у файла.
-    fun latest(repo: String, apk: String, force: Boolean = false, tag: String = "android-latest"): ApkRelease {
-        val key = "$repo/$tag/$apk"
-        cache[key]?.let { if (!force && System.currentTimeMillis() - it.first < CACHE_MS) return it.second }
-        val json = JSONObject(Net.get("https://api.github.com/repos/${Catalog.OWNER}/$repo/releases/tags/$tag"))
-        val body = json.optString("body", "")
-        val version = Regex("""[Вв]ерсия\s+(\d+(?:\.\d+)+)""").find(body)?.groupValues?.get(1)
+    @Volatile private var prefs: android.content.SharedPreferences? = null
+
+    // Последняя удачно полученная версия хранится на телефоне: если GitHub не отвечает (нет связи или лимит
+    // запросов — у мобильного интернета адрес общий, и 60 запросов в час кончаются быстро), показываем её,
+    // а не ошибку и закрытые кнопки.
+    fun init(ctx: Context) {
+        if (prefs == null) prefs = ctx.applicationContext.getSharedPreferences("release-cache", Context.MODE_PRIVATE)
+    }
+
+    private fun saved(key: String): Pair<String?, ApkRelease?> {
+        val s = prefs?.getString("rel:$key", null) ?: return null to null
+        return try {
+            val j = JSONObject(s)
+            j.optString("etag").takeIf { it.isNotEmpty() } to ApkRelease(
+                j.getString("version"), j.getString("url"), j.optString("sha256").takeIf { it.isNotEmpty() }, j.optLong("size", 0))
+        } catch (e: Exception) { null to null }
+    }
+
+    private fun parse(body: String, repo: String, apk: String): ApkRelease {
+        val json = JSONObject(body)
+        val text = json.optString("body", "")
+        val version = Regex("""[Вв]ерсия\s+(\d+(?:\.\d+)+)""").find(text)?.groupValues?.get(1)
             ?: throw IllegalStateException("В релизе нет версии")
         val assets = json.getJSONArray("assets")
         for (i in 0 until assets.length()) {
@@ -31,11 +45,36 @@ object Installer {
             val url = a.getString("browser_download_url")
             if (!Net.isTrustedDownload(url, repo)) throw IllegalStateException("Недоверенный адрес загрузки")
             val digest = a.optString("digest", "").removePrefix("sha256:").lowercase().takeIf { Regex("^[0-9a-f]{64}$").matches(it) }
-            val rel = ApkRelease(version, url, digest, a.optLong("size", 0))
-            cache[key] = System.currentTimeMillis() to rel
-            return rel
+            return ApkRelease(version, url, digest, a.optLong("size", 0))
         }
         throw IllegalStateException("В релизе нет файла $apk")
+    }
+
+    // Последняя сборка: релиз с фиксированным тегом android-latest, версия — в его описании («Версия 1.0.5, …»),
+    // контрольная сумма — в поле digest у файла.
+    fun latest(repo: String, apk: String, force: Boolean = false, tag: String = "android-latest"): ApkRelease {
+        val key = "$repo/$tag/$apk"
+        cache[key]?.let { if (!force && System.currentTimeMillis() - it.first < CACHE_MS) return it.second }
+        val (oldEtag, old) = saved(key)
+        try {
+            val (code, body, etag) = Net.getConditional("https://api.github.com/repos/${Catalog.OWNER}/$repo/releases/tags/$tag",
+                if (old != null) oldEtag else null)
+            if (code == 304 && old != null) {
+                cache[key] = System.currentTimeMillis() to old
+                return old
+            }
+            val rel = parse(body ?: throw IllegalStateException("Пустой ответ"), repo, apk)
+            cache[key] = System.currentTimeMillis() to rel
+            prefs?.edit()?.putString("rel:$key", JSONObject().put("etag", etag ?: "").put("version", rel.version)
+                .put("url", rel.url).put("sha256", rel.sha256 ?: "").put("size", rel.size).toString())?.apply()
+            return rel
+        } catch (e: IllegalStateException) {
+            throw e
+        } catch (e: Exception) {
+            if ((e.message ?: "").startsWith("HTTP 404")) throw e
+            if (old != null) return old // нет связи или лимит GitHub — последняя удачно полученная версия
+            throw e
+        }
     }
 
     fun installedVersion(ctx: Context, pkg: String): String? = try {

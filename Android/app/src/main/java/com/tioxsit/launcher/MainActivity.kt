@@ -64,6 +64,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Installer.init(this)
         store = Store(this)
         render()
         // роль могла смениться, аккаунт — заблокироваться, токен — отозваться, устройство — быть отозвано
@@ -519,7 +520,12 @@ class MainActivity : Activity() {
                     catch (e: Exception) {
                         // нет релиза или файла — версия ещё не вышла (кнопка включится сама); иначе — нет связи
                         if (e is IllegalStateException || (e.message ?: "").startsWith("HTTP 404")) missing = true
-                        else err = "Не удалось узнать последнюю версию (нет связи с GitHub?)"
+                        else {
+                            val m = e.message ?: e.javaClass.simpleName
+                            err = if (m.startsWith("HTTP 403") || m.startsWith("HTTP 429"))
+                                "GitHub сейчас не отвечает: слишком много запросов с этого интернета ($m). Подожди от 10 минут до часа и нажми «Проверить обновления»."
+                            else "Не удалось узнать последнюю версию (нет связи с GitHub?): $m"
+                        }
                     }
                 }
                 Row(def, installed, latest, err, missing)

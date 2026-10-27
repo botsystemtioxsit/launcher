@@ -21,6 +21,23 @@ object Net {
 
     fun get(url: String): String = send("GET", url, null)
 
+    // Запрос с ETag: ответ 304 («не менялось») у GitHub не считается в лимит запросов (60 в час без токена).
+    // Возвращает (код, тело, ETag); при 304 тело = null.
+    fun getConditional(url: String, etag: String?): Triple<Int, String?, String?> {
+        val c = open(url, "GET")
+        try {
+            c.setRequestProperty("Accept", "application/vnd.github+json")
+            if (etag != null) c.setRequestProperty("If-None-Match", etag)
+            val code = c.responseCode
+            if (code == 304) return Triple(304, null, etag)
+            if (code !in 200..299) throw IOException("HTTP $code")
+            val body = c.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }
+            return Triple(code, body, c.getHeaderField("ETag"))
+        } finally {
+            c.disconnect()
+        }
+    }
+
     fun send(method: String, url: String, body: String?): String {
         val c = open(url, method)
         try {

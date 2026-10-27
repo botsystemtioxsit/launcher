@@ -15,6 +15,7 @@ object Updates {
 
     fun check(ctx: Context): List<Pair<String, String>> {
         val found = ArrayList<Pair<String, String>>()
+        Installer.init(ctx)
         Catalog.refresh()
         val store = Store(ctx)
         val me = store.active ?: return found

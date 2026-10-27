@@ -10,6 +10,7 @@ import android.content.Context
 // Периодическая проверка новых версий в фоне (раз в ~30 минут, переживает перезагрузку телефона)
 class UpdateJob : JobService() {
     override fun onStartJob(params: JobParameters): Boolean {
+        Installer.init(this)
         Thread {
             try { Updates.notifyNew(this, Updates.check(this)) } catch (_: Exception) { }
             jobFinished(params, false)
