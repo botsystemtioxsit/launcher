@@ -33,7 +33,7 @@ static class Catalog
     {
         new AppDef("troll-battle", "Тролль-Баттл", "Голосовые баттлы — та же игра, что в Telegram.",
             "index.html", "Тролль-Баттл", null, "TIOXSITTrollBattle.exe", "Тролль-Баттл (Desktop)", Site: "https://botsystemtioxsit.github.io/index.html/"),
-        new AppDef("battle-admin", "БАТТЛ Админ", "Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат.",
+        new AppDef("battle-admin", "Ghost Shell Terminal", "Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат.",
             "battle-admin-bot", "БАТТЛ Админ", new[] { "moderator", "admin", "superadmin", "token" }, "TIOXSITTerminal.exe", "Ghost Shell Terminal",
             Site: "https://botsystemtioxsit.github.io/battle-admin-bot/public/admin.html"),
         new AppDef("videochat", "ВидеоЧат", "Случайные видеоразговоры. Аккаунт тот же, что в «Тролль-Баттле».",
