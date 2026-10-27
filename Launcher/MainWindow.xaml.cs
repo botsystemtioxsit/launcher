@@ -439,11 +439,12 @@ public partial class MainWindow : Window
     {
         AppList.Children.Clear();
         foreach (var a in apps) AppList.Children.Add(AppCard(a));
-        if (Catalog.Downloads.Length > 0)
+        var downloads = Catalog.Downloads.Where(d => d.Os.Contains("windows")).ToArray();
+        if (downloads.Length > 0)
         {
-            AppList.Children.Add(new TextBlock { Text = "ДЛЯ LINUX И CHROME", FontFamily = (FontFamily)FindResource("Mono"), FontWeight = FontWeights.Bold, Foreground = Res("Accent2"), Margin = new Thickness(0, 14, 0, 4) });
+            AppList.Children.Add(new TextBlock { Text = "ДОПОЛНИТЕЛЬНО", FontFamily = (FontFamily)FindResource("Mono"), FontWeight = FontWeights.Bold, Foreground = Res("Accent2"), Margin = new Thickness(0, 14, 0, 4) });
             AppList.Children.Add(new TextBlock { Text = "Эти программы лаунчер сам не ставит — он даёт файл для скачивания.", Foreground = Res("Muted"), Margin = new Thickness(0, 0, 0, 10) });
-            foreach (var d in Catalog.Downloads) AppList.Children.Add(DownloadCard(d));
+            foreach (var d in downloads) AppList.Children.Add(DownloadCard(d));
         }
     }
 

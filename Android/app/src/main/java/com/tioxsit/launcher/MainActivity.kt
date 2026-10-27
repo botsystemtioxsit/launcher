@@ -555,10 +555,11 @@ class MainActivity : Activity() {
             return
         }
         rows.forEach { box.addView(appCard(it), lp(10)) }
-        if (Catalog.downloads.isNotEmpty()) {
-            box.addView(tv("ДЛЯ LINUX И CHROME", 12f, 0xFFFF2A9D.toInt(), true), lp(20))
+        val downloads = Catalog.downloads.filter { "android" in it.os }
+        if (downloads.isNotEmpty()) {
+            box.addView(tv("ДОПОЛНИТЕЛЬНО", 12f, 0xFFFF2A9D.toInt(), true), lp(20))
             box.addView(tv("Эти программы лаунчер сам не ставит — он даёт файл для скачивания.", 13f, MUTED), lp(4))
-            Catalog.downloads.forEach { box.addView(downloadCard(it), lp(10)) }
+            downloads.forEach { box.addView(downloadCard(it), lp(10)) }
         }
     }
 
