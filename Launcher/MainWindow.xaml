@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Ghost Shell Launcher" Width="980" Height="680" MinWidth="760" MinHeight="520"
-        Background="{StaticResource Bg}" Foreground="{StaticResource Text}" Icon="Assets/icon.ico"
+        Background="{StaticResource Bg}" Foreground="{StaticResource Text}"
         FontFamily="Segoe UI" FontSize="14" WindowStartupLocation="CenterScreen">
   <Grid>
     <Grid.RowDefinitions>
@@ -24,7 +24,7 @@
         <Border Width="440" Margin="0,24" VerticalAlignment="Center" HorizontalAlignment="Center" Background="{StaticResource Panel}"
                 BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="4" Padding="24">
           <StackPanel>
-            <Image x:Name="LoginLogo" Width="64" Height="64" HorizontalAlignment="Center"/>
+            
             <TextBlock Text="GHOST SHELL" FontFamily="{StaticResource Mono}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource Accent}" HorizontalAlignment="Center" Margin="0,10,0,0">
               <TextBlock.Effect><DropShadowEffect Color="#00F0FF" BlurRadius="16" ShadowDepth="0" Opacity="0.7"/></TextBlock.Effect>
             </TextBlock>
@@ -80,7 +80,7 @@
             <TextBlock x:Name="VersionText" DockPanel.Dock="Bottom" Foreground="{StaticResource Muted}" FontSize="12" Margin="6,0,0,0"/>
             <StackPanel>
               <StackPanel Orientation="Horizontal" Margin="6,0,0,20">
-                <Image x:Name="SideLogo" Width="30" Height="30"/>
+                
                 <StackPanel VerticalAlignment="Center" Margin="10,0,0,0">
                   <TextBlock Text="GHOST SHELL" FontFamily="{StaticResource Mono}" FontWeight="Bold" Foreground="{StaticResource Accent}"/>
                   <TextBlock Text="создано нейросетью" FontFamily="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Accent2}"/>

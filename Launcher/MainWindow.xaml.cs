@@ -40,15 +40,6 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        try
-        {
-            // в .ico несколько размеров; WPF по умолчанию берёт первый (мелкий), поэтому выбираем самый крупный
-            var dec = new IconBitmapDecoder(new Uri("pack://application:,,,/Assets/icon.ico"), BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-            var best = dec.Frames.OrderByDescending(f => f.PixelWidth).First();
-            LoginLogo.Source = best;
-            SideLogo.Source = best;
-        }
-        catch { /* без логотипа тоже работаем */ }
         loginTimer.Tick += (_, _) => LoginTick();
         toastTimer.Tick += (_, _) => { toastTimer.Stop(); ToastBox.Visibility = Visibility.Collapsed; };
         VersionText.Text = "Версия " + SelfUpdate.CurrentVersion;
