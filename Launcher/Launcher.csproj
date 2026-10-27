@@ -8,21 +8,19 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>BattleLauncher</AssemblyName>
     <RootNamespace>BattleLauncher</RootNamespace>
-    <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     <!-- Версию поднимать при каждом изменении: по ней лаунчер понимает, что вышло обновление -->
-    <Version>1.8.0</Version>
-    <Product>TIOXSIT Launcher</Product>
+    <Version>1.10.0</Version>
+    <Product>Ghost Shell Launcher</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
     <Copyright>TIOXSIT</Copyright>
     <Description>Лаунчер Тролль-Баттл: вход в аккаунт, установка и обновление приложений проекта</Description>
-    <AssemblyTitle>TIOXSIT Launcher</AssemblyTitle>
+    <AssemblyTitle>Ghost Shell Launcher</AssemblyTitle>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
-    <Resource Include="Assets\icon.ico" />
   </ItemGroup>
 
 </Project>

@@ -25,16 +25,16 @@ import android.widget.Toast
 // Данные из базы и GitHub выводятся только как текст.
 class MainActivity : Activity() {
     companion object {
-        const val BG = 0xFF0B0B0F.toInt()
-        const val PANEL = 0xFF14141B.toInt()
-        const val PANEL2 = 0xFF1B1B25.toInt()
-        const val LINE = 0xFF2A2A38.toInt()
-        const val TEXT = 0xFFECECF3.toInt()
-        const val MUTED = 0xFF8D8DA3.toInt()
-        const val ACCENT = 0xFFF5C451.toInt()
-        const val ON_ACCENT = 0xFF1A1405.toInt()
-        const val RED = 0xFFE5484D.toInt()
-        const val GREEN = 0xFF3FB97A.toInt()
+        const val BG = 0xFF06050D.toInt()
+        const val PANEL = 0xFF0D0B1A.toInt()
+        const val PANEL2 = 0xFF15112B.toInt()
+        const val LINE = 0xFF2D2060.toInt()
+        const val TEXT = 0xFFE6F4FF.toInt()
+        const val MUTED = 0xFF8B86B8.toInt()
+        const val ACCENT = 0xFF00F0FF.toInt()
+        const val ON_ACCENT = 0xFF001418.toInt()
+        const val RED = 0xFFFF3366.toInt()
+        const val GREEN = 0xFF2CFF9A.toInt()
         const val REQUEST_TTL_MS = 5 * 60 * 1000L
     }
 
@@ -201,7 +201,8 @@ class MainActivity : Activity() {
         var sv: ScrollView? = null
         val ticker = Handler(Looper.getMainLooper())
         sv = screen { col ->
-            col.addView(tv("TIOXSIT Launcher", 26f, TEXT, true))
+            col.addView(tv("Ghost Shell Launcher", 26f, TEXT, true))
+            col.addView(tv("создано нейросетью", 12f, 0xFFFF2A9D.toInt()), lp(4))
             col.addView(tv("Войди в свой аккаунт — тот же, что в игре и админ-панели.", 14f, MUTED), lp(4))
 
             // Что сейчас происходит — сразу под заголовком, чтобы было видно: запрос отправлен, идёт ожидание
@@ -447,7 +448,7 @@ class MainActivity : Activity() {
         appsBox = list
         col.addView(list, lp(10))
         col.addView(button("Проверить обновления") { loadApps(true) }, lp(14))
-        col.addView(tv("TIOXSIT Launcher · версия ${ownVersion()}", 11f, MUTED), lp(20))
+        col.addView(tv("Ghost Shell Launcher · версия ${ownVersion()}", 11f, MUTED), lp(20))
     }
 
     private fun showAccountTab(col: LinearLayout, me: Account) {
@@ -500,7 +501,7 @@ class MainActivity : Activity() {
         actions.addView(button("Выйти", danger = true) { store.active?.let { store.remove(it.id) }; render() },
             LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(8) })
         col.addView(actions, lp(14))
-        col.addView(tv("TIOXSIT Launcher · версия ${ownVersion()}", 11f, MUTED), lp(24))
+        col.addView(tv("Ghost Shell Launcher · версия ${ownVersion()}", 11f, MUTED), lp(24))
     }
 
     private fun loadApps(force: Boolean) {
@@ -554,6 +555,22 @@ class MainActivity : Activity() {
             return
         }
         rows.forEach { box.addView(appCard(it), lp(10)) }
+        if (Catalog.downloads.isNotEmpty()) {
+            box.addView(tv("ДЛЯ LINUX И CHROME", 12f, 0xFFFF2A9D.toInt(), true), lp(20))
+            box.addView(tv("Эти программы лаунчер сам не ставит — он даёт файл для скачивания.", 13f, MUTED), lp(4))
+            Catalog.downloads.forEach { box.addView(downloadCard(it), lp(10)) }
+        }
+    }
+
+    private fun downloadCard(d: DownloadDef): View {
+        val c = card()
+        c.addView(tv(d.name, 17f, TEXT, true))
+        c.addView(tv(d.desc, 13f, MUTED), lp(3))
+        c.addView(tv(d.platform, 12f, MUTED), lp(6))
+        c.addView(button("Скачать", primary = true) {
+            try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(d.url))) } catch (_: Exception) { toast("Не удалось открыть браузер") }
+        }, lp(8))
+        return c
     }
 
     private fun appCard(r: Row): View {

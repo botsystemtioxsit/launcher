@@ -129,9 +129,13 @@ static class NativeInstaller
         {
             try { File.Delete(tmp); } catch { }
         }
-        // старое название ярлыка («TIOXSIT Terminal») убираем, чтобы не было двух значков
-        try { File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "TIOXSIT Terminal.lnk")); } catch { }
-        try { File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "TIOXSIT Terminal.lnk")); } catch { }
+        // старые названия ярлыка («TIOXSIT Terminal», «Терминал») убираем, чтобы не было двух значков
+        foreach (var old in new[] { "TIOXSIT Terminal", "Терминал" })
+        {
+            if (old == (d.NativeName ?? d.Name)) continue;
+            try { File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), old + ".lnk")); } catch { }
+            try { File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), old + ".lnk")); } catch { }
+        }
         MakeShortcut(StartLink(d), exe, d.NativeName ?? d.Name);
         MakeShortcut(DesktopLink(d), exe, d.NativeName ?? d.Name);
         var version = FileVersionInfo.GetVersionInfo(exe).ProductVersion ?? "";
@@ -178,8 +182,8 @@ static class NativeInstaller
     {
         var d = Catalog.ById(id);
         if (d?.NativeExe == null) return;
-        if (MessageBox.Show($"Удалить «{d.NativeName}» с этого компьютера?", "TIOXSIT Launcher", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (MessageBox.Show($"Удалить «{d.NativeName}» с этого компьютера?", "Ghost Shell Launcher", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         try { Uninstall(d); }
-        catch (Exception ex) { MessageBox.Show(ex.Message, "TIOXSIT Launcher", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        catch (Exception ex) { MessageBox.Show(ex.Message, "Ghost Shell Launcher", MessageBoxButton.OK, MessageBoxImage.Warning); }
     }
 }

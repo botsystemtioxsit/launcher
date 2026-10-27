@@ -61,7 +61,7 @@ object Updates {
         @Suppress("DEPRECATION")
         val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(ctx, CHANNEL) else Notification.Builder(ctx)
         val text = fresh.joinToString("\n") { it.second }
-        b.setSmallIcon(R.drawable.ic_stat_update).setContentTitle("TIOXSIT Launcher").setContentText(fresh.first().second)
+        b.setSmallIcon(R.drawable.ic_stat_update).setContentTitle("Ghost Shell Launcher").setContentText(fresh.first().second)
             .setStyle(Notification.BigTextStyle().bigText(text)).setContentIntent(open).setAutoCancel(true)
         nm.notify(1, b.build())
     }

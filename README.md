@@ -1,4 +1,4 @@
-# TIOXSIT Launcher
+# Ghost Shell Launcher
 
 Нативное приложение для Windows (C# / .NET 8, WPF) — не Electron и не браузер.
 Один файл `BattleLauncher.exe`, .NET внутри, ничего ставить не нужно.
@@ -10,7 +10,7 @@
 Releases → последний релиз → `BattleLauncher.exe` → запустить → «Да» на вопрос про установку
 (ярлыки в «Пуске» и на рабочем столе, запись в «Установленные приложения», удаление оттуда же).
 
-## TIOXSIT Terminal (`Terminal/`)
+## Ghost Shell Terminal (`Terminal/`)
 Админ-панель проекта в виде Windows-приложения (`TIOXSITTerminal.exe`, WPF + Edge WebView2), лежит в том же релизе,
 что и лаунчер. Показывает ту же самую страницу админ-панели, что и сайт (`battle-admin-bot`, GitHub Pages) — один в один,
 со всеми разделами; обновляется сама вместе с сайтом. Вход общий с лаунчером: при первом запуске аккаунт и deviceId
