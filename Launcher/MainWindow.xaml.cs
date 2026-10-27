@@ -464,7 +464,7 @@ public partial class MainWindow : Window
         var left = new StackPanel();
         left.Children.Add(new TextBlock { Text = a.Def.Name, FontSize = 17, FontWeight = FontWeights.SemiBold });
         left.Children.Add(new TextBlock { Text = a.Def.Desc, Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 12, 8) });
-        var badges = new StackPanel { Orientation = Orientation.Horizontal };
+        var badges = new WrapPanel { Orientation = Orientation.Horizontal }; // значки переносятся на новую строку, а не обрезаются
         if (!a.Allowed) badges.Children.Add(Badge("Нет доступа для твоей роли", Res("Muted"), null));
         else
         {
