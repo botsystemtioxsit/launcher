@@ -87,7 +87,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: android-latest
-          name: TIOXSIT Launcher (Android) — последняя сборка
+          name: Ghost Shell Launcher (Android) — последняя сборка
           prerelease: true
           make_latest: false
           files: Android/TIOXSITLauncher.apk

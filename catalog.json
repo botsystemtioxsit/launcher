@@ -15,7 +15,7 @@
       "desc": "Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат.",
       "roles": ["moderator", "admin", "superadmin", "token"],
       "lite": { "repo": "battle-admin-bot", "productName": "БАТТЛ Админ", "site": "https://botsystemtioxsit.github.io/battle-admin-bot/public/admin.html" },
-      "desktop": { "repo": "launcher", "tag": "latest", "asset": "TIOXSITTerminal.exe", "name": "Терминал" },
+      "desktop": { "repo": "launcher", "tag": "latest", "asset": "TIOXSITTerminal.exe", "name": "Ghost Shell Terminal" },
       "android": { "repo": "battle-admin-bot", "tag": "android-latest", "asset": "battle-admin.apk", "package": "com.tioxsit.battleadmin.icontest" }
     },
     {

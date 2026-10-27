@@ -11,7 +11,7 @@
             Version="@VERSION@"
             ProcessorArchitecture="x64" />
   <Properties>
-    <DisplayName>TIOXSIT Launcher</DisplayName>
+    <DisplayName>Ghost Shell Launcher</DisplayName>
     <PublisherDisplayName>TIOXSIT</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <!-- Лаунчер запускает установщики других приложений проекта: их записи в реестр и файлы
@@ -28,7 +28,7 @@
   </Resources>
   <Applications>
     <Application Id="App" Executable="BattleLauncher.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements DisplayName="TIOXSIT Launcher"
+      <uap:VisualElements DisplayName="Ghost Shell Launcher"
                           Description="Вход в аккаунт, установка и обновление приложений проекта Тролль-Баттл"
                           BackgroundColor="transparent"
                           Square150x150Logo="Assets\Square150x150Logo.png"

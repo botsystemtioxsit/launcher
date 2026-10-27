@@ -28,7 +28,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        Title = "Терминал";
+        Title = "Ghost Shell Terminal";
         Loaded += async (_, _) => await StartAsync();
     }
 
@@ -131,7 +131,7 @@ public partial class MainWindow : Window
         }
         catch (WebView2RuntimeNotFoundException)
         {
-            Fail("Для работы Терминала нужен компонент Microsoft Edge WebView2. Он бесплатный и ставится за минуту.", true);
+            Fail("Для работы Ghost Shell Terminal нужен компонент Microsoft Edge WebView2. Он бесплатный и ставится за минуту.", true);
         }
         catch (Exception ex)
         {
