@@ -78,4 +78,8 @@
 Владелец сказал раз и навсегда: **не спрашивать разрешения — делать**. Это относится и к своим идеям, и к правкам, и к публикации. Вопрос — только если без ответа физически нельзя продолжить (например, нужен секрет или выбор, который знает только владелец). Не переспрашивать «делать ли?», не просить подтверждений на очевидные шаги.
 
 ## Раздел «Для Linux и Chrome» (с 1.10.0 / Android 1.4.0)
-В `catalog.json` есть массив `downloads` (`id, name, desc, platform, repo, tag, asset`): программы, которые лаунчер **не ставит сам** (Косынка `game-linux`, Phonecast `Remote`, Tab Unloader `sstr`) — карточка с кнопкой «Скачать», ссылка `https://github.com/botsystemtioxsit/<repo>/releases/download/<tag>/<asset>` собирается из проверенных частей. В каждом из этих репозиториев `.github/workflows/release.yml` кладёт файл в релиз `latest` под постоянным именем при пуше в `main`. Новая такая программа = запись в `downloads` + такой же workflow в её репозитории.
+В `catalog.json` есть массив `downloads` (`id, name, desc, platform, os, repo, tag, asset`; `os` — массив систем, для которых запись: `windows` / `linux` / `android`, каждый лаунчер показывает только подходящие его системе — на Android Linux-файлов нет): программы, которые лаунчер **не ставит сам** (Косынка `game-linux`, Phonecast `Remote`, Tab Unloader `sstr`) — карточка с кнопкой «Скачать», ссылка `https://github.com/botsystemtioxsit/<repo>/releases/download/<tag>/<asset>` собирается из проверенных частей. В каждом из этих репозиториев `.github/workflows/release.yml` кладёт файл в релиз `latest` под постоянным именем при пуше в `main`. Новая такая программа = запись в `downloads` + такой же workflow в её репозитории.
+
+
+## План владельца: лаунчер и Терминал для Linux
+Владелец хочет в будущем такой же лаунчер (и Ghost Shell Terminal) для Linux. Когда дойдёт очередь: Linux-версия показывает записи `downloads` с `os: ["linux"]`, а «Косынка» и Phonecast ставятся из неё.

@@ -78,7 +78,10 @@
       "platform": "Linux",
       "repo": "game-linux",
       "tag": "latest",
-      "asset": "solitaire-linux.deb"
+      "asset": "solitaire-linux.deb",
+      "os": [
+        "linux"
+      ]
     },
     {
       "id": "phonecast",
@@ -87,7 +90,10 @@
       "platform": "Linux",
       "repo": "Remote",
       "tag": "latest",
-      "asset": "phonecast-linux.tar.gz"
+      "asset": "phonecast-linux.tar.gz",
+      "os": [
+        "linux"
+      ]
     },
     {
       "id": "tab-unloader",
@@ -96,7 +102,11 @@
       "platform": "Chrome / ChromeOS",
       "repo": "sstr",
       "tag": "latest",
-      "asset": "tab-unloader.zip"
+      "asset": "tab-unloader.zip",
+      "os": [
+        "windows",
+        "linux"
+      ]
     }
   ]
 }

@@ -14,7 +14,8 @@ record AppDef(string Id, string Name, string Desc, string Repo, string ProductNa
 }
 
 // Программы, которые лаунчер не ставит сам (Linux, расширения Chrome): только кнопка «Скачать» со ссылкой на файл в релизе.
-record DownloadDef(string Id, string Name, string Desc, string Platform, string Url);
+// Os — для каких систем запись: лаунчер показывает только подходящие его системе ("windows", "linux", "android").
+record DownloadDef(string Id, string Name, string Desc, string Platform, string Url, string[] Os);
 
 // Что умеет ставить лаунчер. Список живёт в catalog.json в репозитории launcher и читается при каждом
 // запуске и обновлении списка: новое приложение или новая версия приложения (EXE, облегчённая) появляется
@@ -112,8 +113,11 @@ static class Catalog
                 if (id == null || name == null || repo == null || tag == null || asset == null) continue;
                 if (!Net.SafeId.IsMatch(id) || !Safe.IsMatch(repo) || !Safe.IsMatch(tag) || !Safe.IsMatch(asset)) continue;
                 var desc = S("desc") ?? ""; var platform = S("platform") ?? "";
+                var os = d.TryGetProperty("os", out var oa) && oa.ValueKind == JsonValueKind.Array
+                    ? oa.EnumerateArray().Where(x => x.ValueKind == JsonValueKind.String).Select(x => x.GetString()!).Where(x => Safe.IsMatch(x)).ToArray()
+                    : Array.Empty<string>();
                 list.Add(new DownloadDef(id, name[..Math.Min(name.Length, 60)], desc[..Math.Min(desc.Length, 240)], platform[..Math.Min(platform.Length, 40)],
-                    $"https://github.com/{Owner}/{repo}/releases/download/{tag}/{asset}"));
+                    $"https://github.com/{Owner}/{repo}/releases/download/{tag}/{asset}", os));
             }
         }
         catch { /* битый раздел — просто не показываем */ }
