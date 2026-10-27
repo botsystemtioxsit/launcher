@@ -5,7 +5,19 @@ namespace BattleLauncher;
 
 public partial class App : Application
 {
-    Mutex? single;
+    static Mutex? single;
+
+    // true — этот запуск сделан самообновлением (старая версия сама открыла новую)
+    public static bool JustUpdated;
+
+    // Перед запуском новой версии старая отпускает замок «одно окно»: иначе новая может не успеть
+    // его взять и молча закрыться, а человеку остаётся нажимать «Обновить» снова и снова.
+    public static void ReleaseSingleInstance()
+    {
+        try { single?.ReleaseMutex(); } catch { /* замок мог быть уже отпущен */ }
+        try { single?.Dispose(); } catch { }
+        single = null;
+    }
 
     // --screenshot=<папка>: служебный режим, лаунчер сам сохраняет свои окна (с выдуманными данными) в PNG и выходит.
     // Нужен, чтобы сделать честные скриншоты для Microsoft Store на настоящей Windows (см. build-windows.yml).
@@ -29,9 +41,10 @@ public partial class App : Application
 
         // Одно окно лаунчера. Короткое ожидание нужно после установки и самообновления:
         // прежний процесс ещё может секунду-другую держать замок.
+        JustUpdated = e.Args.Contains("--updated");
         single = new Mutex(false, "BattleLauncher.SingleInstance");
         bool got;
-        try { got = single.WaitOne(4000); }
+        try { got = single.WaitOne(JustUpdated ? 20000 : 4000); }
         catch (AbandonedMutexException) { got = true; }
         if (!got) { Shutdown(); return; }
 

@@ -53,6 +53,7 @@ class AccountStore
     public List<Account> Accounts { get; set; } = new();
     public string? ActiveId { get; set; }
     public string? DeviceIdProtected { get; set; }
+    public bool DesktopIcons { get; set; } = true; // ставить значок приложения на рабочий стол при установке
 
     [JsonIgnore] public Account? Active => Accounts.FirstOrDefault(a => a.Id == ActiveId);
 

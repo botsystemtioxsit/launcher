@@ -92,7 +92,7 @@ static class NativeInstaller
         catch { return false; }
     }
 
-    public static async Task Install(AppDef d, NativeRelease rel, IProgress<int?> progress, CancellationToken ct = default)
+    public static async Task Install(AppDef d, NativeRelease rel, IProgress<int?> progress, bool desktopIcon = true, CancellationToken ct = default)
     {
         if (d.NativeExe == null) throw new InvalidOperationException("У этого приложения нет EXE-версии");
         if (!Net.IsTrustedDownload(rel.Url, d.NativeRepo)) throw new InvalidOperationException("Недоверенный адрес загрузки");
@@ -133,7 +133,8 @@ static class NativeInstaller
         try { File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "TIOXSIT Terminal.lnk")); } catch { }
         try { File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "TIOXSIT Terminal.lnk")); } catch { }
         MakeShortcut(StartLink(d), exe, d.NativeName ?? d.Name);
-        MakeShortcut(DesktopLink(d), exe, d.NativeName ?? d.Name);
+        if (desktopIcon) MakeShortcut(DesktopLink(d), exe, d.NativeName ?? d.Name);
+        else { try { File.Delete(DesktopLink(d)); } catch { } }
         var version = FileVersionInfo.GetVersionInfo(exe).ProductVersion ?? "";
         var plus = version.IndexOf('+');
         using var k = Registry.CurrentUser.CreateSubKey(RegKey(d));
@@ -159,6 +160,10 @@ static class NativeInstaller
         lnk.Description = description;
         lnk.Save();
     }
+
+    public static bool HasDesktopLink(AppDef d) => File.Exists(DesktopLink(d));
+
+    public static void CreateDesktopLink(AppDef d, NativeInfo n) => MakeShortcut(DesktopLink(d), n.Exe, d.NativeName ?? d.Name);
 
     public static void Launch(NativeInfo n) =>
         Process.Start(new ProcessStartInfo(n.Exe) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(n.Exe)! });

@@ -61,6 +61,7 @@ public partial class MainWindow : Window
         if (App.ScreenshotDir != null) { await ScreenshotRun(App.ScreenshotDir); return; }
         await RefreshActiveProfile();
         Render();
+        if (App.JustUpdated) Toast("Лаунчер обновлён до версии " + SelfUpdate.CurrentVersion);
         _ = CheckSelfUpdateLoop();
         _ = CheckAppUpdatesLoop();
     }
@@ -113,7 +114,10 @@ public partial class MainWindow : Window
             if (sessionNote != null) { LoginError.Text = sessionNote; LoginError.Visibility = Visibility.Visible; sessionNote = null; }
             return;
         }
-        AppsSub.Text = $"Ты вошёл как {me.Display} · {me.RoleName}\nОблегчённая версия — приложение в отдельном окне (Electron). Desktop-версия (EXE) — настоящая программа; кнопка включится сама, как только версия выйдет.";
+        AppsSub.Text = $"Ты вошёл как {me.Display} · {me.RoleName}\nЛучше ставить Desktop-версию (EXE): это настоящая программа, она быстрее. Облегчённая версия — то же приложение в отдельном окне (Electron). Если Desktop-версии ещё нет, кнопка включится сама, как только она выйдет.";
+        syncingDesktopCheck = true;
+        DesktopIconsCheck.IsChecked = store.DesktopIcons;
+        syncingDesktopCheck = false;
         MeBox.Children.Clear();
         MeBox.Children.Add(Avatar(me, 52));
         var info = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -476,48 +480,52 @@ public partial class MainWindow : Window
         if (a.Error != null) left.Children.Add(new TextBlock { Text = a.Error, Foreground = Res("Red"), Margin = new Thickness(0, 6, 0, 0), TextWrapping = TextWrapping.Wrap });
         grid.Children.Add(left);
 
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        Grid.SetColumn(actions, 1);
+        // Справа две строки кнопок. Если у приложения есть Desktop-версия (EXE) — она сверху и яркая,
+        // облегчённая (окно Electron) — ниже и поскромнее: людей надо вести на EXE. Пока EXE нет —
+        // наверху облегчённая, под ней закрытая заглушка про EXE.
+        bool exeReady = a.Allowed && a.Def.NativeExe != null
+                        && (a.Native != null || a.NativeLatest != null || busy.ContainsKey(a.Def.Id + ":exe"));
+        Button Btn(string text, string? style, Func<Task> click, bool small)
+        {
+            var b2 = MakeButton(text, style, click);
+            if (small) { b2.FontSize = 12; b2.Padding = new Thickness(10, 5, 10, 5); }
+            return b2;
+        }
+
+        // --- облегчённая версия ---
+        var liteRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
+        var liteMain = exeReady ? "Ghost" : "Primary";
         if (busy.TryGetValue(a.Def.Id, out var b))
         {
-            actions.Children.Add(new TextBlock { Text = b.Installing ? "Работаю…" : $"Скачиваю {b.Percent ?? 0}%", Foreground = Res("Muted"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
-            actions.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = b.Percent ?? 0, IsIndeterminate = b.Installing });
+            liteRow.Children.Add(new TextBlock { Text = b.Installing ? "Работаю…" : $"Скачиваю {b.Percent ?? 0}%", Foreground = Res("Muted"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
+            liteRow.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = b.Percent ?? 0, IsIndeterminate = b.Installing });
         }
         else if (a.Allowed)
         {
             if (a.Installed != null)
             {
-                actions.Children.Add(MakeButton("Запустить", "Primary", async () => await Launch(a)));
-                if (a.UpdateAvailable) actions.Children.Add(MakeButton("Обновить", null, async () => await InstallApp(a, "Обновлено")));
-                actions.Children.Add(MakeButton("Удалить", "Danger", async () => await Uninstall(a)));
+                liteRow.Children.Add(Btn("Запустить", liteMain, async () => await Launch(a), exeReady));
+                if (a.UpdateAvailable) liteRow.Children.Add(Btn("Обновить", null, async () => await InstallApp(a, "Обновлено"), exeReady));
+                if (!Shortcuts.Exists(a.Def.Name))
+                    liteRow.Children.Add(Btn("На рабочий стол", "Ghost", () => { MakeDesktopIcon(a); return Task.CompletedTask; }, exeReady));
+                liteRow.Children.Add(Btn("Удалить", "Danger", async () => await Uninstall(a), exeReady));
             }
             else
             {
-                var install = MakeButton("Скачать облегчённую версию", "Primary", async () => await InstallApp(a, "Установлено"));
+                var install = Btn("Скачать облегчённую версию", liteMain, async () => await InstallApp(a, "Установлено"), exeReady);
                 install.IsEnabled = a.Latest != null;
-                actions.Children.Add(install);
+                liteRow.Children.Add(install);
             }
         }
-        // Справа: кнопки браузерной версии, под ними — кнопки EXE-версии (настоящая программа без браузера).
-        // EXE-версия пока есть только у админ-панели («Терминал»); у остальных кнопка заблокирована.
-        var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
-        Grid.SetColumn(right, 1);
-        actions.HorizontalAlignment = HorizontalAlignment.Right;
-        right.Children.Add(actions);
+
+        // --- Desktop-версия (EXE) ---
+        var exeRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         if (a.Allowed)
         {
-            var exeRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 8, 0, 0) };
             var exeKey = a.Def.Id + ":exe";
-            Button Small(string text, string? style, Func<Task> click)
-            {
-                var b2 = MakeButton(text, style, click);
-                b2.FontSize = 12;
-                b2.Padding = new Thickness(10, 5, 10, 5);
-                return b2;
-            }
             if (a.Def.NativeExe == null)
             {
-                var locked = Small("🔒 Скачать Desktop-версию (EXE)", "Ghost", () => Task.CompletedTask);
+                var locked = Btn("🔒 Скачать Desktop-версию (EXE)", "Ghost", () => Task.CompletedTask, true);
                 locked.IsEnabled = false;
                 locked.ToolTip = "Desktop-версии этого приложения нет в каталоге.";
                 ToolTipService.SetShowOnDisabled(locked, true);
@@ -525,18 +533,20 @@ public partial class MainWindow : Window
             }
             else if (busy.TryGetValue(exeKey, out var eb))
             {
-                exeRow.Children.Add(new TextBlock { Text = eb.Installing ? "Работаю…" : $"Скачиваю Desktop {eb.Percent ?? 0}%", Foreground = Res("Muted"), FontSize = 12, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
+                exeRow.Children.Add(new TextBlock { Text = eb.Installing ? "Работаю…" : $"Скачиваю Desktop {eb.Percent ?? 0}%", Foreground = Res("Muted"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
                 exeRow.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = eb.Percent ?? 0, IsIndeterminate = eb.Installing });
             }
             else if (a.Native != null)
             {
-                exeRow.Children.Add(Small("Запустить Desktop", "Primary", () => LaunchNative(a)));
-                if (a.NativeUpdate) exeRow.Children.Add(Small("Обновить Desktop", null, () => InstallNative(a, "Обновлено")));
-                exeRow.Children.Add(Small("Удалить Desktop", "Danger", () => UninstallNative(a)));
+                exeRow.Children.Add(Btn("Запустить Desktop", "Primary", () => LaunchNative(a), false));
+                if (a.NativeUpdate) exeRow.Children.Add(Btn("Обновить Desktop", null, () => InstallNative(a, "Обновлено"), false));
+                if (!NativeInstaller.HasDesktopLink(a.Def))
+                    exeRow.Children.Add(Btn("На рабочий стол", "Ghost", () => { NativeInstaller.CreateDesktopLink(a.Def, a.Native); RenderApps(); return Task.CompletedTask; }, false));
+                exeRow.Children.Add(Btn("Удалить Desktop", "Danger", () => UninstallNative(a), true));
             }
             else
             {
-                var dl = Small("Скачать Desktop-версию (EXE)", null, () => InstallNative(a, "Установлено"));
+                var dl = Btn(exeReady ? "Скачать Desktop-версию (EXE)" : "🔒 Скачать Desktop-версию (EXE)", exeReady ? "Primary" : "Ghost", () => InstallNative(a, "Установлено"), !exeReady);
                 dl.IsEnabled = a.NativeLatest != null;
                 if (a.NativeLatest == null)
                 {
@@ -545,7 +555,24 @@ public partial class MainWindow : Window
                 }
                 exeRow.Children.Add(dl);
             }
+        }
+
+        var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
+        Grid.SetColumn(right, 1);
+        if (exeReady)
+        {
             right.Children.Add(exeRow);
+            liteRow.Margin = new Thickness(0, 8, 0, 0);
+            right.Children.Add(liteRow);
+        }
+        else
+        {
+            right.Children.Add(liteRow);
+            if (exeRow.Children.Count > 0)
+            {
+                exeRow.Margin = new Thickness(0, 8, 0, 0);
+                right.Children.Add(exeRow);
+            }
         }
         grid.Children.Add(right);
         card.Child = grid;
@@ -576,6 +603,22 @@ public partial class MainWindow : Window
         return true;
     }
 
+    void MakeDesktopIcon(AppInfo a)
+    {
+        if (a.Installed == null) return;
+        try { Shortcuts.Create(a.Def.Name, a.Installed.Exe, a.Def.Desc); Toast($"Значок «{a.Def.Name}» теперь на рабочем столе"); }
+        catch (Exception ex) { Toast("Не удалось создать значок: " + ex.Message); }
+        RenderApps();
+    }
+
+    bool syncingDesktopCheck;
+    void DesktopIcons_Changed(object sender, RoutedEventArgs e)
+    {
+        if (syncingDesktopCheck) return;
+        store.DesktopIcons = DesktopIconsCheck.IsChecked == true;
+        store.Save();
+    }
+
     async Task InstallApp(AppInfo a, string okText)
     {
         var id = a.Def.Id;
@@ -588,7 +631,12 @@ public partial class MainWindow : Window
             var release = await Releases.Latest(a.Def.Repo, true);
             var progress = new Progress<int?>(p => { busy[id] = p == null ? (true, null) : (false, p); RenderApps(); });
             await Installer.Install(a.Def, release, progress);
-            Toast($"{okText}: {a.Def.Name}");
+            if (store.DesktopIcons)
+            {
+                var now = await Task.Run(() => Installer.FindInstalled(a.Def.ProductName));
+                if (now != null) { try { Shortcuts.Create(a.Def.Name, now.Exe, a.Def.Desc); } catch { /* значок — приятное дополнение */ } }
+            }
+            Toast($"{okText}: {a.Def.Name}" + (store.DesktopIcons ? " — значок на рабочем столе" : ""));
         }
         catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
         finally { busy.Remove(id); await LoadApps(true); }
@@ -604,6 +652,7 @@ public partial class MainWindow : Window
         try
         {
             await Installer.Uninstall(a.Installed);
+            if (await Task.Run(() => Installer.FindInstalled(a.Def.ProductName)) == null) Shortcuts.Remove(a.Def.Name);
             Toast($"Удалено: {a.Def.Name}");
         }
         catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
@@ -622,7 +671,7 @@ public partial class MainWindow : Window
             if (!await RequireAllowed(a.Def)) return;
             var rel = await NativeInstaller.Latest(a.Def, true) ?? throw new InvalidOperationException("EXE-версии пока нет в последнем релизе");
             var progress = new Progress<int?>(p => { busy[key] = p == null ? (true, null) : (false, p); RenderApps(); });
-            await NativeInstaller.Install(a.Def, rel, progress);
+            await NativeInstaller.Install(a.Def, rel, progress, store.DesktopIcons);
             Toast($"{okText}: {a.Def.NativeName}");
         }
         catch (Exception ex) { Toast("Не получилось: " + ex.Message); }

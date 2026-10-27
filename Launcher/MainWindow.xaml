@@ -94,6 +94,8 @@
               <StackPanel>
                 <TextBlock Text="Приложения" FontSize="22" FontWeight="SemiBold"/>
                 <TextBlock x:Name="AppsSub" Foreground="{StaticResource Muted}" Margin="0,4,16,0" TextWrapping="Wrap"/>
+                <CheckBox x:Name="DesktopIconsCheck" Content="Ставить значок приложения на рабочий стол" Foreground="{StaticResource Text}"
+                          Margin="0,10,0,0" IsChecked="True" Checked="DesktopIcons_Changed" Unchecked="DesktopIcons_Changed"/>
               </StackPanel>
             </DockPanel>
             <ScrollViewer VerticalScrollBarVisibility="Auto">

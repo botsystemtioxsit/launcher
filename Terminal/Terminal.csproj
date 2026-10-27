@@ -8,9 +8,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>TIOXSITTerminal</AssemblyName>
     <RootNamespace>TioxsitTerminal</RootNamespace>
-    <ApplicationIcon>..\Launcher\Assets\icon.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>0.3.0</Version>
+    <Version>0.3.1</Version>
     <Product>Терминал</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
@@ -28,7 +28,7 @@
     <Compile Include="..\Launcher\Services\Rtdb.cs" Link="Shared\Rtdb.cs" />
     <Compile Include="..\Launcher\Services\AccountStore.cs" Link="Shared\AccountStore.cs" />
     <Compile Include="..\Launcher\Services\Catalog.cs" Link="Shared\Catalog.cs" />
-    <Resource Include="..\Launcher\Assets\icon.ico" Link="Assets\icon.ico" />
+    <Resource Include="Assets\icon.ico" />
   </ItemGroup>
 
 </Project>

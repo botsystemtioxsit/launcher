@@ -25,6 +25,11 @@ static class SelfInstall
     public static bool IsInstalledCopy =>
         string.Equals(Environment.ProcessPath, InstalledExe, StringComparison.OrdinalIgnoreCase);
 
+    // Путь к установленной копии, если запущена другая (например, из «Загрузок»), а установленная есть.
+    // Обновлять нужно именно её: ярлыки в «Пуске» и на рабочем столе открывают её.
+    public static string? OtherInstalledCopy() =>
+        !IsInstalledCopy && File.Exists(InstalledExe) ? InstalledExe : null;
+
     static string? InstalledVersion()
     {
         using var k = Registry.CurrentUser.OpenSubKey(RegKey);

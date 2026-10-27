@@ -35,9 +35,16 @@ static class SelfUpdate
         {
             var exe = ExePath;
             if (exe == null) return;
-            foreach (var f in new[] { exe + ".old", exe + ".new" }) if (File.Exists(f)) File.Delete(f);
+            var dir = Path.GetDirectoryName(exe)!;
+            var name = Path.GetFileName(exe);
+            foreach (var f in Directory.GetFiles(dir, name + ".*"))
+            {
+                var tail = f[(Path.Combine(dir, name).Length)..];
+                if (tail == ".new" || tail.EndsWith(".old", StringComparison.Ordinal))
+                    try { File.Delete(f); } catch { /* старый процесс мог ещё не закрыться — уберём в следующий раз */ }
+            }
         }
-        catch { /* старый процесс мог ещё не закрыться — уберём в следующий раз */ }
+        catch { }
     }
 
     public static async Task<UpdateInfo?> Check(CancellationToken ct = default)
@@ -62,14 +69,18 @@ static class SelfUpdate
 
     public static async Task Apply(UpdateInfo info, IProgress<int?> progress, CancellationToken ct = default)
     {
-        var exe = ExePath ?? throw new InvalidOperationException("Не знаю, где лежит лаунчер");
-        var tmp = exe + ".new";
+        var running = ExePath ?? throw new InvalidOperationException("Не знаю, где лежит лаунчер");
+        // Запущена копия не из папки установки (например, из «Загрузок»), а установленная есть — обновляем установленную:
+        // именно её открывают ярлыки. Иначе плашка «Вышел лаунчер» возвращалась бы при каждом запуске с ярлыка.
+        var target = SelfInstall.OtherInstalledCopy() ?? running;
+        var tmp = target + ".new";
         try
         {
             using var res = await Net.Http.GetAsync(info.ExeUrl, HttpCompletionOption.ResponseHeadersRead, ct);
             res.EnsureSuccessStatusCode();
             var total = res.Content.Headers.ContentLength ?? 0;
             using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             await using (var src = await res.Content.ReadAsStreamAsync(ct))
             await using (var dst = File.Create(tmp))
             {
@@ -91,9 +102,19 @@ static class SelfUpdate
             try { File.Delete(tmp); } catch { }
             throw;
         }
-        File.Move(exe, exe + ".old", true);
-        File.Move(tmp, exe, true);
-        Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(exe)! });
+
+        // Работающий .exe нельзя перезаписать, но можно переименовать: старый уходит в .old, новый встаёт на его место.
+        // Если прежнее .old занято (остался работать старый процесс) — берём другое имя, а не падаем с ошибкой.
+        if (File.Exists(target))
+        {
+            try { File.Move(target, target + ".old", true); }
+            catch { File.Move(target, target + "." + DateTime.Now.Ticks + ".old", true); }
+        }
+        File.Move(tmp, target, true);
+
+        // Отпускаем замок «одно окно» и запускаем новую версию; метка --updated даёт ей время дождаться нас.
+        App.ReleaseSingleInstance();
+        Process.Start(new ProcessStartInfo(target, "--updated") { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(target)! });
         Environment.Exit(0);
     }
 }
