@@ -13,6 +13,9 @@ record AppDef(string Id, string Name, string Desc, string Repo, string ProductNa
     public bool IsAllowed(string role) => Roles == null ? role != "token" : Roles.Contains(role);
 }
 
+// Программы, которые лаунчер не ставит сам (Linux, расширения Chrome): только кнопка «Скачать» со ссылкой на файл в релизе.
+record DownloadDef(string Id, string Name, string Desc, string Platform, string Url);
+
 // Что умеет ставить лаунчер. Список живёт в catalog.json в репозитории launcher и читается при каждом
 // запуске и обновлении списка: новое приложение или новая версия приложения (EXE, облегчённая) появляется
 // без обновления самого лаунчера. Кнопка Desktop-версии, у которой в релизе ещё нет файла, остаётся
@@ -24,6 +27,7 @@ static class Catalog
     static DateTime lastFetch = DateTime.MinValue;
 
     public static AppDef[] Apps { get; private set; } = Defaults();
+    public static DownloadDef[] Downloads { get; private set; } = Array.Empty<DownloadDef>();
 
     static AppDef[] Defaults() => new[]
     {
@@ -46,6 +50,7 @@ static class Catalog
             var text = await Net.GetText($"https://raw.githubusercontent.com/{Owner}/launcher/main/catalog.json", ct);
             var parsed = Parse(text);
             if (parsed.Length > 0) Apps = parsed;
+            Downloads = ParseDownloads(text);
             lastFetch = DateTime.UtcNow;
         }
         catch { /* нет сети или файл повреждён — остаётся прежний список */ }
@@ -89,6 +94,29 @@ static class Catalog
             }
             catch { /* одну битую запись пропускаем, остальные работают */ }
         }
+        return list.ToArray();
+    }
+
+    // Раздел "downloads" каталога: ссылка собирается только из проверенных частей и ведёт на релиз нашего же аккаунта.
+    public static DownloadDef[] ParseDownloads(string json)
+    {
+        var list = new List<DownloadDef>();
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("downloads", out var arr) || arr.ValueKind != JsonValueKind.Array) return Array.Empty<DownloadDef>();
+            foreach (var d in arr.EnumerateArray())
+            {
+                string? S(string k) => d.ValueKind == JsonValueKind.Object && d.TryGetProperty(k, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+                var id = S("id"); var name = S("name"); var repo = S("repo"); var tag = S("tag"); var asset = S("asset");
+                if (id == null || name == null || repo == null || tag == null || asset == null) continue;
+                if (!Net.SafeId.IsMatch(id) || !Safe.IsMatch(repo) || !Safe.IsMatch(tag) || !Safe.IsMatch(asset)) continue;
+                var desc = S("desc") ?? ""; var platform = S("platform") ?? "";
+                list.Add(new DownloadDef(id, name[..Math.Min(name.Length, 60)], desc[..Math.Min(desc.Length, 240)], platform[..Math.Min(platform.Length, 40)],
+                    $"https://github.com/{Owner}/{repo}/releases/download/{tag}/{asset}"));
+            }
+        }
+        catch { /* битый раздел — просто не показываем */ }
         return list.ToArray();
     }
 }

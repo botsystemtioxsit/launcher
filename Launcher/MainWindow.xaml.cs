@@ -439,11 +439,41 @@ public partial class MainWindow : Window
     {
         AppList.Children.Clear();
         foreach (var a in apps) AppList.Children.Add(AppCard(a));
+        if (Catalog.Downloads.Length > 0)
+        {
+            AppList.Children.Add(new TextBlock { Text = "ДЛЯ LINUX И CHROME", FontFamily = (FontFamily)FindResource("Mono"), FontWeight = FontWeights.Bold, Foreground = Res("Accent2"), Margin = new Thickness(0, 14, 0, 4) });
+            AppList.Children.Add(new TextBlock { Text = "Эти программы лаунчер сам не ставит — он даёт файл для скачивания.", Foreground = Res("Muted"), Margin = new Thickness(0, 0, 0, 10) });
+            foreach (var d in Catalog.Downloads) AppList.Children.Add(DownloadCard(d));
+        }
+    }
+
+    UIElement DownloadCard(DownloadDef d)
+    {
+        var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) };
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition());
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var left = new StackPanel();
+        left.Children.Add(new TextBlock { Text = d.Name, FontSize = 17, FontWeight = FontWeights.SemiBold });
+        left.Children.Add(new TextBlock { Text = d.Desc, Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 12, 8) });
+        left.Children.Add(Badge(d.Platform, Res("Muted"), null));
+        grid.Children.Add(left);
+        var btn = MakeButton("Скачать", "Primary", () =>
+        {
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(d.Url) { UseShellExecute = true }); }
+            catch { Toast("Не удалось открыть браузер"); }
+            return Task.CompletedTask;
+        });
+        btn.VerticalAlignment = VerticalAlignment.Center;
+        Grid.SetColumn(btn, 1);
+        grid.Children.Add(btn);
+        card.Child = grid;
+        return card;
     }
 
     UIElement AppCard(AppInfo a)
     {
-        var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(14), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) };
+        var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) };
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });

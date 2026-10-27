@@ -555,6 +555,22 @@ class MainActivity : Activity() {
             return
         }
         rows.forEach { box.addView(appCard(it), lp(10)) }
+        if (Catalog.downloads.isNotEmpty()) {
+            box.addView(tv("ДЛЯ LINUX И CHROME", 12f, 0xFFFF2A9D.toInt(), true), lp(20))
+            box.addView(tv("Эти программы лаунчер сам не ставит — он даёт файл для скачивания.", 13f, MUTED), lp(4))
+            Catalog.downloads.forEach { box.addView(downloadCard(it), lp(10)) }
+        }
+    }
+
+    private fun downloadCard(d: DownloadDef): View {
+        val c = card()
+        c.addView(tv(d.name, 17f, TEXT, true))
+        c.addView(tv(d.desc, 13f, MUTED), lp(3))
+        c.addView(tv(d.platform, 12f, MUTED), lp(6))
+        c.addView(button("Скачать", primary = true) {
+            try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(d.url))) } catch (_: Exception) { toast("Не удалось открыть браузер") }
+        }, lp(8))
+        return c
     }
 
     private fun appCard(r: Row): View {

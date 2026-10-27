@@ -20,6 +20,9 @@ data class AppDef(
     fun isAllowed(role: String) = if (roles == null) role != "token" else role in roles
 }
 
+// Программы, которые лаунчер не ставит сам (Linux, расширения Chrome): только кнопка «Скачать» со ссылкой на релиз.
+data class DownloadDef(val id: String, val name: String, val desc: String, val platform: String, val url: String)
+
 object Catalog {
     const val OWNER = "botsystemtioxsit"
     const val LAUNCHER_REPO = "launcher"
@@ -29,6 +32,9 @@ object Catalog {
     private var lastFetch = 0L
 
     @Volatile var apps: List<AppDef> = defaults()
+        private set
+
+    @Volatile var downloads: List<DownloadDef> = emptyList()
         private set
 
     private fun defaults() = listOf(
@@ -46,8 +52,10 @@ object Catalog {
     fun refresh(force: Boolean = false) {
         if (!force && System.currentTimeMillis() - lastFetch < 5 * 60 * 1000L) return
         try {
-            val parsed = parse(Net.get("https://raw.githubusercontent.com/$OWNER/launcher/main/catalog.json"))
+            val text = Net.get("https://raw.githubusercontent.com/$OWNER/launcher/main/catalog.json")
+            val parsed = parse(text)
             if (parsed.isNotEmpty()) apps = parsed
+            downloads = parseDownloads(text)
             lastFetch = System.currentTimeMillis()
         } catch (_: Exception) { /* нет сети или файл повреждён — остаётся прежний список */ }
     }
@@ -75,6 +83,22 @@ object Catalog {
                 }
                 if (!SAFE.matches(repo)) continue
                 out.add(AppDef(id, a.getString("name").take(60), a.optString("desc", "").take(200), repo, pkg, apk, tag, roles, site))
+            } catch (_: Exception) { /* одну битую запись пропускаем */ }
+        }
+        return out
+    }
+
+    // Раздел "downloads" каталога: ссылка собирается только из проверенных частей и ведёт на релиз нашего же аккаунта.
+    fun parseDownloads(json: String): List<DownloadDef> {
+        val out = ArrayList<DownloadDef>()
+        val arr = try { JSONObject(json).optJSONArray("downloads") } catch (_: Exception) { null } ?: return out
+        for (i in 0 until arr.length()) {
+            try {
+                val d = arr.getJSONObject(i)
+                val id = d.getString("id"); val repo = d.getString("repo"); val tag = d.getString("tag"); val asset = d.getString("asset")
+                if (!Net.SAFE_ID.matches(id) || !SAFE.matches(repo) || !SAFE.matches(tag) || !SAFE.matches(asset)) continue
+                out.add(DownloadDef(id, d.getString("name").take(60), d.optString("desc", "").take(240), d.optString("platform", "").take(40),
+                    "https://github.com/$OWNER/$repo/releases/download/$tag/$asset"))
             } catch (_: Exception) { /* одну битую запись пропускаем */ }
         }
         return out

@@ -5,27 +5,98 @@
       "name": "Тролль-Баттл",
       "desc": "Голосовые баттлы — та же игра, что в Telegram.",
       "roles": null,
-      "lite": { "repo": "index.html", "productName": "Тролль-Баттл", "site": "https://botsystemtioxsit.github.io/index.html/" },
-      "desktop": { "repo": "launcher", "tag": "latest", "asset": "TIOXSITTrollBattle.exe", "name": "Тролль-Баттл (Desktop)" },
-      "android": { "repo": "index.html", "tag": "android-latest", "asset": "troll-battle.apk", "package": "com.tioxsit.trollbattle.icontest" }
+      "lite": {
+        "repo": "index.html",
+        "productName": "Тролль-Баттл",
+        "site": "https://botsystemtioxsit.github.io/index.html/"
+      },
+      "desktop": {
+        "repo": "launcher",
+        "tag": "latest",
+        "asset": "TIOXSITTrollBattle.exe",
+        "name": "Тролль-Баттл (Desktop)"
+      },
+      "android": {
+        "repo": "index.html",
+        "tag": "android-latest",
+        "asset": "troll-battle.apk",
+        "package": "com.tioxsit.trollbattle.icontest"
+      }
     },
     {
       "id": "battle-admin",
       "name": "БАТТЛ Админ",
       "desc": "Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат.",
-      "roles": ["moderator", "admin", "superadmin", "token"],
-      "lite": { "repo": "battle-admin-bot", "productName": "БАТТЛ Админ", "site": "https://botsystemtioxsit.github.io/battle-admin-bot/public/admin.html" },
-      "desktop": { "repo": "launcher", "tag": "latest", "asset": "TIOXSITTerminal.exe", "name": "Ghost Shell Terminal" },
-      "android": { "repo": "battle-admin-bot", "tag": "android-latest", "asset": "battle-admin.apk", "package": "com.tioxsit.battleadmin.icontest" }
+      "roles": [
+        "moderator",
+        "admin",
+        "superadmin",
+        "token"
+      ],
+      "lite": {
+        "repo": "battle-admin-bot",
+        "productName": "БАТТЛ Админ",
+        "site": "https://botsystemtioxsit.github.io/battle-admin-bot/public/admin.html"
+      },
+      "desktop": {
+        "repo": "launcher",
+        "tag": "latest",
+        "asset": "TIOXSITTerminal.exe",
+        "name": "Ghost Shell Terminal"
+      },
+      "android": {
+        "repo": "battle-admin-bot",
+        "tag": "android-latest",
+        "asset": "battle-admin.apk",
+        "package": "com.tioxsit.battleadmin.icontest"
+      }
     },
     {
       "id": "videochat",
       "name": "ВидеоЧат",
       "desc": "Случайные видеоразговоры. Аккаунт тот же, что в «Тролль-Баттле».",
       "roles": null,
-      "lite": { "repo": "videochat", "productName": "ВидеоЧат", "site": null },
-      "desktop": { "repo": "launcher", "tag": "latest", "asset": "TIOXSITVideoChat.exe", "name": "ВидеоЧат (Desktop)" },
+      "lite": {
+        "repo": "videochat",
+        "productName": "ВидеоЧат",
+        "site": null
+      },
+      "desktop": {
+        "repo": "launcher",
+        "tag": "latest",
+        "asset": "TIOXSITVideoChat.exe",
+        "name": "ВидеоЧат (Desktop)"
+      },
       "android": null
+    }
+  ],
+  "downloads": [
+    {
+      "id": "solitaire-linux",
+      "name": "Косынка",
+      "desc": "Пасьянс «Косынка» для Linux (пакет .deb: Debian, Ubuntu, Linux Mint).",
+      "platform": "Linux",
+      "repo": "game-linux",
+      "tag": "latest",
+      "asset": "solitaire-linux.deb"
+    },
+    {
+      "id": "phonecast",
+      "name": "Phonecast",
+      "desc": "Экран Android-телефона на ноутбуке с Linux по USB, с управлением мышью и клавиатурой. Распаковать и запустить install.sh.",
+      "platform": "Linux",
+      "repo": "Remote",
+      "tag": "latest",
+      "asset": "phonecast-linux.tar.gz"
+    },
+    {
+      "id": "tab-unloader",
+      "name": "Tab Unloader",
+      "desc": "Расширение для Chrome и Chromebook: выгружает неактивные вкладки, когда мало памяти.",
+      "platform": "Chrome / ChromeOS",
+      "repo": "sstr",
+      "tag": "latest",
+      "asset": "tab-unloader.zip"
     }
   ]
 }
