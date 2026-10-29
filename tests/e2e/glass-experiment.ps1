@@ -5,6 +5,8 @@ New-Item -ItemType Directory -Force $Out | Out-Null
 $log = Join-Path $Out 'report.txt'
 function Say($t) { $t | Tee-Object -FilePath $log -Append }
 
+(New-Object -ComObject Shell.Application).MinimizeAll()   # свернуть консоль раннера, чтобы позади было видно подложку
+Start-Sleep -Seconds 2
 # яркая подложка позади: цветные полосы и крупный текст (размытие должно быть хорошо видно)
 $backScript = Join-Path (Get-Location) 'backdrop.ps1'
 @'
