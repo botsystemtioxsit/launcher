@@ -107,6 +107,7 @@ sealed partial class MainWindow
             var snapshot = settings;
             var result = await Task.Run(() => engine.ApplyColor(snapshot, t => Dispatcher.BeginInvoke(new Action(() => Say("Перекрашиваю: " + t)))));
             Say($"Готово: значков изменено {result.Done}" + (result.Failed > 0 ? $", не удалось {result.Failed}" : "") + ". " + (result.Messages.Count > 0 ? string.Join("; ", result.Messages.Take(3)) : ""));
+            if (result.Done > 0) { busy = false; BuildState(); AskExplorerRestart(); }
         }
         catch (Exception ex) { Say("Не вышло: " + ex.Message); }
         finally { busy = false; BuildState(); }
@@ -120,6 +121,7 @@ sealed partial class MainWindow
         {
             var n = await Task.Run(() => engine.RestoreAll());
             Say($"Всё возвращено как было (изменений отменено: {n}).");
+            if (n > 0) { busy = false; BuildState(); AskExplorerRestart(); }
         }
         catch (Exception ex) { Say("Не вышло: " + ex.Message); }
         finally { busy = false; BuildState(); }

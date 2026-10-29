@@ -119,6 +119,7 @@ sealed partial class MainWindow
             var map = new Dictionary<string, string>(packMap);
             var result = await Task.Run(() => engine.ApplyPack(map, t => Dispatcher.BeginInvoke(new Action(() => Say("Ставлю: " + t)))));
             Say($"Готово: значков изменено {result.Done}" + (result.Failed > 0 ? $", не удалось {result.Failed}" : "") + ". " + (result.Messages.Count > 0 ? string.Join("; ", result.Messages.Take(3)) : ""));
+            if (result.Done > 0) { busy = false; BuildState(); AskExplorerRestart(); }
         }
         catch (Exception ex) { Say("Не вышло: " + ex.Message); }
         finally { busy = false; BuildState(); }

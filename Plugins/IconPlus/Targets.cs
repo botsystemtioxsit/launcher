@@ -9,7 +9,7 @@ sealed record Target(string Id, string Group, string Title, TargetKind Kind, str
 
     public static readonly Target[] All =
     {
-        new("folder", GFolders, "Папка", TargetKind.Folder, new[] { "folder", "directory", "папка", "dir", "folderclosed", "closed" }, Reject: new[] { "open", "открыт", "network", "music", "video", "picture", "download", "document", "desktop" }),
+        new("folder", GFolders, "Папка (спросит разрешение администратора)", TargetKind.Folder, new[] { "folder", "directory", "папка", "dir", "folderclosed", "closed" }, Reject: new[] { "open", "открыт", "network", "music", "video", "picture", "download", "document", "desktop" }),
         new("drive-fixed", GFolders, "Жёсткий диск", TargetKind.Drive, new[] { "harddrive", "hard drive", "hdd", "ssd", "disk", "drive", "диск", "локальный" }, Reject: new[] { "usb", "flash", "removable", "dvd", "cd", "optical", "network", "сеть" }),
         new("drive-removable", GFolders, "Флешка (USB)", TargetKind.Drive, new[] { "usb", "flash", "removable", "флешка", "съемный" }),
         new("drive-optical", GFolders, "DVD / CD", TargetKind.Drive, new[] { "dvd", "cd", "optical", "cdrom", "диск dvd", "bluray", "blu" }),

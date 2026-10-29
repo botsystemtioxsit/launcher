@@ -41,6 +41,15 @@ sealed partial class MainWindow
         }));
     }
 
+    // После изменения часть значков (панель слева, «Этот компьютер», диски, папки) обновляется только после перезапуска Проводника.
+    void AskExplorerRestart()
+    {
+        var r = MessageBox.Show(this, "Часть значков (панель слева, «Этот компьютер», диски, папки) обновится только после перезапуска Проводника.\n\n" +
+                                      "Перезапустить сейчас? Открытые окна папок на секунду закроются, ваши программы не затрагиваются.",
+                                "Icon Plus", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (r == MessageBoxResult.Yes) RestartExplorer();
+    }
+
     void RestartExplorer()
     {
         Say("Перезапускаю Проводник…");

@@ -28,8 +28,8 @@ sealed class IconEngine
             case TargetKind.Folder:
                 yield return new Sink("folder", FolderSource, p =>
                 {
-                    reg.Set(@"Software\Classes\Directory\DefaultIcon", "", p);
-                    reg.Set(@"Software\Classes\Folder\DefaultIcon", "", p);
+                    FolderIcon.SetElevated(p);
+                    state.FolderMachine = true;
                 });
                 break;
             case TargetKind.Drive:
@@ -250,6 +250,11 @@ sealed class IconEngine
     {
         var n = 0;
         foreach (var c in Enumerable.Reverse(state.Reg).ToList()) { RegistryWriter.Revert(c); n++; }
+        if (state.FolderMachine)
+        {
+            try { FolderIcon.RestoreElevated(); n++; } catch { }
+            state.FolderMachine = false;
+        }
         foreach (var l in state.Lnk.ToList())
         {
             try { if (File.Exists(l.File) && Shortcuts.WriteIcon(l.File, l.OldPath, l.OldIndex)) n++; } catch { }

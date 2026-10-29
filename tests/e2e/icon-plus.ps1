@@ -24,6 +24,8 @@ Run-Exe 'selftest' @("--selftest=$(Join-Path $outFull 'self')") 300
 if (Test-Path (Join-Path $outFull 'self/report.txt')) { Get-Content (Join-Path $outFull 'self/report.txt') | ForEach-Object { Say $_ } }
 
 Say ""
+Say "значок папок после самопроверки (должен быть чист): " + ((Get-ItemProperty 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons' -ErrorAction SilentlyContinue) | Out-String).Trim()
+Say ""
 Say "=== набор значков: архивы ==="
 Add-Type -AssemblyName System.Drawing
 $packDir = Join-Path $env:RUNNER_TEMP 'icon-pack-src'

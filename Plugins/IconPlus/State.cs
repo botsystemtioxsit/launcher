@@ -27,6 +27,7 @@ sealed class IconState
     public List<RegChange> Reg { get; set; } = new();
     public List<LnkChange> Lnk { get; set; } = new();
     public Dictionary<string, string> Sources { get; set; } = new();   // откуда брали исходный значок: ключ → «путь,номер»
+    public bool FolderMachine { get; set; }                             // значок папок поставлен через HKLM (нужно вернуть с правами администратора)
     public string Applied { get; set; } = "";                           // что сейчас применено: пусто | color | pack:<имя>
 }
 
