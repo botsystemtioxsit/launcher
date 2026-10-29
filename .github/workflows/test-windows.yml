@@ -1,10 +1,16 @@
 name: Test plugins on Windows
 
 # Проверка плагинов на настоящей Windows-машине GitHub (не на компьютере владельца: сборка Windows и набор программ другие,
-# но панель задач, Проводник и окна — настоящие). Запускается вручную; результат — папка results в ветке ci-e2e:
-# отчёт report.txt, журналы движка, дерево элементов панели и снимки экрана до / во время / после.
+# но панель задач, Проводник и окна — настоящие). Запускается вручную; результат — папка в ветке ci-e2e (плагины)
+# или ci-e2e-bg (опыты с прозрачным фоном): отчёт report.txt, журналы, дерево элементов панели и снимки экрана.
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: 'plugins — проверка обоих плагинов; bg — опыты с прозрачным фоном окон'
+        default: plugins
+        type: choice
+        options: [plugins, bg]
 
 permissions:
   contents: write
@@ -12,14 +18,18 @@ permissions:
 jobs:
   test:
     runs-on: windows-latest
+    env:
+      SCENARIO: ${{ inputs.scenario || 'plugins' }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
+        if: env.SCENARIO == 'plugins'
         with:
           dotnet-version: 8.0.x
 
       - name: Build engine
+        if: env.SCENARIO == 'plugins'
         shell: pwsh
         run: |
           cmake -S Plugins/TaskbarPlus/Engine -B Plugins/TaskbarPlus/Engine/build -A x64
@@ -28,6 +38,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'cmake: сборка не удалась' }
 
       - name: Publish plugins
+        if: env.SCENARIO == 'plugins'
         shell: pwsh
         run: |
           foreach ($p in 'TaskbarPlus', 'ColorPlus') {
@@ -37,7 +48,8 @@ jobs:
 
       - name: Run checks
         shell: pwsh
-        run: ./tests/e2e/run.ps1 -Out results
+        run: |
+          if ($env:SCENARIO -eq 'bg') { ./tests/e2e/bg-experiment.ps1 -Out results } else { ./tests/e2e/run.ps1 -Out results }
         continue-on-error: true
 
       - uses: actions/upload-artifact@v4
@@ -46,10 +58,11 @@ jobs:
           name: e2e-results
           path: results/*
 
-      - name: Results to branch ci-e2e
+      - name: Results to branch
         if: always()
         shell: pwsh
         run: |
+          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } else { 'ci-e2e' }
           $dir = Join-Path $env:RUNNER_TEMP 'e2e-branch'
           New-Item -ItemType Directory -Force $dir | Out-Null
           Copy-Item results/* $dir -Recurse -ErrorAction SilentlyContinue
@@ -57,10 +70,10 @@ jobs:
           git init -q
           git config user.name 'github-actions'
           git config user.email 'github-actions@users.noreply.github.com'
-          git checkout -q -b ci-e2e
+          git checkout -q -b $branch
           git add .
-          git commit -q -m 'Результаты проверки плагинов на Windows'
+          git commit -q -m 'Результаты проверки на Windows'
           git remote add origin "https://x-access-token:$($env:GH_TOKEN)@github.com/${{ github.repository }}.git"
-          git push -q --force origin ci-e2e
+          git push -q --force origin $branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
