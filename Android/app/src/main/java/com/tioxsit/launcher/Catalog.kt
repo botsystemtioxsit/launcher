@@ -23,6 +23,9 @@ data class AppDef(
 // Программы, которые лаунчер не ставит сам (Linux, расширения Chrome): только кнопка «Скачать» со ссылкой на релиз.
 data class DownloadDef(val id: String, val name: String, val desc: String, val platform: String, val url: String, val os: Set<String>)
 
+// Плагин (сейчас только тема оформления). Ссылка собирается из проверенных частей и ведёт в наш репозиторий.
+data class PluginDef(val id: String, val name: String, val desc: String, val version: String, val url: String, val os: Set<String>)
+
 object Catalog {
     const val OWNER = "botsystemtioxsit"
     const val LAUNCHER_REPO = "launcher"
@@ -35,6 +38,9 @@ object Catalog {
         private set
 
     @Volatile var downloads: List<DownloadDef> = emptyList()
+        private set
+
+    @Volatile var plugins: List<PluginDef> = emptyList()
         private set
 
     private fun defaults() = listOf(
@@ -56,6 +62,7 @@ object Catalog {
             val parsed = parse(text)
             if (parsed.isNotEmpty()) apps = parsed
             downloads = parseDownloads(text)
+            plugins = parsePlugins(text)
             lastFetch = System.currentTimeMillis()
         } catch (_: Exception) { /* нет сети или файл повреждён — остаётся прежний список */ }
     }
@@ -101,6 +108,26 @@ object Catalog {
                 val os = if (osArr == null) emptySet() else (0 until osArr.length()).map { osArr.getString(it) }.filter { SAFE.matches(it) }.toSet()
                 out.add(DownloadDef(id, d.getString("name").take(60), d.optString("desc", "").take(240), d.optString("platform", "").take(40),
                     "https://github.com/$OWNER/$repo/releases/download/$tag/$asset", os))
+            } catch (_: Exception) { /* одну битую запись пропускаем */ }
+        }
+        return out
+    }
+
+    private val PLUGIN_FILE = Regex("^plugins/[A-Za-z0-9._-]{1,80}\\.json$")
+
+    // Раздел "plugins" каталога: файл должен лежать в plugins/ репозитория launcher, остальное — только безопасные символы.
+    fun parsePlugins(json: String): List<PluginDef> {
+        val out = ArrayList<PluginDef>()
+        val arr = try { JSONObject(json).optJSONArray("plugins") } catch (_: Exception) { null } ?: return out
+        for (i in 0 until arr.length()) {
+            try {
+                val d = arr.getJSONObject(i)
+                val id = d.getString("id"); val file = d.getString("file")
+                if (d.optString("kind") != "theme" || !Net.SAFE_ID.matches(id) || !PLUGIN_FILE.matches(file)) continue
+                val version = d.optString("version", "1").takeIf { SAFE.matches(it) } ?: "1"
+                val osArr = d.optJSONArray("os")
+                val os = if (osArr == null) emptySet() else (0 until osArr.length()).map { osArr.getString(it) }.filter { SAFE.matches(it) }.toSet()
+                out.add(PluginDef(id, d.getString("name").take(60), d.optString("desc", "").take(240), version, "https://raw.githubusercontent.com/$OWNER/$LAUNCHER_REPO/main/$file", os))
             } catch (_: Exception) { /* одну битую запись пропускаем */ }
         }
         return out

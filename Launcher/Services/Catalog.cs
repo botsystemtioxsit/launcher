@@ -17,6 +17,9 @@ record AppDef(string Id, string Name, string Desc, string Repo, string ProductNa
 // Os — для каких систем запись: лаунчер показывает только подходящие его системе ("windows", "linux", "android").
 record DownloadDef(string Id, string Name, string Desc, string Platform, string Url, string[] Os);
 
+// Плагин: сейчас только kind = "theme" (цвета оформления). Url собирается из проверенных частей.
+record PluginDef(string Id, string Name, string Desc, string Kind, string Version, string Url, string[] Os);
+
 // Что умеет ставить лаунчер. Список живёт в catalog.json в репозитории launcher и читается при каждом
 // запуске и обновлении списка: новое приложение или новая версия приложения (EXE, облегчённая) появляется
 // без обновления самого лаунчера. Кнопка Desktop-версии, у которой в релизе ещё нет файла, остаётся
@@ -29,6 +32,7 @@ static class Catalog
 
     public static AppDef[] Apps { get; private set; } = Defaults();
     public static DownloadDef[] Downloads { get; private set; } = Array.Empty<DownloadDef>();
+    public static PluginDef[] Plugins { get; private set; } = Array.Empty<PluginDef>();
 
     static AppDef[] Defaults() => new[]
     {
@@ -52,6 +56,7 @@ static class Catalog
             var parsed = Parse(text);
             if (parsed.Length > 0) Apps = parsed;
             Downloads = ParseDownloads(text);
+            Plugins = ParsePlugins(text);
             lastFetch = DateTime.UtcNow;
         }
         catch { /* нет сети или файл повреждён — остаётся прежний список */ }
@@ -118,6 +123,35 @@ static class Catalog
                     : Array.Empty<string>();
                 list.Add(new DownloadDef(id, name[..Math.Min(name.Length, 60)], desc[..Math.Min(desc.Length, 240)], platform[..Math.Min(platform.Length, 40)],
                     $"https://github.com/{Owner}/{repo}/releases/download/{tag}/{asset}", os));
+            }
+        }
+        catch { /* битый раздел — просто не показываем */ }
+        return list.ToArray();
+    }
+
+    // Раздел "plugins" каталога: файл должен лежать в plugins/ репозитория launcher, остальное — только безопасные символы.
+    static readonly Regex PluginFile = new(@"^plugins/[A-Za-z0-9._-]{1,80}\.json$", RegexOptions.Compiled);
+
+    public static PluginDef[] ParsePlugins(string json)
+    {
+        var list = new List<PluginDef>();
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("plugins", out var arr) || arr.ValueKind != JsonValueKind.Array) return Array.Empty<PluginDef>();
+            foreach (var d in arr.EnumerateArray())
+            {
+                string? S(string k) => d.ValueKind == JsonValueKind.Object && d.TryGetProperty(k, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+                var id = S("id"); var name = S("name"); var kind = S("kind"); var file = S("file");
+                if (id == null || name == null || kind != "theme" || file == null) continue;
+                if (!Net.SafeId.IsMatch(id) || !PluginFile.IsMatch(file)) continue;
+                var desc = S("desc") ?? ""; var version = S("version") ?? "1";
+                if (!Safe.IsMatch(version)) version = "1";
+                var os = d.TryGetProperty("os", out var oa) && oa.ValueKind == JsonValueKind.Array
+                    ? oa.EnumerateArray().Where(x => x.ValueKind == JsonValueKind.String).Select(x => x.GetString()!).Where(x => Safe.IsMatch(x)).ToArray()
+                    : Array.Empty<string>();
+                list.Add(new PluginDef(id, name[..Math.Min(name.Length, 60)], desc[..Math.Min(desc.Length, 240)], kind, version,
+                    $"https://raw.githubusercontent.com/{Owner}/launcher/main/{file}", os));
             }
         }
         catch { /* битый раздел — просто не показываем */ }

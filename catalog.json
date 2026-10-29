@@ -108,5 +108,67 @@
         "linux"
       ]
     }
+  ],
+  "plugins": [
+    {
+      "id": "theme-neon-magenta",
+      "name": "Неон-маджента",
+      "desc": "Розовый неон на тёмно-фиолетовом. Киберпанк-ночь.",
+      "kind": "theme",
+      "version": "1.0.0",
+      "file": "plugins/theme-neon-magenta.json",
+      "os": [
+        "windows",
+        "android"
+      ]
+    },
+    {
+      "id": "theme-toxic",
+      "name": "Токсик",
+      "desc": "Кислотно-зелёный на почти чёрном. Как терминал из старых фильмов.",
+      "kind": "theme",
+      "version": "1.0.0",
+      "file": "plugins/theme-toxic.json",
+      "os": [
+        "windows",
+        "android"
+      ]
+    },
+    {
+      "id": "theme-sunset",
+      "name": "Закат",
+      "desc": "Оранжевый и фиолетовый, как неоновый закат над городом.",
+      "kind": "theme",
+      "version": "1.0.0",
+      "file": "plugins/theme-sunset.json",
+      "os": [
+        "windows",
+        "android"
+      ]
+    },
+    {
+      "id": "theme-ice",
+      "name": "Лёд",
+      "desc": "Холодный голубой и тёмно-синий. Спокойно для глаз.",
+      "kind": "theme",
+      "version": "1.0.0",
+      "file": "plugins/theme-ice.json",
+      "os": [
+        "windows",
+        "android"
+      ]
+    },
+    {
+      "id": "theme-classic",
+      "name": "Классика",
+      "desc": "Прежний тёмный вид лаунчера с золотым акцентом.",
+      "kind": "theme",
+      "version": "1.0.0",
+      "file": "plugins/theme-classic.json",
+      "os": [
+        "windows",
+        "android"
+      ]
+    }
   ]
 }
