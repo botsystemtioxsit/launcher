@@ -20,6 +20,8 @@ class AppearanceSettings
     public int BottomGap { get; set; } = 6;             // зазор под панелью (плавающая панель, плавающие острова)
     public string IslandStyle { get; set; } = "float";  // float — отдельные «пилюли»; tab — вкладки, прижатые к низу
     public int IslandPadding { get; set; } = 8;         // поля вокруг группы значков
+    public string IslandMode { get; set; } = "each";    // each — остров вокруг каждого значка; group — вокруг группы соседних значков
+    public int IslandGap { get; set; } = 8;             // зазор между соседними островами (режим «каждый значок»)
     public string Backdrop { get; set; } = BackdropNone;
     public int TintOpacity { get; set; } = 0;           // 0..255
     public string TintColor { get; set; } = "#000000";
@@ -36,6 +38,8 @@ class AppearanceSettings
     {
         if (Shape is not (ShapeNone or ShapePill or ShapeTab or ShapeIslands)) Shape = ShapeNone;
         if (IslandStyle is not ("float" or "tab")) IslandStyle = "float";
+        if (IslandMode is not ("each" or "group")) IslandMode = "each";
+        IslandGap = Clamp(IslandGap, 0, 40);
         if (Backdrop is not (BackdropNone or BackdropClear or BackdropBlur or BackdropAcrylic)) Backdrop = BackdropNone;
         if (!Hex.IsMatch(TintColor ?? "")) TintColor = "#000000";
         Radius = Clamp(Radius, 0, 40);

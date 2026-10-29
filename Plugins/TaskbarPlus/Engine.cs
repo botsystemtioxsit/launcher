@@ -128,14 +128,14 @@ sealed class TaskbarEngine : IDisposable
         {
             if (!islandCache.TryGetValue(h, out var c) || DateTime.UtcNow - c.At > TimeSpan.FromSeconds(1))
             {
-                c = (DateTime.UtcNow, FindClusters(h, rc, scale));
+                c = (DateTime.UtcNow, FindClusters(h, rc, scale, st.IslandMode == "each"));
                 islandCache[h] = c;
             }
             clusters = c.Clusters;
             if (clusters.Count == 0) notes.Add("не нашёл значки панели — острова заменены плавающей панелью");
         }
 
-        var key = $"{rc.Width}x{rc.Height}|{scale:F2}|{st.Shape}|{st.Radius}|{st.SideMargin}|{st.BottomGap}|{st.IslandStyle}|{st.IslandPadding}|" +
+        var key = $"{rc.Width}x{rc.Height}|{scale:F2}|{st.Shape}|{st.Radius}|{st.SideMargin}|{st.BottomGap}|{st.IslandStyle}|{st.IslandPadding}|{st.IslandMode}|{st.IslandGap}|" +
                   (clusters == null ? "" : string.Join(",", clusters.Select(c => c.L + "-" + c.R)));
         // уже стоит такая форма и Windows её не сбросила — ничего не делаем (иначе панель мерцала бы)
         if (!force && applied.TryGetValue(h, out var old) && old == key) return;
@@ -155,6 +155,8 @@ sealed class TaskbarEngine : IDisposable
         var side = (int)Math.Round(st.SideMargin * scale);
         var gap = (int)Math.Round(st.BottomGap * scale);
         var pad = (int)Math.Round(st.IslandPadding * scale);
+        var halfGap = (int)Math.Round(st.IslandGap * scale / 2.0);
+        var each = st.IslandMode == "each";
         var inset = (int)Math.Round(3 * scale); // небольшой зазор сверху у плавающих форм
         IntPtr Round(int x1, int y1, int x2, int y2) => Native.CreateRoundRectRgn(x1, y1, x2 + 1, y2 + 1, Math.Max(1, 2 * r), Math.Max(1, 2 * r));
 
@@ -170,8 +172,11 @@ sealed class TaskbarEngine : IDisposable
                 IntPtr all = IntPtr.Zero;
                 foreach (var (l, rr) in clusters)
                 {
-                    var x1 = Math.Max(0, l - pad);
-                    var x2 = Math.Min(w, rr + pad);
+                    // «каждый значок»: остров — сама кнопка, чуть сжатая, чтобы между соседними был зазор;
+                    // «группа»: остров охватывает группу значков с полями
+                    var x1 = each ? Math.Max(0, l + halfGap) : Math.Max(0, l - pad);
+                    var x2 = each ? Math.Min(w, rr - halfGap) : Math.Min(w, rr + pad);
+                    if (x2 - x1 < 4) continue;
                     var piece = st.IslandStyle == "tab" ? Round(x1, 0, x2, h + r) : Round(x1, inset, x2, Math.Max(inset + 1, h - gap));
                     if (all == IntPtr.Zero) { all = piece; continue; }
                     Native.CombineRgn(all, all, piece, Native.RGN_OR);
@@ -183,10 +188,10 @@ sealed class TaskbarEngine : IDisposable
         }
     }
 
-    // Группы значков на панели: через «Автоматизацию пользовательского интерфейса» Windows (UI Automation) берём
+    // Значки на панели (по одному или группами): через «Автоматизацию пользовательского интерфейса» Windows (UI Automation) берём
     // положение кнопок панели и склеиваем соседние в группы (Пуск+приложения, трей и т. д.). Если Windows
     // отдаёт другое устройство панели, групп не будет — плагин сообщит об этом, ничего не ломая.
-    static List<(int L, int R)> FindClusters(IntPtr hwnd, Native.RECT rc, double scale)
+    static List<(int L, int R)> FindClusters(IntPtr hwnd, Native.RECT rc, double scale, bool each)
     {
         var result = new List<(int L, int R)>();
         try
@@ -208,7 +213,14 @@ sealed class TaskbarEngine : IDisposable
             var gap = (int)Math.Round(16 * scale);
             foreach (var s in spans)
             {
-                if (result.Count > 0 && s.L - result[^1].R <= gap) result[^1] = (result[^1].L, Math.Max(result[^1].R, s.R));
+                if (result.Count > 0 && each)
+                {
+                    // одна и та же кнопка может прийти дважды (вложенные элементы) — такие повторы выбрасываем
+                    var prev = result[^1];
+                    if (s.L >= prev.L - 2 && s.R <= prev.R + 2) continue;
+                    result.Add(s);
+                }
+                else if (result.Count > 0 && s.L - result[^1].R <= gap) result[^1] = (result[^1].L, Math.Max(result[^1].R, s.R));
                 else result.Add(s);
             }
         }

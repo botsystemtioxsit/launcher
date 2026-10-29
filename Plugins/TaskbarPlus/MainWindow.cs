@@ -7,7 +7,7 @@ using System.Windows.Threading;
 namespace TaskbarPlusApp;
 
 // Окно настроек Taskbar Plus. Весь интерфейс собирается кодом: при смене формы или режима перерисовывается целиком.
-public sealed class MainWindow : Window
+sealed class MainWindow : Window
 {
     readonly TaskbarEngine engine;
     readonly AppearanceSettings settings;
@@ -97,6 +97,7 @@ public sealed class MainWindow : Window
     UIElement AppearanceCard()
     {
         var rows = new List<UIElement>();
+        rows.Add(Row("Готовые варианты", "Нажмите — применится сразу, потом можно подстроить ползунками ниже.", Presets()));
         rows.Add(Row("Форма панели", "Обычная — как в Windows. Плавающая — отдельная скруглённая панель с отступами. Вкладка — скруглён только верх, низ прижат к краю экрана. Острова — отдельные группы значков.",
             Seg(new[] { "Обычная", "Плавающая", "Вкладка", "Острова" }, ShapeIndex(), i =>
             {
@@ -110,9 +111,14 @@ public sealed class MainWindow : Window
                 rows.Add(SliderRow("Отступ по бокам", "Чем больше, тем уже панель: так получается небольшая панель по центру", 0, 600, settings.SideMargin, "px", v => { settings.SideMargin = v; Changed(); }));
             if (settings.Shape == AppearanceSettings.ShapeIslands)
             {
-                rows.Add(Row("Вид островов", "Плавающие — отдельные «пилюли». Вкладки — скруглены сверху и прижаты к низу экрана.",
+                rows.Add(Row("Что окружать", "Каждый значок — свой остров. Группу — один остров на несколько соседних значков.",
+                    Seg(new[] { "Каждый значок", "Группу значков" }, settings.IslandMode == "group" ? 1 : 0, i => { settings.IslandMode = i == 1 ? "group" : "each"; Changed(); Build(); })));
+                rows.Add(Row("Вид островов", "Плавающие — отдельные скруглённые плитки. Вкладки — скруглены сверху и прижаты к низу экрана.",
                     Seg(new[] { "Плавающие", "Вкладки" }, settings.IslandStyle == "tab" ? 1 : 0, i => { settings.IslandStyle = i == 1 ? "tab" : "float"; Changed(); Build(); })));
-                rows.Add(SliderRow("Поля острова", "Расстояние от значков до края острова", 0, 40, settings.IslandPadding, "px", v => { settings.IslandPadding = v; Changed(); }));
+                if (settings.IslandMode == "group")
+                    rows.Add(SliderRow("Поля острова", "Расстояние от значков до края острова", 0, 40, settings.IslandPadding, "px", v => { settings.IslandPadding = v; Changed(); }));
+                else
+                    rows.Add(SliderRow("Зазор между островами", "Чем больше, тем дальше острова друг от друга", 0, 40, settings.IslandGap, "px", v => { settings.IslandGap = v; Changed(); }));
             }
             var floating = settings.Shape == AppearanceSettings.ShapePill || (settings.Shape == AppearanceSettings.ShapeIslands && settings.IslandStyle == "float");
             if (floating)
@@ -134,6 +140,25 @@ public sealed class MainWindow : Window
             rows.Add(Row("Цвет", "Оттенок под размытием", Seg(colors.Select(c => c.Item1).ToArray(), sel, i => { settings.TintColor = colors[i].Item2; Changed(); Build(); })));
         }
         return Card("Внешний вид панели", rows);
+    }
+
+    // Готовые варианты — те же формы, что на картинках владельца.
+    WrapPanel Presets()
+    {
+        var wrap = new WrapPanel { MaxWidth = 460 };
+        void Add(string name, Action<AppearanceSettings> apply)
+        {
+            var b = new Button { Content = name, Padding = new Thickness(10, 5, 10, 5), Margin = new Thickness(0, 0, 6, 6) };
+            b.Click += (_, _) => { apply(settings); Changed(); Build(); };
+            wrap.Children.Add(b);
+        }
+        Add("Обычная", s => { s.Shape = AppearanceSettings.ShapeNone; s.Backdrop = AppearanceSettings.BackdropNone; });
+        Add("Плавающая", s => { s.Shape = AppearanceSettings.ShapePill; s.Radius = 18; s.SideMargin = 24; s.BottomGap = 8; });
+        Add("Острова", s => { s.Shape = AppearanceSettings.ShapeIslands; s.IslandMode = "each"; s.IslandStyle = "float"; s.Radius = 14; s.IslandGap = 8; s.BottomGap = 6; });
+        Add("Вкладка", s => { s.Shape = AppearanceSettings.ShapeTab; s.Radius = 16; s.SideMargin = 24; });
+        Add("Вкладки-острова", s => { s.Shape = AppearanceSettings.ShapeIslands; s.IslandMode = "each"; s.IslandStyle = "tab"; s.Radius = 14; s.IslandGap = 8; });
+        Add("Только значки", s => { s.Shape = AppearanceSettings.ShapeNone; s.Backdrop = AppearanceSettings.BackdropClear; s.TintOpacity = 0; });
+        return wrap;
     }
 
     UIElement IconsCard()
