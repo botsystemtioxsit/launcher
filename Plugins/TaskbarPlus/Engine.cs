@@ -11,7 +11,8 @@ sealed class TaskbarEngine : IDisposable
     AppearanceSettings settings = new();
     CancellationTokenSource? cts;
     Task? loop;
-    readonly Dictionary<IntPtr, string> applied = new();       // что уже стоит на окне: ключ формы
+    readonly Dictionary<IntPtr, string> applied = new();       // что уже стоит на окне: ключ формы (при смене настроек забывается)
+    readonly HashSet<IntPtr> owned = new();                    // окна, на которые мы поставили вырез: его надо снять, когда форма выключена
     readonly Dictionary<IntPtr, (DateTime At, List<(int L, int R)> Clusters)> islandCache = new();
     DateTime lastForced = DateTime.MinValue;
     bool accentOn;
@@ -93,10 +94,10 @@ sealed class TaskbarEngine : IDisposable
             if (!Native.GetWindowRect(h, out var rc)) continue;
             if (st.Shape != AppearanceSettings.ShapeNone)
             {
-                if (!Native.IsAtBottom(h, rc)) { notes.Add("форма работает только для панели внизу экрана"); if (applied.ContainsKey(h)) ClearRegion(h); }
+                if (!Native.IsAtBottom(h, rc)) { notes.Add("форма работает только для панели внизу экрана"); if (owned.Contains(h)) ClearRegion(h); }
                 else ApplyShape(h, rc, st, force, notes);
             }
-            else if (applied.ContainsKey(h)) ClearRegion(h);
+            else if (owned.Contains(h)) ClearRegion(h);   // форма выключена, а размытие осталось — старый вырез не должен висеть
 
             if (st.Backdrop != AppearanceSettings.BackdropNone)
             {
@@ -118,6 +119,7 @@ sealed class TaskbarEngine : IDisposable
     {
         Native.SetWindowRgn(h, IntPtr.Zero, true);
         applied.Remove(h);
+        owned.Remove(h);
     }
 
     void ApplyShape(IntPtr h, Native.RECT rc, AppearanceSettings st, bool force, List<string> notes)
@@ -151,7 +153,7 @@ sealed class TaskbarEngine : IDisposable
         if (rgn == IntPtr.Zero) return;
         // после успешного SetWindowRgn регионом владеет Windows; если не вышло — освобождаем сами
         if (Native.SetWindowRgn(h, rgn, true) == 0) Native.DeleteObject(rgn);
-        else applied[h] = key;
+        else { applied[h] = key; owned.Add(h); }
     }
 
     // Форма панели в пикселях окна (отсчёт от его левого верхнего угла).
@@ -266,7 +268,7 @@ sealed class TaskbarEngine : IDisposable
         }
         catch { /* при выходе ошибки не важны */ }
         accentOn = false;
-        lock (gate) { applied.Clear(); islandCache.Clear(); }
+        lock (gate) { applied.Clear(); owned.Clear(); islandCache.Clear(); }
     }
 
     public void Dispose()
