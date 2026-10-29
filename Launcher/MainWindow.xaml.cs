@@ -40,6 +40,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Plugins.ApplyActive(plugins); // выбранная тема оформления
         loginTimer.Tick += (_, _) => LoginTick();
         toastTimer.Tick += (_, _) => { toastTimer.Stop(); ToastBox.Visibility = Visibility.Collapsed; };
         VersionText.Text = "Версия " + SelfUpdate.CurrentVersion;
@@ -374,16 +375,125 @@ public partial class MainWindow : Window
     }
 
     // ---------- навигация ----------
+    string currentView = "apps";
+
     void ShowView(string name)
     {
+        currentView = name;
         AppsView.Visibility = name == "apps" ? Visibility.Visible : Visibility.Collapsed;
+        PluginsView.Visibility = name == "plugins" ? Visibility.Visible : Visibility.Collapsed;
         AccountView.Visibility = name == "account" ? Visibility.Visible : Visibility.Collapsed;
         NavApps.Foreground = name == "apps" ? Res("Text") : Res("Muted");
+        NavPlugins.Foreground = name == "plugins" ? Res("Text") : Res("Muted");
         NavAccount.Foreground = name == "account" ? Res("Text") : Res("Muted");
         if (name == "apps") _ = LoadApps(false);
+        if (name == "plugins") _ = LoadPlugins();
+    }
+
+    // ---------- плагины (темы оформления) ----------
+    readonly PluginStore plugins = PluginStore.Load();
+    readonly HashSet<string> pluginBusy = new();
+
+    async Task LoadPlugins()
+    {
+        RenderPlugins(); // сразу то, что уже известно
+        await Catalog.Refresh(false);
+        RenderPlugins();
+    }
+
+    void RenderPlugins()
+    {
+        PluginList.Children.Clear();
+        var list = Catalog.Plugins.Where(p => p.Os.Contains("windows")).ToArray();
+        if (list.Length == 0)
+        {
+            PluginList.Children.Add(new TextBlock { Text = "Пока нет ни одного плагина.", Foreground = Res("Muted") });
+            return;
+        }
+        foreach (var def in list) PluginList.Children.Add(PluginCard(def));
+    }
+
+    UIElement PluginCard(PluginDef def)
+    {
+        var inst = plugins.Find(def.Id);
+        var active = plugins.ActiveTheme == def.Id;
+        var card = new Border { Background = Res("Panel"), BorderBrush = active ? Res("Accent") : Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) };
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition());
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var left = new StackPanel();
+        left.Children.Add(new TextBlock { Text = def.Name, FontSize = 17, FontWeight = FontWeights.SemiBold });
+        left.Children.Add(new TextBlock { Text = def.Desc, Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 12, 8) });
+        var badges = new StackPanel { Orientation = Orientation.Horizontal };
+        badges.Children.Add(Badge("Тема", Res("Muted"), null));
+        if (active) badges.Children.Add(Badge("Включена", Res("OnAccent"), Res("Accent")));
+        else if (inst != null) badges.Children.Add(Badge("Установлена", Res("Green"), null));
+        if (inst != null && inst.Version != def.Version) badges.Children.Add(Badge("Есть обновление " + def.Version, Res("Accent"), null));
+        left.Children.Add(badges);
+        grid.Children.Add(left);
+
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        Grid.SetColumn(actions, 1);
+        if (pluginBusy.Contains(def.Id))
+            actions.Children.Add(new TextBlock { Text = "Скачиваю…", Foreground = Res("Muted"), VerticalAlignment = VerticalAlignment.Center });
+        else if (inst == null)
+            actions.Children.Add(MakeButton("Установить", "Primary", () => InstallPlugin(def, apply: true)));
+        else
+        {
+            if (inst.Version != def.Version) actions.Children.Add(MakeButton("Обновить", null, () => InstallPlugin(def, apply: active)));
+            if (active) actions.Children.Add(MakeButton("Выключить", null, () => { SetTheme(null); return Task.CompletedTask; }));
+            else actions.Children.Add(MakeButton("Включить", "Primary", () => { SetTheme(def.Id); return Task.CompletedTask; }));
+            actions.Children.Add(MakeButton("Удалить", "Danger", () => { RemovePlugin(def.Id); return Task.CompletedTask; }));
+        }
+        grid.Children.Add(actions);
+        card.Child = grid;
+        return card;
+    }
+
+    async Task InstallPlugin(PluginDef def, bool apply)
+    {
+        pluginBusy.Add(def.Id);
+        RenderPlugins();
+        try
+        {
+            var fresh = await Plugins.Install(def);
+            plugins.Installed.RemoveAll(p => p.Id == def.Id);
+            plugins.Installed.Add(fresh);
+            if (apply) plugins.ActiveTheme = def.Id;
+            plugins.Save();
+            Toast(apply ? $"Тема «{def.Name}» включена" : $"«{def.Name}» обновлён");
+        }
+        catch (Exception ex) { Toast("Не удалось установить: " + ex.Message); }
+        finally { pluginBusy.Remove(def.Id); }
+        ThemeChanged();
+    }
+
+    void SetTheme(string? id)
+    {
+        plugins.ActiveTheme = id;
+        plugins.Save();
+        ThemeChanged();
+    }
+
+    void RemovePlugin(string id)
+    {
+        plugins.Installed.RemoveAll(p => p.Id == id);
+        if (plugins.ActiveTheme == id) plugins.ActiveTheme = null;
+        plugins.Save();
+        ThemeChanged();
+    }
+
+    // Цвета в XAML обновляются сами (DynamicResource); то, что рисуется кодом, перерисовываем.
+    void ThemeChanged()
+    {
+        var view = currentView; // Render() возвращает на «Приложения» — запоминаем, где были
+        Plugins.ApplyActive(plugins);
+        if (store.Active != null) Render();
+        ShowView(view);
     }
 
     void NavApps_Click(object sender, RoutedEventArgs e) => ShowView("apps");
+    void NavPlugins_Click(object sender, RoutedEventArgs e) => ShowView("plugins");
     void NavAccount_Click(object sender, RoutedEventArgs e) => ShowView("account");
 
     void AddAccount_Click(object sender, RoutedEventArgs e) { store.ActiveId = null; store.Save(); Render(); }

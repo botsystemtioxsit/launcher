@@ -1,0 +1,16 @@
+{
+  "kind": "theme",
+  "colors": {
+    "bg": "#0B0B0F",
+    "panel": "#14141B",
+    "panel2": "#1B1B25",
+    "line": "#2A2A38",
+    "text": "#ECECF3",
+    "muted": "#8D8DA3",
+    "accent": "#F5C451",
+    "onAccent": "#1A1405",
+    "accent2": "#9B8CFF",
+    "red": "#E5484D",
+    "green": "#3FB97A"
+  }
+}

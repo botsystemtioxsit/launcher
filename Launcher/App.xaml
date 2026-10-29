@@ -17,9 +17,9 @@
     <SolidColorBrush x:Key="Green" Color="#2CFF9A"/>
 
     <Style TargetType="Button">
-      <Setter Property="Foreground" Value="{StaticResource Text}"/>
-      <Setter Property="Background" Value="{StaticResource Panel2}"/>
-      <Setter Property="BorderBrush" Value="{StaticResource Line}"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+      <Setter Property="Background" Value="{DynamicResource Panel2}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="Padding" Value="16,8"/>
       <Setter Property="Cursor" Value="Hand"/>
@@ -32,7 +32,7 @@
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="bd" Property="BorderBrush" Value="#00F0FF"/>
+                <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
               </Trigger>
               <Trigger Property="IsEnabled" Value="False">
                 <Setter TargetName="bd" Property="Opacity" Value="0.5"/>
@@ -44,9 +44,9 @@
     </Style>
 
     <Style x:Key="Primary" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-      <Setter Property="Background" Value="{StaticResource Accent}"/>
-      <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
-      <Setter Property="Foreground" Value="{StaticResource OnAccent}"/>
+      <Setter Property="Background" Value="{DynamicResource Accent}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+      <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
       <Setter Property="FontWeight" Value="Bold"/>
       <Setter Property="FontFamily" Value="{StaticResource Mono}"/>
       <Setter Property="Effect">
@@ -58,21 +58,21 @@
     </Style>
     <Style x:Key="Danger" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
       <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="{StaticResource Red}"/>
+      <Setter Property="Foreground" Value="{DynamicResource Red}"/>
     </Style>
     <Style x:Key="Nav" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+      <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
       <Setter Property="HorizontalContentAlignment" Value="Left"/>
       <Setter Property="Padding" Value="12,10"/>
     </Style>
 
     <Style TargetType="TextBox">
-      <Setter Property="Foreground" Value="{StaticResource Text}"/>
-      <Setter Property="CaretBrush" Value="{StaticResource Text}"/>
-      <Setter Property="Background" Value="{StaticResource Panel2}"/>
-      <Setter Property="BorderBrush" Value="{StaticResource Line}"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+      <Setter Property="CaretBrush" Value="{DynamicResource Text}"/>
+      <Setter Property="Background" Value="{DynamicResource Panel2}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
       <Setter Property="Padding" Value="12,10"/>
       <Setter Property="Template">
         <Setter.Value>
@@ -83,7 +83,7 @@
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsKeyboardFocused" Value="True">
-                <Setter TargetName="bd" Property="BorderBrush" Value="#00F0FF"/>
+                <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
               </Trigger>
               <Trigger Property="IsEnabled" Value="False">
                 <Setter TargetName="bd" Property="Opacity" Value="0.5"/>
@@ -95,8 +95,8 @@
     </Style>
 
     <Style TargetType="ProgressBar">
-      <Setter Property="Foreground" Value="{StaticResource Accent}"/>
-      <Setter Property="Background" Value="{StaticResource Panel2}"/>
+      <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+      <Setter Property="Background" Value="{DynamicResource Panel2}"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Height" Value="8"/>
       <Setter Property="Width" Value="150"/>
