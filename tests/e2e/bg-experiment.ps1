@@ -6,17 +6,17 @@ New-Item -ItemType Directory -Force $Out | Out-Null
 $log = Join-Path $Out 'report.txt'
 function Say($t) { $t | Tee-Object -FilePath $log -Append }
 
-Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
+Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 public static class X
 {
     [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
+    [StructLayout(LayoutKind.Sequential)] public struct PT { public int X, Y; }
     [StructLayout(LayoutKind.Sequential)] struct Accent { public int State; public int Flags; public uint Color; public int Anim; }
     [StructLayout(LayoutKind.Sequential)] struct Attr { public int A; public IntPtr D; public int S; }
+    [StructLayout(LayoutKind.Sequential)] struct BmpInfo { public int Size, Width, Height; public short Planes, Bits; public int Compression, SizeImage, XPels, YPels, ClrUsed, ClrImportant; }
     [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] static extern IntPtr GetL(IntPtr h, int i);
     [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")] static extern IntPtr SetL(IntPtr h, int i, IntPtr v);
     [DllImport("user32.dll")] static extern bool SetLayeredWindowAttributes(IntPtr h, uint key, byte a, uint f);
@@ -26,6 +26,15 @@ public static class X
     [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int w, int hh, uint f);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int cmd);
+    [DllImport("user32.dll")] static extern IntPtr GetDC(IntPtr h);
+    [DllImport("user32.dll")] static extern int ReleaseDC(IntPtr h, IntPtr dc);
+    [DllImport("gdi32.dll")] static extern IntPtr CreateCompatibleDC(IntPtr dc);
+    [DllImport("gdi32.dll")] static extern IntPtr CreateDIBSection(IntPtr dc, ref BmpInfo bi, uint usage, out IntPtr bits, IntPtr sect, uint off);
+    [DllImport("gdi32.dll")] static extern IntPtr SelectObject(IntPtr dc, IntPtr o);
+    [DllImport("gdi32.dll")] static extern bool DeleteObject(IntPtr o);
+    [DllImport("gdi32.dll")] static extern bool DeleteDC(IntPtr dc);
+    [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(PT p);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetClassNameW(IntPtr h, System.Text.StringBuilder s, int n);
 
     public static void Place(IntPtr h) { ShowWindow(h, 9); SetWindowPos(h, IntPtr.Zero, 40, 30, 760, 480, 0x0004 | 0x0040); SetForegroundWindow(h); }
 
@@ -51,20 +60,18 @@ public static class X
         Marshal.FreeHGlobal(ptr);
     }
 
+    public static string UnderPoint(int x, int y)
+    {
+        IntPtr h = WindowFromPoint(new PT { X = x, Y = y });
+        var sb = new System.Text.StringBuilder(256); GetClassNameW(h, sb, 256);
+        return h + " класс " + sb;
+    }
+
     // Самый частый цвет в нижних 60% окна (так обходим заголовок и вкладки) и его доля.
     public static string Dominant(IntPtr h, out uint colorRef)
     {
         colorRef = 0;
         try { return Dominant2(h, out colorRef); } catch (Exception ex) { return "ошибка: " + ex.Message; }
-    }
-
-    [DllImport("user32.dll")] public static extern IntPtr WindowFromPoint(System.Drawing.Point p);
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetClassNameW(IntPtr h, System.Text.StringBuilder s, int n);
-    public static string UnderPoint(int x, int y)
-    {
-        IntPtr h = WindowFromPoint(new System.Drawing.Point(x, y));
-        var sb = new System.Text.StringBuilder(256); GetClassNameW(h, sb, 256);
-        return h + " класс " + sb;
     }
 
     static string Dominant2(IntPtr h, out uint colorRef)
@@ -73,27 +80,32 @@ public static class X
         RECT r; GetWindowRect(h, out r);
         int w = r.R - r.L, hh = r.B - r.T;
         if (w < 50 || hh < 50) return "окно слишком мало";
-        using (var bmp = new Bitmap(w, hh, PixelFormat.Format32bppArgb))
+        IntPtr sdc = GetDC(IntPtr.Zero);
+        IntPtr dc = CreateCompatibleDC(sdc);
+        var bi = new BmpInfo { Size = 40, Width = w, Height = -hh, Planes = 1, Bits = 32 };
+        IntPtr bits;
+        IntPtr bmp = CreateDIBSection(sdc, ref bi, 0, out bits, IntPtr.Zero, 0);
+        IntPtr old = SelectObject(dc, bmp);
+        try
         {
-            using (var g = Graphics.FromImage(bmp)) { IntPtr dc = g.GetHdc(); PrintWindow(h, dc, 2); g.ReleaseHdc(dc); }
-            var bd = bmp.LockBits(new Rectangle(0, 0, w, hh), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            PrintWindow(h, dc, 2);
             var counts = new Dictionary<int, int>();
             int total = 0;
             for (int y = hh * 4 / 10; y < hh; y += 5)
             {
                 for (int x = 0; x < w; x += 5)
                 {
-                    int px = Marshal.ReadInt32(bd.Scan0, y * bd.Stride + x * 4) & 0xFFFFFF;
+                    int px = Marshal.ReadInt32(bits, (y * w + x) * 4) & 0xFFFFFF;
                     int c; counts.TryGetValue(px, out c); counts[px] = c + 1; total++;
                 }
             }
-            bmp.UnlockBits(bd);
             int best = 0, bestN = 0;
             foreach (var kv in counts) if (kv.Value > bestN) { best = kv.Key; bestN = kv.Value; }
             int rr = (best >> 16) & 0xFF, gg = (best >> 8) & 0xFF, bb = best & 0xFF;
             colorRef = (uint)((bb << 16) | (gg << 8) | rr);
             return string.Format("#{0:X2}{1:X2}{2:X2} доля {3:P0}", rr, gg, bb, bestN / (double)Math.Max(1, total));
         }
+        finally { SelectObject(dc, old); DeleteObject(bmp); DeleteDC(dc); ReleaseDC(IntPtr.Zero, sdc); }
     }
 }
 '@
