@@ -108,5 +108,18 @@
         "linux"
       ]
     }
+  ],
+  "plugins": [
+    {
+      "id": "taskbar-plus",
+      "name": "Taskbar Plus",
+      "desc": "Панель задач Windows по-своему: форма, острова, прозрачность, значки, автоскрытие.",
+      "desktop": {
+        "repo": "launcher",
+        "tag": "latest",
+        "asset": "TaskbarPlus.exe",
+        "name": "Taskbar Plus"
+      }
+    }
   ]
 }

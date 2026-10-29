@@ -79,6 +79,19 @@ static class NativeInstaller
         return rel;
     }
 
+    // Плагин может работать в фоне без окна: вежливо просим его выйти (он сам вернёт всё, что менял) и ждём.
+    static void AskPluginToQuit(AppDef d, string exe)
+    {
+        if (!d.IsPlugin || !IsRunning(exe)) return;
+        try
+        {
+            using var ev = EventWaitHandle.OpenExisting("GhostShell.Plugin.Quit." + d.Id);
+            ev.Set();
+        }
+        catch { /* события нет — старая версия плагина: ниже попросим закрыть вручную */ }
+        for (var i = 0; i < 40 && IsRunning(exe); i++) Thread.Sleep(100);
+    }
+
     static bool IsRunning(string exe)
     {
         try
@@ -98,6 +111,7 @@ static class NativeInstaller
         if (!Net.IsTrustedDownload(rel.Url, d.NativeRepo)) throw new InvalidOperationException("Недоверенный адрес загрузки");
         var dir = DirFor(d);
         var exe = Path.Combine(dir, d.NativeExe);
+        AskPluginToQuit(d, exe);
         if (IsRunning(exe)) throw new InvalidOperationException($"Закрой «{d.NativeName}» и повтори.");
         var tmp = Path.Combine(Path.GetTempPath(), "battle-launcher-" + Guid.NewGuid().ToString("N") + ".exe");
         try
@@ -137,7 +151,7 @@ static class NativeInstaller
             try { File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), old + ".lnk")); } catch { }
         }
         MakeShortcut(StartLink(d), exe, d.NativeName ?? d.Name);
-        MakeShortcut(DesktopLink(d), exe, d.NativeName ?? d.Name);
+        if (!d.IsPlugin) MakeShortcut(DesktopLink(d), exe, d.NativeName ?? d.Name); // плагин — только в меню «Пуск»
         var version = FileVersionInfo.GetVersionInfo(exe).ProductVersion ?? "";
         var plus = version.IndexOf('+');
         using var k = Registry.CurrentUser.CreateSubKey(RegKey(d));
@@ -170,6 +184,7 @@ static class NativeInstaller
     public static void Uninstall(AppDef d)
     {
         var info = Find(d);
+        if (info != null) AskPluginToQuit(d, info.Exe);
         if (info != null && IsRunning(info.Exe)) throw new InvalidOperationException($"Закрой «{d.NativeName}» и повтори.");
         try { File.Delete(StartLink(d)); } catch { }
         try { File.Delete(DesktopLink(d)); } catch { }
