@@ -519,8 +519,8 @@ class MainActivity : Activity() {
                 if (inst == null) add(button("Установить", primary = true) { installPlugin(def, true) })
                 else {
                     if (inst.version != def.version) add(button("Обновить") { installPlugin(def, isActive) })
-                    if (isActive) add(button("Выключить") { setTheme(null) })
-                    else add(button("Включить", primary = true) { setTheme(def.id) })
+                    if (isActive) add(button("Выключить") { chooseTheme(null) })
+                    else add(button("Включить", primary = true) { chooseTheme(def.id) })
                     add(button("Удалить", danger = true) { removePlugin(def.id) })
                 }
                 c.addView(row, lp(8))
@@ -544,7 +544,7 @@ class MainActivity : Activity() {
         }.start()
     }
 
-    private fun setTheme(id: String?) {
+    private fun chooseTheme(id: String?) {
         Plugins.save(this, Plugins.installed(this), id)
         themeChanged()
     }
