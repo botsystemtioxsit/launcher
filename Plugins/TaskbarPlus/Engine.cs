@@ -162,25 +162,33 @@ sealed class TaskbarEngine : IDisposable
         var r = (int)Math.Round(st.Radius * scale);
         var side = (int)Math.Round(st.SideMargin * scale);
         var gap = (int)Math.Round(st.BottomGap * scale);
+        gap = Math.Min(gap, (int)(h * 0.25)); // зазор снизу не должен «съедать» панель: значки остаются на месте, выше них фигуру не поднять
         var pad = (int)Math.Round(st.IslandPadding * scale);
         var halfGap = (int)Math.Round(st.IslandGap * scale / 2.0);
         var each = st.IslandMode == "each";
         var inset = (int)Math.Round(3 * scale); // небольшой зазор сверху у плавающих форм
-        IntPtr Round(int x1, int y1, int x2, int y2) => Native.CreateRoundRectRgn(x1, y1, x2 + 1, y2 + 1, Math.Max(1, 2 * r), Math.Max(1, 2 * r));
+        // Скругление не больше ~40% меньшей стороны видимой фигуры: остров остаётся скруглённым квадратом, а не кругом.
+        IntPtr Round(int x1, int y1, int x2, int y2, int visibleH)
+        {
+            var minSide = Math.Max(2, Math.Min(x2 - x1, visibleH));
+            var rr = Math.Min(r, (int)(minSide * 0.4));
+            var d = Math.Max(1, 2 * rr);
+            return Native.CreateRoundRectRgn(x1, y1, x2 + 1, y2 + 1, d, d);
+        }
 
         // Плавающая панель и «вкладка» (у «вкладки» скруглён только верх: низ уходит за край окна и обрезается)
         IntPtr Bar(bool tab)
         {
             var x1 = side;
             var x2 = Math.Max(side + 1, w - side);
-            var bar = tab ? Round(x1, 0, x2, h + r) : Round(x1, inset, x2, Math.Max(inset + 1, h - gap));
+            var bar = tab ? Round(x1, 0, x2, h + r, h) : Round(x1, inset, x2, Math.Max(inset + 1, h - gap), Math.Max(1, h - gap - inset));
             if (!st.KeepEdges || clusters == null) return bar;
             foreach (var (l, rr) in clusters)
             {
                 if (l >= side && rr <= w - side) continue; // целиком внутри основной панели
                 var a = Math.Max(0, l - pad);
                 var b = Math.Min(w, rr + pad);
-                var piece = tab ? Round(a, 0, b, h + r) : Round(a, inset, b, Math.Max(inset + 1, h - gap));
+                var piece = tab ? Round(a, 0, b, h + r, h) : Round(a, inset, b, Math.Max(inset + 1, h - gap), Math.Max(1, h - gap - inset));
                 Native.CombineRgn(bar, bar, piece, Native.RGN_OR);
                 Native.DeleteObject(piece);
             }
@@ -203,7 +211,7 @@ sealed class TaskbarEngine : IDisposable
                     var x1 = each ? Math.Max(0, l + halfGap) : Math.Max(0, l - pad);
                     var x2 = each ? Math.Min(w, rr - halfGap) : Math.Min(w, rr + pad);
                     if (x2 - x1 < 4) continue;
-                    var piece = st.IslandStyle == "tab" ? Round(x1, 0, x2, h + r) : Round(x1, inset, x2, Math.Max(inset + 1, h - gap));
+                    var piece = st.IslandStyle == "tab" ? Round(x1, 0, x2, h + r, h) : Round(x1, inset, x2, Math.Max(inset + 1, h - gap), Math.Max(1, h - gap - inset));
                     if (all == IntPtr.Zero) { all = piece; continue; }
                     Native.CombineRgn(all, all, piece, Native.RGN_OR);
                     Native.DeleteObject(piece);
