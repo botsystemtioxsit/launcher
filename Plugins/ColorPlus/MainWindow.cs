@@ -19,6 +19,7 @@ sealed class MainWindow : Window
     static readonly string[] SwatchColors = { "#000000", "#101018", "#202020", "#F2F2F2", "#00F0FF", "#FF2A9D", "#6C4DFF", "#1E6BFF", "#20C27A" };
     static readonly string[] Backdrops = { ColorSettings.BdNone, ColorSettings.BdBlur, ColorSettings.BdAcrylic, ColorSettings.BdMica, ColorSettings.BdTabbed };
     static readonly string[] BackdropLabels = { "Нет", "Размытие", "Акрил", "Слюда", "Вкладки" };
+    static readonly string[] WinModes = { ColorSettings.WmBackground, ColorSettings.WmAlpha, ColorSettings.WmNone };
     static readonly string[] TaskbarModes = { ColorSettings.TbDefault, ColorSettings.TbClear, ColorSettings.TbBlur, ColorSettings.TbSolid };
 
     static Brush Res(string key) => (Brush)Application.Current.FindResource(key);
@@ -42,6 +43,34 @@ sealed class MainWindow : Window
         applyTimer.Tick += (_, _) => { applyTimer.Stop(); settings.Save(); ctl.Apply(settings); ShowStatus(); };
         ctl.Effects.Changed += () => Dispatcher.BeginInvoke(new Action(ShowStatus));
         Build();
+    }
+
+    // Служебный режим для проверки внешнего вида: рисует окно целиком (без прокрутки) в PNG. Запускается из CI: --screenshot=<папка>.
+    public void RenderTo(string path)
+    {
+        Build();
+        var scroll = (ScrollViewer)Content;
+        var content = (FrameworkElement)scroll.Content;
+        scroll.Content = null;
+        // вне окна свойства текста не наследуются — задаём вручную, чтобы снимок выглядел как настоящее окно
+        System.Windows.Documents.TextElement.SetForeground(content, Foreground);
+        System.Windows.Documents.TextElement.SetFontFamily(content, FontFamily);
+        System.Windows.Documents.TextElement.SetFontSize(content, FontSize);
+        content.Measure(new Size(900, double.PositiveInfinity));
+        var w = 900;
+        var h = (int)Math.Ceiling(content.DesiredSize.Height);
+        content.Arrange(new Rect(0, 0, w, h));
+        content.UpdateLayout();
+        var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
+        var bg = new DrawingVisual();
+        using (var dc = bg.RenderOpen()) dc.DrawRectangle(Background, null, new Rect(0, 0, w, h));
+        rtb.Render(bg);
+        rtb.Render(content);
+        var enc = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(rtb));
+        using var fs = System.IO.File.Create(path);
+        enc.Save(fs);
+        scroll.Content = content;
     }
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
@@ -117,8 +146,19 @@ sealed class MainWindow : Window
         };
         if (!settings.WindowsOn) return Card("Окна всех программ", rows);
 
-        rows.Add(SliderRow("Прозрачность окон", "100% — окна как обычно. Меньше — сквозь окно виден рабочий стол и то, что за ним.", 20, 100, settings.WindowOpacity, "%",
-            v => { settings.WindowOpacity = v; Changed(); }));
+        rows.Add(Row("Что делать прозрачным",
+            "«Только фон» — становится прозрачным фон за текстом, картинками и значками, а заголовок, текст, картинки и видео остаются плотными. «Окно целиком» — прозрачно всё, включая видео и заголовок. «Ничего» — окна не просвечивают, работают только цвет заголовка и подложка.",
+            Seg(new[] { "Только фон", "Окно целиком", "Ничего" }, Math.Max(0, Array.IndexOf(WinModes, settings.WindowMode)), i => { settings.WindowMode = WinModes[i]; Changed(); Build(); })));
+        if (settings.WindowMode == ColorSettings.WmBackground)
+        {
+            rows.Add(Row("Если «только фон» невозможен", "Chrome, Edge, Discord, VS Code и магазинные приложения рисуют окно видеокартой — Windows не даёт сделать у них прозрачным один фон. Что с ними делать:",
+                Seg(new[] { "Не трогать окно", "Сделать целиком прозрачным" }, settings.FallbackAlpha ? 1 : 0, i => { settings.FallbackAlpha = i == 1; Changed(); Build(); })));
+        }
+        if (settings.WindowMode == ColorSettings.WmAlpha || (settings.WindowMode == ColorSettings.WmBackground && settings.FallbackAlpha))
+        {
+            rows.Add(SliderRow("Прозрачность окна целиком", "100% — окна как обычно. Меньше — сквозь окно виден рабочий стол и то, что за ним.", 20, 100, settings.WindowOpacity, "%",
+                v => { settings.WindowOpacity = v; Changed(); }));
+        }
 
         var bdIdx = Math.Max(0, Array.IndexOf(Backdrops, settings.Backdrop));
         rows.Add(Row("Что за окном", "Размытие и акрил — матовое стекло; слюда (Mica) и вкладки — мягкий фон Windows 11 за заголовком окна.",
@@ -147,8 +187,10 @@ sealed class MainWindow : Window
             rows.Add(Row("Цвет текста заголовка", "Цвет названия окна", ColorPicker(settings.TitleTextColor ?? "#F2F2F2", hex => { settings.TitleTextColor = hex; Changed(); })));
         }
 
-        rows.Add(Note("Честно о возможностях: прозрачность всего окна работает почти у всех программ. Размытие и «слюда» хорошо видны там, где окно само прозрачно, " +
-                      "а у окон со сплошной заливкой — только у рамки и заголовка. Полноэкранные окна (игры, видео), системные окна и окна самого плагина не трогаются."));
+        rows.Add(Note("Честно о возможностях. «Только фон» работает цветом: прозрачным становится ровно тот цвет, которым залит фон окна (его плагин находит сам). " +
+                      "Поэтому: (1) если шапка окна залита тем же цветом, она тоже станет прозрачной; (2) по прозрачным местам мышь «проваливается» — клик попадёт в то, что лежит за окном; " +
+                      "(3) у краёв букв остаётся тонкая кайма; (4) окна, которые рисуются видеокартой (Chrome, Edge, Telegram, Discord, VS Code, магазинные приложения), так не умеют — снаружи Windows им фон не отдаёт. " +
+                      "Размытие и «слюда» видны там, где окно само прозрачно, у остальных — у рамки и заголовка. Полноэкранные окна (игры, видео), системные окна и окна самого плагина не трогаются."));
         return Card("Окна всех программ", rows);
     }
 
@@ -171,17 +213,22 @@ sealed class MainWindow : Window
         settings.Apps.TryGetValue(name, out var rule);
         var mode = rule?.Mode ?? "inherit";
         var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 6) };
-        panel.Children.Add(Row(name, mode == "skip" ? "Не трогаем" : mode == "custom" ? "Свои настройки" : "Как у всех",
+        ctl.Effects.UnsupportedApps.TryGetValue(name, out var noKey);
+        panel.Children.Add(Row(name, (mode == "skip" ? "Не трогаем" : mode == "custom" ? "Свои настройки" : "Как у всех") + (noKey != null ? " · «только фон» невозможен: " + noKey : ""),
             Seg(new[] { "Как у всех", "Не трогать", "Свои" }, mode == "skip" ? 1 : mode == "custom" ? 2 : 0, i =>
             {
                 if (i == 0) settings.Apps.Remove(name);
-                else settings.Apps[name] = new AppRule { Mode = i == 1 ? "skip" : "custom", Opacity = rule?.Opacity ?? settings.WindowOpacity, Backdrop = rule?.Backdrop };
+                else settings.Apps[name] = new AppRule { Mode = i == 1 ? "skip" : "custom", WinMode = rule?.WinMode, Opacity = rule?.Opacity ?? settings.WindowOpacity, Backdrop = rule?.Backdrop };
                 Changed(); Build();
             })));
         if (mode == "custom" && rule != null)
         {
             var body = new StackPanel { Margin = new Thickness(14, 0, 0, 0) };
-            body.Children.Add(SliderRow("Прозрачность", "Для этой программы", 20, 100, rule.Opacity, "%", v => { rule.Opacity = v; Changed(); }));
+            var wmIdx = rule.WinMode == null ? 0 : Array.IndexOf(WinModes, rule.WinMode) + 1;
+            body.Children.Add(Row("Что делать прозрачным", "Для этой программы",
+                Seg(new[] { "Как у всех", "Только фон", "Окно целиком", "Ничего" }, Math.Max(0, wmIdx), i => { rule.WinMode = i == 0 ? null : WinModes[i - 1]; Changed(); Build(); })));
+            if ((rule.WinMode ?? settings.WindowMode) == ColorSettings.WmAlpha || (rule.WinMode == null && settings.FallbackAlpha && settings.WindowMode == ColorSettings.WmBackground))
+                body.Children.Add(SliderRow("Прозрачность окна целиком", "Для этой программы", 20, 100, rule.Opacity, "%", v => { rule.Opacity = v; Changed(); }));
             var idx = rule.Backdrop == null ? 0 : Array.IndexOf(Backdrops, rule.Backdrop) + 1;
             body.Children.Add(Row("Что за окном", "Для этой программы",
                 Seg(new[] { "Как у всех" }.Concat(BackdropLabels).ToArray(), Math.Max(0, idx), i => { rule.Backdrop = i == 0 ? null : Backdrops[i - 1]; Changed(); Build(); })));

@@ -43,7 +43,7 @@ public static class W
         long ex = GetLong(h, -20).ToInt64();
         string s = "ex=0x" + ex.ToString("X") + " layered=" + (((ex & 0x80000) != 0) ? 1 : 0);
         uint key, flags; byte alpha;
-        if ((ex & 0x80000) != 0 && GetLayeredWindowAttributes(h, out key, out alpha, out flags)) s += " alpha=" + alpha;
+        if ((ex & 0x80000) != 0 && GetLayeredWindowAttributes(h, out key, out alpha, out flags)) s += " alpha=" + alpha + " flags=" + flags + " key=0x" + key.ToString("X6");
         int v;
         if (DwmGetWindowAttribute(h, 38, out v, 4) == 0) s += " backdrop=" + v;
         if (DwmGetWindowAttribute(h, 35, out v, 4) == 0) s += " caption=0x" + ((uint)v).ToString("X8");

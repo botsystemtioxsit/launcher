@@ -53,6 +53,35 @@ sealed class MainWindow : Window
         Dispatcher.BeginInvoke(new Action(MaybeAskRestart));
     }
 
+    // Служебный режим для проверки внешнего вида: рисует окно целиком (без прокрутки) в PNG. Запускается из CI: --screenshot=<папка>.
+    public void RenderTo(string path, params string[] open)
+    {
+        foreach (var k in open) openIslands.Add(k);
+        Build();
+        var scroll = (ScrollViewer)Content;
+        var content = (FrameworkElement)scroll.Content;
+        scroll.Content = null;
+        // вне окна свойства текста не наследуются — задаём вручную, чтобы снимок выглядел как настоящее окно
+        System.Windows.Documents.TextElement.SetForeground(content, Foreground);
+        System.Windows.Documents.TextElement.SetFontFamily(content, FontFamily);
+        System.Windows.Documents.TextElement.SetFontSize(content, FontSize);
+        content.Measure(new Size(900, double.PositiveInfinity));
+        var w = 900;
+        var h = (int)Math.Ceiling(content.DesiredSize.Height);
+        content.Arrange(new Rect(0, 0, w, h));
+        content.UpdateLayout();
+        var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
+        var bg = new DrawingVisual();
+        using (var dc = bg.RenderOpen()) dc.DrawRectangle(Background, null, new Rect(0, 0, w, h));
+        rtb.Render(bg);
+        rtb.Render(content);
+        var enc = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(rtb));
+        using var fs = System.IO.File.Create(path);
+        enc.Save(fs);
+        scroll.Content = content;
+    }
+
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
         // Форма держится, пока работает плагин: закрытие окна просто прячет его в фон.

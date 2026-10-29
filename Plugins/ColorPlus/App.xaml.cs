@@ -1,3 +1,4 @@
+using System.IO;
 using System.Threading;
 using System.Windows;
 
@@ -21,6 +22,9 @@ public partial class App : Application
     {
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        var shot = e.Args.FirstOrDefault(a => a.StartsWith("--screenshot="));
+        if (shot != null) { RenderScreenshots(shot["--screenshot=".Length..]); Quitting = true; Shutdown(); return; }
 
         // Одна копия: повторный запуск (из лаунчера или ярлыка) просто показывает окно уже работающей.
         mutex = new Mutex(true, MutexName, out var first);
@@ -59,6 +63,25 @@ public partial class App : Application
 
         if (background && !settings.Active) { Quitting = true; Shutdown(); return; } // фоновый запуск без эффектов — делать нечего
         if (!background) ShowWindow();
+    }
+
+    // Служебный режим для CI: рисует окно настроек с выдуманными настройками в PNG и выходит (ничего не применяя).
+    static void RenderScreenshots(string dir)
+    {
+        try
+        {
+            Directory.CreateDirectory(dir);
+            var s = new ColorSettings
+            {
+                WindowsOn = true, Backdrop = ColorSettings.BdAcrylic, TitleColor = "#101018", TitleTextColor = "#F2F2F2",
+                TaskbarOn = true, TaskbarMode = ColorSettings.TbBlur, SelectionOn = true, AccentOn = true,
+            };
+            s.Apps["notepad"] = new AppRule { Mode = "custom", Opacity = 70, Backdrop = ColorSettings.BdMica };
+            s.Apps["chrome"] = new AppRule { Mode = "skip" };
+            var w = new MainWindow(new Controller(), s);
+            w.RenderTo(Path.Combine(dir, "color-plus-ui.png"));
+        }
+        catch (Exception ex) { File.WriteAllText(Path.Combine(dir, "color-plus-ui-error.txt"), ex.ToString()); }
     }
 
     void ShowWindow()
