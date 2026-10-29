@@ -9,8 +9,10 @@
 //  4. Мы подписываемся на изменения дерева элементов (AdviseVisualTreeChange) и меняем нужные элементы (styler.cpp).
 // Настройки читаются из файла, состояние пишется в файл-статус; общение с плагином больше ничем не идёт.
 #include "styler.h"
+#include <algorithm>
 #include <atomic>
 #include <new>
+#include <set>
 #include <thread>
 
 // Случайный идентификатор нашего анализатора, чужие не используем.
@@ -20,6 +22,7 @@ static HINSTANCE g_module = nullptr;
 static std::atomic<bool> g_started{ false };
 static std::atomic<bool> g_connected{ false };
 static std::atomic<int> g_connectTries{ 0 };
+static std::atomic<int> g_sessions{ 0 };
 static std::atomic<bool> g_stopWatcher{ false };
 
 // ---------- статус для плагина ----------
@@ -36,6 +39,8 @@ static void WriteStatus(const wchar_t* state, const wchar_t* error)
     put(L"pid", num(GetCurrentProcessId()));
     put(L"tick", num((long long)GetTickCount64()));
     put(L"module", modulePath);
+    put(L"sessions", num(g_sessions.load()));
+    put(L"threads", num(st.threads));
     put(L"nodes", num(st.nodes));
     put(L"bgfill", num(st.bgFill));
     put(L"stroke", num(st.bgStroke));
@@ -57,7 +62,9 @@ static void WriteStatus(const wchar_t* state, const wchar_t* error)
 class TreeCallback final : public IVisualTreeServiceCallback2
 {
     LONG refs_ = 1;
+    IXamlDiagnostics* diag_;   // ссылку держим до конца работы Проводника: освобождать её из случайного потока опасно
 public:
+    explicit TreeCallback(IXamlDiagnostics* diag) : diag_(diag) { if (diag_) diag_->AddRef(); }
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv) override
     {
         if (!ppv) return E_POINTER;
@@ -79,7 +86,7 @@ public:
     }
     HRESULT STDMETHODCALLTYPE OnVisualTreeChange(ParentChildRelation relation, VisualElement element, VisualMutationType mutationType) override
     {
-        return Styler::OnChange(relation, element, mutationType);
+        return Styler::OnChange(diag_, relation, element, mutationType);
     }
     HRESULT STDMETHODCALLTYPE OnElementStateChanged(InstanceHandle, VisualElementState, LPCWSTR) override { return S_OK; }
 };
@@ -129,13 +136,14 @@ public:
                 Log(L"SetSite: нет IXamlDiagnostics");
                 return S_OK;
             }
-            Styler::SetDiagnostics(diag); // держит свою ссылку
-            diag->Release();
+            diag->Release(); // у подписки (TreeCallback) своя ссылка
 
             // Подписку нельзя делать прямо здесь: этот вызов идёт из потока XAML, а подписка ждёт ответа от него же.
             IUnknown* keep = site_;
             keep->AddRef();
-            std::thread([keep]()
+            IXamlDiagnostics* diagForCallback = nullptr;
+            keep->QueryInterface(__uuidof(IXamlDiagnostics), (void**)&diagForCallback);
+            std::thread([keep, diagForCallback]()
             {
                 CoInitializeEx(nullptr, COINIT_MULTITHREADED);
                 // просим расширенный интерфейс; на старых Windows хватит и базового
@@ -145,7 +153,7 @@ public:
                 if (FAILED(hr) || !service) hr = keep->QueryInterface(__uuidof(IVisualTreeService), (void**)&service);
                 if (SUCCEEDED(hr) && service)
                 {
-                    auto* cb = new TreeCallback(); // ссылку держит служба XAML
+                    auto* cb = new TreeCallback(diagForCallback); // ссылку держит служба XAML
                     hr = service->AdviseVisualTreeChange(cb);
                     cb->Release();
                     Log(L"подписка на дерево элементов: 0x%08X", (unsigned)hr);
@@ -153,6 +161,7 @@ public:
                     service->Release();
                 }
                 else Log(L"нет IVisualTreeService: 0x%08X", (unsigned)hr);
+                if (diagForCallback) diagForCallback->Release();
                 keep->Release();
                 CoUninitialize();
             }).detach();
@@ -217,21 +226,37 @@ static void ConnectToXaml()
         return;
     }
 
-    // Панель может ещё грузиться: пробуем до 30 секунд. Каждое имя подключения годится только один раз.
-    for (int i = 1; i <= 60 && !g_connected; ++i)
+    // У каждого окна XAML в Проводнике (панель, всплывающее окно скрытых значков, другие мониторы) своё подключение
+    // «VisualDiagConnection<N>»: номера выдаёт сам XAML, а закрытые окна их освобождают. Какое из них — панель, заранее
+    // неизвестно, поэтому подключаемся ко всем существующим (несуществующее отвечает ERROR_NOT_FOUND) и периодически
+    // проверяем снова: так подхватываются окна, появившиеся позже (второй монитор, перезапуск панели).
+    std::set<int> done;
+    int highest = 0, logged = 0;
+    for (int round = 0; !g_stopWatcher; ++round)
     {
-        g_connectTries = i;
-        wchar_t name[64];
-        _snwprintf_s(name, _TRUNCATE, L"VisualDiagConnection%d", i);
-        HRESULT hr = init(name, GetCurrentProcessId(), nullptr, modulePath, CLSID_GhostShellTap, nullptr);
-        Log(L"InitializeXamlDiagnosticsEx(%s): 0x%08X", name, (unsigned)hr);
-        if (SUCCEEDED(hr))
+        g_connectTries = round + 1;
+        const int limit = std::min(300, std::max(60, highest + 40));
+        for (int i = 1; i <= limit; ++i)
         {
-            // подключение идёт асинхронно: ждём, пока придёт подписка
-            for (int w = 0; w < 20 && !g_connected; ++w) Sleep(100);
-            if (g_connected) break;
+            if (done.count(i)) continue;
+            wchar_t name[64];
+            _snwprintf_s(name, _TRUNCATE, L"VisualDiagConnection%d", i);
+            HRESULT hr = init(name, GetCurrentProcessId(), nullptr, modulePath, CLSID_GhostShellTap, nullptr);
+            if (SUCCEEDED(hr))
+            {
+                done.insert(i);
+                highest = std::max(highest, i);
+                ++g_sessions;
+                Log(L"подключение %s установлено (сессий: %d)", name, g_sessions.load());
+            }
+            else if (hr != HRESULT_FROM_WIN32(ERROR_NOT_FOUND) && logged < 30)
+            {
+                ++logged;
+                Log(L"InitializeXamlDiagnosticsEx(%s): 0x%08X", name, (unsigned)hr);
+            }
         }
-        Sleep(500);
+        // первые полминуты проверяем часто (панель могла ещё не загрузиться), потом реже
+        Sleep(round < 40 ? 750 : 4000);
     }
 }
 

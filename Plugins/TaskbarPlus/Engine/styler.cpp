@@ -40,7 +40,7 @@ namespace aut = winrt::Windows::UI::Xaml::Automation;
 
 namespace
 {
-    enum class Kind { BgFill = 1, BgStroke = 2, App = 3, Widgets = 4, System = 5 };
+    enum class Kind { BgFill = 1, BgStroke = 2, App = 3, Widgets = 4, System = 5, Pill = 6 };
 
     // номера групп в настройках: 0 виджеты, 1 системная область, 2 значки приложений
     int GroupOf(Kind k) { return k == Kind::Widgets ? 0 : k == Kind::System ? 1 : k == Kind::App ? 2 : -1; }
@@ -102,17 +102,40 @@ namespace
         Box b;
     };
 
-    // ----- состояние (поток XAML) -----
-    IXamlDiagnostics* g_diag = nullptr;
-    std::unordered_map<uint64_t, Item> g_items;
-    std::vector<Host> g_hosts;
-    xaml::DispatcherTimer g_timer{ nullptr };
-    int g_tick = 0;
-    int g_appliedGen = -1;
-    std::wstring g_layoutSig;
-    std::string g_islandsListed;
-    std::vector<Rule> g_rules;
-    std::string g_rulesSig = "?";
+    // ----- состояние потока XAML -----
+    // У каждого окна XAML в Проводнике (панель, всплывающее окно скрытых значков, дополнительные мониторы) свой поток,
+    // и объекты XAML можно трогать только в нём. Поэтому всё, что связано с элементами, хранится отдельно для каждого потока.
+    // Состояние намеренно никогда не освобождается: при закрытии окна XAML уже разобран, и освобождать его объекты поздно.
+    struct TS
+    {
+        IXamlDiagnostics* diag = nullptr;
+        std::unordered_map<uint64_t, Item> items;
+        std::vector<Host> hosts;
+        xaml::DispatcherTimer timer{ nullptr };
+        int tick = 0;
+        int appliedGen = -1;
+        std::wstring layoutSig;
+        std::string islandsListed;
+        std::vector<Rule> rules;
+        std::string rulesSig = "?";
+        // счётчики читает поток наблюдателя
+        std::atomic<int> nBgFill{ 0 }, nBgStroke{ 0 }, nApps{ 0 }, nWidgets{ 0 }, nSystem{ 0 }, nIslands{ 0 }, nHosts{ 0 };
+    };
+
+    std::mutex g_registryLock;
+    std::vector<TS*> g_registry;
+    thread_local TS* t_state = nullptr;
+
+    TS& T()
+    {
+        if (!t_state)
+        {
+            t_state = new TS();
+            std::lock_guard<std::mutex> l(g_registryLock);
+            g_registry.push_back(t_state);
+        }
+        return *t_state;
+    }
 
     // ----- общее для потоков -----
     std::mutex g_cfgLock;
@@ -120,9 +143,9 @@ namespace
     std::mutex g_treeLock;
     std::unordered_map<uint64_t, Node> g_nodes;
     uint32_t g_order = 0;
-    std::atomic<int> g_nBgFill{ 0 }, g_nBgStroke{ 0 }, g_nApps{ 0 }, g_nWidgets{ 0 }, g_nSystem{ 0 }, g_nIslands{ 0 }, g_nHosts{ 0 }, g_nRects{ 0 };
+    std::atomic<int> g_nRects{ 0 };
     std::atomic<bool> g_applied{ false }, g_queueOk{ false };
-    std::atomic<int> g_cfgGen{ 0 };
+    std::atomic<int> g_cfgGen{ 0 };               // растёт при каждой смене настроек; каждый поток XAML замечает это на своём тике
     std::mutex g_noteLock;
     std::wstring g_rectNames;     // имена прямоугольников, увиденных на панели (для отчёта, если фон не нашёлся)
 
@@ -156,21 +179,22 @@ namespace
             { 3, "Taskbar.SearchBoxButton", "" },
             { 4, "Taskbar.AugmentedEntryPointButton", "" },
             { 5, "SystemTray.*", "" },
+            { 6, "Windows.UI.Xaml.Controls.Border", "BackgroundBorder" },   // собственная плашка значка трея
         };
     }
 
     int Classify(const std::wstring& type, const std::wstring& name)
     {
-        for (auto& r : g_rules)
+        for (auto& r : T().rules)
             if (Glob(r.type, type) && Glob(r.name, name)) return r.kind;
         return 0;
     }
 
     void SyncRules(const Config& c)
     {
-        if (g_rulesSig == c.rulesSig && !g_rules.empty()) return;
-        g_rulesSig = c.rulesSig;
-        g_rules = c.rules.empty() ? DefaultRules() : c.rules;
+        if (T().rulesSig == c.rulesSig && !T().rules.empty()) return;
+        T().rulesSig = c.rulesSig;
+        T().rules = c.rules.empty() ? DefaultRules() : c.rules;
     }
 
     // ---------- цвета и кисти ----------
@@ -341,19 +365,19 @@ namespace
 
     void ResetShifts()
     {
-        for (auto& kv : g_items)
+        for (auto& kv : T().items)
             if (kv.second.tx) { try { kv.second.tx.X(0); } catch (...) {} }
     }
 
     void ClearAllShifts()
     {
-        for (auto& kv : g_items) ClearShift(kv.second);
+        for (auto& kv : T().items) ClearShift(kv.second);
     }
 
     // Windows могла заменить RenderTransform (например, для своей анимации) — тогда ставим свой сдвиг заново.
     void ReassertShifts()
     {
-        for (auto& kv : g_items)
+        for (auto& kv : T().items)
         {
             auto& it = kv.second;
             if (!it.installed) continue;
@@ -390,8 +414,8 @@ namespace
         {
             cur = ParentOf(cur);
             if (!cur) break;
-            for (size_t k = 0; k < g_hosts.size(); ++k)
-                if (g_hosts[k].fill && g_hosts[k].panel == cur) { g_hosts[k].seen = true; return (int)k; }
+            for (size_t k = 0; k < T().hosts.size(); ++k)
+                if (T().hosts[k].fill && T().hosts[k].panel == cur) { T().hosts[k].seen = true; return (int)k; }
             if (auto p = cur.try_as<ctl::Panel>())
             {
                 if (!widest) widest = p;
@@ -399,20 +423,20 @@ namespace
             }
         }
         if (!widest) return -1;
-        for (size_t k = 0; k < g_hosts.size(); ++k)
-            if (g_hosts[k].panel == widest) { g_hosts[k].seen = true; return (int)k; }
+        for (size_t k = 0; k < T().hosts.size(); ++k)
+            if (T().hosts[k].panel == widest) { T().hosts[k].seen = true; return (int)k; }
         Host h;
         h.panel = widest;
         h.seen = true;
-        g_hosts.push_back(std::move(h));
-        return (int)g_hosts.size() - 1;
+        T().hosts.push_back(std::move(h));
+        return (int)T().hosts.size() - 1;
     }
 
     // Хозяева по найденным фонам панели (до замеров значков).
     void CollectBarHosts()
     {
-        for (auto& h : g_hosts) h.seen = false;
-        for (auto& kv : g_items)
+        for (auto& h : T().hosts) h.seen = false;
+        for (auto& kv : T().items)
         {
             if (kv.second.kind != Kind::BgFill) continue;
             auto fe = kv.second.obj.try_as<xaml::FrameworkElement>();
@@ -420,7 +444,7 @@ namespace
             auto parent = ParentOf(fe).try_as<ctl::Panel>();
             if (!parent) continue;
             bool found = false;
-            for (auto& h : g_hosts)
+            for (auto& h : T().hosts)
                 if (h.panel == parent) { h.fill = fe; h.nativeFill = kv.second.saved ? kv.second.origFill : med::Brush{ nullptr }; h.seen = true; found = true; break; }
             if (found) continue;
             Host h;
@@ -428,7 +452,7 @@ namespace
             h.fill = fe;
             h.nativeFill = kv.second.saved ? kv.second.origFill : med::Brush{ nullptr };
             h.seen = true;
-            g_hosts.push_back(std::move(h));
+            T().hosts.push_back(std::move(h));
         }
     }
 
@@ -449,11 +473,11 @@ namespace
 
     void RemoveIslands()
     {
-        for (auto& h : g_hosts) RemoveBorders(h);
-        g_hosts.clear();
-        g_layoutSig.clear();
-        g_nIslands = 0;
-        g_nHosts = 0;
+        for (auto& h : T().hosts) RemoveBorders(h);
+        T().hosts.clear();
+        T().layoutSig.clear();
+        T().nIslands = 0;
+        T().nHosts = 0;
     }
 
     // ---------- имена значков ----------
@@ -512,7 +536,7 @@ namespace
         wchar_t buf[96];
         _snwprintf_s(buf, _TRUNCATE, L"%d|", g_cfgGen.load());
         sig += buf;
-        for (auto& kv : g_items)
+        for (auto& kv : T().items)
         {
             auto& it = kv.second;
             if (it.kind == Kind::BgFill || it.kind == Kind::BgStroke) continue;
@@ -540,8 +564,8 @@ namespace
         for (int i = 0; i < 200 && n != g_nodes.end(); ++i)
         {
             if (n->second.parent == 0) return false;
-            auto p = g_items.find(n->second.parent);
-            if (p != g_items.end() && p->second.kind == kind) return true;
+            auto p = T().items.find(n->second.parent);
+            if (p != T().items.end() && p->second.kind == kind) return true;
             n = g_nodes.find(n->second.parent);
         }
         return false;
@@ -625,8 +649,8 @@ namespace
         if (haveWidgets) text += "widgets||\n";
         if (haveSystem) text += "system||\n";
         for (auto& a : apps) text += "app|" + a.first + "|" + HexOf(a.second) + "\n";
-        if (text == g_islandsListed) return;
-        g_islandsListed = text;
+        if (text == T().islandsListed) return;
+        T().islandsListed = text;
         WriteTextAtomic(DataDir() + L"\\taskbar-plus-engine-islands.txt", text);
     }
 
@@ -636,21 +660,30 @@ namespace
         const bool wantLayout = c.enabled && c.LayoutActive();
         if (!wantIslands && !wantLayout)
         {
-            if (!g_hosts.empty()) RemoveIslands();
+            if (!T().hosts.empty()) RemoveIslands();
             ClearAllShifts();
-            g_layoutSig.clear();
+            T().layoutSig.clear();
             return;
         }
 
+        // У окон XAML без панели задач (например, всплывающее окно скрытых значков) нечего двигать и рисовать.
+        bool hasTaskbar = false;
+        for (auto& kv : T().items)
+        {
+            const Kind k = kv.second.kind;
+            if (k == Kind::BgFill || k == Kind::App || k == Kind::Widgets || (k == Kind::System && kv.second.type == L"SystemTray.SystemTrayFrame")) { hasTaskbar = true; break; }
+        }
+        if (!hasTaskbar) return;
+
         auto sig = Signature(c);
-        if (!force && sig == g_layoutSig) return;
-        g_layoutSig = sig;
+        if (!force && sig == T().layoutSig) return;
+        T().layoutSig = sig;
 
         CollectBarHosts();
         ResetShifts(); // замеры делаем без наших сдвигов — так «базовые» места не зависят от прошлого расчёта
 
-        std::vector<std::vector<Meas>> ms(g_hosts.size());
-        for (auto& kv : g_items)
+        std::vector<std::vector<Meas>> ms(T().hosts.size());
+        for (auto& kv : T().items)
         {
             auto& it = kv.second;
             if (it.kind != Kind::App && it.kind != Kind::Widgets && it.kind != Kind::System) continue;
@@ -663,8 +696,8 @@ namespace
                 if (w < 2 || h < 2) continue;
                 const int hi = HostIndexFor(fe);
                 if (hi < 0) continue;
-                if ((size_t)hi >= ms.size()) ms.resize(g_hosts.size());
-                auto pt = fe.TransformToVisual(g_hosts[hi].panel).TransformPoint(wf::Point{ 0, 0 });
+                if ((size_t)hi >= ms.size()) ms.resize(T().hosts.size());
+                auto pt = fe.TransformToVisual(T().hosts[hi].panel).TransformPoint(wf::Point{ 0, 0 });
                 Meas m;
                 m.it = &it;
                 m.handle = kv.first;
@@ -675,21 +708,21 @@ namespace
             }
             catch (...) { /* элемент как раз пересобирается — в следующий раз */ }
         }
-        if (ms.size() < g_hosts.size()) ms.resize(g_hosts.size());
+        if (ms.size() < T().hosts.size()) ms.resize(T().hosts.size());
 
         // убрать хозяев, которых больше нет
-        for (size_t k = g_hosts.size(); k-- > 0;)
-            if (!g_hosts[k].seen && ms[k].empty()) { RemoveBorders(g_hosts[k]); g_hosts.erase(g_hosts.begin() + k); ms.erase(ms.begin() + k); }
-        g_nHosts = (int)g_hosts.size();
+        for (size_t k = T().hosts.size(); k-- > 0;)
+            if (!T().hosts[k].seen && ms[k].empty()) { RemoveBorders(T().hosts[k]); T().hosts.erase(T().hosts.begin() + k); ms.erase(ms.begin() + k); }
+        T().nHosts = (int)T().hosts.size();
 
         int totalIslands = 0;
         std::vector<std::pair<std::string, std::wstring>> listApps;
         bool listWidgets = false, listSystem = false;
         std::set<Item*> measured;
 
-        for (size_t hk = 0; hk < g_hosts.size(); ++hk)
+        for (size_t hk = 0; hk < T().hosts.size(); ++hk)
         {
-            auto& host = g_hosts[hk];
+            auto& host = T().hosts[hk];
             auto& list = ms[hk];
 
             bool present[3] = { false, false, false };
@@ -844,10 +877,10 @@ namespace
             }
         }
 
-        for (auto& kv : g_items)
+        for (auto& kv : T().items)
             if (GroupOf(kv.second.kind) >= 0 && !measured.count(&kv.second)) ClearShift(kv.second);
 
-        g_nIslands = totalIslands;
+        T().nIslands = totalIslands;
         if (wantIslands) WriteIslandList(listApps, listWidgets, listSystem);
     }
 
@@ -855,7 +888,7 @@ namespace
     void RecountItems()
     {
         int bg = 0, st = 0, ap = 0, wi = 0, sy = 0;
-        for (auto& kv : g_items)
+        for (auto& kv : T().items)
             switch (kv.second.kind)
             {
                 case Kind::BgFill: ++bg; break;
@@ -863,22 +896,23 @@ namespace
                 case Kind::App: ++ap; break;
                 case Kind::Widgets: ++wi; break;
                 case Kind::System: ++sy; break;
+                case Kind::Pill: break;
             }
-        g_nBgFill = bg; g_nBgStroke = st; g_nApps = ap; g_nWidgets = wi; g_nSystem = sy;
+        T().nBgFill = bg; T().nBgStroke = st; T().nApps = ap; T().nWidgets = wi; T().nSystem = sy;
     }
 
     bool AddItem(InstanceHandle handle, const std::wstring& type, const std::wstring& name, int kind)
     {
-        if (!g_diag || kind == 0) return false;
+        if (!T().diag || kind == 0) return false;
         IInspectable* raw = nullptr;
-        if (FAILED(g_diag->GetIInspectableFromHandle(handle, &raw)) || !raw) return false;
+        if (FAILED(T().diag->GetIInspectableFromHandle(handle, &raw)) || !raw) return false;
         wf::IInspectable obj{ raw, winrt::take_ownership_from_abi };
         Item it;
         it.kind = (Kind)kind;
         it.type = type;
         it.name = name;
         it.obj = obj;
-        g_items[Key(handle)] = std::move(it);
+        T().items[Key(handle)] = std::move(it);
         return true;
     }
 
@@ -899,17 +933,56 @@ namespace
             if (kind == 0) continue;
             const uint64_t k = Key(n.handle);
             want.insert(k);
-            auto it = g_items.find(k);
-            if (it != g_items.end() && (int)it->second.kind == kind) continue;
-            if (it != g_items.end()) { ClearShift(it->second); g_items.erase(it); }
+            auto it = T().items.find(k);
+            if (it != T().items.end() && (int)it->second.kind == kind) continue;
+            if (it != T().items.end()) { ClearShift(it->second); T().items.erase(it); }
             try { AddItem(n.handle, n.type, n.name, kind); } catch (...) {}
         }
-        for (auto it = g_items.begin(); it != g_items.end();)
+        for (auto it = T().items.begin(); it != T().items.end();)
         {
-            if (!want.count(it->first)) { ClearShift(it->second); it = g_items.erase(it); }
+            if (!want.count(it->first)) { ClearShift(it->second); it = T().items.erase(it); }
             else ++it;
         }
         RecountItems();
+    }
+
+
+    // «Плашки» значков системной области: у каждого значка трея и у часов в новых сборках Windows свой скруглённый фон.
+    // Системная область должна выглядеть одним блоком, поэтому собственные плашки внутри неё гасим (наведение мыши
+    // по-прежнему подсвечивает значок — это делает анимация состояния, она сильнее нашего значения).
+    void ApplyPills(const Config& c)
+    {
+        bool hasTaskbar = false;
+        for (auto& kv : T().items)
+        {
+            const Kind k = kv.second.kind;
+            if (k == Kind::BgFill || k == Kind::App || k == Kind::Widgets || (k == Kind::System && kv.second.type == L"SystemTray.SystemTrayFrame")) { hasTaskbar = true; break; }
+        }
+        const bool unify = c.enabled && c.unifySystem && hasTaskbar;
+        for (auto& kv : T().items)
+        {
+            auto& it = kv.second;
+            if (it.kind != Kind::Pill) continue;
+            try
+            {
+                auto fe = it.obj.try_as<xaml::FrameworkElement>();
+                if (!fe) continue;
+                const bool mine = unify && HasAncestorInKind(kv.first, Kind::System);
+                if (mine)
+                {
+                    if (!it.saved) { it.origFill = GetFill(it.obj); it.origOpacity = fe.Opacity(); it.saved = true; }
+                    SetFill(it.obj, MakeBrush(2, 0, 0));
+                    fe.Opacity(0.0);
+                }
+                else if (it.saved)
+                {
+                    SetFill(it.obj, it.origFill);
+                    fe.Opacity(it.origOpacity);
+                    it.saved = false;
+                }
+            }
+            catch (...) { /* элемент как раз пересобирается — в следующий раз */ }
+        }
     }
 
     void ApplyAll()
@@ -917,13 +990,14 @@ namespace
         try
         {
             auto c = CurrentConfig();
-            if (g_rulesSig != c.rulesSig || g_rules.empty()) RescanAll(c);
-            for (auto& kv : g_items)
+            if (T().rulesSig != c.rulesSig || T().rules.empty()) RescanAll(c);
+            for (auto& kv : T().items)
                 if (kv.second.kind == Kind::BgFill || kv.second.kind == Kind::BgStroke)
                 {
                     try { ApplyBar(kv.second, c); }
                     catch (winrt::hresult_error const& e) { Log(L"применение: ошибка 0x%08X", (unsigned)e.code().value); }
                 }
+            ApplyPills(c);
             try { Relayout(c, true); }
             catch (winrt::hresult_error const& e) { Log(L"расположение: ошибка 0x%08X", (unsigned)e.code().value); }
             g_applied = c.enabled;
@@ -936,9 +1010,9 @@ namespace
     {
         try
         {
-            if (g_cfgGen.load() != g_appliedGen)
+            if (g_cfgGen.load() != T().appliedGen)
             {
-                g_appliedGen = g_cfgGen.load();
+                T().appliedGen = g_cfgGen.load();
                 ApplyAll();
                 return;
             }
@@ -946,15 +1020,16 @@ namespace
             if (!c.enabled) return;
             try { Relayout(c, false); }
             catch (winrt::hresult_error const& e) { Log(L"расположение: ошибка 0x%08X", (unsigned)e.code().value); }
-            if (++g_tick % 4 == 0)
+            if (++T().tick % 4 == 0)
             {
-                for (auto& kv : g_items)
+                for (auto& kv : T().items)
                 {
                     auto& it = kv.second;
                     if (it.kind != Kind::BgFill || !it.ourFill) continue;
                     if (GetFill(it.obj) != it.ourFill) ApplyBar(it, c);
                 }
                 ReassertShifts();
+                ApplyPills(c);
             }
         }
         catch (...) { /* следующий тик */ }
@@ -962,13 +1037,13 @@ namespace
 
     void EnsureTimer()
     {
-        if (g_timer) return;
+        if (T().timer) return;
         try
         {
-            g_timer = xaml::DispatcherTimer();
-            g_timer.Interval(std::chrono::milliseconds(250));
-            g_timer.Tick([](auto&&, auto&&) { OnTick(); });
-            g_timer.Start();
+            T().timer = xaml::DispatcherTimer();
+            T().timer.Interval(std::chrono::milliseconds(250));
+            T().timer.Tick([](auto&&, auto&&) { OnTick(); });
+            T().timer.Start();
             g_queueOk = true;
         }
         catch (winrt::hresult_error const& e) { Log(L"таймер XAML: ошибка 0x%08X", (unsigned)e.code().value); }
@@ -984,14 +1059,10 @@ namespace
 
 namespace Styler
 {
-    void SetDiagnostics(IXamlDiagnostics* diag)
+    HRESULT OnChange(IXamlDiagnostics* diag, const ParentChildRelation& relation, const VisualElement& elementIn, VisualMutationType mutation)
     {
-        if (diag) diag->AddRef();
-        g_diag = diag;
-    }
-
-    HRESULT OnChange(const ParentChildRelation& relation, const VisualElement& elementIn, VisualMutationType mutation)
-    {
+        // Каждый поток XAML запоминает «свою» диагностику: элементы можно получить по номеру только через неё.
+        if (diag && T().diag != diag) { diag->AddRef(); T().diag = diag; }
         // Строки в VisualElement отдаются нам во владение — освобождаем их сами.
         VisualElement element = elementIn;
         BstrGuard gFile(element.SrcInfo.FileName), gHash(element.SrcInfo.Hash), gName(element.Name), gType(element.Type);
@@ -1004,11 +1075,11 @@ namespace Styler
                     std::lock_guard<std::mutex> l(g_treeLock);
                     g_nodes.erase(key);
                 }
-                auto it = g_items.find(key);
-                if (it != g_items.end())
+                auto it = T().items.find(key);
+                if (it != T().items.end())
                 {
                     ClearShift(it->second);
-                    g_items.erase(it);
+                    T().items.erase(it);
                     RecountItems();
                 }
                 return S_OK;
@@ -1049,7 +1120,7 @@ namespace Styler
             if (kind != 0 && AddItem(element.Handle, type, name, kind))
             {
                 RecountItems();
-                auto& it = g_items[key];
+                auto& it = T().items[key];
                 if (it.kind == Kind::BgFill || it.kind == Kind::BgStroke)
                     ApplyBar(it, c); // и при выключенном движке: запоминает исходный вид, чтобы его можно было вернуть
             }
@@ -1058,7 +1129,7 @@ namespace Styler
         catch (...) { Log(L"OnChange: неожиданная ошибка"); }
         try
         {
-            if (g_cfgGen.load() != g_appliedGen) { g_appliedGen = g_cfgGen.load(); ApplyAll(); } // запасной путь, если таймер XAML не тикает
+            if (g_cfgGen.load() != T().appliedGen) { T().appliedGen = g_cfgGen.load(); ApplyAll(); } // запасной путь, если таймер XAML не тикает
         }
         catch (...) {}
         return S_OK; // ошибка здесь не должна ломать панель
@@ -1113,8 +1184,16 @@ namespace Styler
     {
         StylerStats s;
         { std::lock_guard<std::mutex> l(g_treeLock); s.nodes = (int)g_nodes.size(); }
-        s.bgFill = g_nBgFill; s.bgStroke = g_nBgStroke; s.apps = g_nApps; s.widgets = g_nWidgets; s.system = g_nSystem;
-        s.islands = g_nIslands; s.hosts = g_nHosts; s.rects = g_nRects;
+        {
+            std::lock_guard<std::mutex> l(g_registryLock);
+            s.threads = (int)g_registry.size();
+            for (auto* t : g_registry)
+            {
+                s.bgFill += t->nBgFill; s.bgStroke += t->nBgStroke; s.apps += t->nApps; s.widgets += t->nWidgets; s.system += t->nSystem;
+                s.islands += t->nIslands; s.hosts += t->nHosts;
+            }
+        }
+        s.rects = g_nRects;
         s.applied = g_applied; s.queueOk = g_queueOk;
         { std::lock_guard<std::mutex> l(g_noteLock); s.rectNames = g_rectNames; }
         return s;

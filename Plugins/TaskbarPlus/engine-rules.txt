@@ -5,6 +5,7 @@
 #   app      — «Пуск», поиск и значки программ
 #   widgets  — виджеты (погода и т. п.)
 #   system   — часы, язык, сеть, звук, скрытые значки: всегда один объект
+#   pill     — собственная плашка значка внутри системной области (её гасим, чтобы область была одним блоком)
 # Плагин скачивает этот файл при запуске (raw.githubusercontent.com, ветка main): так названия элементов
 # можно подправить под другую сборку Windows без нового выпуска плагина.
 bgfill|Windows.UI.Xaml.Shapes.Rectangle|BackgroundFill
@@ -14,3 +15,4 @@ app|Taskbar.ExperienceToggleButton|
 app|Taskbar.SearchBoxButton|
 widgets|Taskbar.AugmentedEntryPointButton|
 system|SystemTray.*|
+pill|Windows.UI.Xaml.Controls.Border|BackgroundBorder
