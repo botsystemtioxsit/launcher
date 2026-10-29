@@ -22,6 +22,18 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      # Движок Taskbar Plus для Windows 11 (C++ DLL, подключается к панели задач). Собираем первым — если не соберётся, дальше идти незачем.
+      # Файл вкладывается в TaskbarPlus.exe (см. TaskbarPlus.csproj), отдельно его скачивать не нужно.
+      - name: Build Taskbar Plus engine
+        shell: pwsh
+        run: |
+          cmake -S Plugins/TaskbarPlus/Engine -B Plugins/TaskbarPlus/Engine/build -A x64
+          if ($LASTEXITCODE -ne 0) { throw 'cmake: настройка не удалась' }
+          cmake --build Plugins/TaskbarPlus/Engine/build --config Release
+          if ($LASTEXITCODE -ne 0) { throw 'cmake: сборка движка не удалась' }
+          if (-not (Test-Path Plugins/TaskbarPlus/Engine/out/GhostShellTap.dll)) { throw 'GhostShellTap.dll не появился' }
+          Get-Item Plugins/TaskbarPlus/Engine/out/GhostShellTap.dll | Select-Object Name, Length
+
       # Один самодостаточный .exe: .NET внутри, ставить ничего на компьютер не нужно.
       - name: Publish
         run: >

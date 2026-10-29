@@ -6,3 +6,4 @@ Android/**/build/
 Android/.gradle/
 Android/local.properties
 *.apk
+Plugins/TaskbarPlus/Engine/build/
