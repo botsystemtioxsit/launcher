@@ -47,10 +47,11 @@ static class Paths
     public static string Generated => System.IO.Path.Combine(Root, "generated");
     public static string StateFile => System.IO.Path.Combine(Root, "state.json");
     public static string SettingsFile => System.IO.Path.Combine(Root, "settings.json");
+    public static string Originals => System.IO.Path.Combine(Root, "originals");
     public static string Downloads => System.IO.Path.Combine(Root, "downloads");
     public static string WebData => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GhostShell", "IconPlus", "webview");
 
-    public static void Ensure() { foreach (var d in new[] { Root, Packs, Generated, Downloads }) Directory.CreateDirectory(d); }
+    public static void Ensure() { foreach (var d in new[] { Root, Packs, Generated, Originals, Downloads }) Directory.CreateDirectory(d); }
 }
 
 static class StateStore
