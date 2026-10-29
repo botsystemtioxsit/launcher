@@ -19,7 +19,8 @@ sealed class MainWindow : Window
     static readonly string[] SwatchColors = { "#000000", "#101018", "#202020", "#F2F2F2", "#00F0FF", "#FF2A9D", "#6C4DFF", "#1E6BFF", "#20C27A" };
     static readonly string[] Backdrops = { ColorSettings.BdNone, ColorSettings.BdBlur, ColorSettings.BdAcrylic, ColorSettings.BdMica, ColorSettings.BdTabbed };
     static readonly string[] BackdropLabels = { "Нет", "Размытие", "Акрил", "Слюда", "Вкладки" };
-    static readonly string[] WinModes = { ColorSettings.WmBackground, ColorSettings.WmAlpha, ColorSettings.WmNone };
+    static readonly string[] WinModes = { ColorSettings.WmBackground, ColorSettings.WmAlpha, ColorSettings.WmNone };          // для правила программы
+    static readonly string[] GlobalModes = { ColorSettings.WmAlpha, ColorSettings.WmNone };                                  // для всех окон
     static readonly string[] TaskbarModes = { ColorSettings.TbDefault, ColorSettings.TbClear, ColorSettings.TbBlur, ColorSettings.TbSolid };
 
     static Brush Res(string key) => (Brush)Application.Current.FindResource(key);
@@ -146,15 +147,11 @@ sealed class MainWindow : Window
         };
         if (!settings.WindowsOn) return Card("Окна всех программ", rows);
 
-        rows.Add(Row("Что делать прозрачным",
-            "«Только фон» — становится прозрачным фон за текстом, картинками и значками, а заголовок, текст, картинки и видео остаются плотными. «Окно целиком» — прозрачно всё, включая видео и заголовок. «Ничего» — окна не просвечивают, работают только цвет заголовка и подложка.",
-            Seg(new[] { "Только фон", "Окно целиком", "Ничего" }, Math.Max(0, Array.IndexOf(WinModes, settings.WindowMode)), i => { settings.WindowMode = WinModes[i]; Changed(); Build(); })));
-        if (settings.WindowMode == ColorSettings.WmBackground)
-        {
-            rows.Add(Row("Если «только фон» невозможен", "Chrome, Edge, Discord, VS Code и магазинные приложения рисуют окно видеокартой — Windows не даёт сделать у них прозрачным один фон. Что с ними делать:",
-                Seg(new[] { "Не трогать окно", "Сделать целиком прозрачным" }, settings.FallbackAlpha ? 1 : 0, i => { settings.FallbackAlpha = i == 1; Changed(); Build(); })));
-        }
-        if (settings.WindowMode == ColorSettings.WmAlpha || (settings.WindowMode == ColorSettings.WmBackground && settings.FallbackAlpha))
+        rows.Add(Row("Окна всех программ",
+            "«Окно целиком» — окно становится прозрачнее, сквозь него виден рабочий стол (текст и видео тоже). «Ничего» — окна не просвечивают, работают только подложка, цвет заголовка и тёмный режим. " +
+            "Затрагиваются окна со своей строкой заголовка; Steam, Wallpaper Engine, Discord и подобные программы без неё общими настройками не трогаются.",
+            Seg(new[] { "Окно целиком", "Ничего" }, Math.Max(0, Array.IndexOf(GlobalModes, settings.WindowMode)), i => { settings.WindowMode = GlobalModes[i]; Changed(); Build(); })));
+        if (settings.WindowMode == ColorSettings.WmAlpha)
         {
             rows.Add(SliderRow("Прозрачность окна целиком", "100% — окна как обычно. Меньше — сквозь окно виден рабочий стол и то, что за ним.", 20, 100, settings.WindowOpacity, "%",
                 v => { settings.WindowOpacity = v; Changed(); }));
@@ -187,10 +184,9 @@ sealed class MainWindow : Window
             rows.Add(Row("Цвет текста заголовка", "Цвет названия окна", ColorPicker(settings.TitleTextColor ?? "#F2F2F2", hex => { settings.TitleTextColor = hex; Changed(); })));
         }
 
-        rows.Add(Note("Честно о возможностях. «Только фон» работает цветом: прозрачным становится ровно тот цвет, которым залит фон окна (его плагин находит сам). " +
-                      "Поэтому: (1) если шапка окна залита тем же цветом, она тоже станет прозрачной; (2) по прозрачным местам мышь «проваливается» — клик попадёт в то, что лежит за окном; " +
-                      "(3) у краёв букв остаётся тонкая кайма; (4) окна, которые рисуются видеокартой (Chrome, Edge, Telegram, Discord, VS Code, магазинные приложения), так не умеют — снаружи Windows им фон не отдаёт. " +
-                      "Размытие и «слюда» видны там, где окно само прозрачно, у остальных — у рамки и заголовка. Полноэкранные окна (игры, видео), системные окна и окна самого плагина не трогаются."));
+        rows.Add(Note("Честно о возможностях. Размытие и «слюда» видны там, где окно само прозрачно, у остальных — у рамки и заголовка. " +
+                      "Режим «Только фон» (прозрачен только цвет фона, текст и картинки плотные) включается для отдельной программы в списке ниже и работает лишь у программ, которые рисует сам Windows; " +
+                      "у Chrome, Edge и Electron-программ он невозможен. Полноэкранные окна (игры, видео), системные окна и окна самого плагина не трогаются."));
         return Card("Окна всех программ", rows);
     }
 
@@ -225,9 +221,9 @@ sealed class MainWindow : Window
         {
             var body = new StackPanel { Margin = new Thickness(14, 0, 0, 0) };
             var wmIdx = rule.WinMode == null ? 0 : Array.IndexOf(WinModes, rule.WinMode) + 1;
-            body.Children.Add(Row("Что делать прозрачным", "Для этой программы",
+            body.Children.Add(Row("Что делать прозрачным", "«Только фон» — прозрачен цвет фона окна; ВАЖНО: по прозрачным местам мышь «проваливается» — клик попадёт в окно позади. Включайте только для программ, где это нужно.",
                 Seg(new[] { "Как у всех", "Только фон", "Окно целиком", "Ничего" }, Math.Max(0, wmIdx), i => { rule.WinMode = i == 0 ? null : WinModes[i - 1]; Changed(); Build(); })));
-            if ((rule.WinMode ?? settings.WindowMode) == ColorSettings.WmAlpha || (rule.WinMode == null && settings.FallbackAlpha && settings.WindowMode == ColorSettings.WmBackground))
+            if ((rule.WinMode ?? settings.WindowMode) == ColorSettings.WmAlpha)
                 body.Children.Add(SliderRow("Прозрачность окна целиком", "Для этой программы", 20, 100, rule.Opacity, "%", v => { rule.Opacity = v; Changed(); }));
             var idx = rule.Backdrop == null ? 0 : Array.IndexOf(Backdrops, rule.Backdrop) + 1;
             body.Children.Add(Row("Что за окном", "Для этой программы",

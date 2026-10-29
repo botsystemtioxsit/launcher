@@ -28,7 +28,13 @@ sealed class WindowEffects : IDisposable
     {
         "dwm", "csrss", "winlogon", "logonui", "searchhost", "startmenuexperiencehost", "shellexperiencehost", "textinputhost",
         "lockapp", "widgets", "sihost", "fontdrvhost", "taskmgr",
+        // программы, которые сами управляют своими окнами или рисуют обои: их не трогаем никогда (даже по правилу программы)
+        "steam", "steamwebhelper", "steamservice", "wallpaper32", "wallpaper64", "webwallpaper32", "webwallpaper64", "applicationwallpaper32",
+        "applicationwallpaper64", "ui32", "ui64", "launcher", "wallpaperengine", "lively", "rainmeter", "obs64", "obs32",
     };
+
+    // Метка на окне, которое слоим мы: переживает падение плагина, по ней при следующем запуске окно возвращается как было.
+    const string OurProp = "GhostShell.ColorPlus.Layered";
 
     class WinState
     {
@@ -46,7 +52,7 @@ sealed class WindowEffects : IDisposable
         public DateTime LastAssert = DateTime.MinValue;
     }
 
-    sealed record Eff(string Mode, bool Fallback, int Opacity, string Backdrop, bool Extend, bool Dark, string? Caption, string? CaptionText, string Tint, int TintOpacity);
+    sealed record Eff(string Mode, int Opacity, string Backdrop, bool Extend, bool Dark, string? Caption, string? CaptionText, string Tint, int TintOpacity);
 
     readonly object gate = new();
     readonly Dictionary<IntPtr, WinState> states = new();
@@ -60,6 +66,7 @@ sealed class WindowEffects : IDisposable
     Dictionary<string, string> unsupported = new();
     string status = "";
     bool taskbarWasOn;
+    bool recovered;
 
     static readonly bool Win11 = Environment.OSVersion.Version.Build >= 22000;
     static readonly bool BackdropApi = Environment.OSVersion.Version.Build >= 22621;
@@ -80,6 +87,7 @@ sealed class WindowEffects : IDisposable
     public void Update(ColorSettings s)
     {
         lock (gate) settings = s.Clone();
+        if (!recovered) { recovered = true; try { RecoverLeftovers(); } catch { } }
         if (s.WindowsOn || s.TaskbarOn) Start();
         else { Stop(); RestoreEverything(); SetStatus(""); }
     }
@@ -129,6 +137,9 @@ sealed class WindowEffects : IDisposable
                 if (!Eligible(h, out var cls, out var proc)) return true;
                 apps.Add(proc);
                 if (!s.WindowsOn) return true;
+                // окна без своей строки заголовка (Steam, Discord, Wallpaper Engine, программы на Qt/CEF) общими настройками не трогаем — только по правилу программы
+                var hasCaption = (Native.GetLong(h, Native.GWL_STYLE) & Native.WS_CAPTION) == Native.WS_CAPTION;
+                if (!hasCaption && !s.Apps.ContainsKey(proc)) return true;
                 var eff = EffectiveFor(s, proc);
                 if (eff == null) return true;
                 seen.Add(h);
@@ -207,8 +218,7 @@ sealed class WindowEffects : IDisposable
         if (rule?.Mode == "skip") return null;
         var custom = rule?.Mode == "custom";
         return new Eff(
-            custom && rule!.WinMode != null ? rule.WinMode : s.WindowMode,
-            s.FallbackAlpha,
+            custom && rule!.WinMode != null ? rule.WinMode : s.WindowMode,   // «только фон» возможен лишь по правилу программы
             custom ? rule!.Opacity : s.WindowOpacity,
             custom && rule!.Backdrop != null ? rule.Backdrop : s.Backdrop,
             s.ExtendFrame, s.DarkTitle, s.TitleColor, s.TitleTextColor, s.Tint, s.TintOpacity);
@@ -233,7 +243,7 @@ sealed class WindowEffects : IDisposable
             if (why == null)
             {
                 // цвет фона: находим при первом применении и обновляем раз в 12 с (сменилась тема, открыта другая страница)
-                if (!st.Keyed || (DateTime.UtcNow - st.KeyAt).TotalSeconds > 12)
+                if ((!st.Keyed || (DateTime.UtcNow - st.KeyAt).TotalSeconds > 12) && !Native.IsHungAppWindow(h))
                 {
                     if (BackgroundProbe.TrySample(h, out var color, out var share) && share >= BackgroundProbe.MinShare) { st.KeyColor = color; st.Keyed = true; }
                     else if (!st.Keyed) why = "у окна нет одного явного цвета фона (картинка, градиент)";
@@ -243,14 +253,13 @@ sealed class WindowEffects : IDisposable
             st.NoKeyWhy = why;
             if (why != null)
             {
-                if (eff.Fallback && canLayer) { wantKey = false; wantAlpha = true; }
-                else wantKey = false;
+                wantKey = false;
             }
         }
         var alphaPercent = wantAlpha ? eff.Opacity : 100;
         if ((wantKey || (wantAlpha && alphaPercent < 100)) && canLayer)
         {
-            if (!st.LayeredByUs) { Native.SetLong(h, Native.GWL_EXSTYLE, Native.GetLong(h, Native.GWL_EXSTYLE) | Native.WS_EX_LAYERED); st.LayeredByUs = true; }
+            if (!st.LayeredByUs) { Native.SetProp(h, OurProp, (IntPtr)1); Native.SetLong(h, Native.GWL_EXSTYLE, Native.GetLong(h, Native.GWL_EXSTYLE) | Native.WS_EX_LAYERED); st.LayeredByUs = true; }
             var flags = (wantKey ? Native.LWA_COLORKEY : 0u) | (wantAlpha ? Native.LWA_ALPHA : 0u);
             Native.SetLayeredWindowAttributes(h, wantKey ? st.KeyColor : 0, (byte)Math.Round(alphaPercent * 255 / 100.0), flags);
             st.Opacity = alphaPercent;
@@ -324,6 +333,7 @@ sealed class WindowEffects : IDisposable
     static void RemoveLayer(IntPtr h, WinState st)
     {
         Native.SetLong(h, Native.GWL_EXSTYLE, Native.GetLong(h, Native.GWL_EXSTYLE) & ~Native.WS_EX_LAYERED);
+        Native.RemoveProp(h, OurProp);
         Native.RedrawWindow(h, IntPtr.Zero, IntPtr.Zero, 0x0001 | 0x0004 | 0x0080 | 0x0400 /* INVALIDATE | ERASE | ALLCHILDREN | FRAME */);
         st.LayeredByUs = false;
         st.Opacity = 100;
@@ -390,9 +400,28 @@ sealed class WindowEffects : IDisposable
         Task.Run(() => { try { Native.SendMessageTimeout((IntPtr)0xFFFF, 0x1A, UIntPtr.Zero, "ImmersiveColorSet", 2, 1500, out _); } catch { } });
     }
 
+    // Если плагин когда-то закрылся аварийно (например, убит в диспетчере задач), окна остались слоёными по нашей метке — возвращаем их.
+    static void RecoverLeftovers()
+    {
+        Native.EnumWindows((h, _) =>
+        {
+            try
+            {
+                if (Native.GetProp(h, OurProp) == IntPtr.Zero) return true;
+                if (Native.IsHungAppWindow(h)) return true;
+                Native.SetLong(h, Native.GWL_EXSTYLE, Native.GetLong(h, Native.GWL_EXSTYLE) & ~Native.WS_EX_LAYERED);
+                Native.RemoveProp(h, OurProp);
+                Native.RedrawWindow(h, IntPtr.Zero, IntPtr.Zero, 0x0001 | 0x0004 | 0x0080 | 0x0400);
+            }
+            catch { }
+            return true;
+        }, IntPtr.Zero);
+    }
+
     // Вернуть всё, что трогали: окна и панель.
     void RestoreEverything()
     {
+        RecoverLeftovers();
         foreach (var kv in states.ToList())
         {
             if (Native.IsWindow(kv.Key)) { try { Restore(kv.Key, kv.Value); } catch { } }
