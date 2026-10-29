@@ -54,7 +54,7 @@ sealed class MainWindow : Window
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
-        // Форма и размытие держатся, пока работает плагин: закрытие окна просто прячет его в фон.
+        // Форма держится, пока работает плагин: закрытие окна просто прячет его в фон.
         if (!App.Quitting && settings.Active)
         {
             e.Cancel = true;
@@ -63,7 +63,7 @@ sealed class MainWindow : Window
             {
                 settings.BackgroundHintShown = true;
                 settings.Save();
-                MessageBox.Show("Taskbar Plus продолжает работать в фоне — иначе форма и размытие панели пропали бы.\n\n" +
+                MessageBox.Show("Taskbar Plus продолжает работать в фоне — иначе форма панели пропала бы.\n\n" +
                                 "Чтобы открыть окно снова, запустите Taskbar Plus из лаунчера или из меню «Пуск». " +
                                 "Чтобы совсем выйти и вернуть панель как была, нажмите «Выйти» внизу окна.",
                                 "Taskbar Plus", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -90,7 +90,7 @@ sealed class MainWindow : Window
         root.Children.Add(head);
         root.Children.Add(new TextBlock
         {
-            Text = "Плагин Ghost Shell Launcher. Панель задач Windows по-своему: форма, острова, прозрачность, значки, автоскрытие. " +
+            Text = "Плагин Ghost Shell Launcher. Панель задач Windows по-своему: форма, острова, значки, автоскрытие. " +
                    "Всё, что вы поменяли, можно вернуть кнопкой «Вернуть как было».",
             Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 6),
         });
@@ -144,19 +144,6 @@ sealed class MainWindow : Window
             rows.Add(Note("Формы работают для панели, которая стоит внизу экрана. Пока плагин запущен, форма держится сама; при выходе из плагина панель возвращается к обычной."));
         }
 
-        rows.Add(Row("Прозрачность и размытие", "Эксперимент: на Windows 10 работает хорошо; на Windows 11 Проводник может закрывать эффект своим фоном.",
-            Seg(new[] { "Как есть", "Прозрачная", "Размытие", "Акрил" }, BackdropIndex(), i =>
-            {
-                settings.Backdrop = new[] { AppearanceSettings.BackdropNone, AppearanceSettings.BackdropClear, AppearanceSettings.BackdropBlur, AppearanceSettings.BackdropAcrylic }[i];
-                Changed(); Build();
-            })));
-        if (settings.Backdrop != AppearanceSettings.BackdropNone)
-        {
-            rows.Add(SliderRow("Плотность цвета", "0 — совсем прозрачно, 255 — сплошной цвет", 0, 255, settings.TintOpacity, "", v => { settings.TintOpacity = v; Changed(); }));
-            var colors = new[] { ("Чёрный", "#000000"), ("Тёмно-фиолетовый", "#1A0B2E"), ("Синий", "#0B1B3A"), ("Белый", "#FFFFFF") };
-            var sel = Array.FindIndex(colors, c => string.Equals(c.Item2, settings.TintColor, StringComparison.OrdinalIgnoreCase));
-            rows.Add(Row("Цвет", "Оттенок под размытием", Seg(colors.Select(c => c.Item1).ToArray(), sel, i => { settings.TintColor = colors[i].Item2; Changed(); Build(); })));
-        }
         return Card("Внешний вид панели", rows);
     }
 
@@ -170,12 +157,11 @@ sealed class MainWindow : Window
             b.Click += (_, _) => { apply(settings); Changed(); Build(); };
             wrap.Children.Add(b);
         }
-        Add("Обычная", s => { s.Shape = AppearanceSettings.ShapeNone; s.Backdrop = AppearanceSettings.BackdropNone; });
+        Add("Обычная", s => { s.Shape = AppearanceSettings.ShapeNone; });
         Add("Плавающая", s => { s.Shape = AppearanceSettings.ShapePill; s.Radius = 18; s.SideMargin = 24; s.BottomGap = 8; });
         Add("Острова", s => { s.Shape = AppearanceSettings.ShapeIslands; s.IslandMode = "each"; s.IslandStyle = "float"; s.Radius = 14; s.IslandGap = 8; s.BottomGap = 6; });
         Add("Вкладка", s => { s.Shape = AppearanceSettings.ShapeTab; s.Radius = 16; s.SideMargin = 24; });
         Add("Вкладки-острова", s => { s.Shape = AppearanceSettings.ShapeIslands; s.IslandMode = "each"; s.IslandStyle = "tab"; s.Radius = 14; s.IslandGap = 8; });
-        Add("Только значки", s => { s.Shape = AppearanceSettings.ShapeNone; s.Backdrop = AppearanceSettings.BackdropClear; s.TintOpacity = 0; });
         return wrap;
     }
 
@@ -216,7 +202,7 @@ sealed class MainWindow : Window
     {
         var rows = new List<UIElement>
         {
-            Row("Запускать вместе с Windows", "Форма и размытие будут применяться после входа в систему, окно открываться не будет",
+            Row("Запускать вместе с Windows", "Форма будет применяться после входа в систему, окно открываться не будет",
                 Seg(new[] { "Нет", "Да" }, RegistrySettings.Autostart ? 1 : 0, i =>
                 {
                     try { RegistrySettings.SetAutostart(i == 1); Say(i == 1 ? "Автозапуск включён" : "Автозапуск выключен"); }
@@ -276,11 +262,10 @@ sealed class MainWindow : Window
     {
         Say("Возвращаю…");
         settings.Shape = AppearanceSettings.ShapeNone;
-        settings.Backdrop = AppearanceSettings.BackdropNone;
         var (restored, error) = await Task.Run(RegistrySettings.Reset);
         engine.Update(settings);
         settings.Save();
-        Say(error != null ? "Вернулось не всё: " + error : restored == 0 ? "Параметры Windows вы не меняли; форма и размытие сняты" : $"Возвращено параметров: {restored}; форма и размытие сняты");
+        Say(error != null ? "Вернулось не всё: " + error : restored == 0 ? "Параметры Windows вы не меняли; форма снята" : $"Возвращено параметров: {restored}; форма снята");
         RefreshAutoHide();
         Build();
     }
@@ -296,11 +281,6 @@ sealed class MainWindow : Window
     int ShapeIndex() => settings.Shape switch
     {
         AppearanceSettings.ShapePill => 1, AppearanceSettings.ShapeTab => 2, AppearanceSettings.ShapeIslands => 3, _ => 0,
-    };
-
-    int BackdropIndex() => settings.Backdrop switch
-    {
-        AppearanceSettings.BackdropClear => 1, AppearanceSettings.BackdropBlur => 2, AppearanceSettings.BackdropAcrylic => 3, _ => 0,
     };
 
     // ---------- кирпичики интерфейса ----------

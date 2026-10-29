@@ -3,7 +3,7 @@ using System.Windows.Automation;
 namespace TaskbarPlusApp;
 
 // Движок внешнего вида: пока плагин запущен, раз в полсекунды следит за панелью задач и держит на ней форму
-// (вырез окна панели — SetWindowRgn) и размытие/прозрачность. Всё это живёт только пока работает плагин:
+// (вырез окна панели — SetWindowRgn). Всё это живёт только пока работает плагин:
 // при выходе форма снимается, панель возвращается к обычному виду (если нет — «Перезапустить панель задач»).
 sealed class TaskbarEngine : IDisposable
 {
@@ -15,7 +15,6 @@ sealed class TaskbarEngine : IDisposable
     readonly HashSet<IntPtr> owned = new();                    // окна, на которые мы поставили вырез: его надо снять, когда форма выключена
     readonly Dictionary<IntPtr, (DateTime At, List<(int L, int R)> Clusters)> islandCache = new();
     DateTime lastForced = DateTime.MinValue;
-    bool accentOn;
     bool cacheStale;                                           // настройки поменялись — забыть, что уже применено
     string status = "";
 
@@ -60,7 +59,7 @@ sealed class TaskbarEngine : IDisposable
         {
             try { Tick(); }
             catch (Exception ex) { SetStatus("Ошибка: " + ex.Message); }
-            ct.WaitHandle.WaitOne(500);
+            ct.WaitHandle.WaitOne(150); // часто, чтобы форма вернулась сразу, когда панель выезжает
         }
     }
 
@@ -95,22 +94,15 @@ sealed class TaskbarEngine : IDisposable
             if (st.Shape != AppearanceSettings.ShapeNone)
             {
                 if (!Native.IsAtBottom(h, rc)) { notes.Add("форма работает только для панели внизу экрана"); if (owned.Contains(h)) ClearRegion(h); }
+                else if (Native.IsHiddenAtBottom(h, rc, Native.Scale(h)))
+                {
+                    // Автоскрытая панель спрятана: пока она за краем, вырез снимаем — иначе у неё отрезана полоска, по которой
+                    // Windows замечает курсор у края экрана, и панель не выезжает (как у полноэкранных игр).
+                    if (owned.Contains(h)) ClearRegion(h);
+                }
                 else ApplyShape(h, rc, st, force, notes);
             }
-            else if (owned.Contains(h)) ClearRegion(h);   // форма выключена, а размытие осталось — старый вырез не должен висеть
-
-            if (st.Backdrop != AppearanceSettings.BackdropNone)
-            {
-                var state = st.Backdrop switch { AppearanceSettings.BackdropClear => 2, AppearanceSettings.BackdropBlur => 3, _ => 4 };
-                try { Native.SetAccent(h, state, st.TintAbgr()); accentOn = true; }
-                catch (Exception ex) { notes.Add("размытие недоступно: " + ex.Message); }
-            }
-        }
-        if (st.Backdrop == AppearanceSettings.BackdropNone && accentOn)
-        {
-            foreach (var h in windows) { try { Native.SetAccent(h, 0, 0); } catch { } }
-            accentOn = false;
-            Native.NotifySettingsChanged();
+            else if (owned.Contains(h)) ClearRegion(h);   // форма выключена — старый вырез не должен висеть
         }
         SetStatus(notes.Count == 0 ? "Применено" : "Применено, но: " + string.Join("; ", notes.Distinct()));
     }
@@ -262,7 +254,7 @@ sealed class TaskbarEngine : IDisposable
         return result;
     }
 
-    // Снимает форму и размытие со всех окон панели.
+    // Снимает форму со всех окон панели.
     public void ResetAll()
     {
         try
@@ -270,12 +262,9 @@ sealed class TaskbarEngine : IDisposable
             foreach (var h in TaskbarWindows())
             {
                 Native.SetWindowRgn(h, IntPtr.Zero, true);
-                if (accentOn) { try { Native.SetAccent(h, 0, 0); } catch { } }
             }
-            if (accentOn) Native.NotifySettingsChanged();
         }
         catch { /* при выходе ошибки не важны */ }
-        accentOn = false;
         lock (gate) { applied.Clear(); owned.Clear(); islandCache.Clear(); }
     }
 
