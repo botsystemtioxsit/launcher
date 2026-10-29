@@ -124,18 +124,24 @@ sealed class TaskbarEngine : IDisposable
     {
         var scale = Native.Scale(h);
         List<(int L, int R)>? clusters = null;
-        if (st.Shape == AppearanceSettings.ShapeIslands)
+        var islands = st.Shape == AppearanceSettings.ShapeIslands;
+        // у плавающей панели и «вкладки» с отступами по бокам часы, трей и виджеты оказались бы за краем формы:
+        // чтобы они не пропадали, находим их и оставляем отдельными островами
+        var keepEdges = !islands && st.KeepEdges && st.SideMargin > 0;
+        if (islands || keepEdges)
         {
             if (!islandCache.TryGetValue(h, out var c) || DateTime.UtcNow - c.At > TimeSpan.FromSeconds(1))
             {
-                c = (DateTime.UtcNow, FindClusters(h, rc, scale, st.IslandMode == "each"));
+                c = (DateTime.UtcNow, FindClusters(h, rc, scale, islands && st.IslandMode == "each"));
                 islandCache[h] = c;
             }
             clusters = c.Clusters;
-            if (clusters.Count == 0) notes.Add("не нашёл значки панели — острова заменены плавающей панелью");
+            if (clusters.Count == 0)
+                notes.Add(islands ? "не нашёл значки панели — острова заменены плавающей панелью"
+                                  : "не нашёл часы и трей — при большом отступе они могут оказаться спрятанными");
         }
 
-        var key = $"{rc.Width}x{rc.Height}|{scale:F2}|{st.Shape}|{st.Radius}|{st.SideMargin}|{st.BottomGap}|{st.IslandStyle}|{st.IslandPadding}|{st.IslandMode}|{st.IslandGap}|" +
+        var key = $"{rc.Width}x{rc.Height}|{scale:F2}|{st.Shape}|{st.Radius}|{st.SideMargin}|{st.BottomGap}|{st.IslandStyle}|{st.IslandPadding}|{st.IslandMode}|{st.IslandGap}|{st.KeepEdges}|" +
                   (clusters == null ? "" : string.Join(",", clusters.Select(c => c.L + "-" + c.R)));
         // уже стоит такая форма и Windows её не сбросила — ничего не делаем (иначе панель мерцала бы)
         if (!force && applied.TryGetValue(h, out var old) && old == key) return;
@@ -160,15 +166,33 @@ sealed class TaskbarEngine : IDisposable
         var inset = (int)Math.Round(3 * scale); // небольшой зазор сверху у плавающих форм
         IntPtr Round(int x1, int y1, int x2, int y2) => Native.CreateRoundRectRgn(x1, y1, x2 + 1, y2 + 1, Math.Max(1, 2 * r), Math.Max(1, 2 * r));
 
+        // Плавающая панель и «вкладка» (у «вкладки» скруглён только верх: низ уходит за край окна и обрезается)
+        IntPtr Bar(bool tab)
+        {
+            var x1 = side;
+            var x2 = Math.Max(side + 1, w - side);
+            var bar = tab ? Round(x1, 0, x2, h + r) : Round(x1, inset, x2, Math.Max(inset + 1, h - gap));
+            if (!st.KeepEdges || clusters == null) return bar;
+            foreach (var (l, rr) in clusters)
+            {
+                if (l >= side && rr <= w - side) continue; // целиком внутри основной панели
+                var a = Math.Max(0, l - pad);
+                var b = Math.Min(w, rr + pad);
+                var piece = tab ? Round(a, 0, b, h + r) : Round(a, inset, b, Math.Max(inset + 1, h - gap));
+                Native.CombineRgn(bar, bar, piece, Native.RGN_OR);
+                Native.DeleteObject(piece);
+            }
+            return bar;
+        }
+
         switch (st.Shape)
         {
             case AppearanceSettings.ShapePill:
-                return Round(side, inset, Math.Max(side + 1, w - side), Math.Max(inset + 1, h - gap));
+                return Bar(false);
             case AppearanceSettings.ShapeTab:
-                // скруглён только верх: низ уходит за край окна и обрезается
-                return Round(side, 0, Math.Max(side + 1, w - side), h + r);
+                return Bar(true);
             case AppearanceSettings.ShapeIslands:
-                if (clusters == null || clusters.Count == 0) goto case AppearanceSettings.ShapePill;
+                if (clusters == null || clusters.Count == 0) return Bar(false);
                 IntPtr all = IntPtr.Zero;
                 foreach (var (l, rr) in clusters)
                 {
