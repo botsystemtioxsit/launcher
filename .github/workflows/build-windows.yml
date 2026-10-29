@@ -68,6 +68,16 @@ jobs:
           -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-taskbarplus
 
+      # Проверка: движок действительно вложен в TaskbarPlus.exe (иначе «Новый движок» в плагине был бы пустой кнопкой)
+      - name: Check engine embedded in Taskbar Plus
+        shell: pwsh
+        run: |
+          $dll = Get-ChildItem Plugins/TaskbarPlus/obj -Recurse -Filter TaskbarPlus.dll | Select-Object -First 1
+          if (-not $dll) { throw 'TaskbarPlus.dll не найден в obj' }
+          $names = [Reflection.Assembly]::Load([IO.File]::ReadAllBytes($dll.FullName)).GetManifestResourceNames()
+          Write-Host ('Ресурсы: ' + ($names -join ', '))
+          if ($names -notcontains 'GhostShellTap.dll') { throw 'GhostShellTap.dll не вложен в плагин' }
+
       - name: Checksum Taskbar Plus
         shell: pwsh
         run: |

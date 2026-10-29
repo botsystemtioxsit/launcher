@@ -47,6 +47,7 @@ namespace
     {
         ctl::Panel panel{ nullptr };
         shp::Rectangle fill{ nullptr };
+        med::Brush nativeFill{ nullptr };   // родная кисть фона панели (для режима «как в Windows»)
         std::vector<ctl::Border> borders;
     };
 
@@ -62,9 +63,9 @@ namespace
     IXamlDiagnostics* g_diag = nullptr;
     std::unordered_map<uint64_t, Item> g_items;
     std::vector<Host> g_hosts;
-    winrt::Windows::System::DispatcherQueue g_queue{ nullptr };
-    winrt::Windows::System::DispatcherQueueTimer g_timer{ nullptr };
+    xaml::DispatcherTimer g_timer{ nullptr };   // таймер самого XAML: тикает в потоке XAML и не требует отдельной очереди
     int g_tick = 0;
+    int g_appliedGen = -1;
     std::wstring g_islandSig;
     med::Brush g_barBrush{ nullptr };
     med::Brush g_islandBrush{ nullptr };
@@ -78,6 +79,7 @@ namespace
     uint32_t g_order = 0;
     std::atomic<int> g_nBgFill{ 0 }, g_nBgStroke{ 0 }, g_nMembers{ 0 }, g_nEdges{ 0 }, g_nIslands{ 0 };
     std::atomic<bool> g_applied{ false }, g_queueOk{ false };
+    std::atomic<int> g_cfgGen{ 0 };               // растёт при каждой смене настроек; поток XAML замечает это на тике
 
     uint64_t Key(InstanceHandle h) { return (uint64_t)h; }
 
@@ -237,6 +239,7 @@ namespace
             Host h;
             h.panel = parent;
             h.fill = rect;
+            h.nativeFill = kv.second.saved ? kv.second.origFill : med::Brush{ nullptr };
             // уже созданные острова этой панели переносим
             for (auto& old : g_hosts)
                 if (old.panel == parent) { h.borders = old.borders; break; }
@@ -381,7 +384,7 @@ namespace
                     b.Width(w);
                     b.Height(h);
                     b.CornerRadius(xaml::CornerRadius{ r, r, r, r });
-                    b.Background(g_islandBrush);
+                    b.Background((c.bgMode == 0 && host.nativeFill) ? host.nativeFill : g_islandBrush);
                 }
             }
             catch (winrt::hresult_error const& e)
@@ -415,6 +418,12 @@ namespace
     {
         try
         {
+            if (g_cfgGen.load() != g_appliedGen)
+            {
+                g_appliedGen = g_cfgGen.load();
+                ApplyAll();
+                return;
+            }
             auto c = CurrentConfig();
             if (!c.enabled) return;
             UpdateIslands(c, false);
@@ -430,20 +439,18 @@ namespace
         catch (...) { /* следующий тик */ }
     }
 
-    void EnsureQueue()
+    void EnsureTimer()
     {
-        if (g_queue) return;
+        if (g_timer) return;
         try
         {
-            g_queue = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
-            if (!g_queue) { Log(L"у потока XAML нет очереди DispatcherQueue"); return; }
-            g_queueOk = true;
-            g_timer = g_queue.CreateTimer();
+            g_timer = xaml::DispatcherTimer();
             g_timer.Interval(std::chrono::milliseconds(250));
             g_timer.Tick([](auto&&, auto&&) { OnTick(); });
             g_timer.Start();
+            g_queueOk = true;
         }
-        catch (winrt::hresult_error const& e) { Log(L"очередь XAML: ошибка 0x%08X", (unsigned)e.code().value); }
+        catch (winrt::hresult_error const& e) { Log(L"таймер XAML: ошибка 0x%08X", (unsigned)e.code().value); }
     }
 }
 
@@ -497,7 +504,7 @@ namespace Styler
                 }
             }
 
-            EnsureQueue();
+            EnsureTimer();
 
             Kind kind;
             if (type == L"Windows.UI.Xaml.Shapes.Rectangle" && name == L"BackgroundFill") kind = Kind::BgFill;
@@ -527,18 +534,18 @@ namespace Styler
         }
         catch (winrt::hresult_error const& e) { Log(L"OnChange: ошибка 0x%08X", (unsigned)e.code().value); }
         catch (...) { Log(L"OnChange: неожиданная ошибка"); }
+        try
+        {
+            if (g_cfgGen.load() != g_appliedGen) { g_appliedGen = g_cfgGen.load(); ApplyAll(); } // запасной путь, если таймер XAML не тикает
+        }
+        catch (...) {}
         return S_OK; // ошибка здесь не должна ломать панель
     }
 
     void SetConfig(const Config& cfg)
     {
         { std::lock_guard<std::mutex> l(g_cfgLock); g_cfg = cfg; }
-        try
-        {
-            auto q = g_queue;
-            if (q) q.TryEnqueue([] { ApplyAll(); });
-        }
-        catch (...) { Log(L"SetConfig: не удалось поставить задачу в очередь XAML"); }
+        ++g_cfgGen; // применит поток XAML на ближайшем тике (раз в 250 мс)
     }
 
     void WriteTree()
