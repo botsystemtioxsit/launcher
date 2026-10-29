@@ -3,13 +3,13 @@ namespace IconPlusApp;
 enum TargetKind { Folder, Drive, Clsid, FileType, Shortcuts }
 
 // Что можно перекрасить или заменить. Ключевые слова — для автоматического подбора значков из набора по именам файлов.
-sealed record Target(string Id, string Group, string Title, TargetKind Kind, string[] Keywords, string[]? Extensions = null, string? Clsid = null, string? ValueName = null, string[]? Reject = null)
+sealed record Target(string Id, string Group, string Title, TargetKind Kind, string[] Keywords, string[]? Extensions = null, string? Clsid = null, string? ValueName = null, string[]? Reject = null, bool NeedsAdmin = false)
 {
     public const string GFolders = "Папки и диски", GSystem = "Рабочий стол и система", GFiles = "Типы файлов", GShortcuts = "Ярлыки";
 
     public static readonly Target[] All =
     {
-        new("folder", GFolders, "Папка (спросит разрешение администратора)", TargetKind.Folder, new[] { "folder", "directory", "папка", "dir", "folderclosed", "closed" }, Reject: new[] { "open", "открыт", "network", "music", "video", "picture", "download", "document", "desktop" }),
+        new("folder", GFolders, "Папка (спросит разрешение администратора)", TargetKind.Folder, new[] { "folder", "directory", "папка", "dir", "folderclosed", "closed" }, Reject: new[] { "open", "открыт", "network", "music", "video", "picture", "download", "document", "desktop" }, NeedsAdmin: true),
         new("drive-fixed", GFolders, "Жёсткий диск", TargetKind.Drive, new[] { "harddrive", "hard drive", "hdd", "ssd", "disk", "drive", "диск", "локальный" }, Reject: new[] { "usb", "flash", "removable", "dvd", "cd", "optical", "network", "сеть" }),
         new("drive-removable", GFolders, "Флешка (USB)", TargetKind.Drive, new[] { "usb", "flash", "removable", "флешка", "съемный" }),
         new("drive-optical", GFolders, "DVD / CD", TargetKind.Drive, new[] { "dvd", "cd", "optical", "cdrom", "диск dvd", "bluray", "blu" }),
@@ -35,7 +35,9 @@ sealed record Target(string Id, string Group, string Title, TargetKind Kind, str
         new("ft-script", GFiles, "Сценарий (bat, cmd, ps1)", TargetKind.FileType, new[] { "bat", "cmd", "ps1", "batch", "powershell", "shell" }, new[] { "bat", "cmd", "ps1" }),
 
         new("lnk-desktop", GShortcuts, "Ярлыки на рабочем столе", TargetKind.Shortcuts, Array.Empty<string>()),
-        new("lnk-start", GShortcuts, "Ярлыки в меню «Пуск» (программы)", TargetKind.Shortcuts, Array.Empty<string>()),
+        new("lnk-desktop-all", GShortcuts, "Ярлыки на общем рабочем столе (для всех; спросит разрешение администратора)", TargetKind.Shortcuts, Array.Empty<string>(), NeedsAdmin: true),
+        new("lnk-start", GShortcuts, "Ярлыки в меню «Пуск» (мои программы)", TargetKind.Shortcuts, Array.Empty<string>()),
+        new("lnk-start-all", GShortcuts, "Ярлыки в меню «Пуск» (общие; спросит разрешение администратора)", TargetKind.Shortcuts, Array.Empty<string>(), NeedsAdmin: true),
         new("lnk-taskbar", GShortcuts, "Закреплённые на панели задач", TargetKind.Shortcuts, Array.Empty<string>()),
     };
 

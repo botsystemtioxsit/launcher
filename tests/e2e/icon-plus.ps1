@@ -12,6 +12,18 @@ function Run-Exe([string]$name, [string[]]$arguments, [int]$seconds = 120) {
     if (-not $p.WaitForExit($seconds * 1000)) { $p.Kill(); Say "$name : не завершился за $seconds с" } else { Say "$name : код $($p.ExitCode)" }
 }
 
+Say "=== значок самой программы ==="
+Add-Type -AssemblyName System.Drawing
+try {
+    $ic = [System.Drawing.Icon]::ExtractAssociatedIcon($exe)
+    $ic.ToBitmap().Save((Join-Path $Out 'app-icon-from-exe.png'), [System.Drawing.Imaging.ImageFormat]::Png)
+    Say "значок из IconPlus.exe извлечён: $($ic.Width)x$($ic.Height)"
+} catch { Say ("значок из exe не извлёкся: " + $_.Exception.Message) }
+$exeLnk = Join-Path ([Environment]::GetFolderPath('Desktop')) 'IconPlusExeTest.lnk'
+$wsh = New-Object -ComObject WScript.Shell
+$l = $wsh.CreateShortcut($exeLnk); $l.TargetPath = $exe; $l.IconLocation = "$exe,0"; $l.Save()
+
+Say ""
 Say "=== окно настроек (снимки без показа) ==="
 New-Item -ItemType Directory -Force (Join-Path $outFull 'ui') | Out-Null
 Run-Exe 'screenshot' @("--screenshot=$(Join-Path $outFull 'ui')") 90
@@ -120,4 +132,5 @@ Start-Sleep -Seconds 8
 Say (Shot (Join-Path $Out 'window-color.png'))
 $p | Stop-Process -Force -ErrorAction SilentlyContinue
 Get-Process explorer -ErrorAction SilentlyContinue | Out-Null
+Remove-Item $exeLnk -ErrorAction SilentlyContinue
 Say "=== конец ==="

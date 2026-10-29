@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Security.Principal;
 using Microsoft.Win32;
 
@@ -64,29 +62,4 @@ static class FolderIcon
         try { using var k = Registry.LocalMachine.OpenSubKey(KeyPath); return k?.GetValue("3") as string; } catch { return null; }
     }
 
-    static void Run(string args)
-    {
-        if (IsAdmin())
-        {
-            var code = args.StartsWith("--folder-icon-restore", StringComparison.Ordinal) ? RestoreMachine() : SetMachine(args[(args.IndexOf('=') + 1)..].Trim('"'));
-            if (code != 0) throw new InvalidOperationException("не хватает прав");
-            return;
-        }
-        try
-        {
-            using var p = Process.Start(new ProcessStartInfo(Environment.ProcessPath!, args) { UseShellExecute = true, Verb = "runas", WindowStyle = ProcessWindowStyle.Hidden });
-            p?.WaitForExit(30000);
-        }
-        catch (Win32Exception ex) when (ex.NativeErrorCode == 1223) { throw new InvalidOperationException("разрешение администратора не дано"); }
-    }
-
-    // Поставить значок папок (с запросом прав администратора, если их нет).
-    public static void SetElevated(string ico)
-    {
-        Run("--folder-icon=\"" + ico + "\"");
-        var cur = Current();
-        if (cur == null || !cur.StartsWith(ico, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("значок папок не изменился (нужно разрешение администратора)");
-    }
-
-    public static void RestoreElevated() => Run("--folder-icon-restore");
 }

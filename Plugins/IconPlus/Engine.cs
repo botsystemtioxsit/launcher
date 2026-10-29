@@ -15,6 +15,7 @@ sealed class IconEngine
 
     readonly IconState state;
     readonly RegistryWriter reg;
+    MachineJob job = new();   // действия, для которых нужны права администратора, собираются сюда и выполняются разом
 
     public IconEngine() { Paths.Ensure(); state = StateStore.Load(); reg = new RegistryWriter(state); }
     public IconState State => state;
@@ -26,11 +27,7 @@ sealed class IconEngine
         switch (t.Kind)
         {
             case TargetKind.Folder:
-                yield return new Sink("folder", FolderSource, p =>
-                {
-                    FolderIcon.SetElevated(p);
-                    state.FolderMachine = true;
-                });
+                yield return new Sink("folder", FolderSource, p => job.FolderIco = p);
                 break;
             case TargetKind.Drive:
                 var type = t.Id switch
@@ -72,7 +69,8 @@ sealed class IconEngine
                 foreach (var f in ShortcutFiles(t.Id))
                 {
                     var file = f;
-                    yield return new Sink("lnk:" + file, () => LnkSource(file), p => WriteLnk(file, p));
+                    var machine = t.NeedsAdmin;
+                    yield return new Sink("lnk:" + file, () => LnkSource(file), p => { if (machine) job.Lnks.Add(new MachineLnk { File = file, Ico = p }); else WriteLnk(file, p); });
                 }
                 break;
         }
@@ -123,8 +121,12 @@ sealed class IconEngine
         {
             case "lnk-desktop":
                 return Shortcuts.In(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), false);
+            case "lnk-desktop-all":
+                return Shortcuts.In(Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory), false);
             case "lnk-start":
                 return Shortcuts.In(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs"), true);
+            case "lnk-start-all":
+                return Shortcuts.In(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs"), true);
             default:
                 return Shortcuts.In(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar"), false);
         }
@@ -169,6 +171,7 @@ sealed class IconEngine
     {
         int done = 0, failed = 0;
         var msgs = new List<string>();
+        job = new MachineJob();
         foreach (var id in s.Enabled)
         {
             var t = Target.ById(id);
@@ -188,6 +191,7 @@ sealed class IconEngine
                 catch (Exception ex) { failed++; msgs.Add(sink.Key + ": " + ex.Message); }
             }
         }
+        FlushMachine(msgs, ref done, ref failed);
         state.Applied = "color";
         StateStore.Save(state);
         Native.NotifyIconsChanged();
@@ -223,6 +227,7 @@ sealed class IconEngine
     {
         int done = 0, failed = 0;
         var msgs = new List<string>();
+        job = new MachineJob();
         foreach (var (id, file) in map)
         {
             var t = Target.ById(id);
@@ -239,10 +244,24 @@ sealed class IconEngine
                 catch (Exception ex) { failed++; msgs.Add(sink.Key + ": " + ex.Message); }
             }
         }
+        FlushMachine(msgs, ref done, ref failed);
         state.Applied = "pack";
         StateStore.Save(state);
         Native.NotifyIconsChanged();
         return new ApplyResult(done, failed, msgs);
+    }
+
+    // Выполнить то, что требует прав администратора (одно окно «Разрешить?»).
+    void FlushMachine(List<string> msgs, ref int done, ref int failed)
+    {
+        if (job.IsEmpty) return;
+        var r = Machine.Run(job);
+        if (r.Error.Length > 0) msgs.Add("для администратора: " + r.Error);
+        if (job.FolderIco != null) { if (r.FolderOk) { done++; state.FolderMachine = true; } else failed++; }
+        done += r.LnkOk; failed += r.LnkFailed;
+        if (r.LnkOk > 0) state.MachineLnk = true;
+        if (job.Lnks.Count > 0 && r.LnkOk == 0 && r.Error.Length > 0) failed += job.Lnks.Count - r.LnkFailed;
+        job = new MachineJob();
     }
 
     // ---------- вернуть как было ----------
@@ -250,10 +269,10 @@ sealed class IconEngine
     {
         var n = 0;
         foreach (var c in Enumerable.Reverse(state.Reg).ToList()) { RegistryWriter.Revert(c); n++; }
-        if (state.FolderMachine)
+        if (state.FolderMachine || state.MachineLnk)
         {
-            try { FolderIcon.RestoreElevated(); n++; } catch { }
-            state.FolderMachine = false;
+            try { var r = Machine.Run(new MachineJob { Restore = true }); n += r.LnkOk + (r.FolderOk ? 1 : 0); } catch { }
+            state.FolderMachine = false; state.MachineLnk = false;
         }
         foreach (var l in state.Lnk.ToList())
         {

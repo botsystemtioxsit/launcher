@@ -4,12 +4,13 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>TIOXSITTerminal</AssemblyName>
     <RootNamespace>TioxsitTerminal</RootNamespace>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>0.4.0</Version>
+    <Version>0.4.1</Version>
     <Product>Ghost Shell Terminal</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
