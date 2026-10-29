@@ -55,6 +55,21 @@ public static class X
     public static string Dominant(IntPtr h, out uint colorRef)
     {
         colorRef = 0;
+        try { return Dominant2(h, out colorRef); } catch (Exception ex) { return "ошибка: " + ex.Message; }
+    }
+
+    [DllImport("user32.dll")] public static extern IntPtr WindowFromPoint(System.Drawing.Point p);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetClassNameW(IntPtr h, System.Text.StringBuilder s, int n);
+    public static string UnderPoint(int x, int y)
+    {
+        IntPtr h = WindowFromPoint(new System.Drawing.Point(x, y));
+        var sb = new System.Text.StringBuilder(256); GetClassNameW(h, sb, 256);
+        return h + " класс " + sb;
+    }
+
+    static string Dominant2(IntPtr h, out uint colorRef)
+    {
+        colorRef = 0;
         RECT r; GetWindowRect(h, out r);
         int w = r.R - r.L, hh = r.B - r.T;
         if (w < 50 || hh < 50) return "окно слишком мало";
@@ -104,17 +119,31 @@ function Experiment([string]$name, [IntPtr]$h) {
     if ($h -eq [IntPtr]::Zero) { Say "окно не найдено"; return }
     [X]::Place($h); Start-Sleep -Seconds 2
     [uint32]$key = 0
-    Say ("главный цвет: " + [X]::Dominant($h, [ref]$key))
+    try { Say ("главный цвет: " + [X]::Dominant($h, [ref]$key) + "  (COLORREF 0x" + $key.ToString('X6') + ")") } catch { Say ("главный цвет: ошибка " + $_.Exception.Message) }
     Say (Shot (Join-Path $Out "$name-1-до.png"))
     [X]::ColorKey($h, $key); Start-Sleep -Seconds 2
     Say (Shot (Join-Path $Out "$name-2-цветовой-ключ.png"))
+    Say ("под точкой фона (ниже середины окна): " + [X]::UnderPoint(600, 420) + "   под текстом: " + [X]::UnderPoint(150, 160))
     [X]::AccentSet($h, 4, 0x80181010); Start-Sleep -Seconds 2   # акрил с оттенком
     Say (Shot (Join-Path $Out "$name-3-ключ-и-акрил.png"))
     [X]::AccentSet($h, 0, 0); [X]::Unlayer($h); Start-Sleep -Seconds 1
 }
 
 # 1) обычное окно Windows Forms (белый фон, чёрный текст)
-$form = Start-Process pwsh -ArgumentList '-NoProfile', '-Command', 'Add-Type -AssemblyName System.Windows.Forms,System.Drawing; $f = New-Object System.Windows.Forms.Form; $f.Text = "BG-TEST-FORM"; $f.Width = 760; $f.Height = 480; $f.BackColor = [System.Drawing.Color]::White; $l = New-Object System.Windows.Forms.Label; $l.Text = "TEXT STAYS OPAQUE"; $l.Font = New-Object System.Drawing.Font("Segoe UI", 28); $l.AutoSize = $true; $l.Left = 30; $l.Top = 40; $f.Controls.Add($l); $p = New-Object System.Windows.Forms.Panel; $p.BackColor = [System.Drawing.Color]::Crimson; $p.Left = 30; $p.Top = 140; $p.Width = 200; $p.Height = 100; $f.Controls.Add($p); [void]$f.ShowDialog()' -PassThru
+$formScript = Join-Path (Get-Location) 'form.ps1'
+@'
+Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+$f = New-Object System.Windows.Forms.Form
+$f.Text = "BG-TEST-FORM"; $f.Width = 760; $f.Height = 480; $f.BackColor = [System.Drawing.Color]::White
+$l = New-Object System.Windows.Forms.Label
+$l.Text = "TEXT STAYS OPAQUE"; $l.Font = New-Object System.Drawing.Font("Segoe UI", 28); $l.AutoSize = $true; $l.Left = 30; $l.Top = 40
+$f.Controls.Add($l)
+$p = New-Object System.Windows.Forms.Panel
+$p.BackColor = [System.Drawing.Color]::Crimson; $p.Left = 30; $p.Top = 140; $p.Width = 200; $p.Height = 100
+$f.Controls.Add($p)
+[void]$f.ShowDialog()
+'@ | Set-Content $formScript -Encoding UTF8
+$form = Start-Process pwsh -ArgumentList '-NoProfile', '-File', $formScript -PassThru
 Start-Sleep -Seconds 5
 Experiment 'форма' (Find-Window 'BG-TEST-FORM')
 
