@@ -22,7 +22,16 @@ class AppearanceSettings
     public bool KeepEdges { get; set; } = true;         // у плавающей панели и «вкладки»: часы, трей и виджеты остаются отдельными островами, а не обрезаются
     public bool BackgroundHintShown { get; set; }
 
-    [JsonIgnore] public bool Active => Shape != ShapeNone;
+    // Новый движок для Windows 11 (плавные края, прозрачность, размытие) — см. XamlEngine.cs
+    public const string BgDefault = "default", BgSolid = "solid", BgClear = "clear", BgAcrylic = "acrylic";
+    public bool UseXaml { get; set; }
+    public string BgMode { get; set; } = BgDefault;     // default — как в Windows | solid — свой цвет | clear — прозрачный | acrylic — размытие
+    public string BgColor { get; set; } = "#202020";    // #RRGGBB
+    public int BgOpacity { get; set; } = 85;            // 0–100
+    public bool HideStroke { get; set; }                // убрать тонкую линию панели
+    public bool XamlConsentShown { get; set; }
+
+    [JsonIgnore] public bool Active => Shape != ShapeNone || UseXaml;
 
     public AppearanceSettings Clone() => (AppearanceSettings)MemberwiseClone();
 
@@ -39,6 +48,9 @@ class AppearanceSettings
         SideMargin = Clamp(SideMargin, 0, 600);
         BottomGap = Clamp(BottomGap, 0, 20);
         IslandPadding = Clamp(IslandPadding, 0, 40);
+        if (BgMode is not (BgDefault or BgSolid or BgClear or BgAcrylic)) BgMode = BgDefault;
+        if (!System.Text.RegularExpressions.Regex.IsMatch(BgColor ?? "", "^#[0-9A-Fa-f]{6}$")) BgColor = "#202020";
+        BgOpacity = Clamp(BgOpacity, 0, 100);
     }
 
     public static AppearanceSettings Load()

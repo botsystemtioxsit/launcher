@@ -9,7 +9,7 @@ namespace TaskbarPlusApp;
 // Окно настроек Taskbar Plus. Весь интерфейс собирается кодом: при смене формы или режима перерисовывается целиком.
 sealed class MainWindow : Window
 {
-    readonly TaskbarEngine engine;
+    readonly Engines engine;
     readonly AppearanceSettings settings;
     readonly StackPanel root = new();
     readonly TextBlock statusLine = new();
@@ -30,7 +30,7 @@ sealed class MainWindow : Window
         });
     }
 
-    public MainWindow(TaskbarEngine engine, AppearanceSettings settings)
+    public MainWindow(Engines engine, AppearanceSettings settings)
     {
         this.engine = engine;
         this.settings = settings;
@@ -101,6 +101,7 @@ sealed class MainWindow : Window
         statusLine.Margin = new Thickness(0, 0, 0, 14);
         root.Children.Add(statusLine);
 
+        root.Children.Add(EngineCard());
         root.Children.Add(AppearanceCard());
         root.Children.Add(IconsCard());
         root.Children.Add(AutoHideCard());
@@ -108,6 +109,118 @@ sealed class MainWindow : Window
     }
 
     // ---------- карточки ----------
+    // ---------- новый движок (Windows 11) ----------
+    static readonly string[] SwatchColors = { "#000000", "#202020", "#F2F2F2", "#00F0FF", "#FF2A9D", "#6C4DFF", "#1E6BFF", "#20C27A" };
+
+    UIElement EngineCard()
+    {
+        var rows = new List<UIElement>();
+        var reason = XamlEngine.UnavailableReason;
+        rows.Add(Note("Подключается к панели задач Windows 11 и меняет её настоящие элементы: края получаются гладкими, фон — прозрачным, цветным или размытым. " +
+                      "Пока он не заработал (или если Windows устроена иначе), действует обычный способ ниже."));
+        if (reason != null)
+        {
+            rows.Add(Note(reason));
+            return Card("Новый движок (Windows 11)", rows);
+        }
+
+        rows.Add(Row("Новый движок", "Включить гладкие края, прозрачность и размытие. При выходе из плагина панель возвращается как была.",
+            Seg(new[] { "Выкл", "Вкл" }, settings.UseXaml ? 1 : 0, i => SetUseXaml(i == 1))));
+
+        if (settings.UseXaml)
+        {
+            rows.Add(Row("Фон панели", "Как в Windows — родной фон. Свой цвет — заливка выбранным цветом. Прозрачный — без фона, видны только значки. Размытие — матовое стекло.",
+                Seg(new[] { "Как в Windows", "Свой цвет", "Прозрачный", "Размытие" }, BgIndex(), i =>
+                {
+                    settings.BgMode = new[] { AppearanceSettings.BgDefault, AppearanceSettings.BgSolid, AppearanceSettings.BgClear, AppearanceSettings.BgAcrylic }[i];
+                    Changed(); Build();
+                })));
+            if (settings.BgMode is AppearanceSettings.BgSolid or AppearanceSettings.BgAcrylic || settings.Shape == AppearanceSettings.ShapeIslands)
+            {
+                rows.Add(Row("Цвет", "Готовые цвета или свой в виде #RRGGBB", ColorPicker()));
+                rows.Add(SliderRow("Непрозрачность", "Чем меньше, тем прозрачнее", 0, 100, settings.BgOpacity, "%", v => { settings.BgOpacity = v; Changed(); }));
+            }
+            rows.Add(Row("Тонкая линия панели", "У панели Windows 11 есть тонкая обводка. Её можно убрать.",
+                Seg(new[] { "Оставить", "Убрать" }, settings.HideStroke ? 1 : 0, i => { settings.HideStroke = i == 1; Changed(); Build(); })));
+            rows.Add(Row("Только значки", "Панель без фона и обводки: значки просто лежат на рабочем столе.", Btn("Применить", null, () =>
+            {
+                settings.Shape = AppearanceSettings.ShapeNone;
+                settings.BgMode = AppearanceSettings.BgClear;
+                settings.HideStroke = true;
+                Changed(); Build();
+            })));
+
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+            buttons.Children.Add(Btn("Сохранить отчёт на рабочий стол", null, () => { _ = SaveReportAsync(); }, first: true));
+            if (engine.Xaml.Blocked) buttons.Children.Add(Btn("Попробовать снова", "Primary", () => { engine.Xaml.ClearBlock(); Changed(); Build(); }));
+            rows.Add(buttons);
+            rows.Add(Note("Если что-то выглядит не так, нажмите «Сохранить отчёт» — на рабочем столе появится TaskbarPlus-report.txt, его можно отправить разработчику."));
+        }
+        return Card("Новый движок (Windows 11)", rows);
+    }
+
+    int BgIndex() => settings.BgMode switch
+    {
+        AppearanceSettings.BgSolid => 1, AppearanceSettings.BgClear => 2, AppearanceSettings.BgAcrylic => 3, _ => 0,
+    };
+
+    void SetUseXaml(bool on)
+    {
+        if (on && !settings.XamlConsentShown)
+        {
+            var ok = MessageBox.Show(this,
+                "Новый движок подключается к панели задач внутри Проводника Windows (так работают и другие программы для оформления панели).\n\n" +
+                "Если Проводник закроется сразу после подключения два раза подряд, движок сам отключится.\n" +
+                "Вернуть всё как было можно кнопкой «Вернуть как было» или перезапуском панели задач.\n\nВключить?",
+                "Taskbar Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+            if (!ok) { Build(); return; }
+            settings.XamlConsentShown = true;
+        }
+        settings.UseXaml = on;
+        Changed();
+        Build();
+    }
+
+    StackPanel ColorPicker()
+    {
+        var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        var box = new TextBox { Text = settings.BgColor, Width = 86, Padding = new Thickness(6, 4, 6, 4), VerticalContentAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
+        void SetColor(string hex)
+        {
+            settings.BgColor = hex.ToUpperInvariant();
+            Changed();
+        }
+        box.TextChanged += (_, _) =>
+        {
+            var t = box.Text.Trim();
+            if (System.Text.RegularExpressions.Regex.IsMatch(t, "^#[0-9A-Fa-f]{6}$")) SetColor(t);
+        };
+        panel.Children.Add(box);
+        foreach (var hex in SwatchColors)
+        {
+            var color = (Color)ColorConverter.ConvertFromString(hex);
+            var sw = new Button
+            {
+                Width = 24, Height = 24, Margin = new Thickness(0, 0, 4, 0), Padding = new Thickness(0),
+                Background = new SolidColorBrush(color), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), ToolTip = hex,
+            };
+            sw.Click += (_, _) => { box.Text = hex; SetColor(hex); };
+            panel.Children.Add(sw);
+        }
+        return panel;
+    }
+
+    async Task SaveReportAsync()
+    {
+        Say("Собираю отчёт…");
+        try
+        {
+            var path = await engine.Xaml.SaveReportAsync();
+            Say("Отчёт сохранён: " + path);
+        }
+        catch (Exception ex) { Say("Не получилось сохранить отчёт: " + ex.Message); }
+    }
+
     UIElement AppearanceCard()
     {
         var rows = new List<UIElement>();
@@ -242,6 +355,7 @@ sealed class MainWindow : Window
         var text = (why == null ? "" : why + "\n\n") + "Панель задач и окна Проводника закроются на пару секунд и откроются снова. Перезапустить сейчас?";
         if (MessageBox.Show(this, text, "Taskbar Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return false;
         Say("Перезапускаю панель задач…");
+        engine.Xaml.NoteExplorerRestart();
         var err = await Task.Run(RegistrySettings.RestartExplorer);
         await Task.Delay(2500); // ждём, пока Проводник поднимется
         Say(err ?? "Панель задач перезапущена");
@@ -262,6 +376,9 @@ sealed class MainWindow : Window
     {
         Say("Возвращаю…");
         settings.Shape = AppearanceSettings.ShapeNone;
+        settings.UseXaml = false;
+        settings.BgMode = AppearanceSettings.BgDefault;
+        settings.HideStroke = false;
         var (restored, error) = await Task.Run(RegistrySettings.Reset);
         engine.Update(settings);
         settings.Save();

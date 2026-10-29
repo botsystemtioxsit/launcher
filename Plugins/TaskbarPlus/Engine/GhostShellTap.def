@@ -1,0 +1,5 @@
+LIBRARY GhostShellTap
+EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE
+    GhostShellHookProc

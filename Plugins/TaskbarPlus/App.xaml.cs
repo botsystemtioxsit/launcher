@@ -12,7 +12,7 @@ public partial class App : Application
     Mutex? mutex;
     EventWaitHandle? showEvent;
     EventWaitHandle? quitEvent;
-    TaskbarEngine? engine;
+    Engines? engine;
     AppearanceSettings settings = new();
     MainWindow? window;
     public static bool Quitting { get; set; }
@@ -35,7 +35,7 @@ public partial class App : Application
 
         var background = e.Args.Contains("--background");
         settings = AppearanceSettings.Load();
-        engine = new TaskbarEngine();
+        engine = new Engines();
         // Тихо возвращаем всё, что могло остаться от прошлого запуска, и применяем сохранённый вид.
         engine.Update(settings);
 
