@@ -8,7 +8,8 @@ namespace ColorPlusApp;
 // Правило для одной программы (по имени процесса, без «.exe»).
 class AppRule
 {
-    public string Mode { get; set; } = "inherit";   // inherit — как у всех | skip — не трогать | custom — своя прозрачность и размытие
+    public string Mode { get; set; } = "inherit";   // inherit — как у всех | skip — не трогать | custom — свой способ, прозрачность и размытие
+    public string? WinMode { get; set; }            // background | alpha | none; null — как у всех (только при Mode = custom)
     public int Opacity { get; set; } = 100;
     public string? Backdrop { get; set; }           // none | blur | acrylic | mica | tabbed; null — как у всех
 }
@@ -18,12 +19,16 @@ class ColorSettings
 {
     public const string BdNone = "none", BdBlur = "blur", BdAcrylic = "acrylic", BdMica = "mica", BdTabbed = "tabbed";
     public const string TbDefault = "default", TbClear = "clear", TbBlur = "blur", TbSolid = "solid";
+    public const string WmBackground = "background", WmAlpha = "alpha", WmNone = "none";
 
     static readonly string FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BattleLauncher", "color-plus-settings.json");
     static readonly Regex HexRe = new("^#[0-9A-Fa-f]{6}$");
 
     // ---- окна всех программ ----
     public bool WindowsOn { get; set; }
+    // background — прозрачным становится только фон окна (цветовой ключ); alpha — окно целиком; none — только рамка, цвет, подложка
+    public string WindowMode { get; set; } = WmBackground;
+    public bool FallbackAlpha { get; set; }               // если «только фон» невозможен (Chrome, Edge…) — сделать прозрачным окно целиком
     public int WindowOpacity { get; set; } = 90;          // 20–100: насколько окно «плотное»; меньше — сквозь него виден рабочий стол
     public string Backdrop { get; set; } = BdNone;        // что рисуется за окном
     public string Tint { get; set; } = "#101018";         // оттенок стекла (размытие и акрил)
@@ -55,7 +60,7 @@ class ColorSettings
     public ColorSettings Clone()
     {
         var c = (ColorSettings)MemberwiseClone();
-        c.Apps = Apps.ToDictionary(kv => kv.Key, kv => new AppRule { Mode = kv.Value.Mode, Opacity = kv.Value.Opacity, Backdrop = kv.Value.Backdrop });
+        c.Apps = Apps.ToDictionary(kv => kv.Key, kv => new AppRule { Mode = kv.Value.Mode, WinMode = kv.Value.WinMode, Opacity = kv.Value.Opacity, Backdrop = kv.Value.Backdrop });
         return c;
     }
 
@@ -69,6 +74,7 @@ class ColorSettings
         WindowOpacity = Clamp(WindowOpacity, 20, 100);
         TintOpacity = Clamp(TintOpacity, 0, 100);
         TaskbarOpacity = Clamp(TaskbarOpacity, 0, 100);
+        if (WindowMode is not (WmBackground or WmAlpha or WmNone)) WindowMode = WmBackground;
         if (Backdrop is not (BdNone or BdBlur or BdAcrylic or BdMica or BdTabbed)) Backdrop = BdNone;
         if (TaskbarMode is not (TbDefault or TbClear or TbBlur or TbSolid)) TaskbarMode = TbDefault;
         Tint = Hex(Tint, "#101018");
@@ -85,6 +91,7 @@ class ColorSettings
             if (r == null || r.Mode == "inherit") { Apps.Remove(k); continue; }
             if (r.Mode is not ("skip" or "custom")) { Apps.Remove(k); continue; }
             r.Opacity = Clamp(r.Opacity, 20, 100);
+            if (r.WinMode is not (null or WmBackground or WmAlpha or WmNone)) r.WinMode = null;
             if (r.Backdrop is not (null or BdNone or BdBlur or BdAcrylic or BdMica or BdTabbed)) r.Backdrop = null;
         }
     }

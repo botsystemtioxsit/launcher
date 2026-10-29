@@ -7,6 +7,8 @@ namespace ColorPlusApp;
 // возвращается: при выключении эффекта, при выходе из плагина и когда окно перестаёт подходить под правила.
 //
 // Что умеет Windows делать с чужими окнами «снаружи» (честно):
+//  • «только фон» — цветовой ключ слоёного окна: пиксели цвета фона становятся прозрачными, текст, картинки и заголовок остаются (BackgroundProbe;
+//    не работает у окон, которые рисуются видеокартой: Chrome, Edge, Electron, магазинные приложения);
 //  • прозрачность всего окна (WS_EX_LAYERED + SetLayeredWindowAttributes) — работает почти везде, видно рабочий стол сквозь окно;
 //  • размытие, акрил, «слюда» за окном (DWM) — видны там, где окно само прозрачно или у рамки и заголовка; у окон, которые
 //    закрашивают всё содержимое сплошным цветом, виден только заголовок (кнопка «растянуть эффект» помогает не всем программам);
@@ -32,6 +34,11 @@ sealed class WindowEffects : IDisposable
     {
         public bool OpacityChecked, HadLayered, LayeredByUs;
         public int Opacity = 100;
+        public bool Keyed;                    // сейчас на окне цветовой ключ
+        public uint KeyColor;
+        public DateTime KeyAt = DateTime.MinValue;
+        public string Outcome = "";           // background | alpha | none — что получилось на самом деле
+        public string? NoKeyWhy;              // почему «только фон» у этого окна невозможен
         public string Backdrop = ColorSettings.BdNone;
         public bool Extended, AccentSet, DarkSet, CaptionSet;
         public int OrigDark = -1;
@@ -39,7 +46,7 @@ sealed class WindowEffects : IDisposable
         public DateTime LastAssert = DateTime.MinValue;
     }
 
-    sealed record Eff(int Opacity, string Backdrop, bool Extend, bool Dark, string? Caption, string? CaptionText, string Tint, int TintOpacity);
+    sealed record Eff(string Mode, bool Fallback, int Opacity, string Backdrop, bool Extend, bool Dark, string? Caption, string? CaptionText, string Tint, int TintOpacity);
 
     readonly object gate = new();
     readonly Dictionary<IntPtr, WinState> states = new();
@@ -50,6 +57,7 @@ sealed class WindowEffects : IDisposable
     CancellationTokenSource? cts;
     Task? loop;
     string[] running = Array.Empty<string>();
+    Dictionary<string, string> unsupported = new();
     string status = "";
     bool taskbarWasOn;
 
@@ -60,6 +68,8 @@ sealed class WindowEffects : IDisposable
     public string Status { get { lock (gate) return status; } }
     // имена программ с окнами, которые движок видел в последний раз — для списка «Программы»
     public string[] RunningApps { get { lock (gate) return running; } }
+    // программы, у которых «только фон» невозможен, и почему — для пометки в списке «Программы»
+    public Dictionary<string, string> UnsupportedApps { get { lock (gate) return new Dictionary<string, string>(unsupported, StringComparer.OrdinalIgnoreCase); } }
 
     void SetStatus(string s)
     {
@@ -111,6 +121,7 @@ sealed class WindowEffects : IDisposable
         var seen = new HashSet<IntPtr>();
         var apps = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
         var applied = 0;
+        var unsup = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         Native.EnumWindows((h, _) =>
         {
             try
@@ -129,6 +140,7 @@ sealed class WindowEffects : IDisposable
                     st.Sig = sig;
                     st.LastAssert = DateTime.UtcNow;
                 }
+                if (st.NoKeyWhy != null) unsup[proc] = st.NoKeyWhy;
                 applied++;
             }
             catch { /* окно закрылось или нам не дали его менять — идём дальше */ }
@@ -142,11 +154,22 @@ sealed class WindowEffects : IDisposable
             if (Native.IsWindow(h)) { try { Restore(h, states[h]); } catch { } }
             states.Remove(h);
         }
-        lock (gate) running = apps.ToArray();
+        lock (gate) { running = apps.ToArray(); unsupported = new Dictionary<string, string>(unsup); }
 
         ApplyTaskbar(s);
 
-        SetStatus(s.WindowsOn ? $"Эффекты применены к окнам: {applied}" : (s.TaskbarOn ? "Работает для панели задач" : ""));
+        string text;
+        if (!s.WindowsOn) text = s.TaskbarOn ? "Работает для панели задач" : "";
+        else
+        {
+            var keyed = states.Values.Count(x => x.Outcome == "background");
+            var whole = states.Values.Count(x => x.Outcome == "alpha");
+            text = $"Окон под эффектами: {applied}";
+            if (s.WindowMode == ColorSettings.WmBackground || keyed > 0) text += $" · только фон: {keyed}";
+            if (whole > 0) text += $" · целиком: {whole}";
+            if (unsup.Count > 0) text += " · у этих фон прозрачным не сделать (рисуются видеокартой): " + string.Join(", ", unsup.Keys);
+        }
+        SetStatus(text);
     }
 
     string ProcessName(uint pid)
@@ -184,6 +207,8 @@ sealed class WindowEffects : IDisposable
         if (rule?.Mode == "skip") return null;
         var custom = rule?.Mode == "custom";
         return new Eff(
+            custom && rule!.WinMode != null ? rule.WinMode : s.WindowMode,
+            s.FallbackAlpha,
             custom ? rule!.Opacity : s.WindowOpacity,
             custom && rule!.Backdrop != null ? rule.Backdrop : s.Backdrop,
             s.ExtendFrame, s.DarkTitle, s.TitleColor, s.TitleTextColor, s.Tint, s.TintOpacity);
@@ -192,20 +217,50 @@ sealed class WindowEffects : IDisposable
     // ---------- применить к окну ----------
     void Apply(IntPtr h, WinState st, Eff eff, string cls)
     {
-        // прозрачность всего окна: только если окно само не слоёное (иначе сломаем его собственную прозрачность)
+        // прозрачность: только если окно само не слоёное (иначе сломаем его собственную прозрачность)
         if (!st.OpacityChecked)
         {
             st.HadLayered = (Native.GetLong(h, Native.GWL_EXSTYLE) & Native.WS_EX_LAYERED) != 0;
             st.OpacityChecked = true;
         }
         var canLayer = !st.HadLayered && cls != "ApplicationFrameWindow"; // окна магазинных приложений слоёность не любят
-        if (eff.Opacity < 100 && canLayer)
+        var wantKey = eff.Mode == ColorSettings.WmBackground;
+        var wantAlpha = eff.Mode == ColorSettings.WmAlpha;
+        var outcome = "none";
+        if (wantKey)
+        {
+            var why = canLayer ? BackgroundProbe.WhyUnsupported(h, cls) : "окно само управляет своей прозрачностью";
+            if (why == null)
+            {
+                // цвет фона: находим при первом применении и обновляем раз в 12 с (сменилась тема, открыта другая страница)
+                if (!st.Keyed || (DateTime.UtcNow - st.KeyAt).TotalSeconds > 12)
+                {
+                    if (BackgroundProbe.TrySample(h, out var color, out var share) && share >= BackgroundProbe.MinShare) { st.KeyColor = color; st.Keyed = true; }
+                    else if (!st.Keyed) why = "у окна нет одного явного цвета фона (картинка, градиент)";
+                    st.KeyAt = DateTime.UtcNow;
+                }
+            }
+            st.NoKeyWhy = why;
+            if (why != null)
+            {
+                if (eff.Fallback && canLayer) { wantKey = false; wantAlpha = true; }
+                else wantKey = false;
+            }
+        }
+        var alphaPercent = wantAlpha ? eff.Opacity : 100;
+        if ((wantKey || (wantAlpha && alphaPercent < 100)) && canLayer)
         {
             if (!st.LayeredByUs) { Native.SetLong(h, Native.GWL_EXSTYLE, Native.GetLong(h, Native.GWL_EXSTYLE) | Native.WS_EX_LAYERED); st.LayeredByUs = true; }
-            Native.SetLayeredWindowAttributes(h, 0, (byte)Math.Round(eff.Opacity * 255 / 100.0), Native.LWA_ALPHA);
-            st.Opacity = eff.Opacity;
+            var flags = (wantKey ? Native.LWA_COLORKEY : 0u) | (wantAlpha ? Native.LWA_ALPHA : 0u);
+            Native.SetLayeredWindowAttributes(h, wantKey ? st.KeyColor : 0, (byte)Math.Round(alphaPercent * 255 / 100.0), flags);
+            st.Opacity = alphaPercent;
+            if (wantKey) outcome = "background";
+            else if (wantAlpha) outcome = "alpha";
         }
         else if (st.LayeredByUs) RemoveLayer(h, st);
+        if (!wantKey) st.Keyed = false;
+        if (eff.Mode != ColorSettings.WmBackground) st.NoKeyWhy = null;
+        st.Outcome = outcome;
 
         ApplyBackdrop(h, st, eff);
 

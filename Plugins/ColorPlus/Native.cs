@@ -8,8 +8,9 @@ namespace ColorPlusApp;
 static class Native
 {
     public const int GWL_STYLE = -16, GWL_EXSTYLE = -20;
-    public const long WS_CAPTION = 0x00C00000, WS_EX_LAYERED = 0x00080000, WS_EX_TOOLWINDOW = 0x00000080, WS_EX_NOACTIVATE = 0x08000000;
-    public const uint LWA_ALPHA = 2, GW_OWNER = 4;
+    public const long WS_CAPTION = 0x00C00000, WS_EX_LAYERED = 0x00080000, WS_EX_TOOLWINDOW = 0x00000080, WS_EX_NOACTIVATE = 0x08000000,
+                      WS_EX_NOREDIRECTIONBITMAP = 0x00200000;
+    public const uint LWA_COLORKEY = 1, LWA_ALPHA = 2, GW_OWNER = 4;
     public const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20, DWMWA_BORDER_COLOR = 34, DWMWA_CAPTION_COLOR = 35, DWMWA_TEXT_COLOR = 36,
                      DWMWA_SYSTEMBACKDROP_TYPE = 38, DWMWA_CLOAKED = 14;
     public const uint ColorDefault = 0xFFFFFFFF;   // DWMWA_COLOR_DEFAULT
@@ -24,6 +25,9 @@ static class Native
 
     [StructLayout(LayoutKind.Sequential)]
     public struct MARGINS { public int Left, Right, Top, Bottom; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BITMAPINFOHEADER { public int Size, Width, Height; public short Planes, BitCount; public int Compression, SizeImage, XPels, YPels, ClrUsed, ClrImportant; }
 
     [StructLayout(LayoutKind.Sequential)]
     struct AccentPolicy { public int AccentState; public int AccentFlags; public uint GradientColor; public int AnimationId; }
@@ -53,6 +57,14 @@ static class Native
     [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint msg, IntPtr wParam, IntPtr lParam);
     [DllImport("user32.dll")] public static extern bool SetSysColors(int count, int[] elements, int[] rgb);
     [DllImport("user32.dll")] public static extern int GetSysColor(int index);
+    [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr h, IntPtr dc, uint flags);
+    [DllImport("user32.dll")] public static extern IntPtr GetDC(IntPtr h);
+    [DllImport("user32.dll")] public static extern int ReleaseDC(IntPtr h, IntPtr dc);
+    [DllImport("gdi32.dll")] public static extern IntPtr CreateCompatibleDC(IntPtr dc);
+    [DllImport("gdi32.dll")] public static extern IntPtr CreateDIBSection(IntPtr dc, ref BITMAPINFOHEADER bi, uint usage, out IntPtr bits, IntPtr section, uint offset);
+    [DllImport("gdi32.dll")] public static extern IntPtr SelectObject(IntPtr dc, IntPtr obj);
+    [DllImport("gdi32.dll")] public static extern bool DeleteObject(IntPtr obj);
+    [DllImport("gdi32.dll")] public static extern bool DeleteDC(IntPtr dc);
 
     [DllImport("dwmapi.dll")] public static extern int DwmSetWindowAttribute(IntPtr h, int attr, ref int value, int size);
     [DllImport("dwmapi.dll")] public static extern int DwmSetWindowAttribute(IntPtr h, int attr, ref uint value, int size);
