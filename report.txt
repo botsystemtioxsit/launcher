@@ -1,0 +1,9 @@
+окно Chrome: 66074
+снимок: results\1-до.png (1024x768)
+2-стекло-без-шапки : Chrome ex=0x280100 layered=1 alpha=153 flags=2 key=0x000000 backdrop=2 dark=0
+снимок: results\2-стекло-без-шапки.png (1024x768)
+3-стекло-и-чёткая-шапка : Chrome ex=0x280100 layered=1 alpha=153 flags=2 key=0x000000 backdrop=2 dark=0
+снимок: results\3-стекло-и-чёткая-шапка.png (1024x768)
+после: Chrome 
+снимок: results\4-после.png (1024x768)
+=== конец ===
