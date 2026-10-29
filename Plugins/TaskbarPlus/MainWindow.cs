@@ -47,9 +47,10 @@ sealed class MainWindow : Window
             Content = new Border { Padding = new Thickness(28, 24, 28, 28), Child = root },
         };
         saveTimer.Tick += (_, _) => { saveTimer.Stop(); settings.Save(); };
-        engine.StatusChanged += () => Dispatcher.BeginInvoke(new Action(() => statusLine.Text = engine.Status));
+        engine.StatusChanged += () => Dispatcher.BeginInvoke(new Action(() => { statusLine.Text = engine.Status; MaybeAskRestart(); }));
         Build();
         RefreshAutoHide();
+        Dispatcher.BeginInvoke(new Action(MaybeAskRestart));
     }
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
@@ -72,6 +73,16 @@ sealed class MainWindow : Window
         }
         base.OnClosing(e);
         Application.Current.Shutdown();
+    }
+
+    // Старая версия движка остаётся в Проводнике, пока его не перезапустить: предлагаем сделать это сразу, один раз за запуск.
+    bool restartAsked;
+
+    void MaybeAskRestart()
+    {
+        if (restartAsked || !settings.UseXaml || !engine.Xaml.NeedsRestart) return;
+        restartAsked = true;
+        _ = ConfirmRestartAsync("Движок панели задач обновился. Чтобы заработала новая версия, панель нужно перезапустить.");
     }
 
     void Changed()

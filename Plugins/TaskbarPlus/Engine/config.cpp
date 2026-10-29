@@ -22,7 +22,7 @@ static std::vector<std::string> Split(const std::string& s, char sep)
 }
 
 static int GroupIndex(const std::string& n) { return n == "widgets" ? 0 : n == "system" ? 1 : n == "apps" ? 2 : -1; }
-static int RuleKind(const std::string& n) { return n == "bgfill" ? 1 : n == "bgstroke" ? 2 : n == "app" ? 3 : n == "widgets" ? 4 : n == "system" ? 5 : 0; }
+static int RuleKind(const std::string& n) { return n == "bgfill" ? 1 : n == "bgstroke" ? 2 : n == "app" ? 3 : n == "widgets" ? 4 : n == "system" ? 5 : n == "pill" ? 6 : 0; }
 
 // «радиус;цвет;прозрачность;режим;скрыт» — пустое поле означает «как у всех»
 static IslandStyle ParseStyle(const std::string& v)
@@ -77,6 +77,7 @@ bool LoadConfig(Config& out, FILETIME& mtime)
         else if (key == "gap") c.gap = Clamp(n, 0, 30);
         else if (key == "hideStroke") c.hideStroke = n != 0;
         else if (key == "keepEdges") c.keepEdges = n != 0;
+        else if (key == "unifySystem") c.unifySystem = n != 0;
         else if (key == "islandMode") c.islandMode = Clamp(n, 0, 1);
         else if (key == "islandStyle") c.islandStyle = Clamp(n, 0, 1);
         else if (key == "islandPad") c.islandPad = Clamp(n, 0, 40);

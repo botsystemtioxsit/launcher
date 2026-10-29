@@ -15,7 +15,7 @@ namespace TaskbarPlusApp;
 sealed class XamlEngine : IDisposable
 {
     const string ResourceName = "GhostShellTap.dll";
-    const string EngineVersion = "2";   // должна совпадать с GS_ENGINE_VERSION в Engine/common.h
+    const string EngineVersion = "3";   // должна совпадать с GS_ENGINE_VERSION в Engine/common.h
 
     static readonly string DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BattleLauncher");
     static readonly string CfgPath = Path.Combine(DataDir, "taskbar-plus-engine.cfg");
@@ -62,6 +62,8 @@ sealed class XamlEngine : IDisposable
         : null;
 
     public bool Ready { get { lock (gate) return ready; } }
+    public bool NeedsRestart { get { lock (gate) return needsRestart; } }
+    bool needsRestart;
     public string Status { get { lock (gate) return status; } }
     public bool Blocked { get { lock (gate) return health.Blocked; } }
 
@@ -168,9 +170,11 @@ sealed class XamlEngine : IDisposable
             // Старая версия движка остаётся в Проводнике до его перезапуска; новая рядом с ней не запускается.
             if (state == "duplicate" || (state == "ready" && st.GetValueOrDefault("engine") != EngineVersion))
             {
-                SetState("Обновился движок. Чтобы подключить новую версию, нажмите «Перезапустить панель задач» внизу окна.", false);
+                lock (gate) needsRestart = true;
+                SetState("Обновился движок. Чтобы подключить новую версию, нужно перезапустить панель задач (кнопка внизу окна).", false);
                 return;
             }
+            lock (gate) needsRestart = false;
             if (state == "ready" && fresh)
             {
                 if (connectedSince == 0) connectedSince = now;
@@ -184,7 +188,8 @@ sealed class XamlEngine : IDisposable
                 {
                     int.TryParse(st.GetValueOrDefault("system"), out var sysCount);
                     int.TryParse(st.GetValueOrDefault("widgets"), out var wid);
-                    SetState($"Движок подключился (элементов {nodes}, значков {apps}, системная область {sysCount}, виджеты {wid}), но фон панели не нашёл — в вашей версии Windows он устроен иначе. " +
+                    int.TryParse(st.GetValueOrDefault("sessions"), out var sessions);
+                    SetState($"Движок подключился (окон XAML: {sessions}, элементов {nodes}, значков {apps}, системная область {sysCount}, виджеты {wid}), но фон панели не нашёл. " +
                              "Нажмите «Отправить отчёт разработчику»; пока действует обычный способ.", false);
                 }
                 else
@@ -284,7 +289,7 @@ sealed class XamlEngine : IDisposable
     // Встроенные правила лежат в самом движке. Файл engine-rules.txt в репозитории позволяет подправить названия элементов
     // для другой сборки Windows без нового выпуска плагина: плагин скачивает его при запуске и кладёт в настройки движка.
     static string[] ParseRules(string text) => text.Split('\n').Select(l => l.Trim())
-        .Where(l => l.Length > 0 && !l.StartsWith('#') && l.Split('|').Length >= 3 && l.Split('|')[0] is "bgfill" or "bgstroke" or "app" or "widgets" or "system").Take(100).ToArray();
+        .Where(l => l.Length > 0 && !l.StartsWith('#') && l.Split('|').Length >= 3 && l.Split('|')[0] is "bgfill" or "bgstroke" or "app" or "widgets" or "system" or "pill").Take(100).ToArray();
 
     static string[] LoadCachedRules()
     {
@@ -377,6 +382,7 @@ sealed class XamlEngine : IDisposable
         Put("gap", s.BottomGap);
         Put("hideStroke", s.HideStroke ? 1 : 0);
         Put("keepEdges", s.KeepEdges ? 1 : 0);
+        Put("unifySystem", 1);
         Put("islandMode", s.IslandMode == "group" ? 1 : 0);
         Put("islandStyle", s.IslandStyle == "tab" ? 1 : 0);
         Put("islandPad", s.IslandPadding);
