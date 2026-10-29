@@ -1,0 +1,133 @@
+=== пакеты в реестре пользователя ===
+найдено пакетов: 46
+  1527c705-839a-4832-9118-54d4Bd6a0c89_10.0.19640.1000_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.FilePicker_cw5n1h2txyewy
+  c5e2524a-ea46-4f67-841f-6a9465d9d515_10.0.26100.1_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.FileExplorer_cw5n1h2txyewy
+  E2A4F912-2574-4A75-9BB0-0D023378592B_10.0.19640.1000_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.AppResolverUX_cw5n1h2txyewy
+  F46D4000-FD22-4DB4-AC8E-4E1DDDE828FE_10.0.26100.1_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.AddSuggestedFoldersToLibraryDialog_cw5n1h2txyewy
+  Microsoft.AAD.BrokerPlugin_1000.19580.1000.2_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy
+  Microsoft.AccountsControl_10.0.26100.1_neutral__cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.AccountsControl_cw5n1h2txyewy
+  Microsoft.AsyncTextService_10.0.26100.1_neutral__8wekyb3d8bbwe  ->  C:\Windows\SystemApps\Microsoft.AsyncTextService_8wekyb3d8bbwe
+  Microsoft.BioEnrollment_10.0.19587.1000_neutral__cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.BioEnrollment_cw5n1h2txyewy
+  Microsoft.CredDialogHost_10.0.19595.1001_neutral__cw5n1h2txyewy  ->  C:\Windows\SystemApps\microsoft.creddialoghost_cw5n1h2txyewy
+  Microsoft.DesktopAppInstaller_1.26.510.0_x64__8wekyb3d8bbwe  ->  C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_1.26.510.0_x64__8wekyb3d8bbwe
+  Microsoft.ECApp_10.0.26100.33648_neutral__8wekyb3d8bbwe  ->  C:\Windows\SystemApps\Microsoft.ECApp_8wekyb3d8bbwe
+  Microsoft.LockApp_10.0.26100.33648_neutral__cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.LockApp_cw5n1h2txyewy
+  Microsoft.MicrosoftEdge.Stable_155.0.4283.62_neutral__8wekyb3d8bbwe  ->  C:\Program Files (x86)\Microsoft\Edge\Application
+  Microsoft.MicrosoftEdgeDevToolsClient_1000.25128.1000.0_neutral_neutral_8wekyb3d8bbwe  ->  C:\Windows\SystemApps\Microsoft.MicrosoftEdgeDevToolsClient_8wekyb3d8bbwe
+  Microsoft.UI.Xaml.2.8_8.2511.26001.0_x64__8wekyb3d8bbwe  ->  C:\Program Files\WindowsApps\Microsoft.UI.Xaml.2.8_8.2511.26001.0_x64__8wekyb3d8bbwe
+  Microsoft.UI.Xaml.CBS_9.2601.4001.0_x64__8wekyb3d8bbwe  ->  C:\Windows\SystemApps\Microsoft.UI.Xaml.CBS_8wekyb3d8bbwe
+  Microsoft.VCLibs.140.00.UWPDesktop_14.0.33728.0_x64__8wekyb3d8bbwe  ->  C:\Program Files\WindowsApps\Microsoft.VCLibs.140.00.UWPDesktop_14.0.33728.0_x64__8wekyb3d8bbwe
+  Microsoft.Win32WebViewHost_10.0.26100.1_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Win32WebViewHost_cw5n1h2txyewy
+  Microsoft.Windows.Apprep.ChxApp_1000.25128.1000.0_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.AppRep.ChxApp_cw5n1h2txyewy
+  Microsoft.Windows.CapturePicker_10.0.19580.1000_neutral__cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.CapturePicker_cw5n1h2txyewy
+  Microsoft.Windows.CloudExperienceHost_10.0.26100.1_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.CloudExperienceHost_cw5n1h2txyewy
+  Microsoft.Windows.ContentDeliveryManager_10.0.26100.1_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.ContentDeliveryManager_cw5n1h2txyewy
+  Microsoft.Windows.OOBENetworkCaptivePortal_10.0.26495.1000_neutral__cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.OOBENetworkCaptivePortal_cw5n1h2txyewy
+  Microsoft.Windows.OOBENetworkConnectionFlow_10.0.26495.1000_neutral__cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.OOBENetworkConnectionFlow_cw5n1h2txyewy
+  Microsoft.Windows.PeopleExperienceHost_10.0.26100.1_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.PeopleExperienceHost_cw5n1h2txyewy
+  Microsoft.Windows.PinningConfirmationDialog_1000.25140.1001.0_neutral__cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.PinningConfirmationDialog_cw5n1h2txyewy
+  Microsoft.Windows.ShellExperienceHost_10.0.26100.7462_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\ShellExperienceHost_cw5n1h2txyewy
+  Microsoft.Windows.StartMenuExperienceHost_10.0.26100.4768_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy
+  Microsoft.Windows.XGpuEjectDialog_10.0.26100.1_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Microsoft.Windows.XGpuEjectDialog_cw5n1h2txyewy
+  Microsoft.WindowsAppRuntime.CBS.1.6_6000.690.32.100_x64__8wekyb3d8bbwe  ->  C:\Windows\SystemApps\Microsoft.WindowsAppRuntime.CBS_8wekyb3d8bbwe
+  Microsoft.WindowsAppRuntime.CBS.1.8_8000.694.2228.100_x64__8wekyb3d8bbwe  ->  C:\Windows\SystemApps\Microsoft.WindowsAppRuntime.vNext.CBS_8wekyb3d8bbwe
+  Microsoft.WindowsTerminal_1.23.20211.0_x64__8wekyb3d8bbwe  ->  C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.23.20211.0_x64__8wekyb3d8bbwe
+  MicrosoftWindows.57242383.Tasbar_1000.26100.33648.0_x64__cw5n1h2txyewy  ->  C:\Windows\SystemApps\SxS\MicrosoftWindows.57242383.Tasbar_cw5n1h2txyewy
+  MicrosoftWindows.59336768.Speion_1000.26100.33648.0_x64__cw5n1h2txyewy  ->  C:\Windows\SystemApps\SxS\MicrosoftWindows.59336768.Speion_cw5n1h2txyewy
+  MicrosoftWindows.59337133.Voiess_1000.26100.33648.0_x64__cw5n1h2txyewy  ->  C:\Windows\SystemApps\SxS\MicrosoftWindows.59337133.Voiess_cw5n1h2txyewy
+  MicrosoftWindows.59337145.Livtop_1000.26100.33648.0_x64__cw5n1h2txyewy  ->  C:\Windows\SystemApps\SxS\MicrosoftWindows.59337145.Livtop_cw5n1h2txyewy
+  MicrosoftWindows.59379618.InpApp_1000.26100.33648.0_x64__cw5n1h2txyewy  ->  C:\Windows\SystemApps\SxS\MicrosoftWindows.59379618.InpApp_cw5n1h2txyewy
+  MicrosoftWindows.Client.CBS_1000.26100.275.0_x64__cw5n1h2txyewy  ->  C:\Windows\SystemApps\MicrosoftWindows.Client.CBS_cw5n1h2txyewy
+  MicrosoftWindows.Client.Core_1000.26100.81.0_x64__cw5n1h2txyewy  ->  C:\Windows\SystemApps\MicrosoftWindows.Client.Core_cw5n1h2txyewy
+  MicrosoftWindows.Client.FileExp_1000.26100.4.0_x64__cw5n1h2txyewy  ->  C:\Windows\SystemApps\MicrosoftWindows.Client.FileExp_cw5n1h2txyewy
+  MicrosoftWindows.Client.OOBE_1000.26100.28.0_x64__cw5n1h2txyewy  ->  C:\Windows\SystemApps\MicrosoftWindows.Client.OOBE_cw5n1h2txyewy
+  MicrosoftWindows.Client.Photon_1000.26100.10.0_x64__cw5n1h2txyewy  ->  C:\Windows\SystemApps\MicrosoftWindows.Client.Photon_cw5n1h2txyewy
+  MicrosoftWindows.UndockedDevKit_10.0.26100.1_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\MicrosoftWindows.UndockedDevKit_cw5n1h2txyewy
+  Windows.CBSPreview_10.0.19580.1000_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Windows.CBSPreview_cw5n1h2txyewy
+  windows.immersivecontrolpanel_10.0.8.1000_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\ImmersiveControlPanel
+  Windows.PrintDialog_6.2.3.0_neutral_neutral_cw5n1h2txyewy  ->  C:\Windows\SystemApps\Windows.PrintDialog_cw5n1h2txyewy
+
+=== манифесты: читаются ли и есть ли значки-файлы ===
+  1527c705-839a-4832-9118-54d4Bd6a0c89_10.0.19640.1000_neutral_neutral_cw5n1h2txyewy: логотипы Assets\SquareTile44x44.png, Assets\SquareTile150x150.png; файлов-вариантов 4
+  c5e2524a-ea46-4f67-841f-6a9465d9d515_10.0.26100.1_neutral_neutral_cw5n1h2txyewy: логотипы Assets\SquareTile44x44.png, Assets\SquareTile150x150.png; файлов-вариантов 16
+  E2A4F912-2574-4A75-9BB0-0D023378592B_10.0.19640.1000_neutral_neutral_cw5n1h2txyewy: логотипы Assets\SquareTile44x44.png, Assets\SquareTile150x150.png; файлов-вариантов 1
+  F46D4000-FD22-4DB4-AC8E-4E1DDDE828FE_10.0.26100.1_neutral_neutral_cw5n1h2txyewy: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png; файлов-вариантов 2
+  Microsoft.AAD.BrokerPlugin_1000.19580.1000.2_neutral_neutral_cw5n1h2txyewy: логотипы Assets\SmallLogo.png, Assets\Logo.png; файлов-вариантов 1
+  Microsoft.AccountsControl_10.0.26100.1_neutral__cw5n1h2txyewy: логотипы Assets\SmallLogo.png, Assets\Logo.png; файлов-вариантов 2
+  Microsoft.AsyncTextService_10.0.26100.1_neutral__8wekyb3d8bbwe: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png; файлов-вариантов 1
+  Microsoft.BioEnrollment_10.0.19587.1000_neutral__cw5n1h2txyewy: логотипы Assets\SmallLogo.png, Assets\Logo.png; файлов-вариантов 0
+  Microsoft.CredDialogHost_10.0.19595.1001_neutral__cw5n1h2txyewy: логотипы Assets\SmallLogo.png, Assets\Logo.png; файлов-вариантов 0
+  Microsoft.DesktopAppInstaller_1.26.510.0_x64__8wekyb3d8bbwe: логотипы Assets\AppPackageAppList.png, Assets\AppPackageMedTile.png, Assets\AppPackageAppList.png, Assets\AppPackageMedTile.png, Assets\WinGet\AppList.png, Assets\WinGet\MedTile.png, Assets\WinGet\AppList.png, Assets\WinGet\MedTile.png; файлов-вариантов 29
+  Microsoft.ECApp_10.0.26100.33648_neutral__8wekyb3d8bbwe: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png; файлов-вариантов 1
+  Microsoft.LockApp_10.0.26100.33648_neutral__cw5n1h2txyewy: логотипы Assets\SmallLogo.png, Assets\Logo.png; файлов-вариантов 1
+  Microsoft.MicrosoftEdge.Stable_155.0.4283.62_neutral__8wekyb3d8bbwe: манифест читается: False
+  Microsoft.MicrosoftEdgeDevToolsClient_1000.25128.1000.0_neutral_neutral_8wekyb3d8bbwe: логотипы Assets/packageAssets/F12-package_44.png, Assets/F12-package_150.png; файлов-вариантов 0
+  Microsoft.UI.Xaml.2.8_8.2511.26001.0_x64__8wekyb3d8bbwe: манифест читается: True
+  Microsoft.UI.Xaml.CBS_9.2601.4001.0_x64__8wekyb3d8bbwe: манифест читается: True
+  Microsoft.VCLibs.140.00.UWPDesktop_14.0.33728.0_x64__8wekyb3d8bbwe: манифест читается: True
+  Microsoft.Win32WebViewHost_10.0.26100.1_neutral_neutral_cw5n1h2txyewy: логотипы Assets\solidsquare.png, Assets\solidsquare.png, Assets\solidsquare.png, Assets\solidsquare.png, Assets\solidsquare.png, Assets\solidsquare.png; файлов-вариантов 1
+  Microsoft.Windows.Apprep.ChxApp_1000.25128.1000.0_neutral_neutral_cw5n1h2txyewy: логотипы Assets\SmallLogo.png, Assets\Logo.png; файлов-вариантов 1
+  Microsoft.Windows.CapturePicker_10.0.19580.1000_neutral__cw5n1h2txyewy: логотипы Assets\SmallLogo.png, Assets\Logo.png; файлов-вариантов 0
+  Microsoft.Windows.CloudExperienceHost_10.0.26100.1_neutral_neutral_cw5n1h2txyewy: логотипы images\SmallLogo.png, images\Logo.png; файлов-вариантов 1
+  Microsoft.Windows.ContentDeliveryManager_10.0.26100.1_neutral_neutral_cw5n1h2txyewy: логотипы Images\SmallLogo.png, Images\Logo.png; файлов-вариантов 1
+  Microsoft.Windows.OOBENetworkCaptivePortal_10.0.26495.1000_neutral__cw5n1h2txyewy: логотипы Assets\SmallLogo.png, Assets\Logo.png; файлов-вариантов 0
+  Microsoft.Windows.OOBENetworkConnectionFlow_10.0.26495.1000_neutral__cw5n1h2txyewy: логотипы Assets\SmallLogo.png, Assets\Logo.png; файлов-вариантов 0
+  Microsoft.Windows.PeopleExperienceHost_10.0.26100.1_neutral_neutral_cw5n1h2txyewy: логотипы Assets\PeopleLogo.png, Assets\Square150x150Logo.png; файлов-вариантов 57
+  Microsoft.Windows.PinningConfirmationDialog_1000.25140.1001.0_neutral__cw5n1h2txyewy: логотипы Assets\SmallLogo.png, Assets\Logo.png; файлов-вариантов 0
+  Microsoft.Windows.ShellExperienceHost_10.0.26100.7462_neutral_neutral_cw5n1h2txyewy: логотипы Assets\SmallLogo.png, Assets\Logo.png, Assets\SmallLogo.png, Assets\Logo.png; файлов-вариантов 1
+  Microsoft.Windows.StartMenuExperienceHost_10.0.26100.4768_neutral_neutral_cw5n1h2txyewy: логотипы Assets\SmallLogo.png, Assets\Logo.png, Assets\SmallLogo.png, Assets\Logo.png; файлов-вариантов 1
+  Microsoft.Windows.XGpuEjectDialog_10.0.26100.1_neutral_neutral_cw5n1h2txyewy: логотипы Assets\SquareTile44x44.png, Assets\SquareTile150x150.png; файлов-вариантов 3
+  Microsoft.WindowsAppRuntime.CBS.1.6_6000.690.32.100_x64__8wekyb3d8bbwe: манифест читается: True
+  Microsoft.WindowsAppRuntime.CBS.1.8_8000.694.2228.100_x64__8wekyb3d8bbwe: манифест читается: True
+  Microsoft.WindowsTerminal_1.23.20211.0_x64__8wekyb3d8bbwe: логотипы Images\Square44x44Logo.png, Images\Square150x150Logo.png; файлов-вариантов 99
+  MicrosoftWindows.57242383.Tasbar_1000.26100.33648.0_x64__cw5n1h2txyewy: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png; файлов-вариантов 1
+  MicrosoftWindows.59336768.Speion_1000.26100.33648.0_x64__cw5n1h2txyewy: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png; файлов-вариантов 1
+  MicrosoftWindows.59337133.Voiess_1000.26100.33648.0_x64__cw5n1h2txyewy: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png; файлов-вариантов 1
+  MicrosoftWindows.59337145.Livtop_1000.26100.33648.0_x64__cw5n1h2txyewy: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png; файлов-вариантов 1
+  MicrosoftWindows.59379618.InpApp_1000.26100.33648.0_x64__cw5n1h2txyewy: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, InputApp\Assets\SquareLogo44x44.png, InputApp\Assets\SquareLogo150x150.png, InputApp\Assets\SquareLogo44x44.png, InputApp\Assets\SquareLogo150x150.png; файлов-вариантов 1
+  MicrosoftWindows.Client.CBS_1000.26100.275.0_x64__cw5n1h2txyewy: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, ActionFXRuntime\Assets\Square44x44Logo.png, ActionFXRuntime\Assets\Square150x150Logo.png, Assets\ActionResponse.png, Assets\ActionResponse.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, CrossDeviceResume\Assets\Square44x44Logo.png, CrossDeviceResume\Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, InputApp\Assets\SquareLogo44x44.png, InputApp\Assets\SquareLogo150x150.png, InputApp\Assets\SquareLogo44x44.png, InputApp\Assets\SquareLogo150x150.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Cortana.UI\Assets\App\Square44x44Logo.png, Cortana.UI\Assets\App\Square150x150Logo.png, Cortana.UI\Assets\App\Square44x44Logo.png, Cortana.UI\Assets\App\Square150x150Logo.png, Cortana.UI\Assets\App\Square44x44Logo.png, Cortana.UI\Assets\App\Square150x150Logo.png, Images\Square44x44Logo.png, Images\Square150x150Logo.png, VisualAssist\Assets\DescribeImage44x44.png, VisualAssist\Assets\Square150x150Logo.png, Assets\GetStartedAppList.png, Assets\GetStartedMedTile.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, WindowsBackup\Assets\AppList.png, WindowsBackup\Assets\MedTile.png, WindowsMigration\Assets\Square44x44Logo.png, WindowsMigration\Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png; файлов-вариантов 1
+  MicrosoftWindows.Client.Core_1000.26100.81.0_x64__cw5n1h2txyewy: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, ScreenClipping\Assets\Square44x44Logo.png, ScreenClipping\Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png; файлов-вариантов 1
+  MicrosoftWindows.Client.FileExp_1000.26100.4.0_x64__cw5n1h2txyewy: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png; файлов-вариантов 1
+  MicrosoftWindows.Client.OOBE_1000.26100.28.0_x64__cw5n1h2txyewy: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\OobeSmallLogo.png, Assets\OobeLogo.png, Assets\WOAHSmallLogo.png, Assets\WOAHLogo.png, Assets\WOAHSmallLogo.png, Assets\WOAHLogo.png; файлов-вариантов 1
+  MicrosoftWindows.Client.Photon_1000.26100.10.0_x64__cw5n1h2txyewy: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png, Assets\Square44x44Logo.png, Assets\Square150x150Logo.png; файлов-вариантов 1
+  MicrosoftWindows.UndockedDevKit_10.0.26100.1_neutral_neutral_cw5n1h2txyewy: манифест читается: True
+  Windows.CBSPreview_10.0.19580.1000_neutral_neutral_cw5n1h2txyewy: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png; файлов-вариантов 1
+  windows.immersivecontrolpanel_10.0.8.1000_neutral_neutral_cw5n1h2txyewy: логотипы Images\logo.png, Images\TileSmall.png; файлов-вариантов 102
+  Windows.PrintDialog_6.2.3.0_neutral_neutral_cw5n1h2txyewy: логотипы Assets\Square44x44Logo.png, Assets\Square150x150Logo.png; файлов-вариантов 15
+подходящих для опыта: 32
+
+=== опыт: Terminal (WindowsApps), Параметры (ImmersiveControlPanel), PrintDialog (SystemApps) ===
+--- Microsoft.WindowsTerminal_1.23.20211.0_x64__8wekyb3d8bbwe : C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.23.20211.0_x64__8wekyb3d8bbwe\Images
+файл: C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.23.20211.0_x64__8wekyb3d8bbwe\Images\Square44x44Logo.scale-100_contrast-black.png  владелец: BUILTIN\Administrators  атрибуты: Archive  sha256: 9E28940C9032
+ACL сохранены: True
+icacls grant: processed file: C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.23.20211.0_x64__8wekyb3d8bbwe\Images\Wide310x150Logo.scale-400_contrast-white.png | Successfully processed 192 files; Failed processing 0 files
+владелец после takeown: runnervmdaln5\runneradmin
+ACL файла после grant: C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.23.20211.0_x64__8wekyb3d8bbwe\Images\Square44x44Logo.scale-100_contrast-black.png BUILTIN\Administrators:(I)(F) |                                                                                                                                            BUILTIN\Users:(I)(Rc,S,RD,REA,X,RA) |                                                                                                                                            S-1-15-3-1254322593-1477425798-1529151232-702750859-81020123-3651049416-2875749711:(I)(RX) |                                                                                                                                            BUILTIN\Users:(I)(R) |                                                                                                                                            NT SERVICE\TrustedInstaller:(I)(F) |                                                                                                                                            S-1-15-3-1024-3635283841-2530182609-996808640-1887759898-3848208603-3313616867-983405619-2501854204:(I)(RX) |                                                                                                                                            NT AUTHORITY\SYSTEM:(I)(F) |                                                                                                                                            NT AUTHORITY\LOCAL SERVICE:(I)(RX) |                                                                                                                                            NT AUTHORITY\NETWORK SERVICE:(I)(RX) |                                                                                                                                            NT AUTHORITY\RESTRICTED:(I)(RX) |                                                                                                                                            S-1-19-512-4096:(RX,D,WDAC,WO,WA) |  | Successfully processed 1 files; Failed processing 0 files
+запись не вышла: Exception calling "Copy" with "3" argument(s): "Access to the path 'C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.23.20211.0_x64__8wekyb3d8bbwe\Images\Square44x44Logo.scale-100_contrast-black.png' is denied."
+robocopy /B: 2026/10/29 23:47:24 ERROR 5 (0x00000005) Accessing Destination Directory C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.23.20211.0_x64__8wekyb3d8bbwe\Images\ | Access is denied. |  | 
+Set-Content: Access to the path 'C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.23.20211.0_x64__8wekyb3d8bbwe\Images\Square44x44Logo.scale-100_contrast-black.png' is denied.
+sha256 после подмены: 9E28940C9032  изменился: False
+ошибка опыта: Exception calling "WriteAllBytes" with "2" argument(s): "Access to the path 'C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.23.20211.0_x64__8wekyb3d8bbwe\Images\Square44x44Logo.scale-100_contrast-black.png' is denied."
+--- windows.immersivecontrolpanel_10.0.8.1000_neutral_neutral_cw5n1h2txyewy : C:\Windows\ImmersiveControlPanel\Images
+файл: C:\Windows\ImmersiveControlPanel\images\logo.contrast-black_scale-100.png  владелец: NT SERVICE\TrustedInstaller  атрибуты: Archive  sha256: 7153F15DB63D
+ACL сохранены: True
+icacls grant: processed file: C:\Windows\ImmersiveControlPanel\Images\wide.UpdateRestore.png | Successfully processed 190 files; Failed processing 0 files
+владелец после takeown: runnervmdaln5\runneradmin
+ACL файла после grant: C:\Windows\ImmersiveControlPanel\images\logo.contrast-black_scale-100.png NT SERVICE\TrustedInstaller:(F) |                                                                           BUILTIN\Administrators:(RX) |                                                                           NT AUTHORITY\SYSTEM:(RX) |                                                                           BUILTIN\Users:(RX) |                                                                           APPLICATION PACKAGE AUTHORITY\ALL APPLICATION PACKAGES:(RX) |                                                                           APPLICATION PACKAGE AUTHORITY\ALL RESTRICTED APPLICATION PACKAGES:(RX) |  | Successfully processed 1 files; Failed processing 0 files
+запись не вышла: Exception calling "Copy" with "3" argument(s): "Access to the path 'C:\Windows\ImmersiveControlPanel\images\logo.contrast-black_scale-100.png' is denied."
+robocopy /B:  | 	                   1	D:\a\launcher\launcher\results\bk-2\ | 	    Newer     		     185	logo.contrast-black_scale-100.png
+Set-Content: Exception setting "IsReadOnly": "Access to the path 'C:\Windows\ImmersiveControlPanel\images\logo.contrast-black_scale-100.png' is denied."
+sha256 после подмены: 733EF579F73B  изменился: True
+ошибка опыта: Exception calling "WriteAllBytes" with "2" argument(s): "Access to the path 'C:\Windows\ImmersiveControlPanel\images\logo.contrast-black_scale-100.png' is denied."
+--- Windows.PrintDialog_6.2.3.0_neutral_neutral_cw5n1h2txyewy : C:\Windows\SystemApps\Windows.PrintDialog_cw5n1h2txyewy\Assets
+файл: C:\Windows\SystemApps\Windows.PrintDialog_cw5n1h2txyewy\Assets\Square44x44Logo.targetsize-16_altform-lightunplated.png  владелец: NT SERVICE\TrustedInstaller  атрибуты: Archive  sha256: 5EEB1E10BACF
+ACL сохранены: True
+icacls grant: processed file: C:\Windows\SystemApps\Windows.PrintDialog_cw5n1h2txyewy\Assets\Wide310x150Logo.scale-200.png | Successfully processed 21 files; Failed processing 0 files
+владелец после takeown: runnervmdaln5\runneradmin
+ACL файла после grant: C:\Windows\SystemApps\Windows.PrintDialog_cw5n1h2txyewy\Assets\Square44x44Logo.targetsize-16_altform-lightunplated.png NT SERVICE\TrustedInstaller:(F) |                                                                                                                        BUILTIN\Administrators:(RX) |                                                                                                                        NT AUTHORITY\SYSTEM:(RX) |                                                                                                                        BUILTIN\Users:(RX) |                                                                                                                        APPLICATION PACKAGE AUTHORITY\ALL APPLICATION PACKAGES:(RX) |                                                                                                                        APPLICATION PACKAGE AUTHORITY\ALL RESTRICTED APPLICATION PACKAGES:(RX) |  | Successfully processed 1 files; Failed processing 0 files
+запись не вышла: Exception calling "Copy" with "3" argument(s): "Access to the path 'C:\Windows\SystemApps\Windows.PrintDialog_cw5n1h2txyewy\Assets\Square44x44Logo.targetsize-16_altform-lightunplated.png' is denied."
+robocopy /B:  | 	                   1	D:\a\launcher\launcher\results\bk-3\ | 	    Newer     		     136	Square44x44Logo.targetsize-16_altform-lightunplated.png
+Set-Content: Exception setting "IsReadOnly": "Access to the path 'C:\Windows\SystemApps\Windows.PrintDialog_cw5n1h2txyewy\Assets\Square44x44Logo.targetsize-16_altform-lightunplated.png' is denied."
+sha256 после подмены: B6E0E273F092  изменился: True
+ошибка опыта: Exception calling "WriteAllBytes" with "2" argument(s): "Access to the path 'C:\Windows\SystemApps\Windows.PrintDialog_cw5n1h2txyewy\Assets\Square44x44Logo.targetsize-16_altform-lightunplated.png' is denied."
+=== конец ===
