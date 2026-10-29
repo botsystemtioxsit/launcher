@@ -102,6 +102,11 @@ sealed class MainWindow : Window
         root.Children.Add(statusLine);
 
         root.Children.Add(EngineCard());
+        if (settings.UseXaml && XamlEngine.UnavailableReason == null)
+        {
+            root.Children.Add(LayoutCard());
+            root.Children.Add(IslandsCard());
+        }
         root.Children.Add(AppearanceCard());
         root.Children.Add(IconsCard());
         root.Children.Add(AutoHideCard());
@@ -137,7 +142,7 @@ sealed class MainWindow : Window
                 })));
             if (settings.BgMode is AppearanceSettings.BgSolid or AppearanceSettings.BgAcrylic || settings.Shape == AppearanceSettings.ShapeIslands)
             {
-                rows.Add(Row("Цвет", "Готовые цвета или свой в виде #RRGGBB", ColorPicker()));
+                rows.Add(Row("Цвет", "Готовые цвета или свой в виде #RRGGBB", ColorPicker(settings.BgColor, hex => { settings.BgColor = hex; Changed(); })));
                 rows.Add(SliderRow("Непрозрачность", "Чем меньше, тем прозрачнее", 0, 100, settings.BgOpacity, "%", v => { settings.BgOpacity = v; Changed(); }));
             }
             rows.Add(Row("Тонкая линия панели", "У панели Windows 11 есть тонкая обводка. Её можно убрать.",
@@ -151,10 +156,13 @@ sealed class MainWindow : Window
             })));
 
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
-            buttons.Children.Add(Btn("Сохранить отчёт на рабочий стол", null, () => { _ = SaveReportAsync(); }, first: true));
+            buttons.Children.Add(Btn("Отправить отчёт разработчику", "Primary", () => { _ = UploadReportAsync(); }, first: true));
+            buttons.Children.Add(Btn("Сохранить отчёт на рабочий стол", null, () => { _ = SaveReportAsync(); }));
+            buttons.Children.Add(Btn("Перезапустить панель задач", null, () => { _ = ConfirmRestartAsync(null); }));
             if (engine.Xaml.Blocked) buttons.Children.Add(Btn("Попробовать снова", "Primary", () => { engine.Xaml.ClearBlock(); Changed(); Build(); }));
             rows.Add(buttons);
-            rows.Add(Note("Если что-то выглядит не так, нажмите «Сохранить отчёт» — на рабочем столе появится TaskbarPlus-report.txt, его можно отправить разработчику."));
+            rows.Add(Note("Если что-то выглядит не так или не работает, нажмите «Отправить отчёт разработчику». В отчёте версия Windows, настройки плагина и названия элементов панели — ничего личного. " +
+                          "Он уходит в общую базу проекта и попадает в репозиторий. Можно и сохранить его файлом на рабочий стол."));
         }
         return Card("Новый движок (Windows 11)", rows);
     }
@@ -181,19 +189,14 @@ sealed class MainWindow : Window
         Build();
     }
 
-    StackPanel ColorPicker()
+    StackPanel ColorPicker(string current, Action<string> set)
     {
         var panel = new StackPanel { Orientation = Orientation.Horizontal };
-        var box = new TextBox { Text = settings.BgColor, Width = 86, Padding = new Thickness(6, 4, 6, 4), VerticalContentAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
-        void SetColor(string hex)
-        {
-            settings.BgColor = hex.ToUpperInvariant();
-            Changed();
-        }
+        var box = new TextBox { Text = current, Width = 86, Padding = new Thickness(6, 4, 6, 4), VerticalContentAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
         box.TextChanged += (_, _) =>
         {
             var t = box.Text.Trim();
-            if (System.Text.RegularExpressions.Regex.IsMatch(t, "^#[0-9A-Fa-f]{6}$")) SetColor(t);
+            if (System.Text.RegularExpressions.Regex.IsMatch(t, "^#[0-9A-Fa-f]{6}$")) set(t.ToUpperInvariant());
         };
         panel.Children.Add(box);
         foreach (var hex in SwatchColors)
@@ -204,10 +207,184 @@ sealed class MainWindow : Window
                 Width = 24, Height = 24, Margin = new Thickness(0, 0, 4, 0), Padding = new Thickness(0),
                 Background = new SolidColorBrush(color), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), ToolTip = hex,
             };
-            sw.Click += (_, _) => { box.Text = hex; SetColor(hex); };
+            sw.Click += (_, _) => { box.Text = hex; set(hex); };
             panel.Children.Add(sw);
         }
         return panel;
+    }
+
+    // ---------- расположение ----------
+    static readonly string[] GroupIds = { "widgets", "system", "apps" };
+    static readonly string[] Zones = { AppearanceSettings.ZoneDefault, AppearanceSettings.ZoneLeft, AppearanceSettings.ZoneCenter, AppearanceSettings.ZoneRight };
+
+    static string GroupTitle(string id) => id switch { "widgets" => "Виджеты", "system" => "Часы, сеть и трей", "apps" => "Значки приложений", _ => id };
+    static string GroupHint(string id) => id switch
+    {
+        "widgets" => "Погода и другие виджеты слева на панели",
+        "system" => "Часы, язык ввода, сеть, звук, скрытые значки — всё это одно целое и всегда остаётся одним объектом",
+        _ => "«Пуск», поиск и все значки программ",
+    };
+
+    string GetZone(string id) => id switch { "widgets" => settings.ZoneWidgets, "system" => settings.ZoneSystem, _ => settings.ZoneApps };
+
+    void SetZone(string id, string zone)
+    {
+        if (id == "widgets") settings.ZoneWidgets = zone;
+        else if (id == "system") settings.ZoneSystem = zone;
+        else settings.ZoneApps = zone;
+    }
+
+    UIElement LayoutCard()
+    {
+        var rows = new List<UIElement>
+        {
+            Note("Каждую часть панели можно поставить слева, по центру или справа и поменять местами. «Как в Windows» — не трогать. " +
+                 "Часы, сеть, трей и скрытые значки всегда двигаются и выглядят одним целым."),
+        };
+        foreach (var id in GroupIds)
+        {
+            var gid = id;
+            rows.Add(Row(GroupTitle(gid), GroupHint(gid),
+                Seg(new[] { "Как в Windows", "Слева", "По центру", "Справа" }, Math.Max(0, Array.IndexOf(Zones, GetZone(gid))), i => { SetZone(gid, Zones[i]); Changed(); Build(); })));
+        }
+        rows.Add(Row("Порядок слева направо", "Если несколько частей стоят в одном месте, они выстраиваются в этом порядке", OrderEditor()));
+        rows.Add(SliderRow("Отступ от края", "Для частей «слева» и «справа»", 0, 60, settings.EdgeMargin, "px", v => { settings.EdgeMargin = v; Changed(); }));
+        rows.Add(Note("Нажатия идут за значками. Окна Windows (календарь, быстрые настройки, «Пуск») могут открываться на прежнем месте."));
+        return Card("Расположение", rows);
+    }
+
+    StackPanel OrderEditor()
+    {
+        var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        for (var i = 0; i < settings.LayoutOrder.Length; i++)
+        {
+            var idx = i;
+            var cell = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(i == 0 ? 0 : 10, 0, 0, 0) };
+            var left = Btn("◀", null, () => MoveGroup(idx, -1), first: true);
+            left.IsEnabled = idx > 0;
+            var right = Btn("▶", null, () => MoveGroup(idx, 1), first: false);
+            right.IsEnabled = idx < settings.LayoutOrder.Length - 1;
+            cell.Children.Add(left);
+            cell.Children.Add(new TextBlock { Text = GroupTitle(settings.LayoutOrder[i]), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) });
+            cell.Children.Add(right);
+            panel.Children.Add(cell);
+        }
+        return panel;
+    }
+
+    void MoveGroup(int index, int delta)
+    {
+        var to = index + delta;
+        if (to < 0 || to >= settings.LayoutOrder.Length) return;
+        (settings.LayoutOrder[index], settings.LayoutOrder[to]) = (settings.LayoutOrder[to], settings.LayoutOrder[index]);
+        Changed(); Build();
+    }
+
+    // ---------- острова по отдельности ----------
+    readonly HashSet<string> openIslands = new();
+
+    UIElement IslandsCard()
+    {
+        var rows = new List<UIElement>();
+        var islandsOn = settings.Shape == AppearanceSettings.ShapeIslands;
+        var edgesOn = islandsOn || (settings.Shape is AppearanceSettings.ShapePill or AppearanceSettings.ShapeTab && settings.KeepEdges);
+        if (!edgesOn)
+        {
+            rows.Add(Note("Острова сейчас не рисуются. Выберите форму «Острова» в карточке «Внешний вид панели» — тогда у каждого острова можно задать свой вид. " +
+                          "С формами «Плавающая» и «Вкладка» отдельно настраиваются только часы с треем и виджеты."));
+            return Card("Острова по отдельности", rows);
+        }
+        rows.Add(Note("Нажмите на остров, чтобы поменять именно его: углы (прямые или круглые), цвет, прозрачность, размытие — или скрыть. «Как у всех» берётся из общих настроек выше."));
+        rows.Add(IslandRow("system", "Часы, сеть и трей (одним объектом)"));
+        rows.Add(IslandRow("widgets", "Виджеты"));
+        if (islandsOn)
+        {
+            rows.Add(IslandRow("apps", settings.IslandMode == "each" ? "Все значки приложений (кроме настроенных отдельно)" : "Группы значков"));
+            if (settings.IslandMode == "each")
+            {
+                var apps = XamlEngine.ReadIslands().Where(x => x.Kind == "app").ToList();
+                if (apps.Count == 0) rows.Add(Note("Список значков появится, когда движок их найдёт. Нажмите «Обновить список»."));
+                foreach (var a in apps) rows.Add(IslandRow(a.Key, a.Name.Length > 0 ? a.Name : "Значок"));
+            }
+            else rows.Add(Note("Отдельные значки настраиваются в режиме «Каждый значок» (карточка «Внешний вид панели»)."));
+        }
+        rows.Add(Btn("Обновить список", null, () => Build(), first: true));
+        return Card("Острова по отдельности", rows);
+    }
+
+    static string StyleSummary(IslandStyle? st)
+    {
+        if (st == null || st.IsEmpty) return "как у всех";
+        var parts = new List<string>();
+        if (st.Hidden) parts.Add("скрыт");
+        if (st.Radius == 0) parts.Add("прямые углы");
+        else if (st.Radius >= 0) parts.Add("углы " + st.Radius);
+        if (st.Mode != null) parts.Add(st.Mode switch { AppearanceSettings.BgSolid => "цвет", AppearanceSettings.BgClear => "прозрачный", AppearanceSettings.BgAcrylic => "размытие", _ => "как в Windows" });
+        if (st.Color != null) parts.Add(st.Color);
+        if (st.Opacity >= 0) parts.Add(st.Opacity + "%");
+        return string.Join(", ", parts);
+    }
+
+    UIElement IslandRow(string key, string title)
+    {
+        settings.Islands.TryGetValue(key, out var st);
+        var open = openIslands.Contains(key);
+        var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 6) };
+        var head = new Button
+        {
+            Content = (open ? "▾  " : "▸  ") + title + "   —   " + StyleSummary(st),
+            HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(10, 7, 10, 7),
+        };
+        head.Click += (_, _) => { if (!openIslands.Remove(key)) openIslands.Add(key); Build(); };
+        panel.Children.Add(head);
+        if (!open) return panel;
+
+        IslandStyle Get() { if (!settings.Islands.TryGetValue(key, out var x)) settings.Islands[key] = x = new IslandStyle(); return x; }
+        void Touch() { if (settings.Islands.TryGetValue(key, out var x) && x.IsEmpty) settings.Islands.Remove(key); Changed(); }
+
+        var body = new StackPanel { Margin = new Thickness(14, 10, 0, 4) };
+
+        var radius = st?.Radius ?? -1;
+        var shapeIdx = radius < 0 ? 0 : radius == 0 ? 1 : radius >= 100 ? 2 : 3;
+        body.Children.Add(Row("Углы", "Прямые, круглые, свои или как у остальных",
+            Seg(new[] { "Как у всех", "Прямые", "Круглые", "Свои" }, shapeIdx, i =>
+            {
+                Get().Radius = i switch { 0 => -1, 1 => 0, 2 => 100, _ => 12 };
+                Touch(); Build();
+            })));
+        if (shapeIdx == 3)
+            body.Children.Add(SliderRow("Скругление", "Насколько круглые углы", 1, 40, radius, "px", v => { Get().Radius = v; Touch(); }));
+
+        var modeIdx = st?.Mode switch { AppearanceSettings.BgSolid => 1, AppearanceSettings.BgClear => 2, AppearanceSettings.BgAcrylic => 3, _ => 0 };
+        body.Children.Add(Row("Фон", "Как у остальных, свой цвет, прозрачный (видны только значки) или размытие",
+            Seg(new[] { "Как у всех", "Цвет", "Прозрачный", "Размытие" }, modeIdx, i =>
+            {
+                Get().Mode = i switch { 1 => AppearanceSettings.BgSolid, 2 => AppearanceSettings.BgClear, 3 => AppearanceSettings.BgAcrylic, _ => null };
+                Touch(); Build();
+            })));
+        if (modeIdx != 2)
+        {
+            body.Children.Add(Row("Цвет", "Например, фиолетовый. Пусто — общий цвет",
+                ColorPicker(st?.Color ?? settings.BgColor, hex => { Get().Color = hex; Touch(); })));
+            body.Children.Add(SliderRow("Непрозрачность", "Чем меньше, тем прозрачнее", 0, 100, st != null && st.Opacity >= 0 ? st.Opacity : settings.BgOpacity, "%", v => { Get().Opacity = v; Touch(); }));
+        }
+        body.Children.Add(Row("Остров", "Можно убрать остров совсем — значки останутся на панели",
+            Seg(new[] { "Показывать", "Скрыть" }, st is { Hidden: true } ? 1 : 0, i => { Get().Hidden = i == 1; Touch(); Build(); })));
+        body.Children.Add(Btn("Сбросить этот остров", null, () => { settings.Islands.Remove(key); Changed(); Build(); }, first: true));
+        panel.Children.Add(body);
+        return panel;
+    }
+
+    async Task UploadReportAsync()
+    {
+        var ok = MessageBox.Show(this,
+            "Отчёт уйдёт разработчику: в общую базу проекта и в репозиторий на GitHub.\n\n" +
+            "В нём версия Windows, настройки плагина, статус движка и названия элементов панели задач. Ничего личного, имя пользователя вычищается.\n\nОтправить?",
+            "Taskbar Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+        if (!ok) return;
+        Say("Отправляю отчёт…");
+        var err = await engine.Xaml.UploadReportAsync();
+        Say(err == null ? "Отчёт отправлен. Спасибо! Напишите разработчику, что отправили." : "Не получилось отправить отчёт: " + err + ". Можно сохранить его файлом на рабочий стол.");
     }
 
     async Task SaveReportAsync()

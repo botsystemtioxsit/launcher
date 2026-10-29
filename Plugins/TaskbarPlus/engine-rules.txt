@@ -1,0 +1,16 @@
+# Правила движка Taskbar Plus: «группа|тип элемента|имя элемента».
+# * — любые символы; пусто — любой тип или имя. Первое подходящее правило побеждает.
+# Группы:
+#   bgfill   — фон панели          bgstroke — тонкая обводка панели
+#   app      — «Пуск», поиск и значки программ
+#   widgets  — виджеты (погода и т. п.)
+#   system   — часы, язык, сеть, звук, скрытые значки: всегда один объект
+# Плагин скачивает этот файл при запуске (raw.githubusercontent.com, ветка main): так названия элементов
+# можно подправить под другую сборку Windows без нового выпуска плагина.
+bgfill|Windows.UI.Xaml.Shapes.Rectangle|BackgroundFill
+bgstroke|Windows.UI.Xaml.Shapes.Rectangle|BackgroundStroke
+app|Taskbar.TaskListButton|
+app|Taskbar.ExperienceToggleButton|
+app|Taskbar.SearchBoxButton|
+widgets|Taskbar.AugmentedEntryPointButton|
+system|SystemTray.*|

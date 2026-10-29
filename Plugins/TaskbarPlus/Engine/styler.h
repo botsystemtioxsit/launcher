@@ -7,7 +7,8 @@
 // OnChange вызывается самой панелью (поток XAML) для каждого элемента, который появился или исчез.
 struct StylerStats
 {
-    int nodes = 0, bgFill = 0, bgStroke = 0, members = 0, edges = 0, islands = 0;
+    int nodes = 0, bgFill = 0, bgStroke = 0, apps = 0, widgets = 0, system = 0, islands = 0, hosts = 0, rects = 0;
+    std::wstring rectNames;   // имена прямоугольников на панели — для отчёта, если фон не нашёлся
     bool applied = false;
     bool queueOk = false;
 };

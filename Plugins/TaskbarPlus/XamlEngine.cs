@@ -14,6 +14,7 @@ namespace TaskbarPlusApp;
 sealed class XamlEngine : IDisposable
 {
     const string ResourceName = "GhostShellTap.dll";
+    const string EngineVersion = "2";   // должна совпадать с GS_ENGINE_VERSION в Engine/common.h
 
     static readonly string DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BattleLauncher");
     static readonly string CfgPath = Path.Combine(DataDir, "taskbar-plus-engine.cfg");
@@ -21,6 +22,10 @@ sealed class XamlEngine : IDisposable
     static readonly string LogPath = Path.Combine(DataDir, "taskbar-plus-engine.log");
     static readonly string TreePath = Path.Combine(DataDir, "taskbar-plus-xaml-tree.txt");
     static readonly string HealthPath = Path.Combine(DataDir, "taskbar-plus-engine-health.json");
+    static readonly string IslandsPath = Path.Combine(DataDir, "taskbar-plus-engine-islands.txt");
+    static readonly string RulesPath = Path.Combine(DataDir, "taskbar-plus-engine-rules.txt");
+    const string RulesUrl = "https://raw.githubusercontent.com/botsystemtioxsit/launcher/main/Plugins/TaskbarPlus/engine-rules.txt";
+    const string ReportUrl = "https://zolotaya-kletka-default-rtdb.firebaseio.com/pluginReports/taskbar-plus/";
     static readonly string EngineDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GhostShell", "TaskbarPlus", "engine");
 
     class Health { public int Crashes { get; set; } public bool Blocked { get; set; } }
@@ -42,6 +47,8 @@ sealed class XamlEngine : IDisposable
     long connectedSince;
     long expectedRestartUntil;
     bool crashCounted;
+
+    string[] rules = LoadCachedRules();
 
     public event Action? Changed;
 
@@ -115,6 +122,7 @@ sealed class XamlEngine : IDisposable
             loop = Task.Run(() => Loop(token));
         }
         SetState("Подключаюсь к панели задач…", false);
+        _ = RefreshRulesAsync();
     }
 
     void Stop()
@@ -154,13 +162,12 @@ sealed class XamlEngine : IDisposable
             long.TryParse(st.GetValueOrDefault("tick"), out var tick);
             var fresh = now - tick < 12_000;
             int.TryParse(st.GetValueOrDefault("bgfill"), out var bg);
-            int.TryParse(st.GetValueOrDefault("members"), out var members);
+            int.TryParse(st.GetValueOrDefault("apps"), out var apps);
             int.TryParse(st.GetValueOrDefault("nodes"), out var nodes);
-            var old = st.GetValueOrDefault("engine") != "1" ? " (в Проводнике работает прошлая версия движка — перезапустите панель задач, чтобы подключить новую)" : "";
-
-            if (state == "duplicate")
+            // Старая версия движка остаётся в Проводнике до его перезапуска; новая рядом с ней не запускается.
+            if (state == "duplicate" || (state == "ready" && st.GetValueOrDefault("engine") != EngineVersion))
             {
-                SetState("В Проводнике уже стоит другая версия движка. Нажмите «Перезапустить панель задач» — подключится новая.", false);
+                SetState("Обновился движок. Чтобы подключить новую версию, нажмите «Перезапустить панель задач» внизу окна.", false);
                 return;
             }
             if (state == "ready" && fresh)
@@ -169,11 +176,16 @@ sealed class XamlEngine : IDisposable
                 Unhook();
                 if (bg > 0)
                 {
-                    SetState($"Новый движок работает. Элементов панели: {nodes}, значков: {members}.{old}", true);
+                    SetState($"Новый движок работает. Элементов панели: {nodes}, значков: {apps}.", true);
                     if (now - connectedSince > 90_000 && health.Crashes != 0) { health.Crashes = 0; SaveHealth(); }
                 }
                 else if (now - connectedSince > 10_000)
-                    SetState("Движок подключился, но фон панели не нашёл — в вашей версии Windows панель устроена иначе. Нажмите «Сохранить отчёт» и отправьте файл; действует обычный способ.", false);
+                {
+                    int.TryParse(st.GetValueOrDefault("system"), out var sysCount);
+                    int.TryParse(st.GetValueOrDefault("widgets"), out var wid);
+                    SetState($"Движок подключился (элементов {nodes}, значков {apps}, системная область {sysCount}, виджеты {wid}), но фон панели не нашёл — в вашей версии Windows он устроен иначе. " +
+                             "Нажмите «Отправить отчёт разработчику»; пока действует обычный способ.", false);
+                }
                 else
                     SetState("Подключился, ищу элементы панели…", false);
                 return;
@@ -267,6 +279,64 @@ sealed class XamlEngine : IDisposable
         catch { return null; }
     }
 
+    // ---------- правила: какой элемент панели к какой группе относится ----------
+    // Встроенные правила лежат в самом движке. Файл engine-rules.txt в репозитории позволяет подправить названия элементов
+    // для другой сборки Windows без нового выпуска плагина: плагин скачивает его при запуске и кладёт в настройки движка.
+    static string[] ParseRules(string text) => text.Split('\n').Select(l => l.Trim())
+        .Where(l => l.Length > 0 && !l.StartsWith('#') && l.Split('|').Length >= 3 && l.Split('|')[0] is "bgfill" or "bgstroke" or "app" or "widgets" or "system").Take(100).ToArray();
+
+    static string[] LoadCachedRules()
+    {
+        try { return ParseRules(File.ReadAllText(RulesPath)); } catch { return Array.Empty<string>(); }
+    }
+
+    async Task RefreshRulesAsync()
+    {
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(6) };
+            var text = await http.GetStringAsync(RulesUrl + "?_=" + DateTime.UtcNow.Ticks);
+            var parsed = ParseRules(text);
+            if (parsed.Length == 0 && text.Trim().Length > 0 && !text.TrimStart().StartsWith('#')) return; // не похоже на файл правил
+            bool changed;
+            lock (gate) { changed = !rules.SequenceEqual(parsed); rules = parsed; }
+            try { Directory.CreateDirectory(DataDir); File.WriteAllText(RulesPath, text); } catch { }
+            if (changed && loop != null) WriteCfg(true);
+        }
+        catch { /* нет сети — остаются прежние правила */ }
+    }
+
+    // Список островов, который движок записывает после каждого пересчёта: системная область, виджеты и значки по именам.
+    public record IslandInfo(string Kind, string Key, string Name);
+
+    public static List<IslandInfo> ReadIslands()
+    {
+        var list = new List<IslandInfo>();
+        try
+        {
+            foreach (var line in SafeRead(IslandsPath).Split('\n'))
+            {
+                var f = line.Trim().Split('|');
+                if (f.Length < 3) continue;
+                if (f[0] == "widgets") list.Add(new IslandInfo("widgets", "widgets", ""));
+                else if (f[0] == "system") list.Add(new IslandInfo("system", "system", ""));
+                else if (f[0] == "app" && f[1].StartsWith("app.")) list.Add(new IslandInfo("app", f[1], FromHex(f[2])));
+            }
+        }
+        catch { }
+        return list;
+    }
+
+    static string FromHex(string hex)
+    {
+        try
+        {
+            if (hex.Length == 0 || hex.Length % 2 != 0 || hex.Length > 400) return "";
+            return Encoding.UTF8.GetString(Convert.FromHexString(hex));
+        }
+        catch { return ""; }
+    }
+
     // ---------- файлы обмена с DLL ----------
     static Dictionary<string, string>? ReadStatus()
     {
@@ -285,6 +355,8 @@ sealed class XamlEngine : IDisposable
         }
         catch { return null; }
     }
+
+    static int ZoneNum(string z) => z switch { AppearanceSettings.ZoneLeft => 1, AppearanceSettings.ZoneCenter => 2, AppearanceSettings.ZoneRight => 3, _ => 0 };
 
     static int Mode(string bg) => bg switch { AppearanceSettings.BgSolid => 1, AppearanceSettings.BgClear => 2, AppearanceSettings.BgAcrylic => 3, _ => 0 };
 
@@ -309,6 +381,28 @@ sealed class XamlEngine : IDisposable
         Put("islandPad", s.IslandPadding);
         Put("islandGap", s.IslandGap);
         Put("dump", dumpCounter);
+        Put("zone.widgets", ZoneNum(s.ZoneWidgets));
+        Put("zone.system", ZoneNum(s.ZoneSystem));
+        Put("zone.apps", ZoneNum(s.ZoneApps));
+        Put("order", string.Join(",", s.LayoutOrder));
+        Put("edgeMargin", s.EdgeMargin);
+        foreach (var kv in s.Islands)
+        {
+            var st = kv.Value;
+            // радиус;цвет;прозрачность;режим;скрыт — пустое поле значит «как у всех»
+            var f = new[]
+            {
+                st.Radius >= 0 ? st.Radius.ToString() : "",
+                st.Color != null ? st.Color.TrimStart('#') : "",
+                st.Opacity >= 0 ? st.Opacity.ToString() : "",
+                st.Mode == null ? "" : Mode(st.Mode).ToString(),
+                st.Hidden ? "1" : "0",
+            };
+            Put("sty." + kv.Key, string.Join(";", f));
+        }
+        string[] rs;
+        lock (gate) rs = rules;
+        for (var i = 0; i < rs.Length; i++) Put("rule." + i, rs[i]);
         try
         {
             Directory.CreateDirectory(DataDir);
@@ -320,8 +414,8 @@ sealed class XamlEngine : IDisposable
     }
 
     // ---------- отчёт для разбора ----------
-    // Просит движок записать дерево элементов панели и собирает всё в один текстовый файл.
-    public async Task<string> SaveReportAsync()
+    // Просит движок записать дерево элементов панели и собирает всё в один текст.
+    async Task<string> BuildReportAsync()
     {
         dumpCounter++;
         AppearanceSettings s;
@@ -348,11 +442,52 @@ sealed class XamlEngine : IDisposable
         sb.AppendLine(string.Join("\n", logLines.Skip(Math.Max(0, logLines.Length - 80))));
         sb.AppendLine("--- дерево элементов панели ---");
         sb.AppendLine(SafeRead(TreePath));
+        return sb.ToString();
+    }
 
+    public async Task<string> SaveReportAsync()
+    {
+        var text = await BuildReportAsync();
         var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
         var path = Path.Combine(desktop, "TaskbarPlus-report.txt");
-        File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));
+        File.WriteAllText(path, text, new UTF8Encoding(true));
         return path;
+    }
+
+    // Отправка отчёта разработчику: в общую базу проекта (узел pluginReports), откуда его забирает служебный процесс GitHub.
+    // В отчёте нет ничего личного: версии, настройки плагина, статус движка и названия элементов панели (имя пользователя вычищается).
+    // Возвращает null, если отправилось, иначе — текст ошибки.
+    public async Task<string?> UploadReportAsync()
+    {
+        try
+        {
+            var text = Sanitize(await BuildReportAsync());
+            if (text.Length > 180_000) text = text[..180_000] + "\n…(обрезано)";
+            var id = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Environment.MachineName + "|" + Environment.UserName)))[..8].ToLowerInvariant();
+            var body = JsonSerializer.Serialize(new
+            {
+                at = DateTime.UtcNow.ToString("o"),
+                plugin = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "?",
+                windows = Environment.OSVersion.Version.ToString(),
+                report = text,
+            });
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
+            using var resp = await http.PutAsync(ReportUrl + id + ".json", new StringContent(body, Encoding.UTF8, "application/json"));
+            return resp.IsSuccessStatusCode ? null : "сервер ответил " + (int)resp.StatusCode;
+        }
+        catch (Exception ex) { return ex.Message; }
+    }
+
+    static string Sanitize(string text)
+    {
+        foreach (var (what, with) in new[]
+        {
+            (Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "%USERPROFILE%"),
+            (Environment.UserName, "user"),
+            (Environment.MachineName, "pc"),
+        })
+            if (what.Length >= 3) text = text.Replace(what, with, StringComparison.OrdinalIgnoreCase);
+        return text;
     }
 
     static string SafeRead(string path)

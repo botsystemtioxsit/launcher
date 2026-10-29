@@ -25,29 +25,45 @@ static std::atomic<bool> g_stopWatcher{ false };
 // ---------- статус для плагина ----------
 static void WriteStatus(const wchar_t* state, const wchar_t* error)
 {
-    auto stats = Styler::GetStats();
+    auto st = Styler::GetStats();
     wchar_t modulePath[MAX_PATH] = L"";
     GetModuleFileNameW(g_module, modulePath, MAX_PATH);
-    wchar_t buf[2048];
-    _snwprintf_s(buf, _TRUNCATE,
-        L"state=%s\r\nengine=%s\r\npid=%lu\r\ntick=%llu\r\nmodule=%s\r\nnodes=%d\r\nbgfill=%d\r\nstroke=%d\r\nmembers=%d\r\nedges=%d\r\nislands=%d\r\napplied=%d\r\nqueue=%d\r\ntries=%d\r\nerror=%s\r\n",
-        state, GS_ENGINE_VERSION, GetCurrentProcessId(), (unsigned long long)GetTickCount64(), modulePath,
-        stats.nodes, stats.bgFill, stats.bgStroke, stats.members, stats.edges, stats.islands,
-        stats.applied ? 1 : 0, stats.queueOk ? 1 : 0, g_connectTries.load(), error ? error : L"");
-    WriteTextAtomic(DataDir() + L"\\taskbar-plus-engine-status.txt", ToUtf8(buf));
+    std::wstring out;
+    auto put = [&](const wchar_t* key, const std::wstring& val) { out += key; out += L"="; out += val; out += L"\r\n"; };
+    auto num = [](long long v) { return std::to_wstring(v); };
+    put(L"state", state);
+    put(L"engine", GS_ENGINE_VERSION);
+    put(L"pid", num(GetCurrentProcessId()));
+    put(L"tick", num((long long)GetTickCount64()));
+    put(L"module", modulePath);
+    put(L"nodes", num(st.nodes));
+    put(L"bgfill", num(st.bgFill));
+    put(L"stroke", num(st.bgStroke));
+    put(L"apps", num(st.apps));
+    put(L"widgets", num(st.widgets));
+    put(L"system", num(st.system));
+    put(L"hosts", num(st.hosts));
+    put(L"islands", num(st.islands));
+    put(L"rects", num(st.rects));
+    put(L"rectnames", st.rectNames);
+    put(L"applied", num(st.applied ? 1 : 0));
+    put(L"queue", num(st.queueOk ? 1 : 0));
+    put(L"tries", num(g_connectTries.load()));
+    put(L"error", error ? error : L"");
+    WriteTextAtomic(DataDir() + L"\\taskbar-plus-engine-status.txt", ToUtf8(out));
 }
 
 // ---------- COM: подписка на дерево элементов ----------
-class TreeCallback final : public IVisualTreeServiceCallback
+class TreeCallback final : public IVisualTreeServiceCallback2
 {
     LONG refs_ = 1;
 public:
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv) override
     {
         if (!ppv) return E_POINTER;
-        if (riid == __uuidof(IUnknown) || riid == __uuidof(IVisualTreeServiceCallback))
+        if (riid == __uuidof(IUnknown) || riid == __uuidof(IVisualTreeServiceCallback) || riid == __uuidof(IVisualTreeServiceCallback2))
         {
-            *ppv = static_cast<IVisualTreeServiceCallback*>(this);
+            *ppv = static_cast<IVisualTreeServiceCallback2*>(this);
             AddRef();
             return S_OK;
         }
@@ -65,6 +81,7 @@ public:
     {
         return Styler::OnChange(relation, element, mutationType);
     }
+    HRESULT STDMETHODCALLTYPE OnElementStateChanged(InstanceHandle, VisualElementState, LPCWSTR) override { return S_OK; }
 };
 
 class Tap final : public IObjectWithSite
@@ -121,8 +138,11 @@ public:
             std::thread([keep]()
             {
                 CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-                IVisualTreeService* service = nullptr;
-                HRESULT hr = keep->QueryInterface(__uuidof(IVisualTreeService), (void**)&service);
+                // просим расширенный интерфейс; на старых Windows хватит и базового
+                IVisualTreeService3* service3 = nullptr;
+                HRESULT hr = keep->QueryInterface(__uuidof(IVisualTreeService3), (void**)&service3);
+                IVisualTreeService* service = service3;
+                if (FAILED(hr) || !service) hr = keep->QueryInterface(__uuidof(IVisualTreeService), (void**)&service);
                 if (SUCCEEDED(hr) && service)
                 {
                     auto* cb = new TreeCallback(); // ссылку держит служба XAML
@@ -218,7 +238,6 @@ static void ConnectToXaml()
 static void WatcherLoop()
 {
     CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    Config last;
     FILETIME lastTime{};
     bool haveLast = false;
     int lastDump = 0;
@@ -237,11 +256,11 @@ static void WatcherLoop()
                 haveLast = true;
                 if (cfg.dump != lastDump) { lastDump = cfg.dump; Styler::WriteTree(); }
                 Styler::SetConfig(cfg);
-                last = cfg;
             }
             auto now = GetTickCount64();
             auto stats = Styler::GetStats();
-            const bool changed = stats.nodes != lastStats.nodes || stats.bgFill != lastStats.bgFill || stats.members != lastStats.members ||
+            const bool changed = stats.nodes != lastStats.nodes || stats.bgFill != lastStats.bgFill || stats.apps != lastStats.apps ||
+                                 stats.widgets != lastStats.widgets || stats.system != lastStats.system || stats.rects != lastStats.rects ||
                                  stats.islands != lastStats.islands || stats.applied != lastStats.applied || stats.queueOk != lastStats.queueOk;
             if (changed || now - lastStatus > 3000)
             {
