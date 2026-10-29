@@ -7,7 +7,7 @@ namespace BattleLauncher;
 // Lite — облегчённая версия (окно Electron вокруг страницы, ставится из релизов репозитория приложения);
 // Native — Desktop-версия (настоящая программа .exe, лежит в релизе указанного репозитория).
 record AppDef(string Id, string Name, string Desc, string Repo, string ProductName, string[]? Roles,
-    string? NativeExe = null, string? NativeName = null, string NativeRepo = "launcher", string NativeTag = "latest", string? Site = null)
+    string? NativeExe = null, string? NativeName = null, string NativeRepo = "launcher", string NativeTag = "latest", string? Site = null, bool IsPlugin = false)
 {
     // null в Roles — любой аккаунт игры, но не сессия по токену доступа (у неё нет игрока)
     public bool IsAllowed(string role) => Roles == null ? role != "token" : Roles.Contains(role);
@@ -28,6 +28,8 @@ static class Catalog
     static DateTime lastFetch = DateTime.MinValue;
 
     public static AppDef[] Apps { get; private set; } = Defaults();
+    // Плагины лаунчера — отдельные программы: ставятся только по кнопке (раздел "plugins" каталога), в «Приложения» не попадают.
+    public static AppDef[] Plugins { get; private set; } = DefaultPlugins();
     public static DownloadDef[] Downloads { get; private set; } = Array.Empty<DownloadDef>();
 
     static AppDef[] Defaults() => new[]
@@ -41,7 +43,13 @@ static class Catalog
             "videochat", "ВидеоЧат", null, "TIOXSITVideoChat.exe", "ВидеоЧат (Desktop)"),
     };
 
-    public static AppDef? ById(string id) => Apps.FirstOrDefault(a => a.Id == id);
+    static AppDef[] DefaultPlugins() => new[]
+    {
+        new AppDef("taskbar-plus", "Taskbar Plus", "Панель задач Windows по-своему: форма, острова, прозрачность, значки, автоскрытие.",
+            "launcher", "Taskbar Plus", null, "TaskbarPlus.exe", "Taskbar Plus", IsPlugin: true),
+    };
+
+    public static AppDef? ById(string id) => Apps.Concat(Plugins).FirstOrDefault(a => a.Id == id);
 
     public static async Task Refresh(bool force = false, CancellationToken ct = default)
     {
@@ -52,6 +60,8 @@ static class Catalog
             var parsed = Parse(text);
             if (parsed.Length > 0) Apps = parsed;
             Downloads = ParseDownloads(text);
+            var plugins = ParsePlugins(text);
+            if (plugins.Length > 0) Plugins = plugins;
             lastFetch = DateTime.UtcNow;
         }
         catch { /* нет сети или файл повреждён — остаётся прежний список */ }
@@ -121,6 +131,33 @@ static class Catalog
             }
         }
         catch { /* битый раздел — просто не показываем */ }
+        return list.ToArray();
+    }
+
+    // Раздел "plugins" каталога: та же форма записи, что у Desktop-версии приложения — EXE + .sha256 в релизе репозитория.
+    public static AppDef[] ParsePlugins(string json)
+    {
+        var list = new List<AppDef>();
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("plugins", out var arr) || arr.ValueKind != JsonValueKind.Array) return Array.Empty<AppDef>();
+            foreach (var p in arr.EnumerateArray())
+            {
+                string? S(JsonElement e, string k) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty(k, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+                var id = S(p, "id"); var name = S(p, "name");
+                if (id == null || name == null || !Net.SafeId.IsMatch(id)) continue;
+                p.TryGetProperty("desktop", out var desk);
+                var asset = S(desk, "asset");
+                if (asset == null || !Safe.IsMatch(asset) || !asset.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) continue;
+                var repo = S(desk, "repo") is { } r && Safe.IsMatch(r) ? r : "launcher";
+                var tag = S(desk, "tag") is { } t && Safe.IsMatch(t) ? t : "latest";
+                name = name[..Math.Min(name.Length, 60)];
+                var desc = S(p, "desc") ?? "";
+                list.Add(new AppDef(id, name, desc[..Math.Min(desc.Length, 240)], repo, name, null, asset, name, repo, tag, null, true));
+            }
+        }
+        catch { /* битый раздел — остаются прежние плагины */ }
         return list.ToArray();
     }
 }

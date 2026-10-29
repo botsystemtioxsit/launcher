@@ -386,104 +386,130 @@ public partial class MainWindow : Window
         NavPlugins.Foreground = name == "plugins" ? Res("Text") : Res("Muted");
         NavAccount.Foreground = name == "account" ? Res("Text") : Res("Muted");
         if (name == "apps") _ = LoadApps(false);
-        if (name == "plugins") RenderPlugins();
+        if (name == "plugins") _ = LoadPlugins(false);
     }
 
     // ---------- плагины ----------
+    // Плагины — отдельные программы (EXE в релизе лаунчера). Каждый ставится только по кнопке и удаляется отдельно.
+    List<AppInfo> pluginInfos = new();
+
+    async Task LoadPlugins(bool force)
+    {
+        RenderPlugins(); // сразу то, что уже известно
+        await Catalog.Refresh(force);
+        var list = await Task.WhenAll(Catalog.Plugins.Select(async def =>
+        {
+            var info = new AppInfo { Def = def, Allowed = true };
+            info.Native = await Task.Run(() => NativeInstaller.Find(def));
+            try { info.NativeLatest = await NativeInstaller.Latest(def, force); } catch { /* нет связи — кнопка просто не включится */ }
+            info.NativeUpdate = info.Native != null && info.NativeLatest != null && info.Native.Sha != info.NativeLatest.Sha;
+            return info;
+        }));
+        pluginInfos = list.ToList();
+        RenderPlugins();
+    }
+
     void RenderPlugins()
     {
         PluginList.Children.Clear();
-        PluginList.Children.Add(TaskbarPlusCard());
+        if (pluginInfos.Count == 0)
+        {
+            PluginList.Children.Add(new TextBlock { Text = "Загружаю список плагинов…", Foreground = Res("Muted") });
+            return;
+        }
+        foreach (var p in pluginInfos) PluginList.Children.Add(PluginCard(p));
     }
 
-    // Taskbar Plus — настройки панели задач Windows (Services/TaskbarPlus.cs).
-    UIElement TaskbarPlusCard()
+    UIElement PluginCard(AppInfo p)
     {
+        var key = p.Def.Id + ":plugin";
         var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) };
-        var col = new StackPanel();
-        var head = new StackPanel { Orientation = Orientation.Horizontal };
-        head.Children.Add(new TextBlock { Text = "Taskbar Plus", FontSize = 17, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
-        var badge = Badge("Плагин · Windows " + (TaskbarPlus.IsWindows11 ? "11" : "10"), Res("Muted"), null);
-        badge.Margin = new Thickness(10, 0, 0, 0);
-        badge.VerticalAlignment = VerticalAlignment.Center;
-        head.Children.Add(badge);
-        col.Children.Add(head);
-        col.Children.Add(new TextBlock
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition());
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var left = new StackPanel();
+        left.Children.Add(new TextBlock { Text = p.Def.Name, FontSize = 17, FontWeight = FontWeights.SemiBold });
+        left.Children.Add(new TextBlock { Text = p.Def.Desc, Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 12, 8) });
+        var badges = new StackPanel { Orientation = Orientation.Horizontal };
+        badges.Children.Add(Badge("Плагин", Res("Muted"), null));
+        if (p.Native != null)
         {
-            Text = "Настройки панели задач Windows: где стоят значки, поиск, размер, группировка кнопок, секунды в часах, автоскрытие. " +
-                   "Меняются обычные параметры вашей учётной записи, права администратора не нужны. Изменения применяются сразу; " +
-                   "«Вернуть как было» отменяет всё, что вы поменяли здесь.",
-            Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 14),
-        });
-
-        foreach (var o in TaskbarPlus.Options.Where(TaskbarPlus.Available))
-        {
-            var opt = o;
-            var current = TaskbarPlus.Current(opt);
-            col.Children.Add(TaskbarRow(opt.Title, opt.Hint, opt.Labels, Array.IndexOf(opt.Values, current), i =>
-            {
-                var err = TaskbarPlus.Set(opt, opt.Values[i]);
-                Toast(err ?? "Применено: " + opt.Title + " — " + opt.Labels[i]);
-                RenderPlugins();
-            }));
+            badges.Children.Add(Badge("Установлен " + p.Native.Version, Res("Green"), null));
+            if (p.NativeUpdate) badges.Children.Add(Badge("Есть обновление", Res("OnAccent"), Res("Accent")));
         }
-        col.Children.Add(TaskbarRow("Автоскрытие панели", "Панель прячется, пока курсор не у края экрана", new[] { "Выкл", "Вкл" }, TaskbarPlus.AutoHide ? 1 : 0, i =>
-        {
-            var err = TaskbarPlus.SetAutoHide(i == 1);
-            Toast(err ?? (i == 1 ? "Автоскрытие включено" : "Автоскрытие выключено"));
-            RenderPlugins();
-        }));
+        else badges.Children.Add(Badge("Не установлен", Res("Muted"), null));
+        left.Children.Add(badges);
+        grid.Children.Add(left);
 
-        col.Children.Add(new TextBlock
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        Grid.SetColumn(actions, 1);
+        if (busy.TryGetValue(key, out var b))
         {
-            Text = "Если размер, группировка или секунды не поменялись сразу, перезапустите панель задач.",
-            Foreground = Res("Muted"), FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 8),
-        });
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal };
-        var restart = MakeButton("Перезапустить панель задач", null, () =>
+            actions.Children.Add(new TextBlock { Text = b.Installing ? "Работаю…" : $"Скачиваю {b.Percent ?? 0}%", Foreground = Res("Muted"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
+            actions.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = b.Percent ?? 0, IsIndeterminate = b.Installing });
+        }
+        else if (p.Native != null)
         {
-            if (MessageBox.Show("Панель задач и окна Проводника закроются на пару секунд и откроются снова. Продолжить?", "Ghost Shell Launcher", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
-                return Task.CompletedTask;
-            var err = TaskbarPlus.RestartExplorer();
-            Toast(err ?? "Панель задач перезапущена");
-            return Task.CompletedTask;
-        });
-        restart.Margin = new Thickness(0);
-        buttons.Children.Add(restart);
-        buttons.Children.Add(MakeButton("Вернуть как было", "Danger", () =>
+            actions.Children.Add(MakeButton("Открыть", "Primary", () => LaunchPlugin(p)));
+            if (p.NativeUpdate) actions.Children.Add(MakeButton("Обновить", null, () => InstallPlugin(p, "Обновлено")));
+            actions.Children.Add(MakeButton("Удалить", "Danger", () => UninstallPlugin(p)));
+        }
+        else
         {
-            var (restored, error) = TaskbarPlus.Reset();
-            Toast(error != null ? "Вернулось не всё: " + error : restored == 0 ? "Вы ещё ничего не меняли" : $"Возвращено параметров: {restored}");
-            RenderPlugins();
-            return Task.CompletedTask;
-        }));
-        col.Children.Add(buttons);
-        card.Child = col;
+            var install = MakeButton("Скачать и установить", "Primary", () => InstallPlugin(p, "Установлено"));
+            install.IsEnabled = p.NativeLatest != null;
+            if (p.NativeLatest == null)
+            {
+                install.ToolTip = "Плагина пока нет в последнем релизе (или нет связи с GitHub). Кнопка включится сама, когда он появится.";
+                ToolTipService.SetShowOnDisabled(install, true);
+            }
+            actions.Children.Add(install);
+        }
+        grid.Children.Add(actions);
+        card.Child = grid;
         return card;
     }
 
-    // Строка настройки: слева название и подсказка, справа переключатель из нескольких кнопок (выбранная подсвечена).
-    UIElement TaskbarRow(string title, string hint, string[] labels, int selected, Action<int> choose)
+    async Task InstallPlugin(AppInfo p, string okText)
     {
-        var row = new Grid { Margin = new Thickness(0, 0, 0, 10) };
-        row.ColumnDefinitions.Add(new ColumnDefinition());
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
-        text.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold });
-        text.Children.Add(new TextBlock { Text = hint, Foreground = Res("Muted"), FontSize = 12, TextWrapping = TextWrapping.Wrap });
-        row.Children.Add(text);
-        var seg = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        Grid.SetColumn(seg, 1);
-        for (var i = 0; i < labels.Length; i++)
+        var key = p.Def.Id + ":plugin";
+        if (busy.ContainsKey(key)) return;
+        busy[key] = (false, 0);
+        RenderPlugins();
+        try
         {
-            var idx = i;
-            var b = MakeButton(labels[i], i == selected ? "Primary" : null, () => { if (idx != selected) choose(idx); return Task.CompletedTask; });
-            b.Padding = new Thickness(10, 5, 10, 5);
-            b.Margin = new Thickness(i == 0 ? 0 : 6, 0, 0, 0);
-            seg.Children.Add(b);
+            var rel = await NativeInstaller.Latest(p.Def, true) ?? throw new InvalidOperationException("Плагина пока нет в последнем релизе");
+            var progress = new Progress<int?>(v => { busy[key] = v == null ? (true, null) : (false, v); RenderPlugins(); });
+            await NativeInstaller.Install(p.Def, rel, progress);
+            Toast($"{okText}: {p.Def.Name}");
         }
-        row.Children.Add(seg);
-        return row;
+        catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
+        finally { busy.Remove(key); await LoadPlugins(true); }
+    }
+
+    async Task UninstallPlugin(AppInfo p)
+    {
+        var key = p.Def.Id + ":plugin";
+        if (busy.ContainsKey(key) || p.Native == null) return;
+        if (MessageBox.Show(this, $"Удалить «{p.Def.Name}» с этого компьютера?\n\nЕсли плагин менял панель задач, он сам вернёт её к обычному виду.", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        try
+        {
+            await Task.Run(() => NativeInstaller.Uninstall(p.Def));
+            Toast($"Удалено: {p.Def.Name}");
+        }
+        catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
+        await LoadPlugins(true);
+    }
+
+    async Task LaunchPlugin(AppInfo p)
+    {
+        try
+        {
+            var found = await Task.Run(() => NativeInstaller.Find(p.Def));
+            if (found == null) { Toast("Плагин не установлен"); await LoadPlugins(true); return; }
+            NativeInstaller.Launch(found);
+        }
+        catch (Exception ex) { Toast("Не получилось запустить: " + ex.Message); }
     }
 
     void NavApps_Click(object sender, RoutedEventArgs e) => ShowView("apps");

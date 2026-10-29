@@ -112,7 +112,7 @@
           <DockPanel x:Name="PluginsView" Visibility="Collapsed">
             <StackPanel DockPanel.Dock="Top" Margin="0,0,0,18">
               <TextBlock Text="Плагины" FontSize="22" FontWeight="SemiBold"/>
-              <TextBlock Text="Дополнения к лаунчеру. Они меняют не сам лаунчер, а ваш компьютер, поэтому каждое можно откатить." Foreground="{DynamicResource Muted}" Margin="0,4,16,0" TextWrapping="Wrap"/>
+              <TextBlock Text="Дополнения качаются отдельно: ставьте только те, что нужны. Каждый плагин можно удалить в любой момент." Foreground="{DynamicResource Muted}" Margin="0,4,16,0" TextWrapping="Wrap"/>
             </StackPanel>
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel x:Name="PluginList"/>
