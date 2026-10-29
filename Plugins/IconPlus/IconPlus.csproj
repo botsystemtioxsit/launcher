@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>IconPlus</AssemblyName>
+    <RootNamespace>IconPlusApp</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Версию поднимать при каждом изменении -->
+    <Version>1.0.0</Version>
+    <Product>Icon Plus</Product>
+    <Company>TIOXSIT</Company>
+    <Authors>TIOXSIT</Authors>
+    <Copyright>TIOXSIT</Copyright>
+    <Description>Icon Plus — значки Windows по-своему: один цвет для всех значков или готовые наборы иконок (плагин Ghost Shell Launcher)</Description>
+    <AssemblyTitle>Icon Plus</AssemblyTitle>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 7z и rar из скачанных наборов (лицензия MIT); встроенный браузер для сайта с иконками (Microsoft WebView2) -->
+    <PackageReference Include="SharpCompress" Version="0.38.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2792.45" />
+  </ItemGroup>
+
+</Project>
