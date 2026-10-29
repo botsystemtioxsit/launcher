@@ -62,7 +62,7 @@ sealed class IconEngine
                 foreach (var ext in t.Extensions!)
                 {
                     var e = ext;
-                    yield return new Sink("ext:" + e, () => Native.IconLocation("x." + e, true), p =>
+                    yield return new Sink("ext:" + e, () => { var a = Native.AssocDefaultIcon("." + e); return a.Length > 0 ? a : Native.IconLocation("x." + e, true); }, p =>
                     {
                         foreach (var progId in ProgIds(e)) reg.Set(@"Software\Classes\" + progId + @"\DefaultIcon", "", p);
                     });
@@ -132,7 +132,16 @@ sealed class IconEngine
 
     static string LnkSource(string file)
     {
-        if (Shortcuts.ReadIcon(file, out var p, out var i) && p.Length > 0) return p + "," + i;
+        if (Shortcuts.ReadIcon(file, out var p, out var i) && p.Length > 0) return Environment.ExpandEnvironmentVariables(p) + "," + i;
+        // у ярлыка нет своего значка — берётся значок цели
+        var target = Shortcuts.ReadTarget(file);
+        if (target.Length > 0 && File.Exists(target))
+        {
+            var ext = Path.GetExtension(target).ToLowerInvariant();
+            if (ext is ".exe" or ".dll" or ".ico" or ".icl") return target + ",0";
+            var a = Native.AssocDefaultIcon(ext);
+            if (a.Length > 0) return a;
+        }
         return Native.IconLocation(file, false);
     }
 

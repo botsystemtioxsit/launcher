@@ -56,18 +56,56 @@ Run-Exe 'pack-test zip' @("--pack-test=$zip", "--out=$(Join-Path $outFull 'pack'
 if (Test-Path $z7) { Run-Exe 'pack-test 7z' @("--pack-test=$z7", "--out=$(Join-Path $outFull 'pack')") 300 }
 foreach ($f in Get-ChildItem (Join-Path $outFull 'pack') -Filter 'pack-*.txt') { Say "--- $($f.Name)"; Get-Content $f.FullName | ForEach-Object { Say $_ } }
 
+function Restart-Explorer {
+    Get-Process explorer -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 4
+    if (-not (Get-Process explorer -ErrorAction SilentlyContinue)) { Start-Process explorer.exe | Out-Null; Start-Sleep -Seconds 4 }
+}
+function Open-Box { Start-Process explorer.exe -ArgumentList $box | Out-Null; Start-Sleep -Seconds 6 }
+
 Say ""
 Say "=== Проводник: значки до и после перекраски ==="
 $box = Join-Path $env:TEMP 'IconPlusTest'
-Start-Process explorer.exe -ArgumentList $box | Out-Null
-Start-Sleep -Seconds 6
+Open-Box
 Say (Shot (Join-Path $Out 'explorer-1-до.png'))
-Run-Exe 'apply-color' @('--apply-color=#FF2A9D') 180
-Start-Sleep -Seconds 5
+Run-Exe 'apply-color' @('--apply-color=#FF2A9D') 240
+Start-Sleep -Seconds 8
 Say (Shot (Join-Path $Out 'explorer-2-перекрашено.png'))
+Restart-Explorer; Open-Box
+Say (Shot (Join-Path $Out 'explorer-2b-после-перезапуска-проводника.png'))
 Run-Exe 'restore' @('--restore') 120
-Start-Sleep -Seconds 5
+Restart-Explorer; Open-Box
 Say (Shot (Join-Path $Out 'explorer-3-вернули.png'))
+
+Say ""
+Say "=== опыт: значок обычной папки без прав администратора? ==="
+Add-Type -AssemblyName System.Drawing
+$bmp = New-Object System.Drawing.Bitmap 32, 32
+$g = [System.Drawing.Graphics]::FromImage($bmp); $g.Clear([System.Drawing.Color]::FromArgb(255, 0, 140)); $g.Dispose()
+$ico = Join-Path $env:TEMP 'folder-test.ico'
+$ic = [System.Drawing.Icon]::FromHandle($bmp.GetHicon())
+$fs = [System.IO.File]::Create($ico); $ic.Save($fs); $fs.Close()
+$probeFile = Join-Path $outFull 'folder-probe.txt'
+function Probe-Folder([string]$label) {
+    $pp = Start-Process -FilePath $exe -ArgumentList "--probe=$probeFile" -PassThru
+    [void]$pp.WaitForExit(60000)
+    $line = (Get-Content $probeFile | Where-Object { $_ -like 'folder=*' })
+    Say "$label : $line"
+}
+Probe-Folder 'до'
+foreach ($variant in @(
+    @{ Name = 'HKCU Shell Icons 3'; Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons' },
+    @{ Name = 'HKLM Shell Icons 3 (нужны права администратора)'; Path = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons' })) {
+    try {
+        New-Item -Path $variant.Path -Force | Out-Null
+        Set-ItemProperty -Path $variant.Path -Name '3' -Value "$ico,0" -Type String
+        Restart-Explorer; Open-Box
+        Probe-Folder $variant.Name
+        Say (Shot (Join-Path $Out ("folder-" + ($variant.Name -replace '[^A-Za-z]', '') + '.png')))
+    } catch { Say ("$($variant.Name): ошибка " + $_.Exception.Message) }
+    finally { try { Remove-ItemProperty -Path $variant.Path -Name '3' -ErrorAction SilentlyContinue; if (-not (Get-Item $variant.Path -ErrorAction SilentlyContinue).GetValueNames()) { Remove-Item $variant.Path -ErrorAction SilentlyContinue } } catch { } }
+}
+Restart-Explorer
 
 Say ""
 Say "=== окно плагина на экране (вкладка «Сайт с иконками») ==="

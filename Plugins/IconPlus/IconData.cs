@@ -36,9 +36,10 @@ static class IconData
     // «C:\Windows\System32\imageres.dll,-3» → файл и номер. Номер может быть отрицательным (идентификатор ресурса).
     public static void ParseLocation(string location, out string file, out int index)
     {
-        file = location.Trim().Trim('"'); index = 0;
-        var comma = file.LastIndexOf(',');
-        if (comma > 0 && int.TryParse(file[(comma + 1)..].Trim(), out var i)) { index = i; file = file[..comma].Trim().Trim('"'); }
+        var loc = location.Trim();
+        file = loc.Trim('"'); index = 0;
+        var comma = loc.LastIndexOf(',');
+        if (comma > 0 && int.TryParse(loc[(comma + 1)..].Trim(), out var i)) { index = i; file = loc[..comma].Trim().Trim('"'); }
     }
 
     static BitmapSource? FromImageFile(string file, int size)

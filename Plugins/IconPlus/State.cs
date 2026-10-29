@@ -11,6 +11,7 @@ sealed class RegChange
     public string Name { get; set; } = "";          // "" — значение по умолчанию
     public bool Existed { get; set; }               // значение было до нас
     public string? Old { get; set; }
+    public string? OldKind { get; set; }            // String или ExpandString — вид значения, чтобы вернуть его в точности
     public string? CreatedFrom { get; set; }        // с какого уровня ветка реестра создана нами (null — ветка уже была)
 }
 
@@ -78,8 +79,12 @@ sealed class RegistryWriter
             using (var key = Registry.CurrentUser.OpenSubKey(path))
             {
                 var old = key?.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
-                if (old is string s) { change.Existed = true; change.Old = s; }
-                else if (old != null) { change.Existed = true; change.Old = old.ToString(); }
+                if (old != null && key != null)
+                {
+                    change.Existed = true;
+                    change.Old = old is string s ? s : old.ToString();
+                    try { change.OldKind = key.GetValueKind(name).ToString(); } catch { }
+                }
             }
             state.Reg.Add(change);
         }
@@ -108,7 +113,8 @@ sealed class RegistryWriter
             if (c.Existed)
             {
                 using var k = Registry.CurrentUser.CreateSubKey(c.Path, true);
-                k.SetValue(c.Name, c.Old ?? "", RegistryValueKind.String);
+                var kind = Enum.TryParse<RegistryValueKind>(c.OldKind, out var kd) && kd is RegistryValueKind.String or RegistryValueKind.ExpandString ? kd : RegistryValueKind.String;
+                k.SetValue(c.Name, c.Old ?? "", kind);
                 return;
             }
             using (var k = Registry.CurrentUser.OpenSubKey(c.Path, true)) k?.DeleteValue(c.Name, false);

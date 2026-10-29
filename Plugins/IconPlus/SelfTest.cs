@@ -24,7 +24,7 @@ static class SelfTest
         Add("thispc", Native.IconLocationOfShellItem("::{20D04FE0-3AEA-1069-A2D8-08002B30309D}"));
         Add("recycle", Native.IconLocationOfShellItem("::{645FF040-5081-101B-9F08-00AA002F954E}"));
         Add("network", Native.IconLocationOfShellItem("::{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}"));
-        foreach (var f in new[] { "a.txt", "b.zip", "c.png", "d.mp3", "e.pdf", "f.docx" }) Add(f, Native.IconLocation(Path.Combine(Box, f), false));
+        foreach (var f in new[] { "a.txt", "b.zip", "c.png", "d.mp3", "e.pdf", "f.docx" }) Add(f, Native.AssocDefaultIcon(Path.GetExtension(f)));
         if (File.Exists(DesktopLnk) && Shortcuts.ReadIcon(DesktopLnk, out var p, out var i)) Add("lnk", p + "," + i); else Add("lnk", "");
         File.WriteAllText(file, sb.ToString());
     }

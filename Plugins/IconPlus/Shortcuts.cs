@@ -61,6 +61,22 @@ static class Shortcuts
         finally { if (o != null) Marshal.ReleaseComObject(o); }
     }
 
+    // Куда ведёт ярлык (пусто для программ из магазина и некоторых системных ярлыков).
+    public static string ReadTarget(string lnk)
+    {
+        object? o = null;
+        try
+        {
+            o = new ShellLink();
+            ((IPersistFile)o).Load(lnk, 0);
+            var sb = new StringBuilder(520);
+            ((IShellLinkW)o).GetPath(sb, sb.Capacity, IntPtr.Zero, 0);
+            return sb.ToString();
+        }
+        catch { return ""; }
+        finally { if (o != null) Marshal.ReleaseComObject(o); }
+    }
+
     public static bool WriteIcon(string lnk, string iconPath, int index)
     {
         object? o = null;

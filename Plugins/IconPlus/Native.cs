@@ -34,6 +34,18 @@ static class Native
 
     [DllImport("user32.dll")] public static extern bool DestroyIcon(IntPtr icon);
 
+    [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
+    static extern int AssocQueryString(uint flags, int str, string assoc, string? extra, StringBuilder? output, ref uint len);
+
+    // Значок типа файла по версии Windows («путь,номер»), с учётом выбранной пользователем программы. assoc — «.txt» или имя типа.
+    public static string AssocDefaultIcon(string assoc)
+    {
+        var sb = new StringBuilder(520);
+        var n = (uint)sb.Capacity;
+        var hr = AssocQueryString(0, 15 /* ASSOCSTR_DEFAULTICON */, assoc, null, sb, ref n);
+        return hr == 0 ? Environment.ExpandEnvironmentVariables(sb.ToString()) : "";
+    }
+
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] public static extern int GetDriveType(string root);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -75,11 +87,31 @@ static class Native
         return n >= 1 && n != 0xFFFFFFFF ? icons[0] : IntPtr.Zero;
     }
 
+    // Попросить Windows пересобрать кэш значков (его не видно, но без этого часть значков остаётся старыми до перезапуска Проводника).
+    public static void RefreshIconCache()
+    {
+        var exe = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "ie4uinit.exe");
+        if (!System.IO.File.Exists(exe)) return;
+        foreach (var arg in new[] { "-ClearIconCache", "-show" })
+        {
+            try
+            {
+                using var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe, arg) { UseShellExecute = false, CreateNoWindow = true });
+                p?.WaitForExit(8000);
+            }
+            catch { }
+        }
+    }
+
     // Сказать Проводнику, что значки изменились.
     public static void NotifyIconsChanged()
     {
         SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
         // часть программ обновляет значки только после этого сообщения
-        System.Threading.Tasks.Task.Run(() => { try { SendMessageTimeout((IntPtr)0xFFFF, 0x1A, UIntPtr.Zero, "Environment", 2, 1500, out _); } catch { } });
+        System.Threading.Tasks.Task.Run(() =>
+        {
+            try { SendMessageTimeout((IntPtr)0xFFFF, 0x1A, UIntPtr.Zero, "Environment", 2, 1500, out _); } catch { }
+            try { RefreshIconCache(); } catch { }
+        });
     }
 }
