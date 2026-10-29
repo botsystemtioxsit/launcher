@@ -73,7 +73,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        try { engine?.Dispose(); } catch { }   // снимает форму и размытие с панели
+        try { engine?.Dispose(); } catch { }   // снимает форму с панели
         try { mutex?.ReleaseMutex(); } catch { }
         base.OnExit(e);
     }

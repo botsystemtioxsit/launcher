@@ -20,12 +20,6 @@ static class Native
     [StructLayout(LayoutKind.Sequential)]
     struct MONITORINFO { public uint cbSize; public RECT rcMonitor; public RECT rcWork; public uint dwFlags; }
 
-    [StructLayout(LayoutKind.Sequential)]
-    struct ACCENT_POLICY { public int AccentState; public int AccentFlags; public uint GradientColor; public int AnimationId; }
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct WINCOMPATTRDATA { public int Attribute; public IntPtr Data; public int SizeOfData; }
-
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindow(string cls, string? title);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindowEx(IntPtr parent, IntPtr after, string? cls, string? title);
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
@@ -34,7 +28,6 @@ static class Native
     [DllImport("user32.dll")] public static extern uint GetDpiForWindow(IntPtr h);
     [DllImport("user32.dll")] static extern IntPtr MonitorFromWindow(IntPtr h, uint flags);
     [DllImport("user32.dll")] static extern bool GetMonitorInfo(IntPtr mon, ref MONITORINFO mi);
-    [DllImport("user32.dll")] static extern int SetWindowCompositionAttribute(IntPtr h, ref WINCOMPATTRDATA data);
     [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW")] static extern bool SpiGetInt(uint action, uint param, out int value, uint winIni);
     [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW")] static extern bool SpiSetPtr(uint action, uint param, IntPtr value, uint winIni);
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -54,6 +47,22 @@ static class Native
         catch { return 1.0; }
     }
 
+    // Нижняя граница монитора, на котором лежит окно (0 — не удалось узнать).
+    static int MonitorBottom(IntPtr hwnd)
+    {
+        var mon = MonitorFromWindow(hwnd, 2 /* MONITOR_DEFAULTTONEAREST */);
+        var mi = new MONITORINFO { cbSize = (uint)Marshal.SizeOf<MONITORINFO>() };
+        return mon != IntPtr.Zero && GetMonitorInfo(mon, ref mi) ? mi.rcMonitor.Bottom : 0;
+    }
+
+    // Автоскрытая панель спрятана за нижним краем экрана и торчит оттуда только тонкой полоской — по ней Windows
+    // замечает курсор у края и выдвигает панель. Вырез эту полоску отрезал бы, и панель перестала бы появляться.
+    public static bool IsHiddenAtBottom(IntPtr hwnd, RECT rc, double scale)
+    {
+        var bottom = MonitorBottom(hwnd);
+        return bottom > 0 && rc.Top >= bottom - (int)Math.Round(6 * scale);
+    }
+
     // Панель лежит у нижнего края своего монитора (формы поддерживаются только для такой панели).
     public static bool IsAtBottom(IntPtr hwnd, RECT rc)
     {
@@ -61,22 +70,6 @@ static class Native
         var mi = new MONITORINFO { cbSize = (uint)Marshal.SizeOf<MONITORINFO>() };
         if (mon == IntPtr.Zero || !GetMonitorInfo(mon, ref mi)) return false;
         return rc.Width > rc.Height && rc.Bottom >= mi.rcMonitor.Bottom - 3 && rc.Top > mi.rcMonitor.Top + 50;
-    }
-
-    // Размытие/прозрачность панели: недокументированный, но давно известный вызов Windows (тот же, что у TranslucentTB).
-    // state: 0 выкл, 2 прозрачный градиент, 3 размытие, 4 акрил. abgr — цвет подложки вместе с прозрачностью.
-    public static void SetAccent(IntPtr hwnd, int state, uint abgr)
-    {
-        var policy = new ACCENT_POLICY { AccentState = state, AccentFlags = 2, GradientColor = abgr };
-        var size = Marshal.SizeOf<ACCENT_POLICY>();
-        var ptr = Marshal.AllocHGlobal(size);
-        try
-        {
-            Marshal.StructureToPtr(policy, ptr, false);
-            var data = new WINCOMPATTRDATA { Attribute = 19 /* WCA_ACCENT_POLICY */, Data = ptr, SizeOfData = size };
-            SetWindowCompositionAttribute(hwnd, ref data);
-        }
-        finally { Marshal.FreeHGlobal(ptr); }
     }
 
     // Говорим Проводнику, что настройки панели изменились (часть параметров он подхватывает сразу).
