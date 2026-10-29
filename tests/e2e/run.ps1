@@ -121,7 +121,7 @@ Run-ColorPlus '21-окна-прозрачность-слюда-заголово�
 Run-ColorPlus '22-окна-размытие-акрил-на-всё-окно' @{ WindowsOn = $true; WindowMode = 'none'; WindowOpacity = 100; Backdrop = 'acrylic'; Tint = '#6C4DFF'; TintOpacity = 70; ExtendFrame = $true }
 Run-ColorPlus '23-окна-не-трогать-программу' @{ WindowsOn = $true; WindowMode = 'alpha'; WindowOpacity = 40; Apps = @{ pwsh = @{ Mode = 'skip' } } }
 
-Run-ColorPlus '24-окна-только-фон-форма' @{ WindowsOn = $true; WindowMode = 'background' }
+Run-ColorPlus '24-окна-только-фон-форма-по-правилу-программы' @{ WindowsOn = $true; WindowMode = 'none'; Apps = @{ pwsh = @{ Mode = 'custom'; WinMode = 'background'; Opacity = 100 } } }
 
 # Chrome: «только фон» невозможен (рисуется видеокартой) — проверяем, что окно не ломается, и что запасной вариант «целиком» работает
 $page = Join-Path (Get-Location) 'e2e-page.html'
@@ -142,12 +142,48 @@ if (Test-Path $chromePath) {
     Say "окно Chrome: $ch"
     if ($ch -ne [IntPtr]::Zero) { Say ("Chrome до: " + [W]::Describe($ch)) }
     Say (Shot (Join-Path $Out '25-хром-до.png'))
-    Run-ColorPlus '26-хром-только-фон-запасного-нет' @{ WindowsOn = $true; WindowMode = 'background'; FallbackAlpha = $false }
+    Run-ColorPlus '26-хром-только-фон-по-правилу-невозможен' @{ WindowsOn = $true; WindowMode = 'none'; Apps = @{ chrome = @{ Mode = 'custom'; WinMode = 'background'; Opacity = 100 } } }
     if ($ch -ne [IntPtr]::Zero) { Say ("Chrome после (без запасного): " + [W]::Describe($ch)) }
-    Run-ColorPlus '27-хром-только-фон-запасной-целиком' @{ WindowsOn = $true; WindowMode = 'background'; FallbackAlpha = $true; WindowOpacity = 60 }
+    Run-ColorPlus '27-хром-общая-прозрачность-целиком' @{ WindowsOn = $true; WindowMode = 'alpha'; WindowOpacity = 60 }
     if ($ch -ne [IntPtr]::Zero) { Say ("Chrome после (с запасным): " + [W]::Describe($ch)) }
     Get-Process chrome -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 } else { Say "Chrome не найден" }
+
+
+# Защита (после ошибки 1.1.0: «только фон» для всех окон ломал Steam и Wallpaper Engine):
+# окно без своей строки заголовка общими настройками не трогается; окно со строкой — трогается; после аварийного закрытия плагина окно возвращается при следующем запуске
+Say ""
+Say "=== Color Plus: защита ==="
+$frameScript = Join-Path (Get-Location) 'e2e-frameless.ps1'
+@'
+Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+$f = New-Object System.Windows.Forms.Form
+$f.Text = "E2E-FRAMELESS"; $f.FormBorderStyle = "None"; $f.StartPosition = "Manual"; $f.Left = 420; $f.Top = 430; $f.Width = 560; $f.Height = 260; $f.BackColor = [System.Drawing.Color]::FromArgb(24, 24, 32)
+[void]$f.ShowDialog()
+'@ | Set-Content $frameScript -Encoding UTF8
+Start-Process pwsh -ArgumentList '-NoProfile', '-File', $frameScript | Out-Null
+Start-Sleep -Seconds 5
+$hf = [IntPtr]::Zero
+foreach ($line in [W]::List()) { if ($line -match 'E2E-FRAMELESS') { $hf = [IntPtr][long]($line.Split('|')[0]) } }
+Say "окно без заголовка: $hf"
+($sg = @{ WindowsOn = $true; WindowMode = 'alpha'; WindowOpacity = 40; Apps = @{ powershell = @{ Mode = 'skip' } } }) | Out-Null
+($sg | ConvertTo-Json -Depth 6) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
+$cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
+Start-Sleep -Seconds 7
+if ($hf -ne [IntPtr]::Zero) { Say ("общая прозрачность 40%: окно БЕЗ заголовка (ожидается layered=0): " + [W]::Describe($hf)) }
+if ($hw -ne [IntPtr]::Zero) { Say ("общая прозрачность 40%: окно СО строкой заголовка (ожидается layered=1 alpha=102): " + [W]::Describe($hw)) }
+Say (Shot (Join-Path $Out '28-защита-окно-без-заголовка.png'))
+# аварийное закрытие: плагин «убит» — окно со строкой остаётся слоёным
+Stop-Process -Id $cp.Id -Force
+Start-Sleep -Seconds 2
+if ($hw -ne [IntPtr]::Zero) { Say ("после аварийного закрытия плагина (окно осталось прозрачным): " + [W]::Describe($hw)) }
+# следующий запуск (даже без эффектов) возвращает оставшееся
+(@{ WindowsOn = $false } | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
+$cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
+Start-Sleep -Seconds 6
+if ($hw -ne [IntPtr]::Zero) { Say ("после следующего запуска (ожидается layered=0): " + [W]::Describe($hw)) }
+Get-Process ColorPlus -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Get-Process pwsh -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -eq 'E2E-FRAMELESS' } | Stop-Process -Force -ErrorAction SilentlyContinue
 
 # Цвет выделения и акцент: проверяем системные значения до / во время / после
 Say ""

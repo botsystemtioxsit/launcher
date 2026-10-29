@@ -57,6 +57,10 @@ static class Native
     [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint msg, IntPtr wParam, IntPtr lParam);
     [DllImport("user32.dll")] public static extern bool SetSysColors(int count, int[] elements, int[] rgb);
     [DllImport("user32.dll")] public static extern int GetSysColor(int index);
+    [DllImport("user32.dll")] public static extern bool IsHungAppWindow(IntPtr h);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern bool SetProp(IntPtr h, string name, IntPtr data);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr GetProp(IntPtr h, string name);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr RemoveProp(IntPtr h, string name);
     [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr h, IntPtr dc, uint flags);
     [DllImport("user32.dll")] public static extern IntPtr GetDC(IntPtr h);
     [DllImport("user32.dll")] public static extern int ReleaseDC(IntPtr h, IntPtr dc);

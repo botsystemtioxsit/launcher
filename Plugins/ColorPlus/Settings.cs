@@ -26,9 +26,9 @@ class ColorSettings
 
     // ---- окна всех программ ----
     public bool WindowsOn { get; set; }
-    // background — прозрачным становится только фон окна (цветовой ключ); alpha — окно целиком; none — только рамка, цвет, подложка
-    public string WindowMode { get; set; } = WmBackground;
-    public bool FallbackAlpha { get; set; }               // если «только фон» невозможен (Chrome, Edge…) — сделать прозрачным окно целиком
+    // Для всех окон: alpha — окно целиком прозрачнее; none — только рамка, цвет, подложка. «Только фон» (background) — ТОЛЬКО для программ,
+    // которые человек выбрал сам в списке: цветовой ключ делает прозрачные места «сквозными» для мыши, на всех окнах он ломает программы (1.1.0).
+    public string WindowMode { get; set; } = WmNone;
     public int WindowOpacity { get; set; } = 90;          // 20–100: насколько окно «плотное»; меньше — сквозь него виден рабочий стол
     public string Backdrop { get; set; } = BdNone;        // что рисуется за окном
     public string Tint { get; set; } = "#101018";         // оттенок стекла (размытие и акрил)
@@ -74,7 +74,7 @@ class ColorSettings
         WindowOpacity = Clamp(WindowOpacity, 20, 100);
         TintOpacity = Clamp(TintOpacity, 0, 100);
         TaskbarOpacity = Clamp(TaskbarOpacity, 0, 100);
-        if (WindowMode is not (WmBackground or WmAlpha or WmNone)) WindowMode = WmBackground;
+        if (WindowMode is not (WmAlpha or WmNone)) WindowMode = WmNone;   // «только фон» для всех окон из 1.1.0 снят: он ломал Steam и Wallpaper Engine
         if (Backdrop is not (BdNone or BdBlur or BdAcrylic or BdMica or BdTabbed)) Backdrop = BdNone;
         if (TaskbarMode is not (TbDefault or TbClear or TbBlur or TbSolid)) TaskbarMode = TbDefault;
         Tint = Hex(Tint, "#101018");
