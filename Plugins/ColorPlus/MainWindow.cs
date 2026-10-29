@@ -46,9 +46,8 @@ sealed class MainWindow : Window
     }
 
     // Служебный режим для проверки внешнего вида: рисует окно целиком (без прокрутки) в PNG. Запускается из CI: --screenshot=<папка>.
-    public void RenderTo(string path, params string[] open)
+    public void RenderTo(string path)
     {
-        foreach (var k in open) openIslands.Add(k);
         Build();
         var scroll = (ScrollViewer)Content;
         var content = (FrameworkElement)scroll.Content;
