@@ -19,7 +19,7 @@ sealed class MainWindow : Window
     static readonly string[] SwatchColors = { "#000000", "#101018", "#202020", "#F2F2F2", "#00F0FF", "#FF2A9D", "#6C4DFF", "#1E6BFF", "#20C27A" };
     static readonly string[] Backdrops = { ColorSettings.BdNone, ColorSettings.BdBlur, ColorSettings.BdAcrylic, ColorSettings.BdMica, ColorSettings.BdTabbed };
     static readonly string[] BackdropLabels = { "Нет", "Размытие", "Акрил", "Слюда", "Вкладки" };
-    static readonly string[] WinModes = { ColorSettings.WmBackground, ColorSettings.WmAlpha, ColorSettings.WmNone };          // для правила программы
+    static readonly string[] WinModes = { ColorSettings.WmBackground, ColorSettings.WmAlpha, ColorSettings.WmNone, ColorSettings.WmGlass };          // для правила программы
     static readonly string[] GlobalModes = { ColorSettings.WmAlpha, ColorSettings.WmNone };                                  // для всех окон
     static readonly string[] TaskbarModes = { ColorSettings.TbDefault, ColorSettings.TbClear, ColorSettings.TbBlur, ColorSettings.TbSolid };
 
@@ -131,6 +131,7 @@ sealed class MainWindow : Window
         root.Children.Add(statusLine);
 
         root.Children.Add(WindowsCard());
+        root.Children.Add(GlassCard());
         if (settings.WindowsOn) root.Children.Add(AppsCard());
         root.Children.Add(TaskbarCard());
         root.Children.Add(SelectionCard());
@@ -190,6 +191,36 @@ sealed class MainWindow : Window
         return Card("Окна всех программ", rows);
     }
 
+    UIElement GlassCard()
+    {
+        var rows = new List<UIElement>
+        {
+            Note("Стекло — для Chrome, Edge и других программ, у которых нельзя сделать прозрачным один только фон. Окно становится чуть прозрачнее, под ним лежит размытое матовое стекло " +
+                 "(значки и обои за окном размываются и не отвлекают), а шапка окна — вкладки, адресная строка, заголовок — остаётся плотной и чёткой. " +
+                 "Честно: текст и видео внутри страницы остаются чёткими лишь настолько, насколько вы оставите окно плотным — Windows не умеет прозрачить у чужой страницы только фон."),
+        };
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) };
+        buttons.Children.Add(Btn("Включить стекло для Chrome", "Primary", () => EnableGlassFor("chrome"), first: true));
+        buttons.Children.Add(Btn("Для Edge", null, () => EnableGlassFor("msedge")));
+        rows.Add(buttons);
+        rows.Add(SliderRow("Плотность окна", "100% — окно как обычно. Меньше — сквозь окно виднее размытое стекло, но и текст бледнее. Хорошо работает 80–90%.", 50, 100, settings.GlassAlpha, "%",
+            v => { settings.GlassAlpha = v; Changed(); }));
+        rows.Add(SliderRow("Сила оттенка стекла", "Чем больше, тем темнее и плотнее стекло под окном; меньше — стекло светлее и прозрачнее.", 0, 100, settings.GlassBlur, "%",
+            v => { settings.GlassBlur = v; Changed(); }));
+        rows.Add(Row("Цвет стекла", "Оттенок матового стекла", ColorPicker(settings.GlassTint, hex => { settings.GlassTint = hex; Changed(); })));
+        rows.Add(Row("Шапка окна", "Вкладки, адресная строка и заголовок: оставить плотными (копия поверх окна) или пусть прозрачнеют вместе со всем окном.",
+            Seg(new[] { "Плотная", "Как всё окно" }, settings.GlassKeepStrip ? 0 : 1, i => { settings.GlassKeepStrip = i == 0; Changed(); })));
+        return Card("Стекло", rows);
+    }
+
+    void EnableGlassFor(string proc)
+    {
+        settings.WindowsOn = true;
+        settings.Apps[proc] = new AppRule { Mode = "custom", WinMode = ColorSettings.WmGlass, Opacity = settings.GlassAlpha };
+        Changed(); Build();
+        Say("Стекло включено для " + proc + ". Откройте окно программы — под ним появится размытое стекло.");
+    }
+
     UIElement AppsCard()
     {
         var rows = new List<UIElement>
@@ -221,8 +252,8 @@ sealed class MainWindow : Window
         {
             var body = new StackPanel { Margin = new Thickness(14, 0, 0, 0) };
             var wmIdx = rule.WinMode == null ? 0 : Array.IndexOf(WinModes, rule.WinMode) + 1;
-            body.Children.Add(Row("Что делать прозрачным", "«Только фон» — прозрачен цвет фона окна; ВАЖНО: по прозрачным местам мышь «проваливается» — клик попадёт в окно позади. Включайте только для программ, где это нужно.",
-                Seg(new[] { "Как у всех", "Только фон", "Окно целиком", "Ничего" }, Math.Max(0, wmIdx), i => { rule.WinMode = i == 0 ? null : WinModes[i - 1]; Changed(); Build(); })));
+            body.Children.Add(Row("Что делать прозрачным", "«Только фон» — прозрачен цвет фона окна; ВАЖНО: по прозрачным местам мышь «проваливается» — клик попадёт в окно позади. «Стекло» — окно чуть прозрачнее, под ним размытое стекло, шапка плотная (подходит Chrome и Edge); настройки — в карточке «Стекло».",
+                Seg(new[] { "Как у всех", "Только фон", "Окно целиком", "Ничего", "Стекло" }, Math.Max(0, wmIdx), i => { rule.WinMode = i == 0 ? null : WinModes[i - 1]; Changed(); Build(); })));
             if ((rule.WinMode ?? settings.WindowMode) == ColorSettings.WmAlpha)
                 body.Children.Add(SliderRow("Прозрачность окна целиком", "Для этой программы", 20, 100, rule.Opacity, "%", v => { rule.Opacity = v; Changed(); }));
             var idx = rule.Backdrop == null ? 0 : Array.IndexOf(Backdrops, rule.Backdrop) + 1;

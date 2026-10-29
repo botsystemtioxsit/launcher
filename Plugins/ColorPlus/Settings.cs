@@ -19,7 +19,7 @@ class ColorSettings
 {
     public const string BdNone = "none", BdBlur = "blur", BdAcrylic = "acrylic", BdMica = "mica", BdTabbed = "tabbed";
     public const string TbDefault = "default", TbClear = "clear", TbBlur = "blur", TbSolid = "solid";
-    public const string WmBackground = "background", WmAlpha = "alpha", WmNone = "none";
+    public const string WmBackground = "background", WmAlpha = "alpha", WmNone = "none", WmGlass = "glass";
 
     static readonly string FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BattleLauncher", "color-plus-settings.json");
     static readonly Regex HexRe = new("^#[0-9A-Fa-f]{6}$");
@@ -29,6 +29,11 @@ class ColorSettings
     // Для всех окон: alpha — окно целиком прозрачнее; none — только рамка, цвет, подложка. «Только фон» (background) — ТОЛЬКО для программ,
     // которые человек выбрал сам в списке: цветовой ключ делает прозрачные места «сквозными» для мыши, на всех окнах он ломает программы (1.1.0).
     public string WindowMode { get; set; } = WmNone;
+    // «Стекло» (только по правилу программы): окно слегка прозрачное, под ним — размытое матовое стекло, шапка окна остаётся плотной
+    public int GlassAlpha { get; set; } = 85;             // 50–100: плотность самого окна
+    public string GlassTint { get; set; } = "#101018";    // оттенок стекла
+    public int GlassBlur { get; set; } = 45;              // 0–100: сила оттенка стекла (больше — темнее и плотнее)
+    public bool GlassKeepStrip { get; set; } = true;      // шапку окна (вкладки, адресная строка, заголовок) оставить плотной
     public int WindowOpacity { get; set; } = 90;          // 20–100: насколько окно «плотное»; меньше — сквозь него виден рабочий стол
     public string Backdrop { get; set; } = BdNone;        // что рисуется за окном
     public string Tint { get; set; } = "#101018";         // оттенок стекла (размытие и акрил)
@@ -72,6 +77,9 @@ class ColorSettings
     void Normalize()
     {
         WindowOpacity = Clamp(WindowOpacity, 20, 100);
+        GlassAlpha = Clamp(GlassAlpha, 50, 100);
+        GlassBlur = Clamp(GlassBlur, 0, 100);
+        GlassTint = Hex(GlassTint, "#101018");
         TintOpacity = Clamp(TintOpacity, 0, 100);
         TaskbarOpacity = Clamp(TaskbarOpacity, 0, 100);
         if (WindowMode is not (WmAlpha or WmNone)) WindowMode = WmNone;   // «только фон» для всех окон из 1.1.0 снят: он ломал Steam и Wallpaper Engine
@@ -91,7 +99,7 @@ class ColorSettings
             if (r == null || r.Mode == "inherit") { Apps.Remove(k); continue; }
             if (r.Mode is not ("skip" or "custom")) { Apps.Remove(k); continue; }
             r.Opacity = Clamp(r.Opacity, 20, 100);
-            if (r.WinMode is not (null or WmBackground or WmAlpha or WmNone)) r.WinMode = null;
+            if (r.WinMode is not (null or WmBackground or WmAlpha or WmNone or WmGlass)) r.WinMode = null;
             if (r.Backdrop is not (null or BdNone or BdBlur or BdAcrylic or BdMica or BdTabbed)) r.Backdrop = null;
         }
     }

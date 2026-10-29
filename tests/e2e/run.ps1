@@ -146,6 +146,18 @@ if (Test-Path $chromePath) {
     if ($ch -ne [IntPtr]::Zero) { Say ("Chrome после (без запасного): " + [W]::Describe($ch)) }
     Run-ColorPlus '27-хром-общая-прозрачность-целиком' @{ WindowsOn = $true; WindowMode = 'alpha'; WindowOpacity = 60 }
     if ($ch -ne [IntPtr]::Zero) { Say ("Chrome после (с запасным): " + [W]::Describe($ch)) }
+    # «Стекло» для Chrome: окно слегка прозрачное, под ним наше размытое стекло, шапка накрыта копией
+    ($sgl = @{ WindowsOn = $true; WindowMode = 'none'; GlassAlpha = 75; GlassBlur = 35; GlassKeepStrip = $true; Apps = @{ chrome = @{ Mode = 'custom'; WinMode = 'glass'; Opacity = 100 }; powershell = @{ Mode = 'skip' }; pwsh = @{ Mode = 'skip' } } }) | Out-Null
+    ($sgl | ConvertTo-Json -Depth 6) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
+    $cpg = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
+    Start-Sleep -Seconds 9
+    if ($ch -ne [IntPtr]::Zero) { Say ("29-хром-стекло : Chrome " + [W]::Describe($ch)) }
+    foreach ($line in [W]::List()) { if ($line -match 'Color Plus') { Say ("окно плагина: " + $line) } }
+    Say (Shot (Join-Path $Out '29-хром-стекло.png'))
+    Quit-Plugin $cpg 'color-plus'
+    Start-Sleep -Seconds 3
+    if ($ch -ne [IntPtr]::Zero) { Say ("29-хром-стекло после выхода : Chrome " + [W]::Describe($ch)) }
+    foreach ($line in [W]::List()) { if ($line -match 'Color Plus') { Say ("окно плагина осталось: " + $line) } }
     Get-Process chrome -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 } else { Say "Chrome не найден" }
 

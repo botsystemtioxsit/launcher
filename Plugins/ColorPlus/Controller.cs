@@ -4,7 +4,10 @@ namespace ColorPlusApp;
 sealed class Controller : IDisposable
 {
     public readonly WindowEffects Effects = new();
+    public readonly GlassManager Glass = new(System.Windows.Application.Current?.Dispatcher ?? System.Windows.Threading.Dispatcher.CurrentDispatcher);
     readonly SystemColors sys = new();
+
+    public Controller() { Effects.Glass = Glass; }
 
     public string? SystemError { get; private set; }
 
@@ -19,6 +22,7 @@ sealed class Controller : IDisposable
     public void Dispose()
     {
         try { Effects.Dispose(); } catch { }
+        try { Glass.Dispose(); } catch { }
         try { sys.RestoreAll(); } catch { }
         try { TaskbarLink.Write(new ColorSettings()); } catch { }
     }

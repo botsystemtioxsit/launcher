@@ -40,6 +40,7 @@ sealed class WindowEffects : IDisposable
     {
         public bool OpacityChecked, HadLayered, LayeredByUs;
         public int Opacity = 100;
+        public bool GlassActive;              // под окном лежит наше стекло
         public bool Keyed;                    // сейчас на окне цветовой ключ
         public uint KeyColor;
         public DateTime KeyAt = DateTime.MinValue;
@@ -52,7 +53,7 @@ sealed class WindowEffects : IDisposable
         public DateTime LastAssert = DateTime.MinValue;
     }
 
-    sealed record Eff(string Mode, int Opacity, string Backdrop, bool Extend, bool Dark, string? Caption, string? CaptionText, string Tint, int TintOpacity);
+    sealed record Eff(string Mode, int GlassAlpha, string GlassTint, int GlassBlur, bool GlassStrip, int Opacity, string Backdrop, bool Extend, bool Dark, string? Caption, string? CaptionText, string Tint, int TintOpacity);
 
     readonly object gate = new();
     readonly Dictionary<IntPtr, WinState> states = new();
@@ -70,6 +71,9 @@ sealed class WindowEffects : IDisposable
 
     static readonly bool Win11 = Environment.OSVersion.Version.Build >= 22000;
     static readonly bool BackdropApi = Environment.OSVersion.Version.Build >= 22621;
+
+    // Стекло под окнами (создаётся в Controller; окна стекла живут в потоке интерфейса)
+    public GlassManager? Glass { get; set; }
 
     public event Action? Changed;
     public string Status { get { lock (gate) return status; } }
@@ -166,6 +170,7 @@ sealed class WindowEffects : IDisposable
             states.Remove(h);
         }
         lock (gate) { running = apps.ToArray(); unsupported = new Dictionary<string, string>(unsup); }
+        Glass?.SetTargets(states.Where(kv => kv.Value.GlassActive && seen.Contains(kv.Key)).Select(kv => kv.Key).ToList(), new GlassConfig(s.GlassTint, s.GlassBlur, s.GlassKeepStrip));
 
         ApplyTaskbar(s);
 
@@ -175,9 +180,11 @@ sealed class WindowEffects : IDisposable
         {
             var keyed = states.Values.Count(x => x.Outcome == "background");
             var whole = states.Values.Count(x => x.Outcome == "alpha");
+            var glassed = states.Values.Count(x => x.Outcome == "glass");
             text = $"Окон под эффектами: {applied}";
             if (s.WindowMode == ColorSettings.WmBackground || keyed > 0) text += $" · только фон: {keyed}";
             if (whole > 0) text += $" · целиком: {whole}";
+            if (glassed > 0) text += $" · стекло: {glassed}";
             if (unsup.Count > 0) text += " · у этих фон прозрачным не сделать (рисуются видеокартой): " + string.Join(", ", unsup.Keys);
         }
         SetStatus(text);
@@ -217,10 +224,11 @@ sealed class WindowEffects : IDisposable
         s.Apps.TryGetValue(proc, out var rule);
         if (rule?.Mode == "skip") return null;
         var custom = rule?.Mode == "custom";
+        var mode = custom && rule!.WinMode != null ? rule.WinMode : s.WindowMode;   // «только фон» и «стекло» возможны лишь по правилу программы
         return new Eff(
-            custom && rule!.WinMode != null ? rule.WinMode : s.WindowMode,   // «только фон» возможен лишь по правилу программы
-            custom ? rule!.Opacity : s.WindowOpacity,
-            custom && rule!.Backdrop != null ? rule.Backdrop : s.Backdrop,
+            mode, s.GlassAlpha, s.GlassTint, s.GlassBlur, s.GlassKeepStrip,
+            mode == ColorSettings.WmGlass ? s.GlassAlpha : custom ? rule!.Opacity : s.WindowOpacity,
+            mode == ColorSettings.WmGlass ? ColorSettings.BdNone : custom && rule!.Backdrop != null ? rule.Backdrop : s.Backdrop,
             s.ExtendFrame, s.DarkTitle, s.TitleColor, s.TitleTextColor, s.Tint, s.TintOpacity);
     }
 
@@ -235,7 +243,8 @@ sealed class WindowEffects : IDisposable
         }
         var canLayer = !st.HadLayered && cls != "ApplicationFrameWindow"; // окна магазинных приложений слоёность не любят
         var wantKey = eff.Mode == ColorSettings.WmBackground;
-        var wantAlpha = eff.Mode == ColorSettings.WmAlpha;
+        var glass = eff.Mode == ColorSettings.WmGlass;
+        var wantAlpha = eff.Mode == ColorSettings.WmAlpha || glass;
         var outcome = "none";
         if (wantKey)
         {
@@ -264,9 +273,10 @@ sealed class WindowEffects : IDisposable
             Native.SetLayeredWindowAttributes(h, wantKey ? st.KeyColor : 0, (byte)Math.Round(alphaPercent * 255 / 100.0), flags);
             st.Opacity = alphaPercent;
             if (wantKey) outcome = "background";
-            else if (wantAlpha) outcome = "alpha";
+            else if (wantAlpha) outcome = glass ? "glass" : "alpha";
         }
         else if (st.LayeredByUs) RemoveLayer(h, st);
+        st.GlassActive = glass && outcome == "glass";
         if (!wantKey) st.Keyed = false;
         if (eff.Mode != ColorSettings.WmBackground) st.NoKeyWhy = null;
         st.Outcome = outcome;
@@ -422,6 +432,7 @@ sealed class WindowEffects : IDisposable
     void RestoreEverything()
     {
         RecoverLeftovers();
+        Glass?.SetTargets(Array.Empty<IntPtr>(), new GlassConfig("#101018", 45, true));
         foreach (var kv in states.ToList())
         {
             if (Native.IsWindow(kv.Key)) { try { Restore(kv.Key, kv.Value); } catch { } }

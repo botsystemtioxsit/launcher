@@ -15,7 +15,17 @@ static class Native
                      DWMWA_SYSTEMBACKDROP_TYPE = 38, DWMWA_CLOAKED = 14;
     public const uint ColorDefault = 0xFFFFFFFF;   // DWMWA_COLOR_DEFAULT
 
+    public const uint SWP_NOSIZE = 1, SWP_NOMOVE = 2, SWP_NOZORDER = 4, SWP_NOACTIVATE = 0x10, GW_HWNDNEXT = 2, GW_HWNDPREV = 3;
+    public const long WS_EX_TRANSPARENT = 0x20;
+
     public delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct POINT { public int X, Y; }
+
+    // Свойства миниатюры окна (DWM_THUMBNAIL_PROPERTIES): флаги 1 — куда рисовать, 2 — что брать, 4 — прозрачность, 8 — видимость.
+    [StructLayout(LayoutKind.Sequential)]
+    public struct THUMBNAIL { public uint Flags; public RECT Dest; public RECT Src; public byte Opacity; public bool Visible; public bool ClientOnly; }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct RECT { public int Left, Top, Right, Bottom; public readonly int Width => Right - Left; public readonly int Height => Bottom - Top; }
@@ -58,6 +68,14 @@ static class Native
     [DllImport("user32.dll")] public static extern bool SetSysColors(int count, int[] elements, int[] rgb);
     [DllImport("user32.dll")] public static extern int GetSysColor(int index);
     [DllImport("user32.dll")] public static extern bool IsHungAppWindow(IntPtr h);
+    [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int cmd);
+    [DllImport("user32.dll")] public static extern bool EnumChildWindows(IntPtr parent, EnumWindowsProc cb, IntPtr lParam);
+    [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h, ref POINT p);
+    [DllImport("dwmapi.dll", EntryPoint = "DwmGetWindowAttribute")] public static extern int DwmGetRectAttribute(IntPtr h, int attr, out RECT value, int size);
+    [DllImport("dwmapi.dll")] public static extern int DwmRegisterThumbnail(IntPtr dest, IntPtr src, out IntPtr thumb);
+    [DllImport("dwmapi.dll")] public static extern int DwmUpdateThumbnailProperties(IntPtr thumb, ref THUMBNAIL p);
+    [DllImport("dwmapi.dll")] public static extern int DwmUnregisterThumbnail(IntPtr thumb);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern bool SetProp(IntPtr h, string name, IntPtr data);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr GetProp(IntPtr h, string name);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr RemoveProp(IntPtr h, string name);
@@ -79,6 +97,15 @@ static class Native
     {
         var sb = new StringBuilder(256);
         return GetClassNameW(h, sb, sb.Capacity) > 0 ? sb.ToString() : "";
+    }
+
+    // Видимые границы окна (без невидимой рамки Windows 10/11) и обычные границы окна.
+    public static bool Bounds(IntPtr h, out RECT visible, out RECT window)
+    {
+        visible = default;
+        if (!GetWindowRect(h, out window)) return false;
+        if (DwmGetRectAttribute(h, 9 /* DWMWA_EXTENDED_FRAME_BOUNDS */, out visible, Marshal.SizeOf<RECT>()) != 0) visible = window;
+        return true;
     }
 
     public static long GetLong(IntPtr h, int index) => GetWindowLongPtr(h, index).ToInt64();
