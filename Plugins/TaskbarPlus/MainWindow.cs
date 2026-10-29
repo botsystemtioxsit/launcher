@@ -61,6 +61,10 @@ sealed class MainWindow : Window
         var scroll = (ScrollViewer)Content;
         var content = (FrameworkElement)scroll.Content;
         scroll.Content = null;
+        // вне окна свойства текста не наследуются — задаём вручную, чтобы снимок выглядел как настоящее окно
+        System.Windows.Documents.TextElement.SetForeground(content, Foreground);
+        System.Windows.Documents.TextElement.SetFontFamily(content, FontFamily);
+        System.Windows.Documents.TextElement.SetFontSize(content, FontSize);
         content.Measure(new Size(900, double.PositiveInfinity));
         var w = 900;
         var h = (int)Math.Ceiling(content.DesiredSize.Height);

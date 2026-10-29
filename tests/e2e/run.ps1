@@ -145,6 +145,7 @@ if (Test-Path $chromePath) {
     Run-ColorPlus '26-хром-только-фон-запасного-нет' @{ WindowsOn = $true; WindowMode = 'background'; FallbackAlpha = $false }
     if ($ch -ne [IntPtr]::Zero) { Say ("Chrome после (без запасного): " + [W]::Describe($ch)) }
     Run-ColorPlus '27-хром-только-фон-запасной-целиком' @{ WindowsOn = $true; WindowMode = 'background'; FallbackAlpha = $true; WindowOpacity = 60 }
+    if ($ch -ne [IntPtr]::Zero) { Say ("Chrome после (с запасным): " + [W]::Describe($ch)) }
     Get-Process chrome -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 } else { Say "Chrome не найден" }
 
