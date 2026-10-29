@@ -108,7 +108,11 @@ sealed class MainWindow : Window
         {
             rows.Add(SliderRow("Скругление", "Насколько круглые углы", 0, 40, settings.Radius, "px", v => { settings.Radius = v; Changed(); }));
             if (settings.Shape is AppearanceSettings.ShapePill or AppearanceSettings.ShapeTab)
+            {
                 rows.Add(SliderRow("Отступ по бокам", "Чем больше, тем уже панель: так получается небольшая панель по центру", 0, 600, settings.SideMargin, "px", v => { settings.SideMargin = v; Changed(); }));
+                rows.Add(Row("Часы, трей и виджеты", "Оставить отдельными островами по краям, иначе при большом отступе они пропадут с экрана вместе с часами.",
+                    Seg(new[] { "Оставить", "Скрыть" }, settings.KeepEdges ? 0 : 1, i => { settings.KeepEdges = i == 0; Changed(); Build(); })));
+            }
             if (settings.Shape == AppearanceSettings.ShapeIslands)
             {
                 rows.Add(Row("Что окружать", "Каждый значок — свой остров. Группу — один остров на несколько соседних значков.",

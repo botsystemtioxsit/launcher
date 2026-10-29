@@ -22,6 +22,7 @@ class AppearanceSettings
     public int IslandPadding { get; set; } = 8;         // поля вокруг группы значков
     public string IslandMode { get; set; } = "each";    // each — остров вокруг каждого значка; group — вокруг группы соседних значков
     public int IslandGap { get; set; } = 8;             // зазор между соседними островами (режим «каждый значок»)
+    public bool KeepEdges { get; set; } = true;         // у плавающей панели и «вкладки»: часы, трей и виджеты остаются отдельными островами, а не обрезаются
     public string Backdrop { get; set; } = BackdropNone;
     public int TintOpacity { get; set; } = 0;           // 0..255
     public string TintColor { get; set; } = "#000000";
