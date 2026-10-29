@@ -5,13 +5,13 @@ project(GhostShellTap LANGUAGES CXX)
 # Движок панели задач Windows 11 для Taskbar Plus. Собирается на GitHub Actions (windows-latest, Visual Studio 2022).
 # Статическая среда выполнения (/MT): DLL работает внутри Проводника, ставить Visual C++ Redistributable не нужно.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_library(GhostShellTap SHARED
     main.cpp styler.cpp config.cpp log.cpp GhostShellTap.def)
 
-target_compile_definitions(GhostShellTap PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX _CRT_SECURE_NO_WARNINGS)
+target_compile_definitions(GhostShellTap PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX _CRT_SECURE_NO_WARNINGS _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
 target_compile_options(GhostShellTap PRIVATE /W3 /EHsc /permissive- /utf-8)
 target_link_libraries(GhostShellTap PRIVATE windowsapp runtimeobject ole32 oleaut32 uuid user32 kernel32)
 
