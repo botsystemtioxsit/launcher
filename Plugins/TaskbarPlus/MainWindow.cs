@@ -17,6 +17,19 @@ sealed class MainWindow : Window
 
     static Brush Res(string key) => (Brush)Application.Current.FindResource(key);
 
+    // Состояние автоскрытия спрашивает у Проводника, а он может отвечать с задержкой (особенно сразу после перезапуска) —
+    // поэтому читаем его в фоне, а окно рисует то, что уже известно.
+    bool autoHide;
+
+    void RefreshAutoHide()
+    {
+        Task.Run(Native.GetAutoHide).ContinueWith(t =>
+        {
+            if (t.IsFaulted) return;
+            Dispatcher.BeginInvoke(new Action(() => { if (autoHide != t.Result) { autoHide = t.Result; Build(); } }));
+        });
+    }
+
     public MainWindow(TaskbarEngine engine, AppearanceSettings settings)
     {
         this.engine = engine;
@@ -36,6 +49,7 @@ sealed class MainWindow : Window
         saveTimer.Tick += (_, _) => { saveTimer.Stop(); settings.Save(); };
         engine.StatusChanged += () => Dispatcher.BeginInvoke(new Action(() => statusLine.Text = engine.Status));
         Build();
+        RefreshAutoHide();
     }
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
@@ -106,7 +120,7 @@ sealed class MainWindow : Window
             })));
         if (settings.Shape != AppearanceSettings.ShapeNone)
         {
-            rows.Add(SliderRow("Скругление", "Насколько круглые углы", 0, 40, settings.Radius, "px", v => { settings.Radius = v; Changed(); }));
+            rows.Add(SliderRow("Скругление", "Насколько круглые углы (у маленьких островов сдерживается, чтобы остров не стал кругом)", 0, 30, settings.Radius, "px", v => { settings.Radius = v; Changed(); }));
             if (settings.Shape is AppearanceSettings.ShapePill or AppearanceSettings.ShapeTab)
             {
                 rows.Add(SliderRow("Отступ по бокам", "Чем больше, тем уже панель: так получается небольшая панель по центру", 0, 600, settings.SideMargin, "px", v => { settings.SideMargin = v; Changed(); }));
@@ -126,7 +140,7 @@ sealed class MainWindow : Window
             }
             var floating = settings.Shape == AppearanceSettings.ShapePill || (settings.Shape == AppearanceSettings.ShapeIslands && settings.IslandStyle == "float");
             if (floating)
-                rows.Add(SliderRow("Зазор снизу", "Расстояние от панели до нижнего края экрана", 0, 60, settings.BottomGap, "px", v => { settings.BottomGap = v; Changed(); }));
+                rows.Add(SliderRow("Зазор снизу", "Расстояние от панели до нижнего края экрана (значки остаются на месте, поэтому много не нужно)", 0, 12, settings.BottomGap, "px", v => { settings.BottomGap = v; Changed(); }));
             rows.Add(Note("Формы работают для панели, которая стоит внизу экрана. Пока плагин запущен, форма держится сама; при выходе из плагина панель возвращается к обычной."));
         }
 
@@ -180,17 +194,12 @@ sealed class MainWindow : Window
     {
         var rows = new List<UIElement>
         {
-            Row("Автоскрытие панели", "Панель прячется, пока курсор не у края экрана", Seg(new[] { "Выкл", "Вкл" }, Native.GetAutoHide() ? 1 : 0, i =>
-            {
-                var err = RegistrySettings.SetAutoHide(i == 1);
-                Say(err ?? (i == 1 ? "Автоскрытие включено" : "Автоскрытие выключено"));
-                Build();
-            })),
+            Row("Автоскрытие панели", "Панель прячется, пока курсор не у края экрана", Seg(new[] { "Выкл", "Вкл" }, autoHide ? 1 : 0, i => SetAutoHideAsync(i == 1))),
         };
         var anim = RegistrySettings.Options.First(o => o.Id == "animations");
         rows.Add(Row(anim.Title, anim.Hint, Seg(anim.Labels, Array.IndexOf(anim.Values, RegistrySettings.Current(anim)), i => ApplyOption(anim, i))));
         var sys = Native.SystemAnimationsOn;
-        var sysRow = Row("Анимации Windows", sys ? "Включены: панель при автоскрытии выезжает и уезжает плавно."
+        var sysRow = Row("Анимации Windows", sys ? "Включены. Если панель при автоскрытии всё равно появляется без движения — Windows 11 у вас так и делает."
                                                  : "Выключены — из-за этого панель появляется и пропадает мгновенно, без движения.",
             sys ? new TextBlock { Text = "Включены", Foreground = Res("Green"), VerticalAlignment = VerticalAlignment.Center }
                 : Btn("Включить анимации Windows", "Primary", () =>
@@ -199,7 +208,7 @@ sealed class MainWindow : Window
                     Build();
                 }));
         rows.Add(sysRow);
-        rows.Add(Note("Собственная анимация выезда снизу вверх пока не сделана: сейчас движение — штатное, Windows."));
+        rows.Add(Note("Собственная плавная анимация выезда снизу вверх пока не сделана: двигать саму панель Windows 11 программам не даёт, нужен другой приём."));
         return Card("Автоскрытие и анимация", rows);
     }
 
@@ -216,8 +225,8 @@ sealed class MainWindow : Window
                 })),
         };
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
-        buttons.Children.Add(Btn("Перезапустить панель задач", null, () => { ConfirmRestart(null); }, first: true));
-        buttons.Children.Add(Btn("Вернуть как было", "Danger", ResetAll));
+        buttons.Children.Add(Btn("Перезапустить панель задач", null, () => { _ = ConfirmRestartAsync(null); }, first: true));
+        buttons.Children.Add(Btn("Вернуть как было", "Danger", () => { _ = ResetAllAsync(); }));
         buttons.Children.Add(Btn("Выйти", null, () => { App.Quitting = true; Close(); }));
         rows.Add(buttons);
         return Card("Система", rows);
@@ -238,26 +247,41 @@ sealed class MainWindow : Window
         }
         Say("Применено: " + opt.Title + " — " + opt.Labels[index]);
         Build();
-        if (opt.NeedsRestart) ConfirmRestart("Чтобы «" + opt.Title + "» изменилось, нужно перезапустить панель задач.");
+        if (opt.NeedsRestart) _ = ConfirmRestartAsync("Чтобы «" + opt.Title + "» изменилось, нужно перезапустить панель задач.");
     }
 
-    bool ConfirmRestart(string? why)
+    // Перезапуск Проводника и обращения к нему идут в фоне, чтобы окно плагина не зависало вместе с панелью.
+    async Task<bool> ConfirmRestartAsync(string? why)
     {
         var text = (why == null ? "" : why + "\n\n") + "Панель задач и окна Проводника закроются на пару секунд и откроются снова. Перезапустить сейчас?";
         if (MessageBox.Show(this, text, "Taskbar Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return false;
-        var err = RegistrySettings.RestartExplorer();
+        Say("Перезапускаю панель задач…");
+        var err = await Task.Run(RegistrySettings.RestartExplorer);
+        await Task.Delay(2500); // ждём, пока Проводник поднимется
         Say(err ?? "Панель задач перезапущена");
+        RefreshAutoHide();
         return err == null;
     }
 
-    void ResetAll()
+    async void SetAutoHideAsync(bool on)
     {
-        var (restored, error) = RegistrySettings.Reset();
+        Say("Применяю…");
+        var err = await Task.Run(() => RegistrySettings.SetAutoHide(on));
+        if (err == null) autoHide = on;
+        Say(err ?? (on ? "Автоскрытие включено" : "Автоскрытие выключено"));
+        Build();
+    }
+
+    async Task ResetAllAsync()
+    {
+        Say("Возвращаю…");
         settings.Shape = AppearanceSettings.ShapeNone;
         settings.Backdrop = AppearanceSettings.BackdropNone;
+        var (restored, error) = await Task.Run(RegistrySettings.Reset);
         engine.Update(settings);
         settings.Save();
         Say(error != null ? "Вернулось не всё: " + error : restored == 0 ? "Параметры Windows вы не меняли; форма и размытие сняты" : $"Возвращено параметров: {restored}; форма и размытие сняты");
+        RefreshAutoHide();
         Build();
     }
 

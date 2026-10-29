@@ -43,9 +43,9 @@ class AppearanceSettings
         IslandGap = Clamp(IslandGap, 0, 40);
         if (Backdrop is not (BackdropNone or BackdropClear or BackdropBlur or BackdropAcrylic)) Backdrop = BackdropNone;
         if (!Hex.IsMatch(TintColor ?? "")) TintColor = "#000000";
-        Radius = Clamp(Radius, 0, 40);
+        Radius = Clamp(Radius, 0, 30);
         SideMargin = Clamp(SideMargin, 0, 600);
-        BottomGap = Clamp(BottomGap, 0, 60);
+        BottomGap = Clamp(BottomGap, 0, 20);
         IslandPadding = Clamp(IslandPadding, 0, 40);
         TintOpacity = Clamp(TintOpacity, 0, 255);
     }

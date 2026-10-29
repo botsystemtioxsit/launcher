@@ -80,14 +80,18 @@ static class Native
     }
 
     // Говорим Проводнику, что настройки панели изменились (часть параметров он подхватывает сразу).
+    // Рассылка идёт в фоне: окна, которые долго отвечают, не должны вешать окно плагина.
     public static void NotifySettingsChanged()
     {
-        try
+        Task.Run(() =>
         {
-            SendMessageTimeout((IntPtr)0xFFFF, 0x1A /* WM_SETTINGCHANGE */, UIntPtr.Zero, "TraySettings", 2, 1500, out _);
-            SendMessageTimeout((IntPtr)0xFFFF, 0x1A, UIntPtr.Zero, "ImmersiveColorSet", 2, 1500, out _);
-        }
-        catch { /* уведомление не обязательно */ }
+            try
+            {
+                SendMessageTimeout((IntPtr)0xFFFF, 0x1A /* WM_SETTINGCHANGE */, UIntPtr.Zero, "TraySettings", 2, 1500, out _);
+                SendMessageTimeout((IntPtr)0xFFFF, 0x1A, UIntPtr.Zero, "ImmersiveColorSet", 2, 1500, out _);
+            }
+            catch { /* уведомление не обязательно */ }
+        });
     }
 
     // ---------- автоскрытие ----------
