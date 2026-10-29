@@ -40,7 +40,6 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        Plugins.ApplyActive(plugins); // выбранная тема оформления
         loginTimer.Tick += (_, _) => LoginTick();
         toastTimer.Tick += (_, _) => { toastTimer.Stop(); ToastBox.Visibility = Visibility.Collapsed; };
         VersionText.Text = "Версия " + SelfUpdate.CurrentVersion;
@@ -387,109 +386,104 @@ public partial class MainWindow : Window
         NavPlugins.Foreground = name == "plugins" ? Res("Text") : Res("Muted");
         NavAccount.Foreground = name == "account" ? Res("Text") : Res("Muted");
         if (name == "apps") _ = LoadApps(false);
-        if (name == "plugins") _ = LoadPlugins();
+        if (name == "plugins") RenderPlugins();
     }
 
-    // ---------- плагины (темы оформления) ----------
-    readonly PluginStore plugins = PluginStore.Load();
-    readonly HashSet<string> pluginBusy = new();
-
-    async Task LoadPlugins()
-    {
-        RenderPlugins(); // сразу то, что уже известно
-        await Catalog.Refresh(false);
-        RenderPlugins();
-    }
-
+    // ---------- плагины ----------
     void RenderPlugins()
     {
         PluginList.Children.Clear();
-        var list = Catalog.Plugins.Where(p => p.Os.Contains("windows")).ToArray();
-        if (list.Length == 0)
-        {
-            PluginList.Children.Add(new TextBlock { Text = "Пока нет ни одного плагина.", Foreground = Res("Muted") });
-            return;
-        }
-        foreach (var def in list) PluginList.Children.Add(PluginCard(def));
+        PluginList.Children.Add(TaskbarPlusCard());
     }
 
-    UIElement PluginCard(PluginDef def)
+    // Taskbar Plus — настройки панели задач Windows (Services/TaskbarPlus.cs).
+    UIElement TaskbarPlusCard()
     {
-        var inst = plugins.Find(def.Id);
-        var active = plugins.ActiveTheme == def.Id;
-        var card = new Border { Background = Res("Panel"), BorderBrush = active ? Res("Accent") : Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) };
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition());
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var left = new StackPanel();
-        left.Children.Add(new TextBlock { Text = def.Name, FontSize = 17, FontWeight = FontWeights.SemiBold });
-        left.Children.Add(new TextBlock { Text = def.Desc, Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 12, 8) });
-        var badges = new StackPanel { Orientation = Orientation.Horizontal };
-        badges.Children.Add(Badge("Тема", Res("Muted"), null));
-        if (active) badges.Children.Add(Badge("Включена", Res("OnAccent"), Res("Accent")));
-        else if (inst != null) badges.Children.Add(Badge("Установлена", Res("Green"), null));
-        if (inst != null && inst.Version != def.Version) badges.Children.Add(Badge("Есть обновление " + def.Version, Res("Accent"), null));
-        left.Children.Add(badges);
-        grid.Children.Add(left);
-
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        Grid.SetColumn(actions, 1);
-        if (pluginBusy.Contains(def.Id))
-            actions.Children.Add(new TextBlock { Text = "Скачиваю…", Foreground = Res("Muted"), VerticalAlignment = VerticalAlignment.Center });
-        else if (inst == null)
-            actions.Children.Add(MakeButton("Установить", "Primary", () => InstallPlugin(def, apply: true)));
-        else
+        var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) };
+        var col = new StackPanel();
+        var head = new StackPanel { Orientation = Orientation.Horizontal };
+        head.Children.Add(new TextBlock { Text = "Taskbar Plus", FontSize = 17, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+        var badge = Badge("Плагин · Windows " + (TaskbarPlus.IsWindows11 ? "11" : "10"), Res("Muted"), null);
+        badge.Margin = new Thickness(10, 0, 0, 0);
+        badge.VerticalAlignment = VerticalAlignment.Center;
+        head.Children.Add(badge);
+        col.Children.Add(head);
+        col.Children.Add(new TextBlock
         {
-            if (inst.Version != def.Version) actions.Children.Add(MakeButton("Обновить", null, () => InstallPlugin(def, apply: active)));
-            if (active) actions.Children.Add(MakeButton("Выключить", null, () => { SetTheme(null); return Task.CompletedTask; }));
-            else actions.Children.Add(MakeButton("Включить", "Primary", () => { SetTheme(def.Id); return Task.CompletedTask; }));
-            actions.Children.Add(MakeButton("Удалить", "Danger", () => { RemovePlugin(def.Id); return Task.CompletedTask; }));
+            Text = "Настройки панели задач Windows: где стоят значки, поиск, размер, группировка кнопок, секунды в часах, автоскрытие. " +
+                   "Меняются обычные параметры вашей учётной записи, права администратора не нужны. Изменения применяются сразу; " +
+                   "«Вернуть как было» отменяет всё, что вы поменяли здесь.",
+            Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 14),
+        });
+
+        foreach (var o in TaskbarPlus.Options.Where(TaskbarPlus.Available))
+        {
+            var opt = o;
+            var current = TaskbarPlus.Current(opt);
+            col.Children.Add(TaskbarRow(opt.Title, opt.Hint, opt.Labels, Array.IndexOf(opt.Values, current), i =>
+            {
+                var err = TaskbarPlus.Set(opt, opt.Values[i]);
+                Toast(err ?? "Применено: " + opt.Title + " — " + opt.Labels[i]);
+                RenderPlugins();
+            }));
         }
-        grid.Children.Add(actions);
-        card.Child = grid;
+        col.Children.Add(TaskbarRow("Автоскрытие панели", "Панель прячется, пока курсор не у края экрана", new[] { "Выкл", "Вкл" }, TaskbarPlus.AutoHide ? 1 : 0, i =>
+        {
+            var err = TaskbarPlus.SetAutoHide(i == 1);
+            Toast(err ?? (i == 1 ? "Автоскрытие включено" : "Автоскрытие выключено"));
+            RenderPlugins();
+        }));
+
+        col.Children.Add(new TextBlock
+        {
+            Text = "Если размер, группировка или секунды не поменялись сразу, перезапустите панель задач.",
+            Foreground = Res("Muted"), FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 8),
+        });
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal };
+        var restart = MakeButton("Перезапустить панель задач", null, () =>
+        {
+            if (MessageBox.Show("Панель задач и окна Проводника закроются на пару секунд и откроются снова. Продолжить?", "Ghost Shell Launcher", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return Task.CompletedTask;
+            var err = TaskbarPlus.RestartExplorer();
+            Toast(err ?? "Панель задач перезапущена");
+            return Task.CompletedTask;
+        });
+        restart.Margin = new Thickness(0);
+        buttons.Children.Add(restart);
+        buttons.Children.Add(MakeButton("Вернуть как было", "Danger", () =>
+        {
+            var (restored, error) = TaskbarPlus.Reset();
+            Toast(error != null ? "Вернулось не всё: " + error : restored == 0 ? "Вы ещё ничего не меняли" : $"Возвращено параметров: {restored}");
+            RenderPlugins();
+            return Task.CompletedTask;
+        }));
+        col.Children.Add(buttons);
+        card.Child = col;
         return card;
     }
 
-    async Task InstallPlugin(PluginDef def, bool apply)
+    // Строка настройки: слева название и подсказка, справа переключатель из нескольких кнопок (выбранная подсвечена).
+    UIElement TaskbarRow(string title, string hint, string[] labels, int selected, Action<int> choose)
     {
-        pluginBusy.Add(def.Id);
-        RenderPlugins();
-        try
+        var row = new Grid { Margin = new Thickness(0, 0, 0, 10) };
+        row.ColumnDefinitions.Add(new ColumnDefinition());
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
+        text.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold });
+        text.Children.Add(new TextBlock { Text = hint, Foreground = Res("Muted"), FontSize = 12, TextWrapping = TextWrapping.Wrap });
+        row.Children.Add(text);
+        var seg = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        Grid.SetColumn(seg, 1);
+        for (var i = 0; i < labels.Length; i++)
         {
-            var fresh = await Plugins.Install(def);
-            plugins.Installed.RemoveAll(p => p.Id == def.Id);
-            plugins.Installed.Add(fresh);
-            if (apply) plugins.ActiveTheme = def.Id;
-            plugins.Save();
-            Toast(apply ? $"Тема «{def.Name}» включена" : $"«{def.Name}» обновлён");
+            var idx = i;
+            var b = MakeButton(labels[i], i == selected ? "Primary" : null, () => { if (idx != selected) choose(idx); return Task.CompletedTask; });
+            b.Padding = new Thickness(10, 5, 10, 5);
+            b.Margin = new Thickness(i == 0 ? 0 : 6, 0, 0, 0);
+            seg.Children.Add(b);
         }
-        catch (Exception ex) { Toast("Не удалось установить: " + ex.Message); }
-        finally { pluginBusy.Remove(def.Id); }
-        ThemeChanged();
-    }
-
-    void SetTheme(string? id)
-    {
-        plugins.ActiveTheme = id;
-        plugins.Save();
-        ThemeChanged();
-    }
-
-    void RemovePlugin(string id)
-    {
-        plugins.Installed.RemoveAll(p => p.Id == id);
-        if (plugins.ActiveTheme == id) plugins.ActiveTheme = null;
-        plugins.Save();
-        ThemeChanged();
-    }
-
-    // Цвета в XAML обновляются сами (DynamicResource); то, что рисуется кодом, перерисовываем.
-    void ThemeChanged()
-    {
-        var view = currentView; // Render() возвращает на «Приложения» — запоминаем, где были
-        Plugins.ApplyActive(plugins);
-        if (store.Active != null) Render();
-        ShowView(view);
+        row.Children.Add(seg);
+        return row;
     }
 
     void NavApps_Click(object sender, RoutedEventArgs e) => ShowView("apps");
