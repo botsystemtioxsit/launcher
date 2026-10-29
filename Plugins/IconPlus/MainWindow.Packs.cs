@@ -118,8 +118,10 @@ sealed partial class MainWindow
         {
             var map = new Dictionary<string, string>(packMap);
             var result = await Task.Run(() => engine.ApplyPack(map, t => Dispatcher.BeginInvoke(new Action(() => Say("Ставлю: " + t)))));
-            Report.Save(Report.Build(result));
+            var reportText = Report.Build(result);
+            Report.Save(reportText);
             Say(Report.Summary(result));
+            if (settings.AutoReport) Say(Report.Summary(result) + " " + await Report.UploadAsync(reportText));
             if (result.Outcomes.Any(o => o.Ok)) { busy = false; BuildState(); AskExplorerRestart(); }
         }
         catch (Exception ex) { Say("Не вышло: " + ex.Message); }

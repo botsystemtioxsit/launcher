@@ -106,8 +106,10 @@ sealed partial class MainWindow
         {
             var snapshot = settings;
             var result = await Task.Run(() => engine.ApplyColor(snapshot, t => Dispatcher.BeginInvoke(new Action(() => Say("Перекрашиваю: " + t)))));
-            Report.Save(Report.Build(result));
+            var reportText = Report.Build(result);
+            Report.Save(reportText);
             Say(Report.Summary(result));
+            if (settings.AutoReport) Say(Report.Summary(result) + " " + await Report.UploadAsync(reportText));
             if (result.Outcomes.Any(o => o.Ok)) { busy = false; BuildState(); AskExplorerRestart(); }
         }
         catch (Exception ex) { Say("Не вышло: " + ex.Message); }

@@ -41,6 +41,13 @@ static class Report
                 sb.AppendLine($"  {why.Key} ({why.Count()}): " + string.Join(", ", names) + (why.Count() > names.Count ? ", …" : ""));
             }
         }
+        if (r.Aumids.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"[Ярлыки с идентификатором программы (AUMID): {r.Aumids.Count}] — имя | идентификатор | результат");
+            var res = r.Outcomes.GroupBy(o => o.Item).ToDictionary(g => g.Key, g => g.First().Result);
+            foreach (var kv in r.Aumids.Take(150)) sb.AppendLine($"  {kv.Key} | {kv.Value} | {(res.TryGetValue(kv.Key, out var v) ? v : "?")}");
+        }
         foreach (var m in r.Messages.Take(20)) sb.AppendLine("• " + m);
         return sb.ToString();
     }

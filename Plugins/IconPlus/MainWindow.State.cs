@@ -26,6 +26,8 @@ sealed partial class MainWindow
         var report = Report.Load();
         var repRows = new List<UIElement>
         {
+            Row("Отправлять отчёт сам", "После каждого применения отчёт уходит разработчику без кнопки (названия ярлыков и причины; имя пользователя и компьютера вычищаются)",
+                Seg(new[] { "Нет", "Да" }, settings.AutoReport ? 1 : 0, i => { settings.AutoReport = i == 1; settings.Save(); BuildState(); })),
             Note("Здесь видно, какие значки перекрасились, а какие Windows не отдала и почему. Если не перекрасилось то, что должно было, нажмите «Отправить отчёт разработчику» — " +
                  "в отчёт попадут названия ярлыков и причины (имя пользователя и компьютера вычищаются), и это можно будет исправить."),
         };
@@ -79,6 +81,8 @@ sealed partial class MainWindow
             try
             {
                 foreach (var pr in Process.GetProcessesByName("explorer")) { try { pr.Kill(); } catch { } }
+                // «Пуск» помнит значки до перезапуска своей оболочки — она сама запустится снова при открытии меню
+                foreach (var pr in Process.GetProcessesByName("StartMenuExperienceHost")) { try { pr.Kill(); } catch { } }
                 System.Threading.Thread.Sleep(1200);
                 if (Process.GetProcessesByName("explorer").Length == 0) Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });
             }
