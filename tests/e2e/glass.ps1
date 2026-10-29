@@ -74,9 +74,14 @@ function New-Tool([string]$name) {
 }
 $glass = New-Tool 'E2E-GLASS'
 $stripForm = New-Tool 'E2E-STRIP'
-$glass.Show(); $stripForm.Show()
+$vis0 = New-Object G+RECT; $win0 = New-Object G+RECT
+[void][G]::Bounds($target, [ref]$vis0, [ref]$win0)
+foreach ($ff in $glass, $stripForm) { $ff.Left = $vis0.L; $ff.Top = $vis0.T; $ff.Width = [Math]::Max(100, $vis0.R - $vis0.L); $ff.Height = 60 }
+$glass.Height = [Math]::Max(100, $vis0.B - $vis0.T)
+$glass.Show()
+if ($StripH -gt 0) { $stripForm.Show() }
 [G]::ExStyle($glass.Handle, 0x08000080)                       # NOACTIVATE | TOOLWINDOW
-[G]::ExStyle($stripForm.Handle, 0x08000080 -bor 0x20)             # + TRANSPARENT (мышь проходит сквозь)
+if ($StripH -gt 0) { [G]::ExStyle($stripForm.Handle, 0x08000080 -bor 0x20) }   # + TRANSPARENT (мышь проходит сквозь)
 $tint = [Convert]::ToUInt32($Tint, 16)
 $abgr = ([uint32]([Math]::Round($TintOpacity * 255 / 100.0)) -shl 24) -bor (($tint -band 0xFF) -shl 16) -bor ($tint -band 0xFF00) -bor (($tint -shr 16) -band 0xFF)
 [G]::Acrylic($glass.Handle, $abgr)

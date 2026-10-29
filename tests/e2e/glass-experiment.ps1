@@ -39,7 +39,7 @@ if ($ch -eq [IntPtr]::Zero) { Say "Chrome не найден"; exit 1 }
 Say (Shot (Join-Path $Out '1-до.png'))
 
 function Run-Glass([string]$name, [int]$alpha, [int]$strip, [int]$tintOpacity) {
-    $p = Start-Process pwsh -ArgumentList '-NoProfile', '-File', (Join-Path $PSScriptRoot 'glass.ps1'), '-Target', ([long]$ch), '-Alpha', $alpha, '-StripH', $strip, '-TintOpacity', $tintOpacity, '-Seconds', '14' -PassThru
+    $p = Start-Process pwsh -ArgumentList '-NoProfile', '-File', (Join-Path $PSScriptRoot 'glass.ps1'), '-Target', ([long]$ch), '-Alpha', $alpha, '-StripH', $strip, '-TintOpacity', $tintOpacity, '-Seconds', '14' -PassThru -WindowStyle Hidden
     Start-Sleep -Seconds 8
     Say ("$name : Chrome " + [W]::Describe($ch))
     Say (Shot (Join-Path $Out "$name.png"))
