@@ -49,6 +49,8 @@ static class Catalog
             "launcher", "Taskbar Plus", null, "TaskbarPlus.exe", "Taskbar Plus", IsPlugin: true),
         new AppDef("color-plus", "Color Plus", "Прозрачность, размытие и цвет для окон всех программ, панели задач и выделения мышкой.",
             "launcher", "Color Plus", null, "ColorPlus.exe", "Color Plus", IsPlugin: true),
+        new AppDef("icon-plus", "Icon Plus", "Значки Windows по-своему: один цвет для всех значков или готовый набор иконок, сайт с иконками внутри.",
+            "launcher", "Icon Plus", null, "IconPlus.exe", "Icon Plus", IsPlugin: true),
     };
 
     public static AppDef? ById(string id) => Apps.Concat(Plugins).FirstOrDefault(a => a.Id == id);

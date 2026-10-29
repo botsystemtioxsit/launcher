@@ -10,7 +10,7 @@ on:
         description: 'plugins — проверка обоих плагинов; bg — опыты с прозрачным фоном окон; glass — опыты со «стеклом» под окном'
         default: plugins
         type: choice
-        options: [plugins, bg, glass, site]
+        options: [plugins, bg, glass, site, icons]
 
 permissions:
   contents: write
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
-        if: env.SCENARIO == 'plugins'
+        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'icons'
         with:
           dotnet-version: 8.0.x
 
@@ -46,12 +46,20 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "publish $p не удался" }
           }
 
+      - name: Publish Icon Plus
+        if: env.SCENARIO == 'icons'
+        shell: pwsh
+        run: |
+          dotnet publish Plugins/IconPlus/IconPlus.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-test
+          if ($LASTEXITCODE -ne 0) { throw 'publish IconPlus не удался' }
+
       - name: Run checks
         shell: pwsh
         run: |
           if ($env:SCENARIO -eq 'bg') { ./tests/e2e/bg-experiment.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'glass') { ./tests/e2e/glass-experiment.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'site') { ./tests/e2e/site-probe.ps1 -Out results }
+          elseif ($env:SCENARIO -eq 'icons') { ./tests/e2e/icon-plus.ps1 -Out results }
           else { ./tests/e2e/run.ps1 -Out results }
         continue-on-error: true
 
@@ -65,7 +73,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } elseif ($env:SCENARIO -eq 'site') { 'ci-e2e-site' } else { 'ci-e2e' }
+          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } elseif ($env:SCENARIO -eq 'site') { 'ci-e2e-site' } elseif ($env:SCENARIO -eq 'icons') { 'ci-e2e-icons' } else { 'ci-e2e' }
           $dir = Join-Path $env:RUNNER_TEMP 'e2e-branch'
           New-Item -ItemType Directory -Force $dir | Out-Null
           Copy-Item results/* $dir -Recurse -ErrorAction SilentlyContinue
