@@ -1,0 +1,66 @@
+name: Test plugins on Windows
+
+# Проверка плагинов на настоящей Windows-машине GitHub (не на компьютере владельца: сборка Windows и набор программ другие,
+# но панель задач, Проводник и окна — настоящие). Запускается вручную; результат — папка results в ветке ci-e2e:
+# отчёт report.txt, журналы движка, дерево элементов панели и снимки экрана до / во время / после.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build engine
+        shell: pwsh
+        run: |
+          cmake -S Plugins/TaskbarPlus/Engine -B Plugins/TaskbarPlus/Engine/build -A x64
+          if ($LASTEXITCODE -ne 0) { throw 'cmake: настройка не удалась' }
+          cmake --build Plugins/TaskbarPlus/Engine/build --config Release
+          if ($LASTEXITCODE -ne 0) { throw 'cmake: сборка не удалась' }
+
+      - name: Publish plugins
+        shell: pwsh
+        run: |
+          foreach ($p in 'TaskbarPlus', 'ColorPlus') {
+            dotnet publish Plugins/$p/$p.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-test
+            if ($LASTEXITCODE -ne 0) { throw "publish $p не удался" }
+          }
+
+      - name: Run checks
+        shell: pwsh
+        run: ./tests/e2e/run.ps1 -Out results
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-results
+          path: results/*
+
+      - name: Results to branch ci-e2e
+        if: always()
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'e2e-branch'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Copy-Item results/* $dir -Recurse -ErrorAction SilentlyContinue
+          Set-Location $dir
+          git init -q
+          git config user.name 'github-actions'
+          git config user.email 'github-actions@users.noreply.github.com'
+          git checkout -q -b ci-e2e
+          git add .
+          git commit -q -m 'Результаты проверки плагинов на Windows'
+          git remote add origin "https://x-access-token:$($env:GH_TOKEN)@github.com/${{ github.repository }}.git"
+          git push -q --force origin ci-e2e
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
