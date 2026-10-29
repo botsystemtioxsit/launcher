@@ -1,0 +1,24 @@
+
+=== форма : окно 66054 ===
+главный цвет: #FFFFFF доля 87%  (COLORREF 0xFFFFFF)
+снимок: results\форма-1-до.png (1024x768)
+снимок: results\форма-2-цветовой-ключ.png (1024x768)
+под точкой фона (ниже середины окна): 197076 класс CASCADIA_HOSTING_WINDOW_CLASS   под текстом: 197076 класс CASCADIA_HOSTING_WINDOW_CLASS
+снимок: results\форма-3-ключ-и-акрил.png (1024x768)
+Edge: C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe  существует: True
+
+=== edge : окно 66104 ===
+главный цвет: #0F0F0F доля 72%  (COLORREF 0x0F0F0F)
+снимок: results\edge-1-до.png (1024x768)
+снимок: results\edge-2-цветовой-ключ.png (1024x768)
+под точкой фона (ниже середины окна): 66134 класс Chrome_RenderWidgetHostHWND   под текстом: 66134 класс Chrome_RenderWidgetHostHWND
+снимок: results\edge-3-ключ-и-акрил.png (1024x768)
+Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe  существует: True
+
+=== chrome : окно 131614 ===
+главный цвет: #0F0F0F доля 74%  (COLORREF 0x0F0F0F)
+снимок: results\chrome-1-до.png (1024x768)
+снимок: results\chrome-2-цветовой-ключ.png (1024x768)
+под точкой фона (ниже середины окна): 131624 класс Chrome_RenderWidgetHostHWND   под текстом: 131624 класс Chrome_RenderWidgetHostHWND
+снимок: results\chrome-3-ключ-и-акрил.png (1024x768)
+=== конец ===
