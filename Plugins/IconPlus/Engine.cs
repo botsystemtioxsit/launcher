@@ -71,7 +71,7 @@ sealed class IconEngine
                     yield return new Sink("ext:" + e, () => { var a = Native.AssocDefaultIcon("." + e); return a.Length > 0 ? a : Native.IconLocation("x." + e, true); }, p =>
                     {
                         foreach (var progId in ProgIds(e)) reg.Set(@"Software\Classes\" + progId + @"\DefaultIcon", "", p);
-                    });
+                    }, () => ShellSample(e));
                 }
                 break;
             case TargetKind.Shortcuts:
@@ -99,6 +99,16 @@ sealed class IconEngine
                 }
                 break;
         }
+    }
+
+    // Пустой образец файла с нужным расширением в папке Temp: Проводник нарисует для него значок типа (так, как он его показывает на самом деле).
+    static string ShellSample(string ext)
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "iconplus-ext");
+        Directory.CreateDirectory(dir);
+        var file = Path.Combine(dir, "sample." + ext);
+        if (!File.Exists(file)) File.WriteAllBytes(file, Array.Empty<byte>());
+        return "shell:" + file;
     }
 
     // Известные папки пользователя, значок которых хранится в desktop.ini.
@@ -240,8 +250,21 @@ sealed class IconEngine
     {
         if (state.Sources.TryGetValue(key, out var v) && v.Length > 0) return v;
         v = query();
+        if (v.StartsWith("shell:", StringComparison.Ordinal) || v.StartsWith("lnktarget:", StringComparison.Ordinal)) v = CaptureOriginal(v) ?? "";
         if (!string.IsNullOrEmpty(v)) state.Sources[key] = v;
         return v;
+    }
+
+    // Значок, который рисует Проводник (а не лежит в файле), запоминаем как файл — после замены Проводник покажет уже наш значок, а красить надо оригинал.
+    static string? CaptureOriginal(string location)
+    {
+        var key = Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(location))).ToLowerInvariant()[..16];
+        var path = Path.Combine(Paths.Originals, key + ".ico");
+        if (File.Exists(path)) return path;
+        var imgs = IconData.LoadAllSizes(location);
+        if (imgs == null) return null;
+        IconData.WriteIco(path, imgs);
+        return path;
     }
 
     // ---------- перекраска ----------
@@ -273,8 +296,9 @@ sealed class IconEngine
                     if (ico == null && sink.Fallback != null)
                     {
                         var fb = sink.Fallback();
-                        ico = GeneratedIcon(fb, s);
-                        if (ico != null) state.Sources[sink.Key] = fb;
+                        var captured = fb.StartsWith("shell:", StringComparison.Ordinal) || fb.StartsWith("lnktarget:", StringComparison.Ordinal) ? CaptureOriginal(fb) : fb;
+                        if (captured != null) ico = GeneratedIcon(captured, s);
+                        if (ico != null) state.Sources[sink.Key] = captured!;
                     }
                     if (ico == null) { failed++; outcomes.Add(new Outcome(t.Title, item, src.Length == 0 ? "значок не найден" : "значок не читается")); continue; }
                     sink.Write(ico);
