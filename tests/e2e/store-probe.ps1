@@ -66,7 +66,7 @@ foreach ($c in $pick) {
         $parent = Split-Path $c.Dir -Parent
         & icacls $c.Dir /save $aclFile /t /c | Out-Null
         Say "ACL сохранены: $(Test-Path $aclFile)"
-        $orig = [System.IO.File]::ReadAllBytes($f)
+        $orig = [System.IO.File]::ReadAllBytes($f); Copy-Item $f (Join-Path $Out "orig-$n.bin") -Force
         & takeown /f $c.Dir /r /d y 2>&1 | Out-Null
         $gr = & icacls $c.Dir /grant '*S-1-5-32-544:(OI)(CI)F' /t /c 2>&1 | Select-Object -Last 2
         Say ("icacls grant: " + ($gr -join ' | '))
@@ -76,7 +76,15 @@ foreach ($c in $pick) {
         $bmp = New-Object System.Drawing.Bitmap $w, $h
         $g = [System.Drawing.Graphics]::FromImage($bmp); $g.Clear([System.Drawing.Color]::FromArgb(255, 42, 157)); $g.Dispose()
         $tmp = Join-Path $Out "tmp-$n.png"; $bmp.Save($tmp, [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
+        Say ("ACL файла после grant: " + ((& icacls $f) -join ' | '))
         try { [System.IO.File]::Copy($tmp, $f, $true); Say "запись после смены владельца: ok" } catch { Say ("запись не вышла: " + $_.Exception.Message) }
+        # запись в режиме резервного копирования (обходит права доступа, но не фильтры системы)
+        $tdir = Join-Path $Out "bk-$n"; New-Item -ItemType Directory -Force $tdir | Out-Null
+        Copy-Item $tmp (Join-Path $tdir (Split-Path $f -Leaf)) -Force
+        $rc = & robocopy $tdir (Split-Path $f -Parent) (Split-Path $f -Leaf) /B /IS /IT /R:0 /W:0 /NP /NJH /NJS 2>&1 | Select-Object -Last 4
+        Say ("robocopy /B: " + ($rc -join ' | '))
+        # запись через атрибут «только чтение»
+        try { (Get-Item $f).IsReadOnly = $false; Set-Content -Path $f -Value ([byte[]](1,2,3)) -AsByteStream -ErrorAction Stop; Say "Set-Content: ok" } catch { Say ("Set-Content: " + $_.Exception.Message) }
         $h1 = (Get-FileHash $f -Algorithm SHA256).Hash
         Say "sha256 после подмены: $($h1.Substring(0, 12))  изменился: $($h1 -ne $h0)"
         # возврат
