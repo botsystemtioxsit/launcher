@@ -70,7 +70,7 @@ sealed partial class MainWindow
             Note("Программа сама подобрала значки из набора по названиям файлов. Если что-то не так или значка не нашлось — нажмите «Выбрать…» у нужной строки. " +
                  "Строки без значка остаются как в Windows."),
         };
-        foreach (var t in Target.All.Where(x => x.Kind != TargetKind.Shortcuts))
+        foreach (var t in Target.All.Where(x => x.Keywords.Length > 0))
         {
             var id = t.Id;
             var cell = new StackPanel { Orientation = Orientation.Horizontal };
@@ -118,8 +118,9 @@ sealed partial class MainWindow
         {
             var map = new Dictionary<string, string>(packMap);
             var result = await Task.Run(() => engine.ApplyPack(map, t => Dispatcher.BeginInvoke(new Action(() => Say("Ставлю: " + t)))));
-            Say($"Готово: значков изменено {result.Done}" + (result.Failed > 0 ? $", не удалось {result.Failed}" : "") + ". " + (result.Messages.Count > 0 ? string.Join("; ", result.Messages.Take(3)) : ""));
-            if (result.Done > 0) { busy = false; BuildState(); AskExplorerRestart(); }
+            Report.Save(Report.Build(result));
+            Say(Report.Summary(result));
+            if (result.Outcomes.Any(o => o.Ok)) { busy = false; BuildState(); AskExplorerRestart(); }
         }
         catch (Exception ex) { Say("Не вышло: " + ex.Message); }
         finally { busy = false; BuildState(); }

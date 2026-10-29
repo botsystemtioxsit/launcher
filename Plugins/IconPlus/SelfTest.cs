@@ -13,6 +13,9 @@ static class SelfTest
 {
     static string Box => Path.Combine(Path.GetTempPath(), "IconPlusTest");
     static string DesktopLnk => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "IconPlusTest.lnk");
+    static string DesktopUrl => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "IconPlusTest.url");
+    static string PublicUrl => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory), "IconPlusTestAll.url");
+    static string BrokenLnk => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "IconPlusTestBroken.lnk");
     static string PublicLnk => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory), "IconPlusTestAll.lnk");
     static string StartAllLnk => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs", "IconPlusTestAll.lnk");
 
@@ -28,6 +31,11 @@ static class SelfTest
         Add("network", Native.IconLocationOfShellItem("::{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}"));
         foreach (var f in new[] { "a.txt", "b.zip", "c.png", "d.mp3", "e.pdf", "f.docx" }) Add(f, Native.AssocDefaultIcon(Path.GetExtension(f)));
         if (File.Exists(DesktopLnk) && Shortcuts.ReadIcon(DesktopLnk, out var p, out var i)) Add("lnk", p + "," + i); else Add("lnk", "");
+        if (File.Exists(DesktopUrl) && Shortcuts.ReadIcon(DesktopUrl, out var u1, out var ui1)) Add("url", u1 + "," + ui1); else Add("url", "");
+        if (File.Exists(PublicUrl) && Shortcuts.ReadIcon(PublicUrl, out var u2, out var ui2)) Add("url-public", u2 + "," + ui2); else Add("url-public", "");
+        if (File.Exists(BrokenLnk) && Shortcuts.ReadIcon(BrokenLnk, out var b1, out var bi1)) Add("lnk-broken", b1 + "," + bi1); else Add("lnk-broken", "");
+        Add("docs-ini", DesktopIni.Read(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "desktop.ini"), "IconResource") ?? "(нет строки)");
+        foreach (var x in new[] { ".ttf", ".cab", ".reg", ".msi" }) Add("assoc" + x, Native.AssocDefaultIcon(x));
         if (File.Exists(PublicLnk) && Shortcuts.ReadIcon(PublicLnk, out var p2, out var i2)) Add("lnk-public", p2 + "," + i2); else Add("lnk-public", "");
         if (File.Exists(StartAllLnk) && Shortcuts.ReadIcon(StartAllLnk, out var p3, out var i3)) Add("lnk-startall", p3 + "," + i3); else Add("lnk-startall", "");
         File.WriteAllText(file, sb.ToString());
@@ -49,6 +57,19 @@ static class SelfTest
         if (Directory.Exists(Box)) Directory.Delete(Box, true);
         Directory.CreateDirectory(Path.Combine(Box, "sub"));
         foreach (var f in new[] { "a.txt", "b.zip", "c.png", "d.mp3", "e.pdf", "f.docx" }) File.WriteAllText(Path.Combine(Box, f), "x");
+        foreach (var u in new[] { DesktopUrl, PublicUrl })
+        {
+            try { File.WriteAllText(u, "[InternetShortcut]\r\nURL=https://example.com/\r\nIconIndex=5\r\nIconFile=C:\\Windows\\System32\\imageres.dll\r\n"); } catch { }
+        }
+        try
+        {
+            dynamic sh2 = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")!)!;
+            var l2 = sh2.CreateShortcut(BrokenLnk);
+            l2.TargetPath = @"C:\Windows\System32\notepad.exe";
+            l2.IconLocation = @"C:\NoSuchFolder\nope.ico,0";   // значка нет на месте — должен сработать запасной путь
+            l2.Save();
+        }
+        catch { }
         foreach (var path in new[] { DesktopLnk, PublicLnk, StartAllLnk })
         {
             try
@@ -86,12 +107,22 @@ static class SelfTest
             var s = new IconSettings
             {
                 Color = "#FF2A9D", Style = Tint.Mono, Strength = 100,
-                Enabled = new() { "folder", "drive-fixed", "thispc", "recycle-empty", "network", "ft-text", "ft-archive", "ft-image", "ft-audio", "ft-pdf", "ft-doc", "lnk-desktop", "lnk-desktop-all", "lnk-start-all" },
+                Enabled = new() { "folder", "drive-fixed", "thispc", "recycle-empty", "network", "ft-text", "ft-archive", "ft-image", "ft-audio", "ft-pdf", "ft-doc", "lnk-desktop", "lnk-desktop-all", "lnk-start-all", "ft-all", "kf" },
             };
             s.Normalize();
             var res = engine.ApplyColor(s);
             log.AppendLine($"перекраска: сделано {res.Done}, не вышло {res.Failed}, записей запомнено {engine.ChangesCount}");
             foreach (var m in res.Messages.Take(20)) log.AppendLine("  " + m);
+            log.AppendLine(Report.Build(res));
+            // как Проводник рисует значки (для проверки прозрачности и стрелки ярлыка)
+            try
+            {
+                void Png(string name, System.Windows.Media.Imaging.BitmapSource? img) { if (img != null) File.WriteAllBytes(Path.Combine(outDir, name), IconData.Png(img)); else log.AppendLine("не отрисовалось: " + name); }
+                Png("render-docs-folder.png", ShellIcon.Render(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), 128));
+                Png("render-lnk-target.png", ShellIcon.RenderLnkTarget(DesktopLnk, 128));
+                Png("render-url.png", ShellIcon.Render(DesktopUrl, 128));
+            }
+            catch (Exception ex) { log.AppendLine("отрисовка: " + ex.Message); }
             try { WritePreviews(engine, s, Path.Combine(outDir, "previews.png")); log.AppendLine("превью: previews.png"); } catch (Exception ex) { log.AppendLine("превью не вышли: " + ex.Message); }
             System.Threading.Thread.Sleep(1500);
             var after = RunProbe(outDir, "after");
@@ -103,7 +134,7 @@ static class SelfTest
             Compare(log, "после «вернуть как было» (ожидаем как было)", before, back, false);
         }
         catch (Exception ex) { log.AppendLine("ОШИБКА: " + ex); }
-        foreach (var f in new[] { PublicLnk, StartAllLnk }) { try { File.Delete(f); } catch { } }
+        foreach (var f in new[] { PublicLnk, StartAllLnk, DesktopUrl, PublicUrl, BrokenLnk }) { try { File.Delete(f); } catch { } }
         File.WriteAllText(Path.Combine(outDir, "report.txt"), log.ToString());
     }
 
@@ -122,7 +153,7 @@ static class SelfTest
             log.AppendLine($"набор «{name}»: значков {pack.Icons.Count}");
             var map = Packs.Suggest(pack);
             foreach (var kv in map.OrderBy(k => k.Key)) log.AppendLine($"  {kv.Key,-16} ← {Path.GetFileName(kv.Value)}");
-            log.AppendLine("не подобрано: " + string.Join(", ", Target.All.Where(t => t.Kind != TargetKind.Shortcuts && !map.ContainsKey(t.Id)).Select(t => t.Id)));
+            log.AppendLine("не подобрано: " + string.Join(", ", Target.All.Where(t => t.Keywords.Length > 0 && !map.ContainsKey(t.Id)).Select(t => t.Id)));
             var engine = new IconEngine();
             var res = engine.ApplyPack(map);
             log.AppendLine($"применено: {res.Done}, не вышло {res.Failed}");

@@ -32,7 +32,7 @@ Get-ChildItem (Join-Path $outFull 'ui') | ForEach-Object { Say "  файл: $($_
 Say ""
 Say "=== самопроверка: перекраска и возврат ==="
 New-Item -ItemType Directory -Force (Join-Path $outFull 'self') | Out-Null
-Run-Exe 'selftest' @("--selftest=$(Join-Path $outFull 'self')") 300
+Run-Exe 'selftest' @("--selftest=$(Join-Path $outFull 'self')") 900
 if (Test-Path (Join-Path $outFull 'self/report.txt')) { Get-Content (Join-Path $outFull 'self/report.txt') | ForEach-Object { Say $_ } }
 
 Say ""

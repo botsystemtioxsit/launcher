@@ -66,6 +66,20 @@ static class Native
         return string.IsNullOrEmpty(fi.szDisplayName) ? "" : fi.szDisplayName + "," + fi.iIcon;
     }
 
+    [DllImport("shell32.dll")]
+    static extern int SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid rfid, uint flags, IntPtr token, out IntPtr path);
+
+    // Путь известной папки Windows (например, «Загрузки»). Пусто, если не нашлась.
+    public static string KnownFolder(Guid id)
+    {
+        try
+        {
+            if (SHGetKnownFolderPath(id, 0, IntPtr.Zero, out var p) != 0 || p == IntPtr.Zero) return "";
+            try { return Marshal.PtrToStringUni(p) ?? ""; } finally { CoTaskMemFree(p); }
+        }
+        catch { return ""; }
+    }
+
     // Значок объекта оболочки (например, «::{20D04FE0-3AEA-1069-A2D8-08002B30309D}» — «Этот компьютер»).
     public static string IconLocationOfShellItem(string parsingName)
     {

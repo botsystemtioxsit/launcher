@@ -13,7 +13,7 @@ sealed class IconSettings
     public string Style { get; set; } = Tint.Mono;       // mono — один цвет; hue — сменить оттенок, сохранив краски
     public int Strength { get; set; } = 100;             // 0–100
     public List<string> Enabled { get; set; } = new() { "folder", "drive-fixed", "drive-removable", "drive-optical", "thispc", "recycle-empty", "recycle-full", "network", "userfiles",
-        "ft-text", "ft-doc", "ft-sheet", "ft-slides", "ft-pdf", "ft-archive", "ft-image", "ft-audio", "ft-video", "ft-web", "ft-code", "ft-script", "lnk-desktop", "lnk-desktop-all", "lnk-start", "lnk-start-all", "lnk-taskbar" };
+        "ft-text", "ft-doc", "ft-sheet", "ft-slides", "ft-pdf", "ft-archive", "ft-image", "ft-audio", "ft-video", "ft-web", "ft-code", "ft-script", "ft-all", "kf", "lnk-desktop", "lnk-desktop-all", "lnk-start", "lnk-start-all", "lnk-taskbar" };
     public string? Pack { get; set; }                    // имя выбранного набора
     public Dictionary<string, Dictionary<string, string>> Maps { get; set; } = new();   // набор → (цель → файл значка): ручные правки подбора
 

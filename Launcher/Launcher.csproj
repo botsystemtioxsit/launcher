@@ -10,7 +10,7 @@
     <AssemblyName>BattleLauncher</AssemblyName>
     <RootNamespace>BattleLauncher</RootNamespace>
     <!-- Версию поднимать при каждом изменении: по ней лаунчер понимает, что вышло обновление -->
-    <Version>1.22.0</Version>
+    <Version>1.23.0</Version>
     <Product>Ghost Shell Launcher</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
