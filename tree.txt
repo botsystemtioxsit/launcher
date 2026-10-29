@@ -1,0 +1,302 @@
+Дерево элементов панели задач (Taskbar Plus, движок 3)
+Windows.UI.Xaml.Hosting.DesktopWindowXamlSource
+  Windows.UI.Xaml.PopupRoot
+  Windows.UI.Xaml.Internal.RootScrollViewer
+    Windows.UI.Xaml.Controls.ScrollContentPresenter
+      Windows.UI.Xaml.Controls.Border
+        Windows.UI.Xaml.Controls.Grid
+          Taskbar.TaskbarFrame #TaskbarFrame
+            Windows.UI.Xaml.Controls.Grid #RootGrid
+              Taskbar.TaskbarBackground #BackgroundControl
+                Windows.UI.Xaml.Controls.Grid
+                  Windows.UI.Xaml.Shapes.Rectangle #BackgroundFill
+                  Windows.UI.Xaml.Shapes.Rectangle #BackgroundStroke
+              Microsoft.UI.Xaml.Controls.ItemsRepeater #TaskbarFrameRepeater
+                Taskbar.ExperienceToggleButton #LaunchListButton
+                  Taskbar.TaskListButtonPanel #ExperienceToggleButtonRootPanel
+                    Windows.UI.Xaml.Controls.Border #BackgroundElement
+                    Microsoft.UI.Xaml.Controls.AnimatedVisualPlayer #Icon
+                      Windows.UI.Composition.SpriteVisual
+                        Windows.UI.Composition.ContainerVisual
+                          Windows.UI.Composition.ContainerVisual
+                            Windows.UI.Composition.ShapeVisual
+                          Windows.UI.Composition.ContainerVisual
+                            Windows.UI.Composition.ShapeVisual
+                          Windows.UI.Composition.ContainerVisual
+                            Windows.UI.Composition.ShapeVisual
+                Taskbar.TaskbarExtensionElement
+                  Windows.UI.Xaml.Controls.ContentPresenter
+                    SearchUx.SearchUI.SearchButtonControl
+                      Windows.UI.Xaml.Controls.Grid
+                        SearchUx.SearchUI.SearchBoxButton #SearchBox
+                          SearchUx.SearchUI.SearchButtonRootGrid #SearchBoxButtonRootPanel
+                            Windows.UI.Xaml.Controls.Border #BackgroundElement
+                            Microsoft.UI.Xaml.Controls.AnimatedVisualPlayer #Icon
+                              Windows.UI.Composition.SpriteVisual
+                                Windows.UI.Composition.ContainerVisual
+                                  Windows.UI.Composition.ContainerVisual
+                                    Windows.UI.Composition.ShapeVisual
+                                    Windows.UI.Composition.ShapeVisual
+                                    Windows.UI.Composition.ShapeVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                  Windows.UI.Composition.ContainerVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.ShapeVisual
+                                  Windows.UI.Composition.ContainerVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.ShapeVisual
+                                    Windows.UI.Composition.ShapeVisual
+                                    Windows.UI.Composition.ShapeVisual
+                                    Windows.UI.Composition.ShapeVisual
+                                    Windows.UI.Composition.ShapeVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                  Windows.UI.Composition.ContainerVisual
+                                    Windows.UI.Composition.ShapeVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                  Windows.UI.Composition.ContainerVisual
+                                    Windows.UI.Composition.ShapeVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                  Windows.UI.Composition.ContainerVisual
+                                    Windows.UI.Composition.ShapeVisual
+                                    Windows.UI.Composition.ShapeVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                                    Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Xaml.Controls.TextBlock #SearchBoxTextBlock
+                            Windows.UI.Xaml.Controls.Grid
+                              Windows.UI.Xaml.Controls.Button #GleamEntryPointButton
+                              Windows.UI.Xaml.Controls.Grid #DynamicSearchBoxGleamContainer
+                                Windows.UI.Xaml.Controls.Image #DynamicSearchBoxGleamImage
+                Taskbar.ExperienceToggleButton #LaunchListButton
+                  Taskbar.TaskListButtonPanel #ExperienceToggleButtonRootPanel
+                    Windows.UI.Xaml.Controls.Border #BackgroundElement
+                    Microsoft.UI.Xaml.Controls.AnimatedVisualPlayer #Icon
+                      Windows.UI.Composition.SpriteVisual
+                        Windows.UI.Composition.ContainerVisual
+                          Windows.UI.Composition.ContainerVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.ShapeVisual
+                          Windows.UI.Composition.ContainerVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.ShapeVisual
+                          Windows.UI.Composition.ContainerVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.ShapeVisual
+                          Windows.UI.Composition.ContainerVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.ShapeVisual
+                          Windows.UI.Composition.ContainerVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.ShapeVisual
+                          Windows.UI.Composition.ContainerVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.SpriteVisual
+                            Windows.UI.Composition.ShapeVisual
+                Taskbar.TaskListButton #TaskListButton
+                  Taskbar.TaskListLabeledButtonPanel #IconPanel
+                    Windows.UI.Xaml.Controls.Border
+                    Windows.UI.Xaml.Controls.Border #BackgroundElement
+                    Windows.UI.Xaml.Controls.Image #Icon
+                    Windows.UI.Xaml.Shapes.Rectangle #DefaultIcon
+                Taskbar.TaskListButton #TaskListButton
+                  Taskbar.TaskListLabeledButtonPanel #IconPanel
+                    Windows.UI.Xaml.Controls.Border
+                    Windows.UI.Xaml.Controls.Border #BackgroundElement
+                    Windows.UI.Xaml.Controls.Image #Icon
+                    Windows.UI.Xaml.Shapes.Rectangle #DefaultIcon
+                Taskbar.TaskListButton #TaskListButton
+                  Taskbar.TaskListLabeledButtonPanel #IconPanel
+                    Windows.UI.Xaml.Controls.Border
+                    Windows.UI.Xaml.Controls.Border #BackgroundElement
+                    Windows.UI.Xaml.Shapes.Rectangle #RunningIndicator
+                    Windows.UI.Xaml.Controls.Image #Icon
+                    Windows.UI.Xaml.Shapes.Rectangle #DefaultIcon
+              Taskbar.Gripper #GripperControl
+                Windows.UI.Xaml.Shapes.Rectangle #Gripper
+              Windows.UI.Xaml.Shapes.Rectangle #ScreenEdgeStroke
+          SystemTray.SystemTrayFrame
+            Windows.UI.Xaml.Controls.Grid #SystemTrayFrameGrid
+              SystemTray.Stack #NotifyIconStack
+                Windows.UI.Xaml.Controls.Grid #Content
+                  SystemTray.StackListView #IconStack
+                    Windows.UI.Xaml.Controls.ItemsPresenter
+                      Windows.UI.Xaml.Controls.ContentControl
+                      Windows.UI.Xaml.Controls.StackPanel
+                        Windows.UI.Xaml.Controls.ContentPresenter
+                          SystemTray.ChevronIconView
+                            Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                              Windows.UI.Xaml.Controls.Border #BackgroundBorder
+                              Windows.UI.Xaml.Controls.ContentPresenter #ContentPresenter
+                                Windows.UI.Xaml.Controls.Grid #ContentGrid
+                                  SystemTray.TextIconContent
+                                    Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                                      SystemTray.AdaptiveTextBlock #Underlay
+                                        Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                                      SystemTray.AdaptiveTextBlock #Base
+                                        Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                                      SystemTray.AdaptiveTextBlock #AccentOverlay
+                                        Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                              Windows.UI.Xaml.Controls.Grid
+                                Windows.UI.Xaml.Shapes.Rectangle #LeftDropInsertionMarker
+                                Windows.UI.Xaml.Shapes.Rectangle #RightDropInsertionMarker
+                      Windows.UI.Xaml.Controls.ContentControl
+              SystemTray.NotificationAreaIcons #NotificationAreaIcons
+                Windows.UI.Xaml.Controls.ItemsPresenter
+                  Windows.UI.Xaml.Controls.ContentControl
+                  Windows.UI.Xaml.Controls.StackPanel
+                    Windows.UI.Xaml.Controls.ContentPresenter
+                      SystemTray.NotifyIconView #NotifyItemIcon
+                        Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                          Windows.UI.Xaml.Controls.Border #BackgroundBorder
+                          Windows.UI.Xaml.Controls.ContentPresenter #ContentPresenter
+                            Windows.UI.Xaml.Controls.Grid #ContentGrid
+                              SystemTray.ImageIconContent
+                                Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                                  Windows.UI.Xaml.Controls.Image
+                          Windows.UI.Xaml.Controls.Grid
+                            Windows.UI.Xaml.Shapes.Rectangle #LeftDropInsertionMarker
+                            Windows.UI.Xaml.Shapes.Rectangle #RightDropInsertionMarker
+                  Windows.UI.Xaml.Controls.ContentControl
+              SystemTray.Stack #MainStack
+                Windows.UI.Xaml.Controls.Grid #Content
+                  SystemTray.StackListView #IconStack
+                    Windows.UI.Xaml.Controls.ItemsPresenter
+                      Windows.UI.Xaml.Controls.ContentControl
+                      Windows.UI.Xaml.Controls.StackPanel
+                      Windows.UI.Xaml.Controls.ContentControl
+              SystemTray.Stack #NonActivatableStack
+                Windows.UI.Xaml.Controls.Grid #Content
+                  SystemTray.StackListView #IconStack
+                    Windows.UI.Xaml.Controls.ItemsPresenter
+                      Windows.UI.Xaml.Controls.ContentControl
+                      Windows.UI.Xaml.Controls.StackPanel
+                      Windows.UI.Xaml.Controls.ContentControl
+              SystemTray.Stack #SecondaryClockStack
+                Windows.UI.Xaml.Controls.Grid #Content
+                  SystemTray.StackListView #IconStack
+                    Windows.UI.Xaml.Controls.ItemsPresenter
+                      Windows.UI.Xaml.Controls.ContentControl
+                      Windows.UI.Xaml.Controls.StackPanel
+                      Windows.UI.Xaml.Controls.ContentControl
+              SystemTray.OmniButton #ControlCenterButton
+                Windows.UI.Xaml.Controls.Grid
+                  Windows.UI.Xaml.Controls.Border #BackgroundBorder
+                  Windows.UI.Xaml.Controls.ContentPresenter #ContentPresenter
+                    Windows.UI.Xaml.Controls.ItemsPresenter
+                      Windows.UI.Xaml.Controls.ContentControl
+                      Windows.UI.Xaml.Controls.StackPanel
+                        Windows.UI.Xaml.Controls.ContentPresenter
+                          SystemTray.IconView #SystemTrayIcon
+                            Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                              Windows.UI.Xaml.Controls.Grid #ContentGrid
+                                SystemTray.TextIconContent
+                                  Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                                    SystemTray.AdaptiveTextBlock #Underlay
+                                      Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                                    SystemTray.AdaptiveTextBlock #Base
+                                      Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                                    SystemTray.AdaptiveTextBlock #AccentOverlay
+                                      Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                        Windows.UI.Xaml.Controls.ContentPresenter
+                          SystemTray.IconView #SystemTrayIcon
+                            Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                              Windows.UI.Xaml.Controls.Grid #ContentGrid
+                                SystemTray.TextIconContent
+                                  Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                                    SystemTray.AdaptiveTextBlock #Underlay
+                                      Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                                    SystemTray.AdaptiveTextBlock #Base
+                                      Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                                    SystemTray.AdaptiveTextBlock #AccentOverlay
+                                      Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                      Windows.UI.Xaml.Controls.ContentControl
+              SystemTray.OmniButton #NotificationCenterButton
+                Windows.UI.Xaml.Controls.Grid
+                  Windows.UI.Xaml.Controls.Border #BackgroundBorder
+                  Windows.UI.Xaml.Controls.ContentPresenter #ContentPresenter
+                    Windows.UI.Xaml.Controls.ItemsPresenter
+                      Windows.UI.Xaml.Controls.ContentControl
+                      Windows.UI.Xaml.Controls.StackPanel
+                        Windows.UI.Xaml.Controls.ContentPresenter
+                          SystemTray.IconView #SystemTrayIcon
+                            Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                              Windows.UI.Xaml.Controls.Grid #ContentGrid
+                                SystemTray.DateTimeIconContent
+                                  Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                                    Windows.UI.Xaml.Controls.StackPanel
+                                      Windows.UI.Xaml.Controls.TextBlock #TimeInnerTextBlock
+                                      Windows.UI.Xaml.Controls.TextBlock #DateInnerTextBlock
+                        Windows.UI.Xaml.Controls.ContentPresenter
+                          SystemTray.IconView #SystemTrayIcon
+                            Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                              Windows.UI.Xaml.Controls.Grid #ContentGrid
+                                SystemTray.TextIconContent
+                                  Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                                    SystemTray.AdaptiveTextBlock #Underlay
+                                      Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                                    SystemTray.AdaptiveTextBlock #Base
+                                      Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                                    SystemTray.AdaptiveTextBlock #AccentOverlay
+                                      Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                      Windows.UI.Xaml.Controls.ContentControl
+              SystemTray.Stack #ShowDesktopStack
+                Windows.UI.Xaml.Controls.Grid #Content
+                  SystemTray.StackListView #IconStack
+                    Windows.UI.Xaml.Controls.ItemsPresenter
+                      Windows.UI.Xaml.Controls.ContentControl
+                      Windows.UI.Xaml.Controls.StackPanel
+                        Windows.UI.Xaml.Controls.ContentPresenter
+                          SystemTray.IconView #SystemTrayIcon
+                            Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                              Windows.UI.Xaml.Controls.Border
+                              Windows.UI.Xaml.Controls.Grid #ContentGrid
+                                SystemTray.TextIconContent
+                                  Windows.UI.Xaml.Controls.Grid #ContainerGrid
+                                    SystemTray.AdaptiveTextBlock #Underlay
+                                      Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                                    SystemTray.AdaptiveTextBlock #Base
+                                      Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                                    SystemTray.AdaptiveTextBlock #AccentOverlay
+                                      Windows.UI.Xaml.Controls.TextBlock #InnerTextBlock
+                              Windows.UI.Xaml.Shapes.Rectangle #ShowDesktopPipe
+                      Windows.UI.Xaml.Controls.ContentControl

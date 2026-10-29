@@ -1,0 +1,83 @@
+=== Среда ===
+Windows: 10.0.26100.0  сеанс: 2
+Экран: {X=0,Y=0,Width=1024,Height=768}
+explorer: 5796  Shell_TrayWnd: 524408
+снимок: results\00-до.png (1024x768)
+
+=== Окна настроек ===
+TaskbarPlus --screenshot: код 0
+ColorPlus --screenshot: код 0
+файл: color-plus-ui.png (372664 байт)
+файл: taskbar-plus-ui.png (413632 байт)
+
+=== Панель: 10-фон-цвет ===
+снимок: results\10-фон-цвет.png (1024x768)
+state=ready | engine=3 | pid=5796 | tick=325171 | module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-171ed9243640.dll | sessions=1 | threads=1 | nodes=301 | bgfill=1 | stroke=1 | apps=5 | widgets=0 | system=43 | hosts=0 | islands=0 | rects=13 | rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon][RunningIndicator][LeftDropInsertionMarker][RightDropInsertionMarker][ShowDesktopPipe] | applied=1 | queue=1 | tries=13 | error= | 
+
+=== Панель: 11-фон-прозрачный ===
+снимок: results\11-фон-прозрачный.png (1024x768)
+state=ready | engine=3 | pid=5796 | tick=333109 | module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-171ed9243640.dll | sessions=1 | threads=1 | nodes=301 | bgfill=1 | stroke=1 | apps=5 | widgets=0 | system=43 | hosts=0 | islands=0 | rects=13 | rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon][RunningIndicator][LeftDropInsertionMarker][RightDropInsertionMarker][ShowDesktopPipe] | applied=1 | queue=1 | tries=24 | error= | 
+
+=== Панель: 12-острова-каждый ===
+снимок: results\12-острова-каждый.png (1024x768)
+state=ready | engine=3 | pid=5796 | tick=343421 | module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-171ed9243640.dll | sessions=1 | threads=1 | nodes=307 | bgfill=1 | stroke=1 | apps=5 | widgets=0 | system=43 | hosts=3 | islands=6 | rects=13 | rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon][RunningIndicator][LeftDropInsertionMarker][RightDropInsertionMarker][ShowDesktopPipe] | applied=1 | queue=1 | tries=37 | error= | 
+
+=== Панель: 13-острова-система-фиолетовый-прямой ===
+снимок: results\13-острова-система-фиолетовый-прямой.png (1024x768)
+state=ready | engine=3 | pid=5796 | tick=352468 | module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-171ed9243640.dll | sessions=1 | threads=1 | nodes=307 | bgfill=1 | stroke=1 | apps=5 | widgets=0 | system=43 | hosts=3 | islands=6 | rects=13 | rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon][RunningIndicator][LeftDropInsertionMarker][RightDropInsertionMarker][ShowDesktopPipe] | applied=1 | queue=1 | tries=42 | error= | 
+
+=== Панель: 14-расположение-система-слева-значки-справа ===
+снимок: results\14-расположение-система-слева-значки-справа.png (1024x768)
+state=ready | engine=3 | pid=5796 | tick=361468 | module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-171ed9243640.dll | sessions=1 | threads=1 | nodes=301 | bgfill=1 | stroke=1 | apps=5 | widgets=0 | system=43 | hosts=3 | islands=0 | rects=13 | rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon][RunningIndicator][LeftDropInsertionMarker][RightDropInsertionMarker][ShowDesktopPipe] | applied=1 | queue=1 | tries=44 | error= | 
+
+=== Панель: 15-вкладка-края ===
+снимок: results\15-вкладка-края.png (1024x768)
+state=ready | engine=3 | pid=5796 | tick=370609 | module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-171ed9243640.dll | sessions=1 | threads=1 | nodes=302 | bgfill=1 | stroke=1 | apps=5 | widgets=0 | system=43 | hosts=3 | islands=1 | rects=13 | rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon][RunningIndicator][LeftDropInsertionMarker][RightDropInsertionMarker][ShowDesktopPipe] | applied=1 | queue=1 | tries=47 | error= | 
+
+снимок: results\19-панель-после-всех-выходов.png (1024x768)
+
+=== Color Plus (окна) ===
+тестовое окно: 66054
+до: ex=0x50100 layered=0 backdrop=0 dark=0
+снимок: results\20-окно-до.png (1024x768)
+21-окна-прозрачность-слюда-заголовок : ex=0xD0100 layered=1 alpha=140 flags=2 key=0x000000 backdrop=2 dark=1
+снимок: results\21-окна-прозрачность-слюда-заголовок.png (1024x768)
+21-окна-прозрачность-слюда-заголовок после выхода: ex=0x50100 layered=0 backdrop=0 dark=0
+22-окна-размытие-акрил-на-всё-окно : ex=0x50100 layered=0 backdrop=3 dark=0
+снимок: results\22-окна-размытие-акрил-на-всё-окно.png (1024x768)
+22-окна-размытие-акрил-на-всё-окно после выхода: ex=0x50100 layered=0 backdrop=0 dark=0
+23-окна-не-трогать-программу : ex=0x50100 layered=0 backdrop=0 dark=0
+снимок: results\23-окна-не-трогать-программу.png (1024x768)
+23-окна-не-трогать-программу после выхода: ex=0x50100 layered=0 backdrop=0 dark=0
+24-окна-только-фон-форма-по-правилу-программы : ex=0xD0100 layered=1 alpha=255 flags=1 key=0xFFFFFF backdrop=0 dark=0
+снимок: results\24-окна-только-фон-форма-по-правилу-программы.png (1024x768)
+24-окна-только-фон-форма-по-правилу-программы после выхода: ex=0x50100 layered=0 backdrop=0 dark=0
+окно Chrome: 66092
+Chrome до: ex=0x200100 layered=0 backdrop=2 dark=0
+снимок: results\25-хром-до.png (1024x768)
+26-хром-только-фон-по-правилу-невозможен : ex=0x50100 layered=0 backdrop=0 dark=0
+снимок: results\26-хром-только-фон-по-правилу-невозможен.png (1024x768)
+26-хром-только-фон-по-правилу-невозможен после выхода: ex=0x50100 layered=0 backdrop=0 dark=0
+Chrome после (без запасного): ex=0x200100 layered=0 backdrop=2 dark=0
+27-хром-общая-прозрачность-целиком : ex=0xD0100 layered=1 alpha=153 flags=2 key=0xFFFFFF backdrop=0 dark=0
+снимок: results\27-хром-общая-прозрачность-целиком.png (1024x768)
+27-хром-общая-прозрачность-целиком после выхода: ex=0x50100 layered=0 backdrop=0 dark=0
+Chrome после (с запасным): ex=0x200100 layered=0 backdrop=2 dark=0
+29-хром-стекло : Chrome ex=0x280100 layered=1 alpha=191 flags=2 key=0x000000 backdrop=2 dark=0
+окно плагина: 66154|HwndWrapper[ColorPlus;;1e2e262a-18e8-4f8e-aaf5-ba49d050c6b1]|Color Plus — шапка|pid=9396|vis=1|127,80,873,167
+окно плагина: 262444|HwndWrapper[ColorPlus;;2e69eb07-fb2d-427f-b821-f15707d4378f]|Color Plus — стекло|pid=9396|vis=1|127,80,873,593
+снимок: results\29-хром-стекло.png (1024x768)
+29-хром-стекло после выхода : Chrome ex=0x200100 layered=0 backdrop=2 dark=0
+
+=== Color Plus: защита ===
+окно без заголовка: 393562
+общая прозрачность 40%: окно БЕЗ заголовка (ожидается layered=0): ex=0x50000 layered=0 backdrop=0 dark=0
+общая прозрачность 40%: окно СО строкой заголовка (ожидается layered=1 alpha=102): ex=0xD0100 layered=1 alpha=102 flags=2 key=0xFFFFFF backdrop=0 dark=0
+снимок: results\28-защита-окно-без-заголовка.png (1024x768)
+после аварийного закрытия плагина (окно осталось прозрачным): ex=0xD0100 layered=1 alpha=102 flags=2 key=0xFFFFFF backdrop=0 dark=0
+после следующего запуска (ожидается layered=0): ex=0x50100 layered=0 backdrop=0 dark=0
+
+=== Color Plus: выделение и акцент ===
+COLOR_HIGHLIGHT: до=0xD47800 во время=0xFF после=0xD47800  (ожидается во время 0x0000FF)
+DWM AccentColor: до=4292114432 во время=4286235168 после=4292114432
+=== конец ===
