@@ -11,7 +11,10 @@ sealed record Outcome(string Group, string Item, string Result)
     public bool Ok => Result == "ok";
 }
 
-sealed record ApplyResult(int Done, int Failed, List<string> Messages, List<Outcome> Outcomes);
+sealed record ApplyResult(int Done, int Failed, List<string> Messages, List<Outcome> Outcomes)
+{
+    public Dictionary<string, string> Aumids { get; init; } = new();   // ярлык → идентификатор программы (для отчёта)
+}
 
 // Применяет значки: перекрашивает исходные значки Windows в выбранный цвет или ставит значки из набора.
 // Всё — в настройках текущего пользователя (HKCU и ярлыки пользователя); каждое прежнее значение запоминается в state.json.
@@ -247,6 +250,7 @@ sealed class IconEngine
         int done = 0, failed = 0;
         var msgs = new List<string>();
         var outcomes = new List<Outcome>();
+        var aumids = new Dictionary<string, string>();
         job = new MachineJob();
         foreach (var id in s.Enabled)
         {
@@ -256,6 +260,11 @@ sealed class IconEngine
             foreach (var sink in SinksFor(t).ToList())
             {
                 var item = ItemName(sink.Key);
+                if (t.Kind == TargetKind.Shortcuts && sink.Key.StartsWith("lnk:", StringComparison.Ordinal))
+                {
+                    var au = Shortcuts.ReadAumid(sink.Key[4..]);
+                    if (au.Length > 0 && aumids.Count < 400) aumids[item] = au;
+                }
                 try
                 {
                     string? ico = null;
@@ -280,7 +289,7 @@ sealed class IconEngine
         state.Applied = "color";
         StateStore.Save(state);
         Native.NotifyIconsChanged();
-        return new ApplyResult(done, failed, msgs, outcomes);
+        return new ApplyResult(done, failed, msgs, outcomes) { Aumids = aumids };
     }
 
     // Краткое имя пункта для отчёта: у ярлыков — имя файла, у остального — сам ключ.

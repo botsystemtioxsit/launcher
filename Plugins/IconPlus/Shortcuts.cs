@@ -110,6 +110,41 @@ static class Shortcuts
         catch { return false; }
     }
 
+    // Идентификатор программы (AppUserModelID) из свойств ярлыка. Читается прямо из файла: ищем блок свойств с форматом {9F4C2855-…}, номер 5.
+    // Нужен только для отчёта: по нему видно, какие ярлыки «Пуск» может подменять значком из реестра, а не из ярлыка.
+    public static string ReadAumid(string lnk)
+    {
+        try
+        {
+            if (IsUrl(lnk)) return "";
+            var data = File.ReadAllBytes(lnk);
+            var guid = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3").ToByteArray();
+            for (var i = 0; i + 16 < data.Length; i++)
+            {
+                var match = true;
+                for (var k = 0; k < 16; k++) if (data[i + k] != guid[k]) { match = false; break; }
+                if (!match) continue;
+                var pos = i + 16;
+                while (pos + 17 < data.Length)
+                {
+                    var size = BitConverter.ToInt32(data, pos);
+                    if (size <= 0 || pos + size > data.Length) break;
+                    var pid = BitConverter.ToInt32(data, pos + 4);
+                    var type = BitConverter.ToUInt16(data, pos + 9);
+                    if (pid == 5 && type == 0x1F)
+                    {
+                        var chars = BitConverter.ToInt32(data, pos + 13);
+                        if (chars > 1 && chars < 400 && pos + 17 + chars * 2 <= data.Length)
+                            return Encoding.Unicode.GetString(data, pos + 17, (chars - 1) * 2);
+                    }
+                    pos += size;
+                }
+            }
+        }
+        catch { }
+        return "";
+    }
+
     // Объект оболочки, на который указывает ярлык (адрес для IShellItem). Освободить CoTaskMemFree.
     public static IntPtr ReadIdList(string lnk)
     {
