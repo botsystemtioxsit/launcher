@@ -10,7 +10,7 @@ on:
         description: 'plugins — проверка обоих плагинов; bg — опыты с прозрачным фоном окон; glass — опыты со «стеклом» под окном'
         default: plugins
         type: choice
-        options: [plugins, bg, glass]
+        options: [plugins, bg, glass, site]
 
 permissions:
   contents: write
@@ -51,6 +51,7 @@ jobs:
         run: |
           if ($env:SCENARIO -eq 'bg') { ./tests/e2e/bg-experiment.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'glass') { ./tests/e2e/glass-experiment.ps1 -Out results }
+          elseif ($env:SCENARIO -eq 'site') { ./tests/e2e/site-probe.ps1 -Out results }
           else { ./tests/e2e/run.ps1 -Out results }
         continue-on-error: true
 
@@ -64,7 +65,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } else { 'ci-e2e' }
+          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } elseif ($env:SCENARIO -eq 'site') { 'ci-e2e-site' } else { 'ci-e2e' }
           $dir = Join-Path $env:RUNNER_TEMP 'e2e-branch'
           New-Item -ItemType Directory -Force $dir | Out-Null
           Copy-Item results/* $dir -Recurse -ErrorAction SilentlyContinue
