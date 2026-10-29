@@ -22,6 +22,9 @@ public partial class App : Application
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
+        var shot = e.Args.FirstOrDefault(a => a.StartsWith("--screenshot="));
+        if (shot != null) { RenderScreenshots(shot["--screenshot=".Length..]); Quitting = true; Shutdown(); return; }
+
         // Одна копия: повторный запуск (из лаунчера или ярлыка) просто показывает окно уже работающей.
         mutex = new Mutex(true, MutexName, out var first);
         showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
@@ -60,6 +63,24 @@ public partial class App : Application
 
         if (background && !settings.Active) { Quitting = true; Shutdown(); return; } // фоновый запуск без эффектов — делать нечего
         if (!background) ShowWindow();
+    }
+
+    // Служебный режим для CI: рисует окно настроек с выдуманными настройками в PNG и выходит (ничего не применяя).
+    static void RenderScreenshots(string dir)
+    {
+        try
+        {
+            Directory.CreateDirectory(dir);
+            var s = new AppearanceSettings
+            {
+                UseXaml = true, XamlConsentShown = true, Shape = AppearanceSettings.ShapeIslands, IslandMode = "each",
+                ZoneApps = AppearanceSettings.ZoneRight, ZoneSystem = AppearanceSettings.ZoneLeft,
+            };
+            s.Islands["system"] = new IslandStyle { Radius = 0, Color = "#6C4DFF", Mode = AppearanceSettings.BgSolid, Opacity = 70 };
+            var w = new MainWindow(new Engines(), s);
+            w.RenderTo(Path.Combine(dir, "taskbar-plus-ui.png"), "system");
+        }
+        catch (Exception ex) { File.WriteAllText(Path.Combine(dir, "taskbar-plus-ui-error.txt"), ex.ToString()); }
     }
 
     void ShowWindow()
