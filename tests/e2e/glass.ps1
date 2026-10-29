@@ -61,6 +61,11 @@ public static class G
         if (GetWindow(target, 2) == w) return;
         SetWindowPos(w, target, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010);
     }
+    [StructLayout(LayoutKind.Sequential)] struct MARGINS { public int L, R, T, B; }
+    [DllImport("dwmapi.dll")] static extern int DwmExtendFrameIntoClientArea(IntPtr h, ref MARGINS m);
+    [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr h, int attr, ref int v, int size);
+    public static void Extend(IntPtr h) { var m = new MARGINS { L = -1, R = -1, T = -1, B = -1 }; DwmExtendFrameIntoClientArea(h, ref m); }
+    public static void Corners(IntPtr h) { int v = 2; DwmSetWindowAttribute(h, 33, ref v, 4); }
     public static void Place(IntPtr w, int x, int y, int cx, int cy) { SetWindowPos(w, IntPtr.Zero, x, y, cx, cy, 0x0004 | 0x0010); }
 }
 '@
@@ -74,11 +79,18 @@ function New-Tool([string]$name) {
 }
 $glass = New-Tool 'E2E-GLASS'
 $stripForm = New-Tool 'E2E-STRIP'
-$glass.Show(); $stripForm.Show()
+$vis0 = New-Object G+RECT; $win0 = New-Object G+RECT
+[void][G]::Bounds($target, [ref]$vis0, [ref]$win0)
+foreach ($ff in $glass, $stripForm) { $ff.Left = $vis0.L; $ff.Top = $vis0.T; $ff.Width = [Math]::Max(100, $vis0.R - $vis0.L); $ff.Height = 60 }
+$glass.Height = [Math]::Max(100, $vis0.B - $vis0.T)
+$glass.Show()
+if ($StripH -gt 0) { $stripForm.Show() }
 [G]::ExStyle($glass.Handle, 0x08000080)                       # NOACTIVATE | TOOLWINDOW
-[G]::ExStyle($stripForm.Handle, 0x08000080 -bor 0x20)             # + TRANSPARENT (мышь проходит сквозь)
+if ($StripH -gt 0) { [G]::ExStyle($stripForm.Handle, 0x08000080 -bor 0x20) }   # + TRANSPARENT (мышь проходит сквозь)
 $tint = [Convert]::ToUInt32($Tint, 16)
 $abgr = ([uint32]([Math]::Round($TintOpacity * 255 / 100.0)) -shl 24) -bor (($tint -band 0xFF) -shl 16) -bor ($tint -band 0xFF00) -bor (($tint -shr 16) -band 0xFF)
+[G]::Extend($glass.Handle)
+[G]::Corners($glass.Handle)
 [G]::Acrylic($glass.Handle, $abgr)
 [G]::Alpha($target, [byte][Math]::Round($Alpha * 255 / 100.0))
 if ($StripH -gt 0) { [G]::Alpha($stripForm.Handle, 255) }

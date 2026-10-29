@@ -5,6 +5,8 @@ New-Item -ItemType Directory -Force $Out | Out-Null
 $log = Join-Path $Out 'report.txt'
 function Say($t) { $t | Tee-Object -FilePath $log -Append }
 
+(New-Object -ComObject Shell.Application).MinimizeAll()   # свернуть консоль раннера, чтобы позади было видно подложку
+Start-Sleep -Seconds 2
 # яркая подложка позади: цветные полосы и крупный текст (размытие должно быть хорошо видно)
 $backScript = Join-Path (Get-Location) 'backdrop.ps1'
 @'
@@ -39,15 +41,15 @@ if ($ch -eq [IntPtr]::Zero) { Say "Chrome не найден"; exit 1 }
 Say (Shot (Join-Path $Out '1-до.png'))
 
 function Run-Glass([string]$name, [int]$alpha, [int]$strip, [int]$tintOpacity) {
-    $p = Start-Process pwsh -ArgumentList '-NoProfile', '-File', (Join-Path $PSScriptRoot 'glass.ps1'), '-Target', ([long]$ch), '-Alpha', $alpha, '-StripH', $strip, '-TintOpacity', $tintOpacity, '-Seconds', '14' -PassThru
+    $p = Start-Process pwsh -ArgumentList '-NoProfile', '-File', (Join-Path $PSScriptRoot 'glass.ps1'), '-Target', ([long]$ch), '-Alpha', $alpha, '-StripH', $strip, '-TintOpacity', $tintOpacity, '-Seconds', '14' -PassThru -WindowStyle Hidden
     Start-Sleep -Seconds 8
     Say ("$name : Chrome " + [W]::Describe($ch))
     Say (Shot (Join-Path $Out "$name.png"))
     if (-not $p.WaitForExit(30000)) { $p.Kill(); Say "$name : glass.ps1 пришлось завершить" }
     Start-Sleep -Seconds 1
 }
-Run-Glass '2-стекло-без-шапки' 80 0 40
-Run-Glass '3-стекло-и-чёткая-шапка' 70 112 40
+Run-Glass '2-стекло-без-шапки' 60 0 25
+Run-Glass '3-стекло-и-чёткая-шапка' 60 112 60
 Say "после: Chrome " + [W]::Describe($ch)
 Say (Shot (Join-Path $Out '4-после.png'))
 Get-Process chrome -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
