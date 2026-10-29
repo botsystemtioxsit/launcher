@@ -138,6 +138,71 @@ static class SelfTest
         File.WriteAllText(Path.Combine(outDir, "report.txt"), log.ToString());
     }
 
+    static string Mean(System.Windows.Media.Imaging.BitmapSource? img)
+    {
+        if (img == null) return "нет значка";
+        var px = IconData.Pixels(img);
+        double r = 0, g = 0, b = 0; var n = 0;
+        for (var i = 0; i + 3 < px.Length; i += 4) { if (px[i + 3] < 128) continue; b += px[i]; g += px[i + 1]; r += px[i + 2]; n++; }
+        return n == 0 ? "прозрачный" : $"средний цвет R{r / n:0} G{g / n:0} B{b / n:0}";
+    }
+
+    // Приложения «Пуска» без ярлыков: создаём свои ярлыки, смотрим, не появились ли дубли, как Проводник рисует значок, и возвращаем всё как было.
+    public static void StartAppsTest(string outDir)
+    {
+        Directory.CreateDirectory(outDir);
+        var log = new StringBuilder();
+        try
+        {
+            var all = StartApps.List();
+            File.WriteAllLines(Path.Combine(outDir, "apps-before.txt"), all.Select(a => a.Name + " | " + a.AppId));
+            log.AppendLine($"в списке «Пуска» {all.Count} приложений, из них с «!» в идентификаторе (магазинные): {all.Count(a => a.AppId.Contains('!'))}");
+            var cand = StartApps.Candidates(Array.Empty<string>(), all);
+            log.AppendLine($"кандидатов на свой ярлык: {cand.Count}");
+            foreach (var a in cand.Take(60)) log.AppendLine($"  {a.Name} | {a.AppId}");
+            var first = cand.Take(10).ToList();
+            var before = first.ToDictionary(a => a.AppId, a => ShellIcon.Render(StartApps.AppsFolderPath(a.AppId), 64));
+            var engine = new IconEngine();
+            var s = new IconSettings { Color = "#FF2A9D", Style = Tint.Mono, Strength = 100, Enabled = new() { "start-apps" } };
+            s.Normalize();
+            var res = engine.ApplyColor(s);
+            log.AppendLine($"применено: сделано {res.Done}, не вышло {res.Failed}");
+            log.AppendLine(Report.Build(res));
+            System.Threading.Thread.Sleep(5000);
+            var after = StartApps.List();
+            File.WriteAllLines(Path.Combine(outDir, "apps-after.txt"), after.Select(a => a.Name + " | " + a.AppId));
+            log.AppendLine($"после: в списке {after.Count} приложений (было {all.Count})");
+            var created = Directory.Exists(StartApps.ProgramsFolder) ? Directory.GetFiles(StartApps.ProgramsFolder, "*.lnk").Where(f => engine.State.Created.Contains(f, StringComparer.OrdinalIgnoreCase)).ToList() : new List<string>();
+            log.AppendLine($"создано ярлыков: {created.Count}");
+            var i = 0;
+            foreach (var a in first)
+            {
+                i++;
+                var byId = after.Count(x => string.Equals(x.AppId, a.AppId, StringComparison.OrdinalIgnoreCase));
+                var byName = after.Count(x => string.Equals(x.Name, a.Name, StringComparison.OrdinalIgnoreCase));
+                var img = ShellIcon.Render(StartApps.AppsFolderPath(a.AppId), 64);
+                var lnk = Path.Combine(StartApps.ProgramsFolder, StartApps.FileName(a.Name) + ".lnk");
+                var info = File.Exists(lnk) ? $"ярлык есть, AUMID в ярлыке: {Shortcuts.ReadAumid(lnk)}" : "ярлыка нет";
+                log.AppendLine($"[{a.Name}] записей с этим идентификатором: {byId}, с этим именем: {byName}; {info}");
+                log.AppendLine($"    значок в «Пуске» (как рисует Проводник): было {Mean(before[a.AppId])} → стало {Mean(img)}");
+                try
+                {
+                    if (before[a.AppId] != null) File.WriteAllBytes(Path.Combine(outDir, $"app{i}-before.png"), IconData.Png(before[a.AppId]!));
+                    if (img != null) File.WriteAllBytes(Path.Combine(outDir, $"app{i}-after.png"), IconData.Png(img));
+                }
+                catch { }
+            }
+            var restored = engine.RestoreAll();
+            log.AppendLine($"вернули: {restored} изменений, ярлыков осталось: {created.Count(File.Exists)}");
+            System.Threading.Thread.Sleep(4000);
+            var back = StartApps.List();
+            log.AppendLine($"после возврата в списке {back.Count} приложений (было {all.Count})");
+            foreach (var a in first.Take(3)) log.AppendLine($"    {a.Name}: значок после возврата {Mean(ShellIcon.Render(StartApps.AppsFolderPath(a.AppId), 64))}");
+        }
+        catch (Exception ex) { log.AppendLine("ОШИБКА: " + ex); }
+        File.WriteAllText(Path.Combine(outDir, "report.txt"), log.ToString());
+    }
+
     // Набор значков: ввоз архива, подбор по именам, применение и возврат.
     public static void PackTest(string archive, string outDir)
     {

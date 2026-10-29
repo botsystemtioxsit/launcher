@@ -28,7 +28,7 @@ sealed class IconEngine
 
     public IconEngine() { Paths.Ensure(); state = StateStore.Load(); reg = new RegistryWriter(state); }
     public IconState State => state;
-    public int ChangesCount => state.Reg.Count + state.Lnk.Count + state.Ini.Count;
+    public int ChangesCount => state.Reg.Count + state.Lnk.Count + state.Ini.Count + state.Created.Count;
 
     // ---------- что куда пишется ----------
     IEnumerable<Sink> SinksFor(Target t)
@@ -75,7 +75,7 @@ sealed class IconEngine
                 }
                 break;
             case TargetKind.Shortcuts:
-                foreach (var f in ShortcutFiles(t.Id))
+                foreach (var f in ShortcutFiles(t.Id).Where(x => !state.Created.Contains(x, StringComparer.OrdinalIgnoreCase)))
                 {
                     var file = f;
                     var machine = t.NeedsAdmin;
@@ -89,6 +89,14 @@ sealed class IconEngine
                     var ini = Path.Combine(folder, "desktop.ini");
                     var fpath = folder;
                     yield return new Sink("kf:" + name, () => "shell:" + fpath, p => WriteIni(ini, p));
+                }
+                break;
+            case TargetKind.StartApps:
+                foreach (var a in StartApps.Candidates(state.Created))
+                {
+                    var app = a;
+                    appNames["app:" + app.AppId] = app.Name;
+                    yield return new Sink("app:" + app.AppId, () => "shell:" + StartApps.AppsFolderPath(app.AppId), p => WriteStartApp(app, p));
                 }
                 break;
             case TargetKind.AllFileTypes:
@@ -109,6 +117,25 @@ sealed class IconEngine
         var file = Path.Combine(dir, "sample." + ext);
         if (!File.Exists(file)) File.WriteAllBytes(file, Array.Empty<byte>());
         return "shell:" + file;
+    }
+
+    readonly Dictionary<string, string> appNames = new();   // ключ приложения «Пуска» → его имя (для отчёта)
+    readonly List<StartApp> createdNow = new();              // ярлыки, созданные в этот раз (для проверки на дубли)
+
+    // Свой ярлык приложения «Пуска» в меню «Пуск» пользователя; уже созданный нами — только меняем значок.
+    void WriteStartApp(StartApp app, string ico)
+    {
+        var file = Path.Combine(StartApps.ProgramsFolder, StartApps.FileName(app.Name) + ".lnk");
+        if (File.Exists(file))
+        {
+            if (!state.Created.Contains(file, StringComparer.OrdinalIgnoreCase)) throw new IOException("в «Пуске» уже есть ярлык с таким именем");
+            if (!Shortcuts.WriteIcon(file, ico, 0)) throw new IOException("ярлык не записывается");
+            return;
+        }
+        Directory.CreateDirectory(StartApps.ProgramsFolder);
+        StartApps.CreateLink(file, app.AppId, ico);
+        state.Created.Add(file);
+        createdNow.Add(app);
     }
 
     // Известные папки пользователя, значок которых хранится в desktop.ini.
@@ -309,6 +336,7 @@ sealed class IconEngine
                 catch (Exception ex) { failed++; outcomes.Add(new Outcome(t.Title, item, ex.Message)); msgs.Add(sink.Key + ": " + ex.Message); }
             }
         }
+        CheckDuplicates(msgs, outcomes, ref done, ref failed);
         FlushMachine(msgs, outcomes, ref done, ref failed);
         state.Applied = "color";
         StateStore.Save(state);
@@ -316,8 +344,29 @@ sealed class IconEngine
         return new ApplyResult(done, failed, msgs, outcomes) { Aumids = aumids };
     }
 
+    // «Пуск» должен склеить наш ярлык с самим приложением. Если на этой версии Windows он показывает обе записи — наши ярлыки убираем (лучше без значка, чем с дублем).
+    void CheckDuplicates(List<string> msgs, List<Outcome> outcomes, ref int done, ref int failed)
+    {
+        if (createdNow.Count == 0) return;
+        var mine = createdNow.ToList();
+        createdNow.Clear();
+        System.Threading.Thread.Sleep(2500);
+        var bad = StartApps.Duplicates(mine);
+        if (bad.Count == 0) return;
+        foreach (var app in mine.Where(a => bad.Contains(a.AppId, StringComparer.OrdinalIgnoreCase)))
+        {
+            var file = Path.Combine(StartApps.ProgramsFolder, StartApps.FileName(app.Name) + ".lnk");
+            try { File.Delete(file); } catch { }
+            state.Created.RemoveAll(x => string.Equals(x, file, StringComparison.OrdinalIgnoreCase));
+            var i = outcomes.FindIndex(o => o.Item == app.Name && o.Group == Target.ById("start-apps")!.Title && o.Ok);
+            if (i >= 0) outcomes[i] = new Outcome(outcomes[i].Group, app.Name, "«Пуск» показывает приложение дважды — ярлык убран");
+            done--; failed++;
+        }
+        msgs.Add($"«Пуск» показал {bad.Count} приложений дважды — их ярлыки убраны");
+    }
+
     // Краткое имя пункта для отчёта: у ярлыков — имя файла, у остального — сам ключ.
-    static string ItemName(string key) => key.StartsWith("lnk:", StringComparison.Ordinal) ? Path.GetFileNameWithoutExtension(key[4..]) : key;
+    string ItemName(string key) => key.StartsWith("lnk:", StringComparison.Ordinal) ? Path.GetFileNameWithoutExtension(key[4..]) : appNames.TryGetValue(key, out var n) ? n : key;
 
     // Пункты, которые ждут ответа от действия администратора (ключ → группа и имя)
     readonly List<(string Key, string Group, string Item)> pendingMachine = new();
@@ -336,6 +385,7 @@ sealed class IconEngine
     // Превью для окна: исходный значок цели и его перекрашенная копия (размер 48).
     public (System.Windows.Media.Imaging.BitmapSource? Before, System.Windows.Media.Imaging.BitmapSource? After) Preview(Target t, IconSettings s)
     {
+        if (t.Kind == TargetKind.StartApps) return (null, null);   // список приложений «Пуска» долго собирается — превью не нужно
         var sink = SinksFor(t).FirstOrDefault();
         if (sink == null) return (null, null);
         var src = SourceOf(sink.Key, sink.Source);
@@ -416,11 +466,15 @@ sealed class IconEngine
         {
             try { if (File.Exists(l.File) && Shortcuts.WriteIcon(l.File, l.OldPath, l.OldIndex)) n++; } catch { }
         }
+        foreach (var f in state.Created.ToList())
+        {
+            try { if (File.Exists(f)) { File.Delete(f); n++; } } catch { }
+        }
         foreach (var c in state.Ini.ToList())
         {
             try { if (File.Exists(c.File)) { DesktopIni.Write(c.File, "IconResource", c.Old); n++; } } catch { }
         }
-        state.Reg.Clear(); state.Lnk.Clear(); state.Ini.Clear(); state.Sources.Clear(); state.Applied = "";
+        state.Reg.Clear(); state.Lnk.Clear(); state.Ini.Clear(); state.Created.Clear(); state.Sources.Clear(); state.Applied = "";
         StateStore.Save(state);
         Native.NotifyIconsChanged();
         return n;

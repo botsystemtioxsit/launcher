@@ -13,13 +13,15 @@ sealed class IconSettings
     public string Style { get; set; } = Tint.Mono;       // mono — один цвет; hue — сменить оттенок, сохранив краски
     public int Strength { get; set; } = 100;             // 0–100
     public List<string> Enabled { get; set; } = new() { "folder", "drive-fixed", "drive-removable", "drive-optical", "thispc", "recycle-empty", "recycle-full", "network", "userfiles",
-        "ft-text", "ft-doc", "ft-sheet", "ft-slides", "ft-pdf", "ft-archive", "ft-image", "ft-audio", "ft-video", "ft-web", "ft-code", "ft-script", "ft-all", "kf", "lnk-desktop", "lnk-desktop-all", "lnk-start", "lnk-start-all", "lnk-taskbar" };
+        "ft-text", "ft-doc", "ft-sheet", "ft-slides", "ft-pdf", "ft-archive", "ft-image", "ft-audio", "ft-video", "ft-web", "ft-code", "ft-script", "ft-all", "kf", "lnk-desktop", "lnk-desktop-all", "lnk-start", "lnk-start-all", "lnk-taskbar", "start-apps" };
+    public int Version { get; set; }                     // 2 — добавлен пункт «Приложения Пуска без ярлыков»; у старых настроек его включаем один раз
     public bool AutoReport { get; set; } = true;          // после применения отправлять отчёт разработчику сам (названия ярлыков и причины; имя пользователя и компьютера вычищаются)
     public string? Pack { get; set; }                    // имя выбранного набора
     public Dictionary<string, Dictionary<string, string>> Maps { get; set; } = new();   // набор → (цель → файл значка): ручные правки подбора
 
     public void Normalize()
     {
+        if (Version < 2) { Enabled ??= new(); if (!Enabled.Contains("start-apps")) Enabled.Add("start-apps"); Version = 2; }
         if (!HexRe.IsMatch(Color ?? "")) Color = "#00F0FF";
         Color = Color.ToUpperInvariant();
         if (Style is not (Tint.Mono or Tint.Hue)) Style = Tint.Mono;
