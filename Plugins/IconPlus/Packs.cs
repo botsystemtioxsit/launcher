@@ -197,7 +197,7 @@ static class Packs
             var tokens = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             foreach (var t in Target.All)
             {
-                if (t.Kind == TargetKind.Shortcuts) continue;
+                if (t.Keywords.Length == 0) continue;
                 var s = Score(t, text, tokens);
                 if (s >= 2) scored.Add((s, t.Id, f));
             }

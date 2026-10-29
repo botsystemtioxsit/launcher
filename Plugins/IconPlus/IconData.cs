@@ -14,6 +14,9 @@ static class IconData
     // Один значок нужного размера как картинка в формате BGRA (без предумножения прозрачности). null — не вышло.
     public static BitmapSource? Load(string location, int size)
     {
+        // особые источники: «shell:<путь>» — значок как его рисует Проводник, «lnktarget:<ярлык>» — значок цели ярлыка
+        if (location.StartsWith("shell:", StringComparison.Ordinal)) return ShellIcon.Render(location[6..], size);
+        if (location.StartsWith("lnktarget:", StringComparison.Ordinal)) return ShellIcon.RenderLnkTarget(location[10..], size);
         ParseLocation(location, out var file, out var index);
         if (file.Length == 0 || !File.Exists(Environment.ExpandEnvironmentVariables(file))) return null;
         file = Environment.ExpandEnvironmentVariables(file);

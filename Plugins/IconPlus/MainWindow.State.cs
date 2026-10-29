@@ -23,6 +23,27 @@ sealed partial class MainWindow
         rows.Add(buttons);
         p.Children.Add(Card("Что сделано", rows));
 
+        var report = Report.Load();
+        var repRows = new List<UIElement>
+        {
+            Note("Здесь видно, какие значки перекрасились, а какие Windows не отдала и почему. Если не перекрасилось то, что должно было, нажмите «Отправить отчёт разработчику» — " +
+                 "в отчёт попадут названия ярлыков и причины (имя пользователя и компьютера вычищаются), и это можно будет исправить."),
+        };
+        if (report.Length > 0)
+        {
+            repRows.Add(new TextBox
+            {
+                Text = report, IsReadOnly = true, TextWrapping = TextWrapping.Wrap, FontFamily = (System.Windows.Media.FontFamily)Application.Current.FindResource("Mono"), FontSize = 12,
+                MaxHeight = 360, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Margin = new Thickness(0, 4, 0, 8),
+            });
+            var rb = new StackPanel { Orientation = Orientation.Horizontal };
+            rb.Children.Add(Btn("Отправить отчёт разработчику", "Primary", async () => { Say("Отправляю отчёт…"); Say(await Report.UploadAsync(report)); }, first: true));
+            rb.Children.Add(Btn("Скопировать отчёт", null, () => { try { Clipboard.SetText(report); Say("Отчёт скопирован."); } catch { Say("Не удалось скопировать."); } }));
+            repRows.Add(rb);
+        }
+        else repRows.Add(Note("Отчёта пока нет — он появится после первого применения."));
+        p.Children.Add(Card("Отчёт о последнем применении", repRows));
+
         if (st.Reg.Count > 0)
         {
             var list = st.Reg.Take(40).Select(c => (UIElement)new TextBlock

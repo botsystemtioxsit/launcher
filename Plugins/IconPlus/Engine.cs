@@ -5,13 +5,19 @@ using Microsoft.Win32;
 
 namespace IconPlusApp;
 
-sealed record ApplyResult(int Done, int Failed, List<string> Messages);
+// Один результат: к какой группе относится, о чём речь и чем кончилось (ok или причина).
+sealed record Outcome(string Group, string Item, string Result)
+{
+    public bool Ok => Result == "ok";
+}
+
+sealed record ApplyResult(int Done, int Failed, List<string> Messages, List<Outcome> Outcomes);
 
 // Применяет значки: перекрашивает исходные значки Windows в выбранный цвет или ставит значки из набора.
 // Всё — в настройках текущего пользователя (HKCU и ярлыки пользователя); каждое прежнее значение запоминается в state.json.
 sealed class IconEngine
 {
-    sealed record Sink(string Key, Func<string> Source, Action<string> Write);
+    sealed record Sink(string Key, Func<string> Source, Action<string> Write, Func<string>? Fallback = null);
 
     readonly IconState state;
     readonly RegistryWriter reg;
@@ -19,7 +25,7 @@ sealed class IconEngine
 
     public IconEngine() { Paths.Ensure(); state = StateStore.Load(); reg = new RegistryWriter(state); }
     public IconState State => state;
-    public int ChangesCount => state.Reg.Count + state.Lnk.Count;
+    public int ChangesCount => state.Reg.Count + state.Lnk.Count + state.Ini.Count;
 
     // ---------- что куда пишется ----------
     IEnumerable<Sink> SinksFor(Target t)
@@ -70,10 +76,70 @@ sealed class IconEngine
                 {
                     var file = f;
                     var machine = t.NeedsAdmin;
-                    yield return new Sink("lnk:" + file, () => LnkSource(file), p => { if (machine) job.Lnks.Add(new MachineLnk { File = file, Ico = p }); else WriteLnk(file, p); });
+                    yield return new Sink("lnk:" + file, () => LnkSource(file), p => { if (machine) job.Lnks.Add(new MachineLnk { File = file, Ico = p }); else WriteLnk(file, p); },
+                        () => Shortcuts.IsUrl(file) ? "shell:" + file : "lnktarget:" + file);
+                }
+                break;
+            case TargetKind.KnownFolders:
+                foreach (var (name, folder) in KnownFolders())
+                {
+                    var ini = Path.Combine(folder, "desktop.ini");
+                    var fpath = folder;
+                    yield return new Sink("kf:" + name, () => "shell:" + fpath, p => WriteIni(ini, p));
+                }
+                break;
+            case TargetKind.AllFileTypes:
+                foreach (var (progId, icon) in AllProgIdIcons())
+                {
+                    var pid = progId; var ic = icon;
+                    yield return new Sink("prog:" + pid, () => ic, p => reg.Set(@"Software\Classes\" + pid + @"\DefaultIcon", "", p));
                 }
                 break;
         }
+    }
+
+    // Известные папки пользователя, значок которых хранится в desktop.ini.
+    static IEnumerable<(string Name, string Path)> KnownFolders()
+    {
+        var list = new List<(string, string)>
+        {
+            ("Рабочий стол", Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)),
+            ("Документы", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)),
+            ("Изображения", Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)),
+            ("Музыка", Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)),
+            ("Видео", Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)),
+            ("Загрузки", Native.KnownFolder(new Guid("374DE290-123F-4565-9164-39C4925E467B"))),
+        };
+        return list.Where(x => x.Item2.Length > 0 && Directory.Exists(x.Item2));
+    }
+
+    // Все типы файлов Windows, у которых есть свой значок (кроме тех, чей значок — сам файл: «%1»).
+    static List<(string ProgId, string Icon)> AllProgIdIcons()
+    {
+        var list = new List<(string, string)>();
+        try
+        {
+            foreach (var name in Registry.ClassesRoot.GetSubKeyNames())
+            {
+                if (name.Length == 0 || name[0] == '.' || name is "*" or "CLSID" or "Folder" or "Directory" or "Drive" or "Applications" or "AllFilesystemObjects" or "Unknown") continue;
+                using var k = Registry.ClassesRoot.OpenSubKey(name + @"\DefaultIcon");
+                var v = k?.GetValue("", "", RegistryValueOptions.DoNotExpandEnvironmentNames) as string;
+                if (string.IsNullOrWhiteSpace(v) || v.Contains("%1") || v.StartsWith("@")) continue;
+                // уже перекрашено нами в этот раз — не трогаем второй раз
+                using (var ours = Registry.CurrentUser.OpenSubKey(@"Software\Classes\" + name + @"\DefaultIcon"))
+                    if (ours?.GetValue("") is string ov && ov.StartsWith(Paths.Generated, StringComparison.OrdinalIgnoreCase)) continue;
+                list.Add((name, Environment.ExpandEnvironmentVariables(v)));
+                if (list.Count >= 2500) break;
+            }
+        }
+        catch { }
+        return list;
+    }
+
+    void WriteIni(string file, string ico)
+    {
+        if (state.Ini.All(c => c.File != file)) state.Ini.Add(new IniChange { File = file, Old = DesktopIni.Read(file, "IconResource") });
+        if (!DesktopIni.Write(file, "IconResource", ico + ",0")) throw new IOException("desktop.ini не записывается");
     }
 
     static string FolderSource()
@@ -134,7 +200,16 @@ sealed class IconEngine
 
     static string LnkSource(string file)
     {
-        if (Shortcuts.ReadIcon(file, out var p, out var i) && p.Length > 0) return Environment.ExpandEnvironmentVariables(p) + "," + i;
+        if (Shortcuts.IsUrl(file))
+        {
+            if (Shortcuts.ReadIcon(file, out var up, out var ui) && up.Length > 0 && File.Exists(Environment.ExpandEnvironmentVariables(up))) return Environment.ExpandEnvironmentVariables(up) + "," + ui;
+            return "shell:" + file;
+        }
+        if (Shortcuts.ReadIcon(file, out var p, out var i) && p.Length > 0)
+        {
+            var full = Environment.ExpandEnvironmentVariables(p);
+            if (File.Exists(full)) return full + "," + i;
+        }
         // у ярлыка нет своего значка — берётся значок цели
         var target = Shortcuts.ReadTarget(file);
         if (target.Length > 0 && File.Exists(target))
@@ -144,7 +219,7 @@ sealed class IconEngine
             var a = Native.AssocDefaultIcon(ext);
             if (a.Length > 0) return a;
         }
-        return Native.IconLocation(file, false);
+        return "";   // дальше сработает запасной путь: значок цели в том виде, как его рисует Проводник
     }
 
     void WriteLnk(string file, string icoPath)
@@ -171,6 +246,7 @@ sealed class IconEngine
     {
         int done = 0, failed = 0;
         var msgs = new List<string>();
+        var outcomes = new List<Outcome>();
         job = new MachineJob();
         foreach (var id in s.Enabled)
         {
@@ -179,24 +255,39 @@ sealed class IconEngine
             progress?.Invoke(t.Title);
             foreach (var sink in SinksFor(t).ToList())
             {
+                var item = ItemName(sink.Key);
                 try
                 {
+                    string? ico = null;
                     var src = SourceOf(sink.Key, sink.Source);
-                    if (src.Length == 0) { failed++; continue; }
-                    var ico = GeneratedIcon(src, s);
-                    if (ico == null) { failed++; msgs.Add("не достать значок: " + sink.Key); continue; }
+                    if (src.Length > 0) ico = GeneratedIcon(src, s);
+                    if (ico == null && sink.Fallback != null)
+                    {
+                        var fb = sink.Fallback();
+                        ico = GeneratedIcon(fb, s);
+                        if (ico != null) state.Sources[sink.Key] = fb;
+                    }
+                    if (ico == null) { failed++; outcomes.Add(new Outcome(t.Title, item, src.Length == 0 ? "значок не найден" : "значок не читается")); continue; }
                     sink.Write(ico);
                     done++;
+                    if (!(t.NeedsAdmin && t.Kind is TargetKind.Shortcuts or TargetKind.Folder)) outcomes.Add(new Outcome(t.Title, item, "ok"));
+                    else pendingMachine.Add((sink.Key, t.Title, item));
                 }
-                catch (Exception ex) { failed++; msgs.Add(sink.Key + ": " + ex.Message); }
+                catch (Exception ex) { failed++; outcomes.Add(new Outcome(t.Title, item, ex.Message)); msgs.Add(sink.Key + ": " + ex.Message); }
             }
         }
-        FlushMachine(msgs, ref done, ref failed);
+        FlushMachine(msgs, outcomes, ref done, ref failed);
         state.Applied = "color";
         StateStore.Save(state);
         Native.NotifyIconsChanged();
-        return new ApplyResult(done, failed, msgs);
+        return new ApplyResult(done, failed, msgs, outcomes);
     }
+
+    // Краткое имя пункта для отчёта: у ярлыков — имя файла, у остального — сам ключ.
+    static string ItemName(string key) => key.StartsWith("lnk:", StringComparison.Ordinal) ? Path.GetFileNameWithoutExtension(key[4..]) : key;
+
+    // Пункты, которые ждут ответа от действия администратора (ключ → группа и имя)
+    readonly List<(string Key, string Group, string Item)> pendingMachine = new();
 
     static string? GeneratedIcon(string sourceLocation, IconSettings s)
     {
@@ -227,11 +318,12 @@ sealed class IconEngine
     {
         int done = 0, failed = 0;
         var msgs = new List<string>();
+        var outcomes = new List<Outcome>();
         job = new MachineJob();
         foreach (var (id, file) in map)
         {
             var t = Target.ById(id);
-            if (t == null || t.Kind == TargetKind.Shortcuts || !File.Exists(file)) continue;
+            if (t == null || t.Keywords.Length == 0 || !File.Exists(file)) continue;
             progress?.Invoke(t.Title);
             foreach (var sink in SinksFor(t).ToList())
             {
@@ -240,27 +332,40 @@ sealed class IconEngine
                     SourceOf(sink.Key, sink.Source);   // запомнить оригинал до замены
                     sink.Write(file);
                     done++;
+                    if (t.Kind == TargetKind.Folder) pendingMachine.Add((sink.Key, t.Title, ItemName(sink.Key))); else outcomes.Add(new Outcome(t.Title, ItemName(sink.Key), "ok"));
                 }
-                catch (Exception ex) { failed++; msgs.Add(sink.Key + ": " + ex.Message); }
+                catch (Exception ex) { failed++; outcomes.Add(new Outcome(t.Title, ItemName(sink.Key), ex.Message)); msgs.Add(sink.Key + ": " + ex.Message); }
             }
         }
-        FlushMachine(msgs, ref done, ref failed);
+        FlushMachine(msgs, outcomes, ref done, ref failed);
         state.Applied = "pack";
         StateStore.Save(state);
         Native.NotifyIconsChanged();
-        return new ApplyResult(done, failed, msgs);
+        return new ApplyResult(done, failed, msgs, outcomes);
     }
 
     // Выполнить то, что требует прав администратора (одно окно «Разрешить?»).
-    void FlushMachine(List<string> msgs, ref int done, ref int failed)
+    void FlushMachine(List<string> msgs, List<Outcome> outcomes, ref int done, ref int failed)
     {
+        var pending = pendingMachine.ToList();
+        pendingMachine.Clear();
         if (job.IsEmpty) return;
         var r = Machine.Run(job);
         if (r.Error.Length > 0) msgs.Add("для администратора: " + r.Error);
-        if (job.FolderIco != null) { if (r.FolderOk) { done++; state.FolderMachine = true; } else failed++; }
-        done += r.LnkOk; failed += r.LnkFailed;
+        var bad = r.Failures.ToDictionary(x => x.File, x => x.Reason, StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, group, item) in pending)
+        {
+            var file = key.StartsWith("lnk:", StringComparison.Ordinal) ? key[4..] : "";
+            string result;
+            if (key == "folder") result = r.FolderOk ? "ok" : (r.Error.Length > 0 ? r.Error : "значок папок не изменён");
+            else if (r.Error.Length > 0 && r.LnkOk == 0) result = r.Error;
+            else if (bad.TryGetValue(file, out var why)) result = why;
+            else result = "ok";
+            outcomes.Add(new Outcome(group, item, result));
+            if (result != "ok") { done--; failed++; }
+        }
+        if (job.FolderIco != null && r.FolderOk) state.FolderMachine = true;
         if (r.LnkOk > 0) state.MachineLnk = true;
-        if (job.Lnks.Count > 0 && r.LnkOk == 0 && r.Error.Length > 0) failed += job.Lnks.Count - r.LnkFailed;
         job = new MachineJob();
     }
 
@@ -278,7 +383,11 @@ sealed class IconEngine
         {
             try { if (File.Exists(l.File) && Shortcuts.WriteIcon(l.File, l.OldPath, l.OldIndex)) n++; } catch { }
         }
-        state.Reg.Clear(); state.Lnk.Clear(); state.Sources.Clear(); state.Applied = "";
+        foreach (var c in state.Ini.ToList())
+        {
+            try { if (File.Exists(c.File)) { DesktopIni.Write(c.File, "IconResource", c.Old); n++; } } catch { }
+        }
+        state.Reg.Clear(); state.Lnk.Clear(); state.Ini.Clear(); state.Sources.Clear(); state.Applied = "";
         StateStore.Save(state);
         Native.NotifyIconsChanged();
         return n;

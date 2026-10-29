@@ -22,8 +22,16 @@ sealed class LnkChange
     public int OldIndex { get; set; }
 }
 
+// Значок папки, записанный в desktop.ini (Документы, Загрузки…): прежняя строка IconResource
+sealed class IniChange
+{
+    public string File { get; set; } = "";
+    public string? Old { get; set; }          // null — строки не было
+}
+
 sealed class IconState
 {
+    public List<IniChange> Ini { get; set; } = new();
     public List<RegChange> Reg { get; set; } = new();
     public List<LnkChange> Lnk { get; set; } = new();
     public Dictionary<string, string> Sources { get; set; } = new();   // откуда брали исходный значок: ключ → «путь,номер»

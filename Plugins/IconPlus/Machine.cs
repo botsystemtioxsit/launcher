@@ -22,7 +22,7 @@ sealed class MachineJob
 
 sealed class MachineBackup { public List<LnkChange> Lnk { get; set; } = new(); }
 
-sealed record MachineResult(bool FolderOk, int LnkOk, int LnkFailed, string Error);
+sealed record MachineResult(bool FolderOk, int LnkOk, int LnkFailed, string Error, List<(string File, string Reason)> Failures);
 
 static class Machine
 {
@@ -47,7 +47,7 @@ static class Machine
                 using var p = Process.Start(new ProcessStartInfo(Environment.ProcessPath!, args) { UseShellExecute = true, Verb = "runas", WindowStyle = ProcessWindowStyle.Hidden });
                 p?.WaitForExit(120000);
             }
-            catch (Win32Exception ex) when (ex.NativeErrorCode == 1223) { return new MachineResult(false, 0, 0, "разрешение администратора не дано"); }
+            catch (Win32Exception ex) when (ex.NativeErrorCode == 1223) { return new MachineResult(false, 0, 0, "разрешение администратора не дано", new()); }
         }
         return ReadResult();
     }
@@ -56,8 +56,8 @@ static class Machine
     {
         try
         {
-            if (!File.Exists(ResultFile)) return new MachineResult(false, 0, 0, "нет ответа от действия администратора");
-            bool folder = false; int ok = 0, fail = 0; var err = "";
+            if (!File.Exists(ResultFile)) return new MachineResult(false, 0, 0, "нет ответа от действия администратора", new());
+            bool folder = false; int ok = 0, fail = 0; var err = ""; var failures = new List<(string, string)>();
             foreach (var line in File.ReadAllLines(ResultFile))
             {
                 var i = line.IndexOf('='); if (i < 0) continue;
@@ -66,10 +66,11 @@ static class Machine
                 else if (k == "ok") int.TryParse(v, out ok);
                 else if (k == "fail") int.TryParse(v, out fail);
                 else if (k == "error") err = v;
+                else if (k == "failitem") { var bar = v.LastIndexOf('|'); if (bar > 0) failures.Add((v[..bar], v[(bar + 1)..])); }
             }
-            return new MachineResult(folder, ok, fail, err);
+            return new MachineResult(folder, ok, fail, err, failures);
         }
-        catch (Exception ex) { return new MachineResult(false, 0, 0, ex.Message); }
+        catch (Exception ex) { return new MachineResult(false, 0, 0, ex.Message, new()); }
     }
 
     // ---------- с правами администратора (запуск: IconPlus.exe --machine=<файл задания>) ----------
@@ -88,11 +89,12 @@ static class Machine
             catch { backup = new MachineBackup(); }
 
             int ok = 0, fail = 0; var folder = false;
+            void Fail(string file, string why) { fail++; if (fail <= 400) sb.AppendLine("failitem=" + file + "|" + why); }
             if (job.Restore)
             {
                 foreach (var b in backup.Lnk.ToList())
                 {
-                    try { if (File.Exists(b.File) && Shortcuts.WriteIcon(b.File, b.OldPath, b.OldIndex)) ok++; else fail++; } catch { fail++; }
+                    try { if (File.Exists(b.File) && Shortcuts.WriteIcon(b.File, b.OldPath, b.OldIndex)) ok++; else Fail(b.File, "не вернулся"); } catch (Exception ex) { Fail(b.File, ex.Message); }
                 }
                 backup.Lnk.Clear();
                 FolderIcon.RestoreMachine();
@@ -107,12 +109,12 @@ static class Machine
                     {
                         if (backup.Lnk.All(x => x.File != l.File))
                         {
-                            if (!Shortcuts.ReadIcon(l.File, out var op, out var oi)) { fail++; continue; }
+                            if (!Shortcuts.ReadIcon(l.File, out var op, out var oi)) { Fail(l.File, "ярлык не читается"); continue; }
                             backup.Lnk.Add(new LnkChange { File = l.File, OldPath = op, OldIndex = oi });
                         }
-                        if (Shortcuts.WriteIcon(l.File, l.Ico, 0)) ok++; else fail++;
+                        if (Shortcuts.WriteIcon(l.File, l.Ico, 0)) ok++; else Fail(l.File, "ярлык не записывается (нет доступа или файл занят)");
                     }
-                    catch { fail++; }
+                    catch (Exception ex) { Fail(l.File, ex.Message); }
                 }
             }
             File.WriteAllText(job.BackupFile, JsonSerializer.Serialize(backup));
