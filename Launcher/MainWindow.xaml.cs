@@ -96,12 +96,19 @@ public partial class MainWindow : Window
     void Render()
     {
         var me = store.Active;
-        LoginView.Visibility = me == null ? Visibility.Visible : Visibility.Collapsed;
-        MainView.Visibility = me == null ? Visibility.Collapsed : Visibility.Visible;
+        // Вход не обязателен: окно с плагинами открыто всегда, вход живёт во вкладке «Аккаунт».
+        // «Приложения» видны только админам и суперпользователям.
+        NavApps.Visibility = IsStaff(me) ? Visibility.Visible : Visibility.Collapsed;
+        NavAccount.Content = me == null ? "Войти" : "Аккаунт";
         if (me == null)
         {
             RenderLogin();
-            if (sessionNote != null) { LoginError.Text = sessionNote; LoginError.Visibility = Visibility.Visible; sessionNote = null; }
+            if (sessionNote != null)
+            {
+                LoginError.Text = sessionNote; LoginError.Visibility = Visibility.Visible; sessionNote = null;
+                ShowView("account"); // объясняем, почему выбросило из сессии
+            }
+            else ShowView(currentView);
             return;
         }
         AppsSub.Text = $"Ты вошёл как {me.Display} · {me.RoleName}\nОблегчённая версия — приложение в отдельном окне (Electron). Desktop-версия (EXE) — настоящая программа; кнопка включится сама, как только версия выйдет.";
@@ -112,8 +119,14 @@ public partial class MainWindow : Window
         info.Children.Add(new TextBlock { Text = me.RoleName + (me.PlayerId.Length > 0 ? " · " + me.PlayerId : ""), Foreground = Res("Muted") });
         MeBox.Children.Add(info);
         FillAccountList(AllAccounts, removableExceptActive: true);
-        ShowView("apps");
+        ShowView(firstRender && IsStaff(me) ? "apps" : currentView);
+        firstRender = false;
     }
+
+    bool firstRender = true;
+
+    // Приложения и всё, что с ними связано, — только для админов и суперпользователей (токен доступа — не админ).
+    static bool IsStaff(Account? a) => a != null && !a.IsToken && a.Role is "admin" or "superadmin";
 
     void RenderLogin()
     {
@@ -232,6 +245,7 @@ public partial class MainWindow : Window
         loginTimer.Stop();
         SetLoginBusy(false);
         Render();
+        ShowView(IsStaff(store.Active) ? "apps" : "account");
     }
 
     CancellationToken StartLogin()
@@ -374,14 +388,18 @@ public partial class MainWindow : Window
     }
 
     // ---------- навигация ----------
-    string currentView = "apps";
+    string currentView = "plugins";
 
     void ShowView(string name)
     {
+        if (name == "apps" && !IsStaff(store.Active)) name = "plugins"; // обычным пользователям приложений нет
         currentView = name;
         AppsView.Visibility = name == "apps" ? Visibility.Visible : Visibility.Collapsed;
         PluginsView.Visibility = name == "plugins" ? Visibility.Visible : Visibility.Collapsed;
-        AccountView.Visibility = name == "account" ? Visibility.Visible : Visibility.Collapsed;
+        // «Аккаунт»: без входа показываем форму входа, со входом — сведения об аккаунте
+        var signedIn = store.Active != null;
+        LoginView.Visibility = name == "account" && !signedIn ? Visibility.Visible : Visibility.Collapsed;
+        AccountView.Visibility = name == "account" && signedIn ? Visibility.Visible : Visibility.Collapsed;
         NavApps.Foreground = name == "apps" ? Res("Text") : Res("Muted");
         NavPlugins.Foreground = name == "plugins" ? Res("Text") : Res("Muted");
         NavAccount.Foreground = name == "account" ? Res("Text") : Res("Muted");
@@ -539,7 +557,8 @@ public partial class MainWindow : Window
     {
         if (App.ScreenshotDir != null) return; // в режиме скриншотов список приложений задан вручную
         var me = store.Active;
-        if (me == null) return;
+        if (!IsStaff(me)) return;
+        me = me!;
         RefreshBtn.IsEnabled = false;
         await Catalog.Refresh(force); // список приложений и их версий читается из catalog.json — без обновления лаунчера
         var list = await Task.WhenAll(Catalog.Apps.Select(def => Describe(def, me.Role, force)));
@@ -724,6 +743,7 @@ public partial class MainWindow : Window
         await RefreshActiveProfile();
         var me = store.Active;
         if (me == null) { Render(); Toast("Аккаунт больше недоступен — войди заново."); return false; }
+        if (!IsStaff(me)) { Render(); Toast("Приложения доступны только админам и суперпользователям."); return false; }
         if (!def.IsAllowed(me.Role)) { Toast("Для этого приложения нет доступа у твоего аккаунта."); await LoadApps(false); return false; }
         return true;
     }
@@ -828,6 +848,7 @@ public partial class MainWindow : Window
         await Capture(Path.Combine(dir, "launcher-1-login.png"), () =>
         {
             store.Accounts.Clear(); store.ActiveId = null; Render();
+            ShowView("account");
             LoginView.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
             ((FrameworkElement)LoginView.Content).LayoutTransform = new ScaleTransform(0.82, 0.82);
         });
@@ -841,6 +862,7 @@ public partial class MainWindow : Window
                 new() { Def = Catalog.Apps[2], Allowed = true, Latest = "1.0.2" },
             };
             Render();
+            ShowView("apps");
             RenderApps();
         });
         Application.Current.Shutdown();
@@ -923,7 +945,7 @@ public partial class MainWindow : Window
             try
             {
                 var me = store.Active;
-                if (me != null)
+                if (IsStaff(me) && me != null)
                 {
                     await Catalog.Refresh();
                     var list = (await Task.WhenAll(Catalog.Apps.Select(def => Describe(def, me.Role, false)))).ToList();
