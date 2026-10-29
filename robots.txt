@@ -1,0 +1,92 @@
+User-agent: Yandex
+User-agent: *
+Disallow: /go/
+Disallow: /dnew/
+Disallow: /*/dnew/
+Disallow: /webhook/
+Disallow: /*/webhook/
+Disallow: /exclusive/
+Disallow: /*/exclusive/
+Disallow: /user/
+Disallow: /*/user/
+Disallow: /page/
+Disallow: /*/page/
+Disallow: /page*
+Disallow: /*/page*
+Disallow: /ideas/
+Disallow: /*/ideas/
+Disallow: /null
+Disallow: /*/null
+Disallow: /undefined
+Disallow: /*/undefined
+Disallow: /*?
+Disallow: /*&
+Disallow: /*%
+Allow: /uploads/*?
+Allow: /templates/*?
+
+Disallow: /favorites/
+Disallow: /*/favorites/
+Disallow: /likes/
+Disallow: /*/likes/
+
+Disallow: /mobile/download/
+Disallow: /*/mobile/download/
+Disallow: /mobile/user/
+Disallow: /*/mobile/user/
+Disallow: /mobile/embed/
+Disallow: /*/mobile/embed/
+Disallow: /mobile/search*
+Disallow: /*/mobile/search*
+
+Sitemap: https://vsthemes.org/sitemap.xml
+Host: vsthemes.org
+
+Disallow: /amp/
+Disallow: /amp:*
+Disallow: /download/
+Disallow: /dpage/
+Disallow: /*/dpage/
+Disallow: /pm/
+Disallow: /qa/
+Disallow: /fonts/
+Disallow: /skins/vk-styles/
+Disallow: /xfsearch/
+Disallow: /remaining/
+Disallow: /icon/stickers/
+Disallow: /skins/xwidget/
+Disallow: /ru/download/
+Disallow: /balance/
+Disallow: /icon/tiles/
+Disallow: /uploads/akamai/
+Disallow: /uploads/fotos/
+
+Disallow: /pictures/*/*
+Disallow: /*/pictures/*/*
+
+Disallow: /livepeace-*
+Disallow: /*/livepeace-*
+Disallow: /akagi-*
+Disallow: /*/akagi-*
+Disallow: /kigurumi-*
+Disallow: /*/kigurumi-*
+Disallow: /happystart-*
+Disallow: /*/happystart-*
+Disallow: /166*
+Disallow: /167*
+Disallow: /168*
+Disallow: /169*
+
+User-agent: Yandex
+Disallow: /en/
+
+User-agent: facebookexternalhit
+User-agent: DotBot
+User-agent: Amazonbot
+User-agent: Applebot
+User-agent: GPTBot
+Disallow: /
+
+User-agent: Googlebot-Image
+User-agent: YandexImages
+Disallow: /uploads/fotos/*
