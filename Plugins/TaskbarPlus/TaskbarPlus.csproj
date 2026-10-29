@@ -8,9 +8,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>TaskbarPlus</AssemblyName>
     <RootNamespace>TaskbarPlusApp</RootNamespace>
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>1.4.1</Version>
+    <Version>1.4.2</Version>
     <Product>Taskbar Plus</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>

@@ -13,6 +13,8 @@ static class SelfTest
 {
     static string Box => Path.Combine(Path.GetTempPath(), "IconPlusTest");
     static string DesktopLnk => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "IconPlusTest.lnk");
+    static string PublicLnk => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory), "IconPlusTestAll.lnk");
+    static string StartAllLnk => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs", "IconPlusTestAll.lnk");
 
     // Где Проводник сейчас берёт значки тестовых объектов. Запускается отдельным процессом — чтобы ничего не оставалось в памяти.
     public static void Probe(string file)
@@ -26,6 +28,8 @@ static class SelfTest
         Add("network", Native.IconLocationOfShellItem("::{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}"));
         foreach (var f in new[] { "a.txt", "b.zip", "c.png", "d.mp3", "e.pdf", "f.docx" }) Add(f, Native.AssocDefaultIcon(Path.GetExtension(f)));
         if (File.Exists(DesktopLnk) && Shortcuts.ReadIcon(DesktopLnk, out var p, out var i)) Add("lnk", p + "," + i); else Add("lnk", "");
+        if (File.Exists(PublicLnk) && Shortcuts.ReadIcon(PublicLnk, out var p2, out var i2)) Add("lnk-public", p2 + "," + i2); else Add("lnk-public", "");
+        if (File.Exists(StartAllLnk) && Shortcuts.ReadIcon(StartAllLnk, out var p3, out var i3)) Add("lnk-startall", p3 + "," + i3); else Add("lnk-startall", "");
         File.WriteAllText(file, sb.ToString());
     }
 
@@ -45,14 +49,17 @@ static class SelfTest
         if (Directory.Exists(Box)) Directory.Delete(Box, true);
         Directory.CreateDirectory(Path.Combine(Box, "sub"));
         foreach (var f in new[] { "a.txt", "b.zip", "c.png", "d.mp3", "e.pdf", "f.docx" }) File.WriteAllText(Path.Combine(Box, f), "x");
-        try
+        foreach (var path in new[] { DesktopLnk, PublicLnk, StartAllLnk })
         {
-            dynamic sh = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")!)!;
-            var l = sh.CreateShortcut(DesktopLnk);
-            l.TargetPath = @"C:\Windows\System32\notepad.exe";
-            l.Save();
+            try
+            {
+                dynamic sh = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")!)!;
+                var l = sh.CreateShortcut(path);
+                l.TargetPath = @"C:\Windows\System32\notepad.exe";
+                l.Save();
+            }
+            catch { }
         }
-        catch { }
     }
 
     static void Compare(StringBuilder log, string title, Dictionary<string, string> a, Dictionary<string, string> b, bool expectChange)
@@ -79,7 +86,7 @@ static class SelfTest
             var s = new IconSettings
             {
                 Color = "#FF2A9D", Style = Tint.Mono, Strength = 100,
-                Enabled = new() { "folder", "drive-fixed", "thispc", "recycle-empty", "network", "ft-text", "ft-archive", "ft-image", "ft-audio", "ft-pdf", "ft-doc", "lnk-desktop" },
+                Enabled = new() { "folder", "drive-fixed", "thispc", "recycle-empty", "network", "ft-text", "ft-archive", "ft-image", "ft-audio", "ft-pdf", "ft-doc", "lnk-desktop", "lnk-desktop-all", "lnk-start-all" },
             };
             s.Normalize();
             var res = engine.ApplyColor(s);
@@ -96,6 +103,7 @@ static class SelfTest
             Compare(log, "после «вернуть как было» (ожидаем как было)", before, back, false);
         }
         catch (Exception ex) { log.AppendLine("ОШИБКА: " + ex); }
+        foreach (var f in new[] { PublicLnk, StartAllLnk }) { try { File.Delete(f); } catch { } }
         File.WriteAllText(Path.Combine(outDir, "report.txt"), log.ToString());
     }
 

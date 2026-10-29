@@ -8,9 +8,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>IconPlus</AssemblyName>
     <RootNamespace>IconPlusApp</RootNamespace>
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Product>Icon Plus</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>

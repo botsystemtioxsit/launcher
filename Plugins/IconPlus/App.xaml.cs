@@ -30,9 +30,8 @@ public partial class App : Application
         if (probe != null) { SelfTest.Probe(probe); Shutdown(); return; }
         var packTest = Arg(e, "--pack-test=");
         if (packTest != null) { SelfTest.PackTest(packTest, Arg(e, "--out=") ?? "."); Shutdown(); return; }
-        var folderIco = Arg(e, "--folder-icon=");
-        if (folderIco != null) { Shutdown(FolderIcon.SetMachine(folderIco.Trim('"'))); return; }
-        if (e.Args.Contains("--folder-icon-restore")) { Shutdown(FolderIcon.RestoreMachine()); return; }
+        var machine = Arg(e, "--machine=");
+        if (machine != null) { Shutdown(Machine.Work(machine.Trim('"'))); return; }
         var color = Arg(e, "--apply-color=");
         if (color != null) { var s = IconSettings.Load(); s.Color = color; s.Normalize(); new IconEngine().ApplyColor(s); Shutdown(); return; }
         if (e.Args.Contains("--restore")) { new IconEngine().RestoreAll(); Shutdown(); return; }
