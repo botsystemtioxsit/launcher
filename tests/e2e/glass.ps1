@@ -1,5 +1,5 @@
 # Прототип «стекла»: под целевым окном — матовое стекло (акрил), само окно слегка прозрачное, а шапка окна накрыта чёткой копией (DWM-миниатюра).
-param([long]$Target, [int]$Alpha = 85, [int]$Strip = 100, [int]$TintOpacity = 40, [string]$Tint = '101018', [int]$Seconds = 40)
+param([long]$Target, [int]$Alpha = 85, [int]$StripH = 100, [int]$TintOpacity = 40, [string]$Tint = '101018', [int]$Seconds = 40)
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type -TypeDefinition @'
 using System;
@@ -73,17 +73,17 @@ function New-Tool([string]$name) {
     $f
 }
 $glass = New-Tool 'E2E-GLASS'
-$strip = New-Tool 'E2E-STRIP'
-$glass.Show(); $strip.Show()
+$stripForm = New-Tool 'E2E-STRIP'
+$glass.Show(); $stripForm.Show()
 [G]::ExStyle($glass.Handle, 0x08000080)                       # NOACTIVATE | TOOLWINDOW
-[G]::ExStyle($strip.Handle, 0x08000080 -bor 0x20)             # + TRANSPARENT (мышь проходит сквозь)
+[G]::ExStyle($stripForm.Handle, 0x08000080 -bor 0x20)             # + TRANSPARENT (мышь проходит сквозь)
 $tint = [Convert]::ToUInt32($Tint, 16)
 $abgr = ([uint32]([Math]::Round($TintOpacity * 255 / 100.0)) -shl 24) -bor (($tint -band 0xFF) -shl 16) -bor ($tint -band 0xFF00) -bor (($tint -shr 16) -band 0xFF)
 [G]::Acrylic($glass.Handle, $abgr)
 [G]::Alpha($target, [byte][Math]::Round($Alpha * 255 / 100.0))
-if ($Strip -gt 0) { [G]::Alpha($strip.Handle, 255) }
+if ($StripH -gt 0) { [G]::Alpha($stripForm.Handle, 255) }
 $thumb = [IntPtr]::Zero
-if ($Strip -gt 0) { $thumb = [G]::Thumb($strip.Handle, $target) }
+if ($StripH -gt 0) { $thumb = [G]::Thumb($stripForm.Handle, $target) }
 
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 30
@@ -93,15 +93,15 @@ $timer.Add_Tick({
     $w = $vis.R - $vis.L; $h = $vis.B - $vis.T
     [G]::Place($glass.Handle, $vis.L, $vis.T, $w, $h)
     [G]::Below($glass.Handle, $target)
-    if ($Strip -gt 0) {
-        [G]::Place($strip.Handle, $vis.L, $vis.T, $w, $Strip)
-        [G]::Above($strip.Handle, $target)
-        [G]::ThumbSet($thumb, $w, $Strip, ($vis.L - $win.L), ($vis.T - $win.T), $w, $Strip)
+    if ($StripH -gt 0) {
+        [G]::Place($stripForm.Handle, $vis.L, $vis.T, $w, $StripH)
+        [G]::Above($stripForm.Handle, $target)
+        [G]::ThumbSet($thumb, $w, $StripH, ($vis.L - $win.L), ($vis.T - $win.T), $w, $StripH)
     }
 })
 $timer.Start()
 $stop = New-Object System.Windows.Forms.Timer
 $stop.Interval = $Seconds * 1000
-$stop.Add_Tick({ $timer.Stop(); [G]::Unlayer($target); if ($thumb -ne [IntPtr]::Zero) { [G]::ThumbOff($thumb) }; $glass.Close(); $strip.Close(); [System.Windows.Forms.Application]::Exit() })
+$stop.Add_Tick({ $timer.Stop(); [G]::Unlayer($target); if ($thumb -ne [IntPtr]::Zero) { [G]::ThumbOff($thumb) }; $glass.Close(); $stripForm.Close(); [System.Windows.Forms.Application]::Exit() })
 $stop.Start()
 [System.Windows.Forms.Application]::Run()
