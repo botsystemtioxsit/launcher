@@ -25,30 +25,17 @@ import android.widget.Toast
 // Данные из базы и GitHub выводятся только как текст.
 class MainActivity : Activity() {
     companion object {
-        // Цвета — не const: плагин-тема (Plugins.kt) подменяет их, applyColors(null) возвращает эти значения.
-        private val DEFAULT_COLORS = mapOf(
-            "bg" to "#06050D", "panel" to "#0D0B1A", "panel2" to "#15112B", "line" to "#2D2060", "text" to "#E6F4FF", "muted" to "#8B86B8",
-            "accent" to "#00F0FF", "onAccent" to "#001418", "accent2" to "#FF2A9D", "red" to "#FF3366", "green" to "#2CFF9A",
-        )
-        var BG = 0xFF06050D.toInt()
-        var PANEL = 0xFF0D0B1A.toInt()
-        var PANEL2 = 0xFF15112B.toInt()
-        var LINE = 0xFF2D2060.toInt()
-        var TEXT = 0xFFE6F4FF.toInt()
-        var MUTED = 0xFF8B86B8.toInt()
-        var ACCENT = 0xFF00F0FF.toInt()
-        var ON_ACCENT = 0xFF001418.toInt()
-        var ACCENT2 = 0xFFFF2A9D.toInt()
-        var RED = 0xFFFF3366.toInt()
-        var GREEN = 0xFF2CFF9A.toInt()
+        const val BG = 0xFF06050D.toInt()
+        const val PANEL = 0xFF0D0B1A.toInt()
+        const val PANEL2 = 0xFF15112B.toInt()
+        const val LINE = 0xFF2D2060.toInt()
+        const val TEXT = 0xFFE6F4FF.toInt()
+        const val MUTED = 0xFF8B86B8.toInt()
+        const val ACCENT = 0xFF00F0FF.toInt()
+        const val ON_ACCENT = 0xFF001418.toInt()
+        const val RED = 0xFFFF3366.toInt()
+        const val GREEN = 0xFF2CFF9A.toInt()
         const val REQUEST_TTL_MS = 5 * 60 * 1000L
-
-        fun applyColors(colors: Map<String, String>?) {
-            val c = if (Plugins.validColors(colors)) colors!! else DEFAULT_COLORS
-            fun p(k: String) = android.graphics.Color.parseColor(c.getValue(k))
-            BG = p("bg"); PANEL = p("panel"); PANEL2 = p("panel2"); LINE = p("line"); TEXT = p("text"); MUTED = p("muted")
-            ACCENT = p("accent"); ON_ACCENT = p("onAccent"); ACCENT2 = p("accent2"); RED = p("red"); GREEN = p("green")
-        }
     }
 
     private lateinit var store: Store
@@ -78,9 +65,6 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         store = Store(this)
-        Plugins.applyActive(this) // выбранная тема оформления
-        window.statusBarColor = BG
-        window.navigationBarColor = BG
         render()
         // роль могла смениться, аккаунт — заблокироваться, токен — отозваться, устройство — быть отозвано
         if (store.active != null) {
@@ -218,7 +202,7 @@ class MainActivity : Activity() {
         val ticker = Handler(Looper.getMainLooper())
         sv = screen { col ->
             col.addView(tv("Ghost Shell Launcher", 26f, TEXT, true))
-            col.addView(tv("создано нейросетью", 12f, ACCENT2), lp(4))
+            col.addView(tv("создано нейросетью", 12f, 0xFFFF2A9D.toInt()), lp(4))
             col.addView(tv("Войди в свой аккаунт — тот же, что в игре и админ-панели.", 14f, MUTED), lp(4))
 
             // Что сейчас происходит — сразу под заголовком, чтобы было видно: запрос отправлен, идёт ожидание
@@ -422,10 +406,9 @@ class MainActivity : Activity() {
             setPadding(0, dp(12), 0, dp(12))
             setTextColor(if (tab == id) ACCENT else MUTED)
             if (tab == id) setTypeface(typeface, Typeface.BOLD)
-            setOnClickListener { if (tab != id) { tab = id; pluginsLoaded = false; showMain() } }
+            setOnClickListener { if (tab != id) { tab = id; showMain() } }
         }
         nav.addView(navBtn("apps", "Приложения"), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        nav.addView(navBtn("plugins", "Плагины"), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         nav.addView(navBtn("account", "Аккаунт"), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
 
         val root = LinearLayout(this).apply {
@@ -440,9 +423,6 @@ class MainActivity : Activity() {
         if (tab == "account") {
             appsBox = null; bannerBox = null
             showAccountTab(content, me)
-        } else if (tab == "plugins") {
-            appsBox = null; bannerBox = null
-            showPluginsTab(content)
         } else {
             showAppsTab(content, me)
             drawApps()
@@ -469,98 +449,6 @@ class MainActivity : Activity() {
         col.addView(list, lp(10))
         col.addView(button("Проверить обновления") { loadApps(true) }, lp(14))
         col.addView(tv("Ghost Shell Launcher · версия ${ownVersion()}", 11f, MUTED), lp(20))
-    }
-
-    // ---------- плагины (темы оформления) ----------
-    private var pluginsBox: LinearLayout? = null
-    private var pluginsLoaded = false
-    private val pluginBusy = HashSet<String>()
-
-    private fun showPluginsTab(col: LinearLayout) {
-        col.addView(tv("Плагины", 22f, TEXT, true))
-        col.addView(tv("Дополнения к лаунчеру. Сейчас это темы оформления: в них только цвета, никакого кода.", 13f, MUTED), lp(4))
-        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        pluginsBox = box
-        col.addView(box, lp(14))
-        drawPlugins()
-        if (!pluginsLoaded) {
-            pluginsLoaded = true
-            Thread {
-                Catalog.refresh(false)
-                runOnUiThread { if (tab == "plugins") drawPlugins() }
-            }.start()
-        }
-    }
-
-    private fun drawPlugins() {
-        val box = pluginsBox ?: return
-        box.removeAllViews()
-        val list = Catalog.plugins.filter { "android" in it.os }
-        if (list.isEmpty()) { box.addView(tv("Пока нет ни одного плагина.", 14f, MUTED)); return }
-        val installed = Plugins.installed(this)
-        val active = Plugins.active(this)
-        list.forEach { def ->
-            val inst = installed.firstOrNull { it.id == def.id }
-            val isActive = active == def.id
-            val c = card().apply { if (isActive) background = shape(PANEL, 14, ACCENT) }
-            c.addView(tv(def.name, 17f, TEXT, true))
-            c.addView(tv(def.desc, 13f, MUTED), lp(3))
-            val state = when {
-                inst == null -> "Тема · не установлена"
-                isActive -> "Тема · включена" + if (inst.version != def.version) " · есть обновление ${def.version}" else ""
-                else -> "Тема · установлена" + if (inst.version != def.version) " · есть обновление ${def.version}" else ""
-            }
-            c.addView(tv(state, 12f, if (isActive) ACCENT else MUTED), lp(6))
-            if (def.id in pluginBusy) {
-                c.addView(tv("Скачиваю…", 13f, MUTED), lp(8))
-            } else {
-                val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-                fun add(b: Button) = row.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(6) })
-                if (inst == null) add(button("Установить", primary = true) { installPlugin(def, true) })
-                else {
-                    if (inst.version != def.version) add(button("Обновить") { installPlugin(def, isActive) })
-                    if (isActive) add(button("Выключить") { chooseTheme(null) })
-                    else add(button("Включить", primary = true) { chooseTheme(def.id) })
-                    add(button("Удалить", danger = true) { removePlugin(def.id) })
-                }
-                c.addView(row, lp(8))
-            }
-            box.addView(c, lp(10))
-        }
-    }
-
-    private fun installPlugin(def: PluginDef, apply: Boolean) {
-        pluginBusy.add(def.id)
-        drawPlugins()
-        Thread {
-            try {
-                val fresh = Plugins.download(def)
-                val list = Plugins.installed(this).filter { it.id != def.id } + fresh
-                Plugins.save(this, list, if (apply) def.id else Plugins.active(this))
-                toast(if (apply) "Тема «${def.name}» включена" else "«${def.name}» обновлён")
-            } catch (e: Exception) { toast("Не удалось установить: " + (e.message ?: "ошибка")) }
-            pluginBusy.remove(def.id)
-            runOnUiThread { themeChanged() }
-        }.start()
-    }
-
-    private fun chooseTheme(id: String?) {
-        Plugins.save(this, Plugins.installed(this), id)
-        themeChanged()
-    }
-
-    private fun removePlugin(id: String) {
-        val active = Plugins.active(this)
-        Plugins.save(this, Plugins.installed(this).filter { it.id != id }, if (active == id) null else active)
-        themeChanged()
-    }
-
-    // Весь интерфейс рисуется кодом, поэтому после смены цветов просто рисуем главный экран заново.
-    private fun themeChanged() {
-        Plugins.applyActive(this)
-        window.statusBarColor = BG
-        window.navigationBarColor = BG
-        showMain()
     }
 
     private fun showAccountTab(col: LinearLayout, me: Account) {
@@ -669,7 +557,7 @@ class MainActivity : Activity() {
         rows.forEach { box.addView(appCard(it), lp(10)) }
         val downloads = Catalog.downloads.filter { "android" in it.os }
         if (downloads.isNotEmpty()) {
-            box.addView(tv("ДОПОЛНИТЕЛЬНО", 12f, ACCENT2, true), lp(20))
+            box.addView(tv("ДОПОЛНИТЕЛЬНО", 12f, 0xFFFF2A9D.toInt(), true), lp(20))
             box.addView(tv("Эти программы лаунчер сам не ставит — он даёт файл для скачивания.", 13f, MUTED), lp(4))
             downloads.forEach { box.addView(downloadCard(it), lp(10)) }
         }
