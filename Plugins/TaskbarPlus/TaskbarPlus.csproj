@@ -10,7 +10,7 @@
     <RootNamespace>TaskbarPlusApp</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Product>Taskbar Plus</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>

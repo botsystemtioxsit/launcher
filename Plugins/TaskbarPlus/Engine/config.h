@@ -1,5 +1,25 @@
 #pragma once
 #include "common.h"
+#include <map>
+#include <string>
+#include <vector>
+
+// Стиль одного острова (-1 / пусто — «как у всех»): ключи "system", "widgets", "apps" (все значки сразу), "app.<hex>" (один значок).
+struct IslandStyle
+{
+    int radius = -1;
+    int color = -1;      // RGB
+    int opacity = -1;
+    int mode = -1;       // 0 как в Windows, 1 цвет, 2 прозрачный, 3 размытие
+    bool hidden = false; // острова нет — значки лежат прямо на панели
+};
+
+// Правило «какой элемент панели к какой группе относится»: тип и имя с «*» (пусто — любой).
+struct Rule
+{
+    int kind = 0;        // 1 фон, 2 обводка, 3 значок приложения, 4 виджеты, 5 системная область
+    std::string type, name;
+};
 
 // Настройки, которые плагин (C#) кладёт в taskbar-plus-engine.cfg простыми строками «ключ=значение».
 struct Config
@@ -19,6 +39,16 @@ struct Config
     int islandPad = 8;
     int islandGap = 8;
     int dump = 0;             // счётчик: изменился — записать дерево элементов панели в файл
+
+    // расположение трёх групп: 0 виджеты, 1 системная область (часы, сеть, трей), 2 значки приложений
+    int zone[3] = { 0, 0, 0 };   // 0 как в Windows, 1 слева, 2 по центру, 3 справа
+    int order[3] = { 0, 1, 2 };  // порядок групп слева направо (номера групп)
+    int edgeMargin = 12;         // отступ от края панели для групп «слева» и «справа»
+    std::map<std::string, IslandStyle> styles;
+    std::vector<Rule> rules;     // пусто — встроенные правила
+    std::string rulesSig;        // подпись правил: изменилась — заново разобрать уже найденные элементы
+
+    bool LayoutActive() const { return zone[0] != 0 || zone[1] != 0 || zone[2] != 0; }
 
     bool SameLook(const Config& o) const
     {
