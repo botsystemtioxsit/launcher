@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>ColorPlus</AssemblyName>
+    <RootNamespace>ColorPlusApp</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Версию поднимать при каждом изменении -->
+    <Version>1.0.0</Version>
+    <Product>Color Plus</Product>
+    <Company>TIOXSIT</Company>
+    <Authors>TIOXSIT</Authors>
+    <Copyright>TIOXSIT</Copyright>
+    <Description>Color Plus — прозрачность, размытие и цвет для окон всех программ, панели задач и выделения (плагин Ghost Shell Launcher)</Description>
+    <AssemblyTitle>Color Plus</AssemblyTitle>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+</Project>

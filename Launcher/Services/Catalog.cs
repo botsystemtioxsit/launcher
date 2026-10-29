@@ -45,8 +45,10 @@ static class Catalog
 
     static AppDef[] DefaultPlugins() => new[]
     {
-        new AppDef("taskbar-plus", "Taskbar Plus", "Панель задач Windows по-своему: форма, острова, прозрачность, значки, автоскрытие.",
+        new AppDef("taskbar-plus", "Taskbar Plus", "Панель задач Windows по-своему: форма, острова, расположение частей, значки, автоскрытие.",
             "launcher", "Taskbar Plus", null, "TaskbarPlus.exe", "Taskbar Plus", IsPlugin: true),
+        new AppDef("color-plus", "Color Plus", "Прозрачность, размытие и цвет для окон всех программ, панели задач и выделения мышкой.",
+            "launcher", "Color Plus", null, "ColorPlus.exe", "Color Plus", IsPlugin: true),
     };
 
     public static AppDef? ById(string id) => Apps.Concat(Plugins).FirstOrDefault(a => a.Id == id);

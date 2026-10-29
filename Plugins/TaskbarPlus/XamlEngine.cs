@@ -157,6 +157,8 @@ sealed class XamlEngine : IDisposable
         lastPid = pid;
         if (Blocked) { SetState(BlockedText, false); return; }
 
+        if (ColorPlusLink.Refresh()) WriteCfg(true);   // Color Plus поменял фон панели
+
         var now = Environment.TickCount64;
         var st = ReadStatus();
         if (st != null && st.GetValueOrDefault("pid") == pid.ToString())
@@ -373,14 +375,16 @@ sealed class XamlEngine : IDisposable
         var sb = new StringBuilder();
         void Put(string k, object v) => sb.Append(k).Append('=').Append(v).Append('\n');
         Put("enabled", enabled ? 1 : 0);
-        Put("bgMode", Mode(s.BgMode));
-        Put("color", s.BgColor.TrimStart('#'));
-        Put("opacity", s.BgOpacity);
+        // фон панели задаёт плагин Color Plus (см. ColorPlusLink); без него — родной фон Windows
+        var bg = ColorPlusLink.Current;
+        Put("bgMode", bg.Active ? Mode(bg.Mode) : 0);
+        Put("color", bg.Color.TrimStart('#'));
+        Put("opacity", bg.Opacity);
         Put("shape", s.Shape switch { AppearanceSettings.ShapePill => 1, AppearanceSettings.ShapeTab => 2, AppearanceSettings.ShapeIslands => 3, _ => 0 });
         Put("radius", s.Radius);
         Put("side", s.SideMargin);
         Put("gap", s.BottomGap);
-        Put("hideStroke", s.HideStroke ? 1 : 0);
+        Put("hideStroke", bg.Active && bg.HideStroke ? 1 : 0);
         Put("keepEdges", s.KeepEdges ? 1 : 0);
         Put("unifySystem", 1);
         Put("islandMode", s.IslandMode == "group" ? 1 : 0);

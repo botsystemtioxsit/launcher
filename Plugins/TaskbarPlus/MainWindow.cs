@@ -132,7 +132,7 @@ sealed class MainWindow : Window
     {
         var rows = new List<UIElement>();
         var reason = XamlEngine.UnavailableReason;
-        rows.Add(Note("Подключается к панели задач Windows 11 и меняет её настоящие элементы: края получаются гладкими, фон — прозрачным, цветным или размытым. " +
+        rows.Add(Note("Подключается к панели задач Windows 11 и меняет её настоящие элементы: гладкие края, острова, расположение частей панели. " +
                       "Пока он не заработал (или если Windows устроена иначе), действует обычный способ ниже."));
         if (reason != null)
         {
@@ -140,31 +140,13 @@ sealed class MainWindow : Window
             return Card("Новый движок (Windows 11)", rows);
         }
 
-        rows.Add(Row("Новый движок", "Включить гладкие края, прозрачность и размытие. При выходе из плагина панель возвращается как была.",
+        rows.Add(Row("Новый движок", "Включить гладкие края, острова и перестановку частей панели. При выходе из плагина панель возвращается как была.",
             Seg(new[] { "Выкл", "Вкл" }, settings.UseXaml ? 1 : 0, i => SetUseXaml(i == 1))));
 
         if (settings.UseXaml)
         {
-            rows.Add(Row("Фон панели", "Как в Windows — родной фон. Свой цвет — заливка выбранным цветом. Прозрачный — без фона, видны только значки. Размытие — матовое стекло.",
-                Seg(new[] { "Как в Windows", "Свой цвет", "Прозрачный", "Размытие" }, BgIndex(), i =>
-                {
-                    settings.BgMode = new[] { AppearanceSettings.BgDefault, AppearanceSettings.BgSolid, AppearanceSettings.BgClear, AppearanceSettings.BgAcrylic }[i];
-                    Changed(); Build();
-                })));
-            if (settings.BgMode is AppearanceSettings.BgSolid or AppearanceSettings.BgAcrylic || settings.Shape == AppearanceSettings.ShapeIslands)
-            {
-                rows.Add(Row("Цвет", "Готовые цвета или свой в виде #RRGGBB", ColorPicker(settings.BgColor, hex => { settings.BgColor = hex; Changed(); })));
-                rows.Add(SliderRow("Непрозрачность", "Чем меньше, тем прозрачнее", 0, 100, settings.BgOpacity, "%", v => { settings.BgOpacity = v; Changed(); }));
-            }
-            rows.Add(Row("Тонкая линия панели", "У панели Windows 11 есть тонкая обводка. Её можно убрать.",
-                Seg(new[] { "Оставить", "Убрать" }, settings.HideStroke ? 1 : 0, i => { settings.HideStroke = i == 1; Changed(); Build(); })));
-            rows.Add(Row("Только значки", "Панель без фона и обводки: значки просто лежат на рабочем столе.", Btn("Применить", null, () =>
-            {
-                settings.Shape = AppearanceSettings.ShapeNone;
-                settings.BgMode = AppearanceSettings.BgClear;
-                settings.HideStroke = true;
-                Changed(); Build();
-            })));
+            rows.Add(Note("Фон панели — прозрачность, размытие, цвет и тонкая линия — теперь настраивается в плагине Color Plus (раздел «Панель задач»). " +
+                          "Пока он включён, движок отсюда применяет его выбор. Здесь — форма панели, острова и расположение частей."));
 
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
             buttons.Children.Add(Btn("Отправить отчёт разработчику", "Primary", () => { _ = UploadReportAsync(); }, first: true));
@@ -178,10 +160,6 @@ sealed class MainWindow : Window
         return Card("Новый движок (Windows 11)", rows);
     }
 
-    int BgIndex() => settings.BgMode switch
-    {
-        AppearanceSettings.BgSolid => 1, AppearanceSettings.BgClear => 2, AppearanceSettings.BgAcrylic => 3, _ => 0,
-    };
 
     void SetUseXaml(bool on)
     {
@@ -376,8 +354,8 @@ sealed class MainWindow : Window
         if (modeIdx != 2)
         {
             body.Children.Add(Row("Цвет", "Например, фиолетовый. Пусто — общий цвет",
-                ColorPicker(st?.Color ?? settings.BgColor, hex => { Get().Color = hex; Touch(); })));
-            body.Children.Add(SliderRow("Непрозрачность", "Чем меньше, тем прозрачнее", 0, 100, st != null && st.Opacity >= 0 ? st.Opacity : settings.BgOpacity, "%", v => { Get().Opacity = v; Touch(); }));
+                ColorPicker(st?.Color ?? ColorPlusLink.Current.Color, hex => { Get().Color = hex; Touch(); })));
+            body.Children.Add(SliderRow("Непрозрачность", "Чем меньше, тем прозрачнее", 0, 100, st != null && st.Opacity >= 0 ? st.Opacity : ColorPlusLink.Current.Opacity, "%", v => { Get().Opacity = v; Touch(); }));
         }
         body.Children.Add(Row("Остров", "Можно убрать остров совсем — значки останутся на панели",
             Seg(new[] { "Показывать", "Скрыть" }, st is { Hidden: true } ? 1 : 0, i => { Get().Hidden = i == 1; Touch(); Build(); })));
@@ -565,8 +543,6 @@ sealed class MainWindow : Window
         Say("Возвращаю…");
         settings.Shape = AppearanceSettings.ShapeNone;
         settings.UseXaml = false;
-        settings.BgMode = AppearanceSettings.BgDefault;
-        settings.HideStroke = false;
         var (restored, error) = await Task.Run(RegistrySettings.Reset);
         engine.Update(settings);
         settings.Save();

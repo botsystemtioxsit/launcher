@@ -113,12 +113,23 @@
     {
       "id": "taskbar-plus",
       "name": "Taskbar Plus",
-      "desc": "Панель задач Windows по-своему: форма, острова, прозрачность, значки, автоскрытие.",
+      "desc": "Панель задач Windows по-своему: форма, острова, расположение частей, значки, автоскрытие.",
       "desktop": {
         "repo": "launcher",
         "tag": "latest",
         "asset": "TaskbarPlus.exe",
         "name": "Taskbar Plus"
+      }
+    },
+    {
+      "id": "color-plus",
+      "name": "Color Plus",
+      "desc": "Прозрачность, размытие и цвет для окон всех программ, панели задач и выделения мышкой.",
+      "desktop": {
+        "repo": "launcher",
+        "tag": "latest",
+        "asset": "ColorPlus.exe",
+        "name": "Color Plus"
       }
     }
   ]
