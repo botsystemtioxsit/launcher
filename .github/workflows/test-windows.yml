@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
     inputs:
       scenario:
-        description: 'plugins — проверка обоих плагинов; bg — опыты с прозрачным фоном окон'
+        description: 'plugins — проверка обоих плагинов; bg — опыты с прозрачным фоном окон; glass — опыты со «стеклом» под окном'
         default: plugins
         type: choice
-        options: [plugins, bg]
+        options: [plugins, bg, glass]
 
 permissions:
   contents: write
@@ -49,7 +49,9 @@ jobs:
       - name: Run checks
         shell: pwsh
         run: |
-          if ($env:SCENARIO -eq 'bg') { ./tests/e2e/bg-experiment.ps1 -Out results } else { ./tests/e2e/run.ps1 -Out results }
+          if ($env:SCENARIO -eq 'bg') { ./tests/e2e/bg-experiment.ps1 -Out results }
+          elseif ($env:SCENARIO -eq 'glass') { ./tests/e2e/glass-experiment.ps1 -Out results }
+          else { ./tests/e2e/run.ps1 -Out results }
         continue-on-error: true
 
       - uses: actions/upload-artifact@v4
@@ -62,7 +64,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } else { 'ci-e2e' }
+          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } else { 'ci-e2e' }
           $dir = Join-Path $env:RUNNER_TEMP 'e2e-branch'
           New-Item -ItemType Directory -Force $dir | Out-Null
           Copy-Item results/* $dir -Recurse -ErrorAction SilentlyContinue
