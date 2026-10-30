@@ -10,7 +10,7 @@ on:
         description: 'plugins — проверка обоих плагинов; bg — опыты с прозрачным фоном окон; glass — опыты со «стеклом» под окном'
         default: plugins
         type: choice
-        options: [plugins, bg, glass, site, icons, store, startapps, taskbar]
+        options: [plugins, bg, glass, site, icons, store, startapps, taskbar, gpu]
 
 permissions:
   contents: write
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
-        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'icons' || env.SCENARIO == 'startapps' || env.SCENARIO == 'taskbar'
+        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'icons' || env.SCENARIO == 'startapps' || env.SCENARIO == 'taskbar' || env.SCENARIO == 'gpu'
         with:
           dotnet-version: 8.0.x
 
@@ -46,6 +46,13 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "publish $p не удался" }
           }
 
+      - name: Publish Color Plus
+        if: env.SCENARIO == 'gpu'
+        shell: pwsh
+        run: |
+          dotnet publish Plugins/ColorPlus/ColorPlus.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-test
+          if ($LASTEXITCODE -ne 0) { throw 'publish ColorPlus не удался' }
+
       - name: Publish Icon Plus
         if: env.SCENARIO == 'icons' || env.SCENARIO == 'startapps'
         shell: pwsh
@@ -63,6 +70,7 @@ jobs:
           elseif ($env:SCENARIO -eq 'store') { ./tests/e2e/store-probe.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'startapps') { ./tests/e2e/startapps.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'taskbar') { ./tests/e2e/taskbar-states.ps1 -Out results }
+          elseif ($env:SCENARIO -eq 'gpu') { ./tests/e2e/gpu-guard.ps1 -Out results }
           else { ./tests/e2e/run.ps1 -Out results }
         continue-on-error: true
 
@@ -76,7 +84,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } elseif ($env:SCENARIO -eq 'site') { 'ci-e2e-site' } elseif ($env:SCENARIO -eq 'icons') { 'ci-e2e-icons' } elseif ($env:SCENARIO -eq 'store') { 'ci-e2e-store' } elseif ($env:SCENARIO -eq 'startapps') { 'ci-e2e-startapps' } elseif ($env:SCENARIO -eq 'taskbar') { 'ci-e2e-taskbar' } else { 'ci-e2e' }
+          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } elseif ($env:SCENARIO -eq 'site') { 'ci-e2e-site' } elseif ($env:SCENARIO -eq 'icons') { 'ci-e2e-icons' } elseif ($env:SCENARIO -eq 'store') { 'ci-e2e-store' } elseif ($env:SCENARIO -eq 'startapps') { 'ci-e2e-startapps' } elseif ($env:SCENARIO -eq 'taskbar') { 'ci-e2e-taskbar' } elseif ($env:SCENARIO -eq 'gpu') { 'ci-e2e-gpu' } else { 'ci-e2e' }
           $dir = Join-Path $env:RUNNER_TEMP 'e2e-branch'
           New-Item -ItemType Directory -Force $dir | Out-Null
           Copy-Item results/* $dir -Recurse -ErrorAction SilentlyContinue
