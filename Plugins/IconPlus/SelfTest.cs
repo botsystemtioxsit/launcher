@@ -134,6 +134,19 @@ static class SelfTest
             Compare(log, "после «вернуть как было» (ожидаем как было)", before, back, false);
         }
         catch (Exception ex) { log.AppendLine("ОШИБКА: " + ex); }
+        // ярлык приложения «Пуска» (раньше падал: «Entry point was not found»): создаётся, в нём записан идентификатор программы
+        try
+        {
+            var lnk = Path.Combine(Box, "startapp-test.lnk");
+            var ico = Path.Combine(Paths.Generated, "startapp-test.ico");
+            Paths.Ensure();
+            var imgs = IconData.LoadAllSizes("shell:" + StartApps.AppsFolderPath("Microsoft.Windows.Explorer"));
+            if (imgs != null) IconData.WriteIco(ico, imgs);
+            StartApps.CreateLink(lnk, "Microsoft.Windows.Explorer", File.Exists(ico) ? ico : @"C:\Windows\explorer.exe");
+            log.AppendLine($"ярлык приложения «Пуска»: файл есть: {File.Exists(lnk)}, AUMID в нём: {Shortcuts.ReadAumid(lnk)}");
+            File.Delete(lnk); try { File.Delete(ico); } catch { }
+        }
+        catch (Exception ex) { log.AppendLine("ярлык приложения «Пуска»: ОШИБКА " + ex.GetType().Name + ": " + ex.Message); }
         foreach (var f in new[] { PublicLnk, StartAllLnk, DesktopUrl, PublicUrl, BrokenLnk }) { try { File.Delete(f); } catch { } }
         File.WriteAllText(Path.Combine(outDir, "report.txt"), log.ToString());
     }

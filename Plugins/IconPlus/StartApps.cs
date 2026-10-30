@@ -65,7 +65,6 @@ static class StartApps
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     static extern int SHParseDisplayName(string name, IntPtr bindCtx, out IntPtr pidl, uint sfgaoIn, out uint sfgaoOut);
     [DllImport("ole32.dll")] static extern void CoTaskMemFree(IntPtr p);
-    [DllImport("propsys.dll", CharSet = CharSet.Unicode, PreserveSig = false)] static extern void InitPropVariantFromString(string psz, out PROPVARIANT pv);
     [DllImport("ole32.dll")] static extern int PropVariantClear(ref PROPVARIANT pv);
 
     public static string ProgramsFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs");
@@ -160,7 +159,9 @@ static class StartApps
             link.SetIconLocation(iconPath, 0);
             var ps = (IPropertyStore)o;
             var key = new PROPERTYKEY { fmtid = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"), pid = 5 };
-            InitPropVariantFromString(appId, out var pv);
+            // InitPropVariantFromString в новых Windows не экспортируется из propsys.dll («Entry point was not found», так провалились все 26 приложений в 1.3.0/1.3.1) —
+            // строку (VT_LPWSTR = 31) собираем сами; PropVariantClear освободит её
+            var pv = new PROPVARIANT { vt = 31, p1 = Marshal.StringToCoTaskMemUni(appId) };
             try
             {
                 var r1 = ps.SetValue(ref key, ref pv);

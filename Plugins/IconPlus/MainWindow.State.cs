@@ -26,6 +26,8 @@ sealed partial class MainWindow
         var report = Report.Load();
         var repRows = new List<UIElement>
         {
+            Row("Перезапускать Проводник сам", "После применения Проводник сам перезапускается и чистит кэш значков — тогда все значки новые сразу (окна папок на пару секунд закроются)",
+                Seg(new[] { "Спрашивать", "Сам" }, settings.AutoRestart ? 1 : 0, i => { settings.AutoRestart = i == 1; settings.Save(); BuildState(); })),
             Row("Отправлять отчёт сам", "После каждого применения отчёт уходит разработчику без кнопки (названия ярлыков и причины; имя пользователя и компьютера вычищаются)",
                 Seg(new[] { "Нет", "Да" }, settings.AutoReport ? 1 : 0, i => { settings.AutoReport = i == 1; settings.Save(); BuildState(); })),
             Note("Здесь видно, какие значки перекрасились, а какие Windows не отдала и почему. Если не перекрасилось то, что должно было, нажмите «Отправить отчёт разработчику» — " +
@@ -67,6 +69,7 @@ sealed partial class MainWindow
     // После изменения часть значков (панель слева, «Этот компьютер», диски, папки) обновляется только после перезапуска Проводника.
     void AskExplorerRestart()
     {
+        if (settings.AutoRestart) { RestartExplorer(); return; }
         var r = MessageBox.Show(this, "Часть значков (панель слева, «Этот компьютер», диски, папки) обновится только после перезапуска Проводника.\n\n" +
                                       "Перезапустить сейчас? Открытые окна папок на секунду закроются, ваши программы не затрагиваются.",
                                 "Icon Plus", MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -75,20 +78,11 @@ sealed partial class MainWindow
 
     void RestartExplorer()
     {
-        Say("Перезапускаю Проводник…");
+        Say("Обновляю значки: Проводник перезапустится на несколько секунд…");
         Task.Run(() =>
         {
-            try
-            {
-                // Метка для Taskbar Plus: это перезапуск по нашей просьбе, а не падение его движка (иначе после двух таких перезапусков он отключился бы)
-                try { System.IO.File.WriteAllText(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BattleLauncher", "explorer-restart.txt"), DateTime.UtcNow.ToString("o")); } catch { }
-                foreach (var pr in Process.GetProcessesByName("explorer")) { try { pr.Kill(); } catch { } }
-                // «Пуск» помнит значки до перезапуска своей оболочки — она сама запустится снова при открытии меню
-                foreach (var pr in Process.GetProcessesByName("StartMenuExperienceHost")) { try { pr.Kill(); } catch { } }
-                System.Threading.Thread.Sleep(1200);
-                if (Process.GetProcessesByName("explorer").Length == 0) Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });
-            }
-            catch { }
+            try { Native.FullIconRefresh(); } catch { }
+            Dispatcher.BeginInvoke(new Action(() => Say("Готово: значки обновлены.")));
         });
     }
 }

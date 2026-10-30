@@ -117,15 +117,65 @@ static class Native
         }
     }
 
-    // Сказать Проводнику, что значки изменились.
+    // Сказать Проводнику, что значки изменились. Обновление идёт в фоне, но по очереди (одно за другим) — перезапуск Проводника ждёт его конца.
+    static readonly object refreshGate = new();
+    static System.Threading.Tasks.Task refreshTask = System.Threading.Tasks.Task.CompletedTask;
+
     public static void NotifyIconsChanged()
     {
         SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
-        // часть программ обновляет значки только после этого сообщения
-        System.Threading.Tasks.Task.Run(() =>
+        lock (refreshGate)
+            refreshTask = refreshTask.ContinueWith(prev =>
+            {
+                // часть программ обновляет значки только после этого сообщения
+                try { SendMessageTimeout((IntPtr)0xFFFF, 0x1A, UIntPtr.Zero, "Environment", 2, 1500, out _); } catch { }
+                try { RefreshIconCache(); } catch { }
+            });
+    }
+
+    static void WaitRefreshIdle(int ms)
+    {
+        System.Threading.Tasks.Task t;
+        lock (refreshGate) t = refreshTask;
+        try { t.Wait(ms); } catch { }
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern IntPtr FindWindow(string cls, string? title);
+
+    // Полное обновление значков, после которого они сразу везде новые: Проводник и оболочка «Пуска» перезапускаются, файлы кэша значков удаляются
+    // (пока Проводник жив, он перезаписывает их своими старыми значками), после возвращения Проводника обновление повторяется ещё раз.
+    // Раньше это требовало нажать «Применить» два-три раза: кэш чистился одновременно с работающим Проводником.
+    public static void FullIconRefresh()
+    {
+        WaitRefreshIdle(25000);
+        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        // метка для Taskbar Plus: перезапуск по нашей просьбе, а не падение его движка
+        try { System.IO.File.WriteAllText(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BattleLauncher", "explorer-restart.txt"), DateTime.UtcNow.ToString("o")); } catch { }
+        foreach (var name in new[] { "explorer", "StartMenuExperienceHost", "SearchHost" })
+            foreach (var pr in System.Diagnostics.Process.GetProcessesByName(name)) { try { pr.Kill(); } catch { } }
+        System.Threading.Thread.Sleep(700);
+        try
         {
-            try { SendMessageTimeout((IntPtr)0xFFFF, 0x1A, UIntPtr.Zero, "Environment", 2, 1500, out _); } catch { }
+            var old = System.IO.Path.Combine(local, "IconCache.db");
+            if (System.IO.File.Exists(old)) System.IO.File.Delete(old);
+            var dir = System.IO.Path.Combine(local, @"Microsoft\Windows\Explorer");
+            if (System.IO.Directory.Exists(dir))
+                foreach (var f in System.IO.Directory.GetFiles(dir, "iconcache_*.db")) { try { System.IO.File.Delete(f); } catch { } }
+        }
+        catch { }
+        System.Threading.Thread.Sleep(500);
+        if (System.Diagnostics.Process.GetProcessesByName("explorer").Length == 0)
+        {
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe") { UseShellExecute = true }); } catch { }
+        }
+        // ждём, пока вернётся панель задач
+        for (var i = 0; i < 40 && FindWindow("Shell_TrayWnd", null) == IntPtr.Zero; i++) System.Threading.Thread.Sleep(500);
+        System.Threading.Thread.Sleep(2000);
+        for (var pass = 0; pass < 2; pass++)
+        {
+            SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
             try { RefreshIconCache(); } catch { }
-        });
+            System.Threading.Thread.Sleep(2500);
+        }
     }
 }
