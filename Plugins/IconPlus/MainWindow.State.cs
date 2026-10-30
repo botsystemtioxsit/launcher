@@ -80,6 +80,8 @@ sealed partial class MainWindow
         {
             try
             {
+                // Метка для Taskbar Plus: это перезапуск по нашей просьбе, а не падение его движка (иначе после двух таких перезапусков он отключился бы)
+                try { System.IO.File.WriteAllText(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BattleLauncher", "explorer-restart.txt"), DateTime.UtcNow.ToString("o")); } catch { }
                 foreach (var pr in Process.GetProcessesByName("explorer")) { try { pr.Kill(); } catch { } }
                 // «Пуск» помнит значки до перезапуска своей оболочки — она сама запустится снова при открытии меню
                 foreach (var pr in Process.GetProcessesByName("StartMenuExperienceHost")) { try { pr.Kill(); } catch { } }

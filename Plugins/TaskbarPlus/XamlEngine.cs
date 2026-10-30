@@ -29,7 +29,8 @@ sealed class XamlEngine : IDisposable
     const string ReportUrl = "https://zolotaya-kletka-default-rtdb.firebaseio.com/pluginReports/taskbar-plus/";
     static readonly string EngineDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GhostShell", "TaskbarPlus", "engine");
 
-    class Health { public int Crashes { get; set; } public bool Blocked { get; set; } }
+    class Health { public int Crashes { get; set; } public bool Blocked { get; set; } public long BlockedAtMs { get; set; } }
+    static readonly string RestartMarkerPath = Path.Combine(DataDir, "explorer-restart.txt");   // сюда пишут другие плагины Ghost Shell (Icon Plus) перед перезапуском Проводника
 
     readonly object gate = new();
     AppearanceSettings settings = new();
@@ -66,7 +67,22 @@ sealed class XamlEngine : IDisposable
     public bool NeedsRestart { get { lock (gate) return needsRestart; } }
     bool needsRestart;
     public string Status { get { lock (gate) return status; } }
-    public bool Blocked { get { lock (gate) return health.Blocked; } }
+    public bool Blocked
+    {
+        get
+        {
+            lock (gate)
+            {
+                // Блокировка не вечная: через полчаса пробуем снова (причиной могли быть чужие перезапуски Проводника)
+                if (health.Blocked && health.BlockedAtMs > 0 && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - health.BlockedAtMs > 30 * 60_000)
+                {
+                    health = new Health { Crashes = 1 };
+                    SaveHealth();
+                }
+                return health.Blocked;
+            }
+        }
+    }
 
     void SetState(string text, bool isReady)
     {
@@ -225,15 +241,26 @@ sealed class XamlEngine : IDisposable
         Inject(hwnd, pid);
     }
 
+    // Проводник перезапустил другой плагин (Icon Plus после смены значков): записал метку времени. Это не падение движка.
+    static bool MarkerRecent()
+    {
+        try
+        {
+            if (!File.Exists(RestartMarkerPath)) return false;
+            return DateTime.UtcNow - File.GetLastWriteTimeUtc(RestartMarkerPath) < TimeSpan.FromSeconds(90);
+        }
+        catch { return false; }
+    }
+
     void OnExplorerChanged(uint newPid)
     {
         var now = Environment.TickCount64;
-        var expected = now < Interlocked.Read(ref expectedRestartUntil);
+        var expected = now < Interlocked.Read(ref expectedRestartUntil) || MarkerRecent();
         var cameSoonAfterInject = injectedPid == lastPid && injectAt != 0 && now - injectAt < 90_000;
         if (!expected && cameSoonAfterInject && !crashCounted)
         {
             health.Crashes++;
-            if (health.Crashes >= 2) health.Blocked = true;
+            if (health.Crashes >= 2) { health.Blocked = true; health.BlockedAtMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); }
             SaveHealth();
         }
         crashCounted = false;

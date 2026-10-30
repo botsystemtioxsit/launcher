@@ -27,6 +27,7 @@ function Quit-Plugin($proc, $id) {
     for ($i = 0; $i -lt 15 -and -not $proc.HasExited; $i++) { Start-Sleep -Seconds 1 }
     if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue }
 }
+function Kill-Explorer { Set-Content (Join-Path $data 'explorer-restart.txt') ([DateTime]::UtcNow.ToString('o')); Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue }
 function Mark([string]$name) { Say (Shot (Join-Path $Out "$name.png")); Say ("  $name : " + [Rg]::Box() + " | " + ((Get-Content $status -Raw -ErrorAction SilentlyContinue) -replace "`r?`n", ' ' | ForEach-Object { if ($_.Length -gt 200) { $_.Substring(0, 200) } else { $_ } })) }
 
 $tp = @{ UseXaml = $true; XamlConsentShown = $true; Shape = 'pill'; Radius = 8; SideMargin = 260; BottomGap = 5; KeepEdges = $true
@@ -51,7 +52,7 @@ Start-Sleep -Seconds 3
 Mark '03-пуск-закрыт'
 
 Say ""; Say "=== перезапуск Проводника (как делает плагин после смены значков) ==="
-Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+Kill-Explorer
 foreach ($w in @(@(2, '02'), @(3, '05'), @(5, '10'), @(10, '20'), @(20, '40'))) {
     Start-Sleep -Seconds $w[0]
     Mark ("04-проводник-+" + $w[1] + "с")
@@ -70,7 +71,7 @@ Start-Sleep -Seconds 12
 Mark '07-цвет-панели-розовый'
 Get-Content (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyContinue | ForEach-Object { Say "  link: $_" }
 Say ""; Say "=== перезапуск Проводника при работающем Color Plus: панель не должна вспыхнуть сплошным цветом ==="
-Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+Kill-Explorer
 Start-Sleep -Seconds 1
 Mark '08-проводник-+1с-цвет'
 Start-Sleep -Seconds 2

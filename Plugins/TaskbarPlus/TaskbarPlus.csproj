@@ -11,7 +11,7 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>1.4.4</Version>
+    <Version>1.4.5</Version>
     <Product>Taskbar Plus</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
