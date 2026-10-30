@@ -125,7 +125,7 @@ static class Native
     {
         SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
         lock (refreshGate)
-            refreshTask = refreshTask.ContinueWith(_ =>
+            refreshTask = refreshTask.ContinueWith(prev =>
             {
                 // часть программ обновляет значки только после этого сообщения
                 try { SendMessageTimeout((IntPtr)0xFFFF, 0x1A, UIntPtr.Zero, "Environment", 2, 1500, out _); } catch { }
