@@ -15,7 +15,7 @@ namespace TaskbarPlusApp;
 sealed class XamlEngine : IDisposable
 {
     const string ResourceName = "GhostShellTap.dll";
-    const string EngineVersion = "4";   // должна совпадать с GS_ENGINE_VERSION в Engine/common.h
+    const string EngineVersion = "5";   // должна совпадать с GS_ENGINE_VERSION в Engine/common.h
 
     static readonly string DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BattleLauncher");
     static readonly string CfgPath = Path.Combine(DataDir, "taskbar-plus-engine.cfg");
