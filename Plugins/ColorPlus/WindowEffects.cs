@@ -35,6 +35,8 @@ sealed class WindowEffects : IDisposable
 
     // Метка на окне, которое слоим мы: переживает падение плагина, по ней при следующем запуске окно возвращается как было.
     const string OurProp = "GhostShell.ColorPlus.Layered";
+    // Метка «подложка/рамка этого окна менялась нами»: по ней после аварийного закрытия плагина эффект снимается при следующем запуске.
+    const string TouchProp = "GhostShell.ColorPlus.Backdrop";
 
     class WinState
     {
@@ -141,6 +143,10 @@ sealed class WindowEffects : IDisposable
                 if (!Eligible(h, out var cls, out var proc)) return true;
                 apps.Add(proc);
                 if (!s.WindowsOn) return true;
+                // игры и 3D-программы не трогаем никогда (прозрачный слой окна показывает подложку вместо картинки)
+                Native.GetWindowThreadProcessId(h, out var wpid);
+                var gpu = GpuDetect.Why(cls, wpid, proc);
+                if (gpu != null) { unsup[proc] = gpu; CleanGpuWindow(h); return true; }
                 // окна без своей строки заголовка (Steam, Discord, Wallpaper Engine, программы на Qt/CEF) общими настройками не трогаем — только по правилу программы
                 var hasCaption = (Native.GetLong(h, Native.GWL_STYLE) & Native.WS_CAPTION) == Native.WS_CAPTION;
                 if (!hasCaption && !s.Apps.ContainsKey(proc)) return true;
@@ -230,6 +236,29 @@ sealed class WindowEffects : IDisposable
             mode == ColorSettings.WmGlass ? s.GlassAlpha : custom ? rule!.Opacity : s.WindowOpacity,
             mode == ColorSettings.WmGlass ? ColorSettings.BdNone : custom && rule!.Backdrop != null ? rule.Backdrop : s.Backdrop,
             s.ExtendFrame, s.DarkTitle, s.TitleColor, s.TitleTextColor, s.Tint, s.TintOpacity);
+    }
+
+    // Окна игр, которым эффект мог остаться от прошлого запуска плагина (или старой версии): подложку и растянутую рамку снимаем один раз.
+    readonly HashSet<IntPtr> cleanedGpu = new();
+    void CleanGpuWindow(IntPtr h)
+    {
+        if (!cleanedGpu.Add(h)) return;
+        if (states.TryGetValue(h, out var st)) { try { Restore(h, st); } catch { } states.Remove(h); }
+        try
+        {
+            Native.SetAccent(h, Native.AccentDisabled);
+            if (BackdropApi) Native.SetDwm(h, Native.DWMWA_SYSTEMBACKDROP_TYPE, 0);
+            Native.Margins(h, 0);
+            if (Native.GetProp(h, OurProp) != IntPtr.Zero)
+            {
+                Native.SetLong(h, Native.GWL_EXSTYLE, Native.GetLong(h, Native.GWL_EXSTYLE) & ~Native.WS_EX_LAYERED);
+                Native.RemoveProp(h, OurProp);
+            }
+            Native.RemoveProp(h, TouchProp);
+            Native.RedrawWindow(h, IntPtr.Zero, IntPtr.Zero, 0x0001 | 0x0004 | 0x0080 | 0x0400);
+        }
+        catch { }
+        if (cleanedGpu.Count > 500) cleanedGpu.RemoveWhere(x => !Native.IsWindow(x));
     }
 
     // ---------- применить к окну ----------
@@ -326,6 +355,7 @@ sealed class WindowEffects : IDisposable
             if (BackdropApi) Native.SetDwm(h, Native.DWMWA_SYSTEMBACKDROP_TYPE, 0);
         }
 
+        if (bd != ColorSettings.BdNone) Native.SetProp(h, TouchProp, (IntPtr)1);
         var want = bd != ColorSettings.BdNone && eff.Extend;
         if (want && !st.Extended) { Native.Margins(h, -1); st.Extended = true; }
         else if (!want && st.Extended) { Native.Margins(h, 0); st.Extended = false; }
@@ -362,6 +392,7 @@ sealed class WindowEffects : IDisposable
             if (st.CaptionSet) ResetCaption(h, st);
         }
         st.Backdrop = ColorSettings.BdNone;
+        Native.RemoveProp(h, TouchProp);
     }
 
     // ---------- панель задач ----------
@@ -417,10 +448,18 @@ sealed class WindowEffects : IDisposable
         {
             try
             {
-                if (Native.GetProp(h, OurProp) == IntPtr.Zero) return true;
+                var layered = Native.GetProp(h, OurProp) != IntPtr.Zero;
+                var touched = Native.GetProp(h, TouchProp) != IntPtr.Zero;
+                if (!layered && !touched) return true;
                 if (Native.IsHungAppWindow(h)) return true;
-                Native.SetLong(h, Native.GWL_EXSTYLE, Native.GetLong(h, Native.GWL_EXSTYLE) & ~Native.WS_EX_LAYERED);
-                Native.RemoveProp(h, OurProp);
+                if (layered) { Native.SetLong(h, Native.GWL_EXSTYLE, Native.GetLong(h, Native.GWL_EXSTYLE) & ~Native.WS_EX_LAYERED); Native.RemoveProp(h, OurProp); }
+                if (touched)
+                {
+                    Native.SetAccent(h, Native.AccentDisabled);
+                    if (BackdropApi) Native.SetDwm(h, Native.DWMWA_SYSTEMBACKDROP_TYPE, 0);
+                    Native.Margins(h, 0);
+                    Native.RemoveProp(h, TouchProp);
+                }
                 Native.RedrawWindow(h, IntPtr.Zero, IntPtr.Zero, 0x0001 | 0x0004 | 0x0080 | 0x0400);
             }
             catch { }

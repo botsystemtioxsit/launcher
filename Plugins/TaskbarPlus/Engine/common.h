@@ -9,7 +9,7 @@
 #include <windows.h>
 #include <string>
 
-#define GS_ENGINE_VERSION L"3"
+#define GS_ENGINE_VERSION L"4"
 
 std::wstring ReadEnv(const wchar_t* name);
 std::wstring DataDir();                       // %APPDATA%\BattleLauncher — там же лежат настройки плагина

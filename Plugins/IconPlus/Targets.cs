@@ -1,6 +1,6 @@
 namespace IconPlusApp;
 
-enum TargetKind { Folder, Drive, Clsid, FileType, Shortcuts, KnownFolders, AllFileTypes }
+enum TargetKind { Folder, Drive, Clsid, FileType, Shortcuts, KnownFolders, AllFileTypes, StartApps }
 
 // Что можно перекрасить или заменить. Ключевые слова — для автоматического подбора значков из набора по именам файлов.
 sealed record Target(string Id, string Group, string Title, TargetKind Kind, string[] Keywords, string[]? Extensions = null, string? Clsid = null, string? ValueName = null, string[]? Reject = null, bool NeedsAdmin = false)
@@ -43,6 +43,7 @@ sealed record Target(string Id, string Group, string Title, TargetKind Kind, str
         new("lnk-start", GShortcuts, "Ярлыки в меню «Пуск» (мои программы)", TargetKind.Shortcuts, Array.Empty<string>()),
         new("lnk-start-all", GShortcuts, "Ярлыки в меню «Пуск» (общие; спросит разрешение администратора)", TargetKind.Shortcuts, Array.Empty<string>(), NeedsAdmin: true),
         new("lnk-taskbar", GShortcuts, "Закреплённые на панели задач", TargetKind.Shortcuts, Array.Empty<string>()),
+        new("start-apps", GShortcuts, "Приложения «Пуска» без ярлыков (магазинные и системные: Блокнот, Терминал, Безопасность Windows…)", TargetKind.StartApps, Array.Empty<string>()),
     };
 
     public static Target? ById(string id) => All.FirstOrDefault(t => t.Id == id);

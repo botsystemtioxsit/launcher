@@ -254,6 +254,8 @@ namespace
         else if (auto c = o.try_as<ctl::Control>()) c.CornerRadius(xaml::CornerRadius{ rx, rx, rx, rx });
     }
 
+    IslandStyle EffectiveStyle(const Config& c, int group, const std::string& key);
+
     bool NeedsIslands(const Config& c) { return c.enabled && (c.shape == 3 || ((c.shape == 1 || c.shape == 2) && c.keepEdges)); }
 
     // ---------- фон и форма панели ----------
@@ -282,18 +284,23 @@ namespace
             return;
         }
 
+        // У плавающей панели и «вкладки» середина — сама панель: значки приложений лежат на ней, поэтому вид «острова значков»
+        // (цвет, прозрачность, скругление из окна плагина) относится к ней. Без этого середина оставалась стандартного серого цвета.
+        const bool bar = c.shape == 1 || c.shape == 2;
+        const IslandStyle appsSt = bar ? EffectiveStyle(c, 2, "apps") : IslandStyle{};
+        const int barRadius = (bar && appsSt.radius >= 0) ? appsSt.radius : c.radius;
         xaml::Thickness m = it.origMargin;
         double rx = it.origRx, ry = it.origRy;
         if (c.shape == 1)
         {
             m = xaml::Thickness{ (double)c.side, it.origMargin.Top, (double)c.side, (double)c.gap };
-            rx = ry = c.radius;
+            rx = ry = barRadius;
         }
         else if (c.shape == 2)
         {
             // нижние углы уходят за край экрана — остаётся «вкладка» со скруглённым верхом
-            m = xaml::Thickness{ (double)c.side, it.origMargin.Top, (double)c.side, -(double)c.radius };
-            rx = ry = c.radius;
+            m = xaml::Thickness{ (double)c.side, it.origMargin.Top, (double)c.side, -(double)barRadius };
+            rx = ry = barRadius;
         }
         fe.Margin(m);
         SetCorner(it.obj, rx, ry);
@@ -311,16 +318,22 @@ namespace
             SetFill(it.obj, clear);
             it.ourFill = clear;
         }
-        else if (c.bgMode == 0)
-        {
-            SetFill(it.obj, it.origFill);
-            it.ourFill = nullptr;
-        }
         else
         {
-            auto br = MakeBrush(c.bgMode, c.color, c.opacity);
-            SetFill(it.obj, br);
-            it.ourFill = br;
+            const int mode = (bar && appsSt.mode >= 0) ? appsSt.mode : c.bgMode;
+            const unsigned color = (bar && appsSt.color >= 0) ? (unsigned)appsSt.color : c.color;
+            const int opacity = (bar && appsSt.opacity >= 0) ? appsSt.opacity : c.opacity;
+            if (mode == 0)
+            {
+                SetFill(it.obj, it.origFill);
+                it.ourFill = nullptr;
+            }
+            else
+            {
+                auto br = MakeBrush(mode, color, opacity);
+                SetFill(it.obj, br);
+                it.ourFill = br;
+            }
         }
     }
 

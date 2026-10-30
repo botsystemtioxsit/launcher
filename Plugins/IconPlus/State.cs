@@ -32,6 +32,7 @@ sealed class IniChange
 sealed class IconState
 {
     public List<IniChange> Ini { get; set; } = new();
+    public List<string> Created { get; set; } = new();                 // ярлыки в «Пуске», которые создали мы (для приложений без ярлыков): при возврате удаляются
     public List<RegChange> Reg { get; set; } = new();
     public List<LnkChange> Lnk { get; set; } = new();
     public Dictionary<string, string> Sources { get; set; } = new();   // откуда брали исходный значок: ключ → «путь,номер»
