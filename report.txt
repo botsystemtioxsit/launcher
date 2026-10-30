@@ -1,0 +1,47 @@
+Экран: {X=0,Y=0,Width=1024,Height=768}
+снимок: results\00-до.png (1024x768)
+снимок: results\01-плагин-работает.png (1024x768)
+  01-плагин-работает : выреза нет | state=ready engine=5 pid=6292 tick=339437 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=302 bgfill=1 stroke=1 apps=5
+
+=== открываем «Пуск» ===
+снимок: results\02-пуск-открыт.png (1024x768)
+  02-пуск-открыт : выреза нет | state=ready engine=5 pid=6292 tick=342484 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=302 bgfill=1 stroke=1 apps=5
+снимок: results\03-пуск-закрыт.png (1024x768)
+  03-пуск-закрыт : выреза нет | state=ready engine=5 pid=6292 tick=345515 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=302 bgfill=1 stroke=1 apps=5
+
+=== перезапуск Проводника (как делает плагин после смены значков) ===
+снимок: results\04-проводник-+02с.png (1024x768)
+  04-проводник-+02с : выреза нет | state=ready engine=5 pid=2800 tick=350046 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=289 bgfill=1 stroke=1 apps=5
+снимок: results\04-проводник-+05с.png (1024x768)
+  04-проводник-+05с : выреза нет | state=ready engine=5 pid=2800 tick=350359 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=290 bgfill=1 stroke=1 apps=5
+снимок: results\04-проводник-+10с.png (1024x768)
+  04-проводник-+10с : выреза нет | state=ready engine=5 pid=2800 tick=356437 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=290 bgfill=1 stroke=1 apps=5
+снимок: results\04-проводник-+20с.png (1024x768)
+  04-проводник-+20с : выреза нет | state=ready engine=5 pid=2800 tick=365562 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=290 bgfill=1 stroke=1 apps=5
+снимок: results\04-проводник-+40с.png (1024x768)
+  04-проводник-+40с : выреза нет | state=ready engine=5 pid=2800 tick=386812 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=290 bgfill=1 stroke=1 apps=5
+
+=== пуск после перезапуска ===
+снимок: results\05-пуск-после-перезапуска.png (1024x768)
+  05-пуск-после-перезапуска : выреза нет | state=ready engine=5 pid=2800 tick=389859 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=290 bgfill=1 stroke=1 apps=5
+
+=== Color Plus: цвет панели «сплошной» (розовый) поверх островов ===
+снимок: results\07-цвет-панели-розовый.png (1024x768)
+  07-цвет-панели-розовый : выреза нет | state=ready engine=5 pid=2800 tick=402000 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=290 bgfill=1 stroke=1 apps=5
+  link: {"Active":true,"BgMode":"solid","BgColor":"#FF2A9D","BgOpacity":90,"HideStroke":false}
+
+=== перезапуск Проводника при работающем Color Plus: панель не должна вспыхнуть сплошным цветом ===
+снимок: results\08-проводник-+1с-цвет.png (1024x768)
+  08-проводник-+1с-цвет : выреза нет | state=connecting engine=5 pid=8732 tick=405390 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=0 threads=0 nodes=0 bgfill=0 stroke=0 app
+снимок: results\08-проводник-+3с-цвет.png (1024x768)
+  08-проводник-+3с-цвет : выреза нет | state=ready engine=5 pid=8732 tick=406937 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=290 bgfill=1 stroke=1 apps=5
+снимок: results\08-проводник-+9с-цвет.png (1024x768)
+  08-проводник-+9с-цвет : выреза нет | state=ready engine=5 pid=8732 tick=413015 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=290 bgfill=1 stroke=1 apps=5
+
+=== Color Plus: «размытая» панель (розовый) при островах Taskbar Plus: цвет на островах, между ними прозрачно ===
+снимок: results\09-размытая-панель-с-островами.png (1024x768)
+  09-размытая-панель-с-островами : выреза нет | state=ready engine=5 pid=8732 tick=431234 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=290 bgfill=1 stroke=1 apps=5
+  link: {"Active":true,"BgMode":"solid","BgColor":"#FF2A9D","BgOpacity":90,"HideStroke":false}
+
+снимок: results\06-после-выхода.png (1024x768)
+  06-после-выхода : выреза нет | state=ready engine=5 pid=8732 tick=439703 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-9b1d500af72f.dll sessions=1 threads=1 nodes=289 bgfill=1 stroke=1 apps=5
