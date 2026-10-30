@@ -89,6 +89,17 @@ $cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--backgrou
 Start-Sleep -Seconds 12
 Mark '09-размытая-панель-обрезка-по-островам'
 Get-ChildItem $data -Filter 'taskbar-plus-engine-rects-*.txt' | ForEach-Object { Say ("  " + $_.Name); Get-Content $_.FullName | ForEach-Object { Say ("    " + $_) } }
+Say "  окна у нижнего края экрана:"
+foreach ($line in [W]::List()) {
+    $parts = $line.Split('|')
+    if ($parts.Count -ge 6 -and $parts[5] -match '^(-?\d+),(\d+),(-?\d+),(\d+)$') {
+        $top = [int]$Matches[2]
+        if ($top -ge 690 -and $parts[4] -eq 'vis=1') { Say ("    " + $parts[1] + " | " + $parts[5] + " | " + $parts[3] + " | " + $parts[4]) }
+    }
+}
+Start-Sleep -Seconds 3
+Say (Shot (Join-Path $Out '09b-через-3-секунды.png'))
+Say ("  " + [Rg]::Box())
 Quit-Plugin $cp 'color-plus'
 Remove-Item (Join-Path $data 'color-plus-settings.json') -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 3
