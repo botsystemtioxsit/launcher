@@ -6,7 +6,6 @@ sealed class Engines : IDisposable
 {
     readonly TaskbarEngine classic = new();
     readonly XamlEngine xaml = new();
-    readonly TaskbarCrop crop = new();
     AppearanceSettings settings = new();
 
     public event Action? StatusChanged;
@@ -42,13 +41,10 @@ sealed class Engines : IDisposable
         // он вырезает часы и трей, если рядом нет места, — значки пропадали. Обычный способ — только там, где нового движка быть не может.
         if (settings.UseXaml && XamlEngine.UnavailableReason == null && !xaml.Blocked) c.Shape = AppearanceSettings.ShapeNone;
         classic.Update(c);
-        // Обрезка по островам — только когда движок работает и у панели есть форма с островами
-        crop.SetWanted(settings.UseXaml && settings.CropToIslands && settings.Shape != AppearanceSettings.ShapeNone && xaml.Ready);
     }
 
     public void Dispose()
     {
-        try { crop.Dispose(); } catch { }
         try { xaml.Dispose(); } catch { }
         try { classic.Dispose(); } catch { }
     }

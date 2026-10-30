@@ -429,8 +429,6 @@ sealed class MainWindow : Window
             })));
         if (settings.Shape != AppearanceSettings.ShapeNone)
         {
-            rows.Add(Row("Обрезать панель по островам", "Окно панели одно на весь экран: размытие и цвет окна (Color Plus, акцент Windows) видны и между островами сплошной полосой. Обрезка оставляет панель только под островами — между ними прозрачно, видны обои. Края выреза без сглаживания; если значки пропадут, плагин сам не обрежет.",
-                Seg(new[] { "Выкл", "Вкл" }, settings.CropToIslands ? 1 : 0, i => { settings.CropToIslands = i == 1; Changed(); Build(); })));
             rows.Add(SliderRow("Скругление", "Насколько круглые углы (у маленьких островов сдерживается, чтобы остров не стал кругом)", 0, 30, settings.Radius, "px", v => { settings.Radius = v; Changed(); }));
             if (settings.Shape is AppearanceSettings.ShapePill or AppearanceSettings.ShapeTab)
             {

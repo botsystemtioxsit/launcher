@@ -64,7 +64,7 @@ sealed class DesktopPreview : Border
         return host;
     }
 
-    public void Update(ColorSettings s)
+    public void Update(ColorSettings s, bool islands = false)
     {
         canvas.Children.Clear();
         Put(canvas, Wallpaper(0, 0), 0, 0);
@@ -149,11 +149,16 @@ sealed class DesktopPreview : Border
             switch (mode)
             {
                 case ColorSettings.TbClear: break;
+                case ColorSettings.TbBlur when islands: break;   // с островами окно не заливается: цвет ложится на сами острова (ниже)
                 case ColorSettings.TbBlur: Put(canvas, Glass(0, y, W, h, 16, s.TaskbarColor, a * 0.9), 0, y); break;
                 case ColorSettings.TbSolid: Put(canvas, new Rectangle { Width = W, Height = h, Fill = B(s.TaskbarColor, Math.Max(0.05, a)) }, 0, y); break;
                 default: Put(canvas, new Rectangle { Width = W, Height = h, Fill = B("#1C1C21", 0.93) }, 0, y); break;
             }
-            Put(canvas, new Border { Width = 230, Height = 26, CornerRadius = new CornerRadius(8), Background = B("#2A2A31", 0.88) }, (W - 230) / 2, y + 4);
+            // острова: у плавающей панели середина и трей — отдельные плитки; при цвете или «размытой» панели с островами они окрашены
+            var tint = islands && mode is ColorSettings.TbBlur or ColorSettings.TbSolid;
+            var tile = tint ? B(s.TaskbarColor, Math.Max(0.25, a)) : B("#2A2A31", 0.88);
+            if (islands) Put(canvas, new Border { Width = 118, Height = 26, CornerRadius = new CornerRadius(8), Background = tile }, W - 130, y + 4);
+            Put(canvas, new Border { Width = 230, Height = 26, CornerRadius = new CornerRadius(8), Background = tile }, (W - 230) / 2, y + 4);
             string[] icons = { "#00F0FF", "#FF2A9D", "#F2F2F2", "#2CFF9A", "#FFB020", "#6C4DFF" };
             for (var i = 0; i < icons.Length; i++)
                 Put(canvas, new Border { Width = 16, Height = 16, CornerRadius = new CornerRadius(4), Background = B(icons[i], 0.9) }, (W - 230) / 2 + 16 + i * 34, y + 9);

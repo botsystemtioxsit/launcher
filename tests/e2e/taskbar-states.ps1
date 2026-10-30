@@ -38,7 +38,7 @@ Say ("Экран: " + [System.Windows.Forms.SystemInformation]::VirtualScreen)
 Say (Shot (Join-Path $Out '00-до.png'))
 
 $p = Start-Process -FilePath 'out-test/TaskbarPlus.exe' -ArgumentList '--background' -PassThru
-$st = Wait-File $status { param($t) $t -match 'state=ready' -and $t -match 'engine=6' -and $t -match 'bgfill=[1-9]' } 90
+$st = Wait-File $status { param($t) $t -match 'state=ready' -and $t -match 'engine=5' -and $t -match 'bgfill=[1-9]' } 90
 Start-Sleep -Seconds 6
 Mark '01-плагин-работает'
 
@@ -82,29 +82,17 @@ Quit-Plugin $cp 'color-plus'
 Remove-Item (Join-Path $data 'color-plus-settings.json') -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 3
 
-Say ""; Say "=== Color Plus: размытая панель (розовый тон) + обрезка по островам ==="
+Say ""; Say "=== Color Plus: «размытая» панель (розовый) при островах Taskbar Plus: цвет на островах, между ними прозрачно ==="
 $csettings = @{ TaskbarOn = $true; TaskbarMode = 'blur'; TaskbarColor = '#FF2A9D'; TaskbarOpacity = 90 }
 ($csettings | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
 $cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
-Start-Sleep -Seconds 12
-Mark '09-размытая-панель-обрезка-по-островам'
-Get-ChildItem $data -Filter 'taskbar-plus-engine-rects-*.txt' | ForEach-Object { Say ("  " + $_.Name); Get-Content $_.FullName | ForEach-Object { Say ("    " + $_) } }
-Say "  окна у нижнего края экрана:"
-foreach ($line in [W]::List()) {
-    $parts = $line.Split('|')
-    if ($parts.Count -ge 6 -and $parts[5] -match '^(-?\d+),(\d+),(-?\d+),(\d+)$') {
-        $top = [int]$Matches[2]
-        if ($top -ge 690 -and $parts[4] -eq 'vis=1') { Say ("    " + $parts[1] + " | " + $parts[5] + " | " + $parts[3] + " | " + $parts[4]) }
-    }
-}
-Start-Sleep -Seconds 3
-Say (Shot (Join-Path $Out '09b-через-3-секунды.png'))
-Say ("  " + [Rg]::Box())
+Start-Sleep -Seconds 14
+Mark '09-размытая-панель-с-островами'
+Get-Content (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyContinue | ForEach-Object { Say "  link: $_" }
 Quit-Plugin $cp 'color-plus'
 Remove-Item (Join-Path $data 'color-plus-settings.json') -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 3
 
-Get-ChildItem $data -Filter 'taskbar-plus-engine-*' -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName (Join-Path $Out ('data-' + $_.Name)) -Force -ErrorAction SilentlyContinue }
 Copy-Item (Join-Path $data 'taskbar-plus-engine.log') (Join-Path $Out 'engine.log') -Force -ErrorAction SilentlyContinue
 Copy-Item (Join-Path $data 'taskbar-plus-engine.cfg') (Join-Path $Out 'engine.cfg') -Force -ErrorAction SilentlyContinue
 Quit-Plugin $p 'taskbar-plus'

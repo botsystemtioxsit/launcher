@@ -16,6 +16,7 @@ sealed class MainWindow : Window
     readonly DesktopPreview preview = new();
     ColorSettings applied;
     bool dirty;
+    bool islandsActive;
     string target = "win";
     TextBlock applyInfo = new();
     Button applyBtn = new(), revertBtn = new();
@@ -105,7 +106,7 @@ sealed class MainWindow : Window
     void Changed()
     {
         dirty = true;
-        preview.Update(settings);
+        preview.Update(settings, islandsActive);
         UpdateApplyBar();
     }
 
@@ -249,7 +250,8 @@ sealed class MainWindow : Window
     UIElement Constructor()
     {
         var rows = new List<UIElement>();
-        preview.Update(settings);
+        islandsActive = TaskbarLink.IslandsActive();
+        preview.Update(settings, islandsActive);
         if (preview.Parent is Panel oldParent) oldParent.Children.Remove(preview);   // при перерисовке окна предпросмотр переезжает в новую карточку
         rows.Add(preview);
 
@@ -288,6 +290,8 @@ sealed class MainWindow : Window
                         settings.TaskbarOn = i > 0;
                         Changed(); Build();
                     })));
+                if (islandsActive && settings.TaskbarOn && settings.TaskbarMode == ColorSettings.TbBlur)
+                    rows.Add(Note("В Taskbar Plus включены острова, поэтому «Размытая» красит сами острова цветом с прозрачностью: размытие окна залило бы и промежутки между ними."));
                 if (settings.TaskbarOn && settings.TaskbarMode is ColorSettings.TbBlur or ColorSettings.TbSolid)
                     rows.Add(SliderRow("Плотность цвета", "Меньше — панель прозрачнее", 0, 100, settings.TaskbarOpacity, "%", v => { settings.TaskbarOpacity = v; Changed(); }));
                 break;

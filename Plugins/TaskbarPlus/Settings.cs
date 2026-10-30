@@ -32,7 +32,6 @@ class AppearanceSettings
     public string IslandMode { get; set; } = "each";    // each — остров вокруг каждого значка; group — вокруг группы соседних значков
     public int IslandGap { get; set; } = 8;             // зазор между соседними островами (режим «каждый значок»)
     public bool KeepEdges { get; set; } = true;         // у плавающей панели и «вкладки»: часы, трей и виджеты остаются отдельными островами, а не обрезаются
-    public bool CropToIslands { get; set; } = true;     // обрезать окно панели по островам: между ними прозрачно (видны обои), а не залито цветом окна (размытие, акцент Windows)
     public bool BackgroundHintShown { get; set; }
 
     // Новый движок для Windows 11 (плавные края, прозрачность, размытие) — см. XamlEngine.cs
