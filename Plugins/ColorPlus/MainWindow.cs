@@ -13,7 +13,12 @@ sealed class MainWindow : Window
     readonly ColorSettings settings;
     readonly StackPanel root = new();
     readonly TextBlock statusLine = new();
-    readonly DispatcherTimer applyTimer = new() { Interval = TimeSpan.FromMilliseconds(300) };
+    readonly DesktopPreview preview = new();
+    ColorSettings applied;
+    bool dirty;
+    string target = "win";
+    TextBlock applyInfo = new();
+    Button applyBtn = new(), revertBtn = new();
     readonly HashSet<string> openApps = new();
 
     static readonly string[] SwatchColors = { "#000000", "#101018", "#202020", "#F2F2F2", "#00F0FF", "#FF2A9D", "#6C4DFF", "#1E6BFF", "#20C27A" };
@@ -29,6 +34,7 @@ sealed class MainWindow : Window
     {
         this.ctl = ctl;
         this.settings = settings;
+        applied = settings.Clone();
         Title = "Color Plus";
         Width = 900; Height = 780; MinWidth = 600; MinHeight = 480;
         Background = Res("Bg");
@@ -41,7 +47,6 @@ sealed class MainWindow : Window
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = new Border { Padding = new Thickness(28, 24, 28, 28), Child = root },
         };
-        applyTimer.Tick += (_, _) => { applyTimer.Stop(); settings.Save(); ctl.Apply(settings); ShowStatus(); };
         ctl.Effects.Changed += () => Dispatcher.BeginInvoke(new Action(ShowStatus));
         Build();
     }
@@ -96,11 +101,45 @@ sealed class MainWindow : Window
         Application.Current.Shutdown();
     }
 
-    // Применение откладывается на 0,3 с: пока человек двигает ползунок или вводит цвет, Windows не засыпается изменениями.
+    // Изменения только готовятся: предпросмотр обновляется сразу, а в Windows они попадают по кнопке «Применить» (так сначала видно, что получится).
     void Changed()
     {
-        applyTimer.Stop();
-        applyTimer.Start();
+        dirty = true;
+        preview.Update(settings);
+        UpdateApplyBar();
+    }
+
+    void ApplyNow()
+    {
+        settings.Save();
+        ctl.Apply(settings);
+        applied = settings.Clone();
+        dirty = false;
+        UpdateApplyBar();
+        ShowStatus();
+        Say("Применено. " + statusLine.Text);
+    }
+
+    // Вернуть настройки к тем, что сейчас действуют в Windows (отбросить неприменённые правки).
+    void Revert()
+    {
+        foreach (var p in typeof(ColorSettings).GetProperties())
+        {
+            if (!p.CanWrite || !p.CanRead) continue;
+            var v = p.GetValue(applied);
+            if (v is Dictionary<string, AppRule> d) v = d.ToDictionary(kv => kv.Key, kv => new AppRule { Mode = kv.Value.Mode, WinMode = kv.Value.WinMode, Opacity = kv.Value.Opacity, Backdrop = kv.Value.Backdrop });
+            p.SetValue(settings, v);
+        }
+        dirty = false;
+        Build();
+    }
+
+    void UpdateApplyBar()
+    {
+        applyInfo.Text = dirty ? "Есть изменения, которые ещё не применены к Windows." : "Всё применено: Windows выглядит так, как на предпросмотре.";
+        applyInfo.Foreground = dirty ? Res("Accent2") : Res("Muted");
+        applyBtn.IsEnabled = dirty;
+        revertBtn.IsEnabled = dirty;
     }
 
     void ShowStatus()
@@ -130,12 +169,154 @@ sealed class MainWindow : Window
         ShowStatus();
         root.Children.Add(statusLine);
 
+        root.Children.Add(Constructor());
         root.Children.Add(WindowsCard());
         root.Children.Add(GlassCard());
         if (settings.WindowsOn) root.Children.Add(AppsCard());
         root.Children.Add(TaskbarCard());
         root.Children.Add(SelectionCard());
         root.Children.Add(SystemCard());
+    }
+
+    // ---------- конструктор: предпросмотр + цвета кружками + ползунок + «Применить» ----------
+    static readonly string[] Palette = { "#5B2A86", "#7E6AB8", "#5A78B8", "#4E8F3C", "#000000", "#2B1B4A", "#3B2A8A", "#00F0FF", "#FF2A9D", "#6C4DFF", "#1E6BFF", "#20C27A", "#FFB020", "#F2F2F2" };
+    static readonly string[] TargetNames = { "Окна", "Панель задач", "Выделение", "Заголовки" };
+    static readonly string[] TargetKeys = { "win", "bar", "sel", "title" };
+
+    static double Lum(string hex)
+    {
+        var c = (Color)ColorConverter.ConvertFromString(hex);
+        return (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0;
+    }
+
+    string TargetColor() => target switch { "bar" => settings.TaskbarColor, "sel" => settings.SelectionColor, "title" => settings.TitleColor ?? "#101018", _ => settings.Tint };
+
+    // Выбор цвета для текущей части: заодно включает нужный эффект, чтобы выбор сразу был виден на предпросмотре.
+    void PickColor(string hex)
+    {
+        switch (target)
+        {
+            case "bar":
+                settings.TaskbarColor = hex; settings.TaskbarOn = true;
+                if (settings.TaskbarMode == ColorSettings.TbDefault) settings.TaskbarMode = ColorSettings.TbSolid;
+                break;
+            case "sel":
+                settings.SelectionColor = hex; settings.SelectionOn = true;
+                break;
+            case "title":
+                settings.TitleColor = hex; settings.TitleTextColor = Lum(hex) > 0.55 ? "#111111" : "#F2F2F2"; settings.WindowsOn = true;
+                break;
+            default:
+                settings.Tint = hex; settings.WindowsOn = true;
+                if (settings.Backdrop is ColorSettings.BdNone or ColorSettings.BdMica or ColorSettings.BdTabbed) settings.Backdrop = ColorSettings.BdBlur;
+                if (settings.TintOpacity == 0) settings.TintOpacity = 60;
+                break;
+        }
+        Changed();
+        Build();
+    }
+
+    UIElement Swatches()
+    {
+        var current = TargetColor();
+        var panel = new WrapPanel { Margin = new Thickness(0, 4, 0, 4) };
+        foreach (var hex in Palette)
+        {
+            var color = (Color)ColorConverter.ConvertFromString(hex);
+            var sel = string.Equals(hex, current, StringComparison.OrdinalIgnoreCase);
+            var dot = new Border
+            {
+                Width = 40, Height = 40, CornerRadius = new CornerRadius(20), Margin = new Thickness(0, 0, 10, 10), Background = new SolidColorBrush(color),
+                BorderThickness = new Thickness(sel ? 3 : 1), BorderBrush = sel ? Res("Accent") : Res("Line"), Cursor = System.Windows.Input.Cursors.Hand, ToolTip = hex,
+            };
+            if (sel) dot.Child = new TextBlock { Text = "✓", FontSize = 20, FontWeight = FontWeights.Bold, Foreground = Lum(hex) > 0.55 ? Brushes.Black : Brushes.White, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            var h = hex;
+            dot.MouseLeftButtonUp += (_, _) => PickColor(h);
+            panel.Children.Add(dot);
+        }
+        // свой цвет: любой код вида #RRGGBB
+        var box = new TextBox { Text = current, Width = 92, Padding = new Thickness(6, 4, 6, 4), VerticalContentAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 6, 0, 10), ToolTip = "Свой цвет: #RRGGBB, затем Enter" };
+        box.KeyDown += (_, e) =>
+        {
+            if (e.Key != System.Windows.Input.Key.Enter) return;
+            var t = box.Text.Trim();
+            if (System.Text.RegularExpressions.Regex.IsMatch(t, "^#[0-9A-Fa-f]{6}$")) PickColor(t.ToUpperInvariant());
+        };
+        panel.Children.Add(box);
+        return panel;
+    }
+
+    UIElement Constructor()
+    {
+        var rows = new List<UIElement>();
+        preview.Update(settings);
+        if (preview.Parent is Panel oldParent) oldParent.Children.Remove(preview);   // при перерисовке окна предпросмотр переезжает в новую карточку
+        rows.Add(preview);
+
+        // какую часть красим: окна, панель, выделение, заголовки
+        var tabs = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+        for (var i = 0; i < TargetNames.Length; i++)
+        {
+            var key = TargetKeys[i];
+            var b = new Button { Content = TargetNames[i], Padding = new Thickness(14, 7, 14, 7), Margin = new Thickness(i == 0 ? 0 : 6, 0, 0, 0) };
+            if (key == target) b.Style = (Style)FindResource("Primary");
+            b.Click += (_, _) => { target = key; Build(); };
+            tabs.Children.Add(b);
+        }
+        rows.Add(tabs);
+        rows.Add(Swatches());
+
+        // стиль и плотность выбранной части
+        switch (target)
+        {
+            case "win":
+                rows.Add(Row("Что за окном", "Размытие и акрил — матовое стекло, слюда и вкладки — мягкий фон Windows 11. Оттенок красит только фон, текст остаётся как есть.",
+                    Seg(BackdropLabels, Math.Max(0, Array.IndexOf(Backdrops, settings.Backdrop)), i =>
+                    {
+                        settings.Backdrop = Backdrops[i];
+                        if (i > 0) settings.WindowsOn = true;
+                        Changed(); Build();
+                    })));
+                if (settings.Backdrop is ColorSettings.BdBlur or ColorSettings.BdAcrylic)
+                    rows.Add(SliderRow("Плотность оттенка", "Меньше — стекло прозрачнее, больше — цвет плотнее", 0, 100, settings.TintOpacity, "%", v => { settings.TintOpacity = v; Changed(); }));
+                break;
+            case "bar":
+                rows.Add(Row("Панель задач", "Как в Windows, прозрачная, размытая или сплошной цвет. Форму и острова настраивает плагин Taskbar Plus.",
+                    Seg(new[] { "Как в Windows", "Прозрачная", "Размытая", "Цвет" }, Math.Max(0, Array.IndexOf(TaskbarModes, settings.TaskbarOn ? settings.TaskbarMode : ColorSettings.TbDefault)), i =>
+                    {
+                        settings.TaskbarMode = TaskbarModes[i];
+                        settings.TaskbarOn = i > 0;
+                        Changed(); Build();
+                    })));
+                if (settings.TaskbarOn && settings.TaskbarMode is ColorSettings.TbBlur or ColorSettings.TbSolid)
+                    rows.Add(SliderRow("Плотность цвета", "Меньше — панель прозрачнее", 0, 100, settings.TaskbarOpacity, "%", v => { settings.TaskbarOpacity = v; Changed(); }));
+                break;
+            case "sel":
+                rows.Add(Row("Цвет текста выделения", "Авто — буквы остаются как в Windows и читаются всегда",
+                    Seg(new[] { "Авто", "Свой" }, settings.SelectionTextAuto ? 0 : 1, i => { settings.SelectionTextAuto = i == 0; settings.SelectionOn = true; Changed(); Build(); })));
+                if (!settings.SelectionTextAuto)
+                    rows.Add(Row("Свой цвет текста", "Цвет выделенных букв", ColorPicker(settings.SelectionTextColor, hex => { settings.SelectionTextColor = hex; Changed(); })));
+                break;
+            default:
+                rows.Add(Row("Тёмные заголовки", "Тёмная строка заголовка у окон (Windows 11)",
+                    Seg(new[] { "Нет", "Да" }, settings.DarkTitle ? 1 : 0, i => { settings.DarkTitle = i == 1; settings.WindowsOn = true; Changed(); Build(); })));
+                if (settings.TitleColor != null)
+                    rows.Add(Row("Свой цвет заголовка", "Вернуть как в Windows", Btn("Сбросить", null, () => { settings.TitleColor = null; settings.TitleTextColor = null; Changed(); Build(); }, first: true)));
+                break;
+        }
+
+        // «Применить» — только после того, как всё видно на предпросмотре
+        applyInfo = new TextBlock { FontSize = 12, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxWidth = 380, Margin = new Thickness(14, 0, 0, 0) };
+        applyBtn = Btn("Применить", "Primary", ApplyNow, first: true);
+        revertBtn = Btn("Отменить изменения", null, Revert);
+        var bar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+        bar.Children.Add(applyBtn);
+        bar.Children.Add(revertBtn);
+        bar.Children.Add(applyInfo);
+        UpdateApplyBar();
+        rows.Add(bar);
+        rows.Add(Note("Предпросмотр показывает результат заранее. В Windows изменения попадают только после «Применить». Подробные настройки — карточки ниже."));
+        return Card("Цвет и стекло", rows);
     }
 
     // ---------- карточки ----------
@@ -344,9 +525,10 @@ sealed class MainWindow : Window
         settings.TaskbarOn = false;
         settings.SelectionOn = false;
         settings.AccentOn = false;
-        applyTimer.Stop();
         settings.Save();
         ctl.Apply(settings);
+        applied = settings.Clone();
+        dirty = false;
         Say("Всё возвращено как было");
         Build();
     }

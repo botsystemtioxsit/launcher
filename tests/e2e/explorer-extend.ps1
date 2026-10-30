@@ -35,3 +35,11 @@ Run-Cp '02-размытие-оттенок-без-растягивания' 'blu
 Run-Cp '03-акрил-оттенок-без-растягивания' 'acrylic' $false
 Run-Cp '04-слюда' 'mica' $false
 Run-Cp '05-размытие-оттенок-растянуть' 'blur' $true
+
+# окно настроек Color Plus (конструктор с предпросмотром) — рисуется в PNG без показа
+Say ""
+Say "=== окно Color Plus: конструктор с предпросмотром ==="
+$ui = Join-Path (Get-Location) $Out
+$pr = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList "--screenshot=$((Resolve-Path $Out).Path)" -PassThru
+if (-not $pr.WaitForExit(90000)) { $pr.Kill(); Say 'не завершился' } else { Say "код $($pr.ExitCode)" }
+Get-ChildItem $Out -Filter '*ui*' | ForEach-Object { Say "файл: $($_.Name) ($($_.Length) байт)" }
