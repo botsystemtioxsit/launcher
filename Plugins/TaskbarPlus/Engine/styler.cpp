@@ -117,7 +117,6 @@ namespace
         std::wstring layoutSig;
         std::string islandsListed;
         std::string rectsWritten;
-        int rectsLogged = 0;
         std::vector<Rule> rules;
         std::string rulesSig = "?";
         // счётчики читает поток наблюдателя
@@ -755,6 +754,11 @@ namespace
         std::vector<std::pair<std::string, std::wstring>> listApps;
         bool listWidgets = false, listSystem = false;
         std::set<Item*> measured;
+        std::vector<RectOut> allRects;
+        std::vector<std::pair<double, double>> centers;
+        bool anyMembers = false;
+        double outW = 0, outH = 0;
+        ctl::Panel refPanel{ nullptr };
 
         for (size_t hk = 0; hk < T().hosts.size(); ++hk)
         {
@@ -920,34 +924,48 @@ namespace
                 host.borders.clear(); // дерево, вероятно, пересоздано
             }
 
-            if (T().rectsLogged < 8) { ++T().rectsLogged; Log(L"узел панели %d: фон=%d, элементов %d, размер %dx%d, острова=%d", (int)hk, host.fill ? 1 : 0, (int)list.size(), (int)width, (int)hostH, (int)draw.size()); }
-            if (host.fill && !list.empty())
+            if (!list.empty())
             {
-                try
+                // острова, значки и размер этого узла копим для общей выгрузки (острова и фон панели лежат в разных узлах дерева)
+                anyMembers = true;
+                if (!refPanel) refPanel = host.panel;
+                outW = std::max(outW, width); outH = std::max(outH, hostH);
+                allRects.insert(allRects.end(), rects.begin(), rects.end());
+                for (auto& m : list)
                 {
-                    if (c.shape == 1 || c.shape == 2)
-                        if (auto fe = host.fill.try_as<xaml::FrameworkElement>())
-                        {
-                            auto pt = fe.TransformToVisual(host.panel).TransformPoint(wf::Point{ 0, 0 });
-                            const auto appsSt = EffectiveStyle(c, 2, "apps");
-                            rects.push_back({ pt.X, pt.Y, fe.ActualWidth(), fe.ActualHeight(), appsSt.radius >= 0 ? (double)appsSt.radius : (double)c.radius });
-                        }
-                    // обрезать можно, только если каждый значок панели лежит внутри какого-то прямоугольника (иначе часы или трей пропали бы)
-                    bool safe = !rects.empty() && hostH > 0;
-                    for (auto& m : list)
-                    {
-                        const int g = GroupOf(m.it->kind);
-                        const double cx = (m.b.l + m.b.r) / 2 + dx[g], cy = (m.b.t + m.b.b) / 2;
-                        bool inside = false;
-                        for (auto& rr : rects)
-                            if (cx >= rr.l - 1 && cx <= rr.l + rr.w + 1 && cy >= rr.t - 1 && cy <= rr.t + rr.h + 1) { inside = true; break; }
-                        if (!inside) { safe = false; break; }
-                    }
-                    if (width > 0 && hostH > 0) WriteRects(rects, width, hostH, safe);
-                    else Log(L"прямоугольники панели: у панели нет размера (%d x %d)", (int)width, (int)hostH);
+                    const int g = GroupOf(m.it->kind);
+                    centers.push_back({ (m.b.l + m.b.r) / 2 + dx[g], (m.b.t + m.b.b) / 2 });
                 }
-                catch (...) { Log(L"прямоугольники панели: ошибка при измерении"); }
             }
+        }
+
+        // выгрузка прямоугольников для обрезки окна панели (см. WriteRects)
+        if (wantIslands && anyMembers)
+        {
+            try
+            {
+                if (c.shape == 1 || c.shape == 2)
+                    for (auto& hh : T().hosts)
+                        if (hh.fill)
+                            if (auto fe = hh.fill.try_as<xaml::FrameworkElement>())
+                            {
+                                auto pt = fe.TransformToVisual(refPanel).TransformPoint(wf::Point{ 0, 0 });
+                                const auto appsSt = EffectiveStyle(c, 2, "apps");
+                                allRects.push_back({ pt.X, pt.Y, fe.ActualWidth(), fe.ActualHeight(), appsSt.radius >= 0 ? (double)appsSt.radius : (double)c.radius });
+                                break;
+                            }
+                // обрезать можно, только если центр каждого значка панели лежит внутри какого-то прямоугольника (иначе часы или трей пропали бы)
+                bool safe = !allRects.empty() && outH > 0;
+                for (auto& pc : centers)
+                {
+                    bool inside = false;
+                    for (auto& rr : allRects)
+                        if (pc.first >= rr.l - 1 && pc.first <= rr.l + rr.w + 1 && pc.second >= rr.t - 1 && pc.second <= rr.t + rr.h + 1) { inside = true; break; }
+                    if (!inside) { safe = false; break; }
+                }
+                if (outW > 0 && outH > 0) WriteRects(allRects, outW, outH, safe);
+            }
+            catch (...) { Log(L"прямоугольники панели: ошибка при измерении"); }
         }
 
         for (auto& kv : T().items)
