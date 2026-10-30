@@ -409,10 +409,11 @@ sealed class WindowEffects : IDisposable
                 var ok = s.TaskbarMode switch
                 {
                     ColorSettings.TbBlur => Native.SetAccent(h, Native.AccentAcrylic, Native.Abgr(s.TaskbarColor, s.TaskbarOpacity)),
-                    // Цвет красит сам движок панели (Taskbar Plus): фон и острова. Окно целиком им не заливаем — иначе цвет виден и между островами
-                    // (там должно быть прозрачно). Без движка (Windows 10, движок не запущен) красить окно приходится самим.
-                    ColorSettings.TbSolid => EngineWorks() ? Native.SetAccent(h, Native.AccentTransparentGradient, 0)
-                                                          : Native.SetAccent(h, Native.AccentGradient, Native.Abgr(s.TaskbarColor, Math.Max(1, s.TaskbarOpacity))),
+                    // В Windows 11 панель рисует XAML внутри Проводника: сплошной цвет красит движок Taskbar Plus (фон и острова), а окно целиком
+                    // заливать нельзя — цвет виден и между островами, а при перезапуске Проводника (движок подключается не сразу) панель на несколько секунд
+                    // вспыхивает сплошным цветом. Заливка окна — только для Windows 10, где панель обычная.
+                    ColorSettings.TbSolid => Win11 ? Native.SetAccent(h, Native.AccentTransparentGradient, 0)
+                                                   : Native.SetAccent(h, Native.AccentGradient, Native.Abgr(s.TaskbarColor, Math.Max(1, s.TaskbarOpacity))),
                     _ => Native.SetAccent(h, Native.AccentTransparentGradient, 0),
                 };
                 if (ok) taskbarTouched.Add(h);
@@ -424,13 +425,6 @@ sealed class WindowEffects : IDisposable
             ResetTaskbar();
             taskbarWasOn = false;
         }
-    }
-
-    static (DateTime At, bool Ready) engineCache = (DateTime.MinValue, false);
-    static bool EngineWorks()
-    {
-        if (DateTime.UtcNow - engineCache.At > TimeSpan.FromSeconds(2)) engineCache = (DateTime.UtcNow, TaskbarLink.EngineState().Ready);
-        return engineCache.Ready;
     }
 
     static List<IntPtr> TaskbarWindows()

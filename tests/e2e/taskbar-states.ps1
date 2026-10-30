@@ -69,6 +69,14 @@ $cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--backgrou
 Start-Sleep -Seconds 12
 Mark '07-цвет-панели-розовый'
 Get-Content (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyContinue | ForEach-Object { Say "  link: $_" }
+Say ""; Say "=== перезапуск Проводника при работающем Color Plus: панель не должна вспыхнуть сплошным цветом ==="
+Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 1
+Mark '08-проводник-+1с-цвет'
+Start-Sleep -Seconds 2
+Mark '08-проводник-+3с-цвет'
+Start-Sleep -Seconds 6
+Mark '08-проводник-+9с-цвет'
 Quit-Plugin $cp 'color-plus'
 Remove-Item (Join-Path $data 'color-plus-settings.json') -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 3
