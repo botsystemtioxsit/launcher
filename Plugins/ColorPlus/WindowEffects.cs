@@ -310,7 +310,7 @@ sealed class WindowEffects : IDisposable
         if (eff.Mode != ColorSettings.WmBackground) st.NoKeyWhy = null;
         st.Outcome = outcome;
 
-        ApplyBackdrop(h, st, eff);
+        ApplyBackdrop(h, st, eff, cls);
 
         if (Win11)
         {
@@ -333,7 +333,11 @@ sealed class WindowEffects : IDisposable
         }
     }
 
-    void ApplyBackdrop(IntPtr h, WinState st, Eff eff)
+    // Окна, у которых «растянуть на всё окно» стирает текст: Проводник и диалоги Windows рисуют подписи старым способом (GDI), на прозрачной подложке
+    // он рисует их с нулевой непрозрачностью — панель слева и подписи дисков становились невидимыми. У этих окон подложка остаётся только у рамки.
+    static readonly HashSet<string> NoExtendClasses = new(StringComparer.OrdinalIgnoreCase) { "CabinetWClass", "ExploreWClass", "#32770", "Notepad", "SysListView32", "ConsoleWindowClass" };
+
+    void ApplyBackdrop(IntPtr h, WinState st, Eff eff, string cls)
     {
         var bd = eff.Backdrop;
         // системные подложки (Windows 11 22H2+): слюда, акрил, вкладки
@@ -356,7 +360,7 @@ sealed class WindowEffects : IDisposable
         }
 
         if (bd != ColorSettings.BdNone) Native.SetProp(h, TouchProp, (IntPtr)1);
-        var want = bd != ColorSettings.BdNone && eff.Extend;
+        var want = bd != ColorSettings.BdNone && eff.Extend && !NoExtendClasses.Contains(cls);
         if (want && !st.Extended) { Native.Margins(h, -1); st.Extended = true; }
         else if (!want && st.Extended) { Native.Margins(h, 0); st.Extended = false; }
         st.Backdrop = bd;

@@ -167,7 +167,7 @@ sealed class MainWindow : Window
             rows.Add(SliderRow("Сила оттенка", "Чем меньше, тем прозрачнее стекло", 0, 100, settings.TintOpacity, "%", v => { settings.TintOpacity = v; Changed(); }));
         }
         if (settings.Backdrop != ColorSettings.BdNone)
-            rows.Add(Row("Растянуть на всё окно", "Показать размытие не только у рамки, но и под содержимым. Некоторые программы после этого выглядят криво — тогда выключите.",
+            rows.Add(Row("Растянуть на всё окно", "Показать размытие не только у рамки, но и под содержимым. У части программ пропадает текст, поэтому в Проводнике и диалогах Windows это не включается никогда; если что-то выглядит криво — выключите.",
                 Seg(new[] { "Нет", "Да" }, settings.ExtendFrame ? 1 : 0, i => { settings.ExtendFrame = i == 1; Changed(); })));
 
         rows.Add(Row("Тёмные заголовки", "Тёмная строка заголовка у окон (Windows 11)",
