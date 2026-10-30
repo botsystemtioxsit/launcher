@@ -20,8 +20,8 @@ foreach ($line in [W]::List()) { if ($line -match '\|CabinetWClass\|' -and $line
 Say "окно Проводника: $hx"
 Say (Shot (Join-Path $Out '01-проводник-обычный.png'))
 if ($hx -ne [IntPtr]::Zero) { Say ("до: " + [W]::Describe($hx)) }
-function Run-Cp($name, $extend) {
-    $s = @{ WindowsOn = $true; WindowMode = 'none'; WindowOpacity = 100; Backdrop = 'acrylic'; Tint = '#FF2A9D'; TintOpacity = 80; ExtendFrame = $extend }
+function Run-Cp($name, $backdrop, $extend, $opacity = 80) {
+    $s = @{ WindowsOn = $true; WindowMode = 'none'; WindowOpacity = 100; Backdrop = $backdrop; Tint = '#FF2A9D'; TintOpacity = $opacity; ExtendFrame = $extend }
     ($s | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
     $c = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
     Start-Sleep -Seconds 9
@@ -29,7 +29,9 @@ function Run-Cp($name, $extend) {
     Say (Shot (Join-Path $Out "$name.png"))
     Quit-Plugin $c 'color-plus'
     Start-Sleep -Seconds 3
+    if ($hx -ne [IntPtr]::Zero) { Say ("$name после выхода: " + [W]::Describe($hx)) }
 }
-Run-Cp '02-проводник-подложка-растянуть-ДА' $true
-Run-Cp '03-проводник-подложка-растянуть-НЕТ' $false
-Get-Process explorer -ErrorAction SilentlyContinue | Out-Null
+Run-Cp '02-размытие-оттенок-без-растягивания' 'blur' $false
+Run-Cp '03-акрил-оттенок-без-растягивания' 'acrylic' $false
+Run-Cp '04-слюда' 'mica' $false
+Run-Cp '05-размытие-оттенок-растянуть' 'blur' $true
