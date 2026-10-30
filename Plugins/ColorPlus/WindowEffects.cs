@@ -55,7 +55,7 @@ sealed class WindowEffects : IDisposable
         public DateTime LastAssert = DateTime.MinValue;
     }
 
-    sealed record Eff(string Mode, int GlassAlpha, string GlassTint, int GlassBlur, bool GlassStrip, int Opacity, string Backdrop, bool Extend, bool Dark, string? Caption, string? CaptionText, string Tint, int TintOpacity);
+    sealed record Eff(string Mode, int GlassAlpha, string GlassTint, int GlassBlur, bool GlassStrip, int Opacity, string Backdrop, bool Extend, bool Dark, string? Caption, string? CaptionText, string Tint, int TintOpacity, bool Custom);
 
     readonly object gate = new();
     readonly Dictionary<IntPtr, WinState> states = new();
@@ -235,7 +235,7 @@ sealed class WindowEffects : IDisposable
             mode, s.GlassAlpha, s.GlassTint, s.GlassBlur, s.GlassKeepStrip,
             mode == ColorSettings.WmGlass ? s.GlassAlpha : custom ? rule!.Opacity : s.WindowOpacity,
             mode == ColorSettings.WmGlass ? ColorSettings.BdNone : custom && rule!.Backdrop != null ? rule.Backdrop : s.Backdrop,
-            s.ExtendFrame, s.DarkTitle, s.TitleColor, s.TitleTextColor, s.Tint, s.TintOpacity);
+            s.ExtendFrame, s.DarkTitle, s.TitleColor, s.TitleTextColor, s.Tint, s.TintOpacity, custom);
     }
 
     // Окна игр, которым эффект мог остаться от прошлого запуска плагина (или старой версии): подложку и растянутую рамку снимаем один раз.
@@ -337,24 +337,35 @@ sealed class WindowEffects : IDisposable
     // он рисует их с нулевой непрозрачностью — панель слева и подписи дисков становились невидимыми. У этих окон подложка остаётся только у рамки.
     static readonly HashSet<string> NoExtendClasses = new(StringComparer.OrdinalIgnoreCase) { "CabinetWClass", "ExploreWClass", "#32770", "Notepad", "SysListView32", "ConsoleWindowClass" };
 
+    // Оттенок стекла («подложка через окно», SetWindowCompositionAttribute) красит всё, что у окна прозрачно. Программы, которые рисуют буквы
+    // старым способом (Проводник, диалоги, большинство обычных окон Windows), рисуют их с нулевой непрозрачностью — сквозь буквы виден оттенок,
+    // и текст получает цвет подложки (розовый на розовом). Поэтому оттенок ставится только окнам, где это безопасно (Chrome, Edge, Firefox, Electron,
+    // современные приложения), и тем программам, для которых человек сам включил «свои настройки». Остальным — системная подложка без оттенка.
+    static bool AccentSafe(string cls) =>
+        cls.StartsWith("Chrome_WidgetWin", StringComparison.OrdinalIgnoreCase) || cls.StartsWith("MozillaWindowClass", StringComparison.OrdinalIgnoreCase) ||
+        cls.StartsWith("HwndWrapper[", StringComparison.OrdinalIgnoreCase) || cls is "ApplicationFrameWindow" or "WinUIDesktopWin32WindowClass" or "XamlWindow";
+
     void ApplyBackdrop(IntPtr h, WinState st, Eff eff, string cls)
     {
         var bd = eff.Backdrop;
-        // системные подложки (Windows 11 22H2+): слюда, акрил, вкладки
-        if (BackdropApi && bd is ColorSettings.BdMica or ColorSettings.BdTabbed or ColorSettings.BdAcrylic)
+        var tintOk = eff.Custom || AccentSafe(cls);
+        // номер системной подложки Windows 11 22H2+: слюда 2, акрил 3, вкладки 4; «размытие» без разрешённого оттенка — ближайшая системная (акрил)
+        var sysType = bd == ColorSettings.BdMica ? 2 : bd == ColorSettings.BdTabbed ? 4 : bd == ColorSettings.BdAcrylic ? 3 : bd == ColorSettings.BdBlur && !tintOk ? 3 : 0;
+        if (BackdropApi && sysType != 0)
         {
             if (st.AccentSet) { Native.SetAccent(h, Native.AccentDisabled); st.AccentSet = false; }
-            Native.SetDwm(h, Native.DWMWA_SYSTEMBACKDROP_TYPE, bd == ColorSettings.BdMica ? 2 : bd == ColorSettings.BdAcrylic ? 3 : 4);
+            Native.SetDwm(h, Native.DWMWA_SYSTEMBACKDROP_TYPE, sysType);
         }
-        else if (bd is ColorSettings.BdBlur or ColorSettings.BdAcrylic)
+        else if (bd is ColorSettings.BdBlur or ColorSettings.BdAcrylic && tintOk)
         {
-            // размытие и акрил «через подложку окна» — для Windows 10 и ранних сборок Windows 11
+            // размытие и акрил «через подложку окна» — для окон, которым оттенок безопасен (и для Windows 10)
             if (BackdropApi) Native.SetDwm(h, Native.DWMWA_SYSTEMBACKDROP_TYPE, 1);
             Native.SetAccent(h, bd == ColorSettings.BdBlur && eff.TintOpacity == 0 ? Native.AccentBlurBehind : Native.AccentAcrylic, Native.Abgr(eff.Tint, eff.TintOpacity));
             st.AccentSet = true;
         }
-        else if (st.Backdrop != ColorSettings.BdNone)
+        else if (st.Backdrop != ColorSettings.BdNone || st.AccentSet)
         {
+            // Windows 10 и окно, которому оттенок не подходит: подложку не ставим (и снимаем свою, если была)
             if (st.AccentSet) { Native.SetAccent(h, Native.AccentDisabled); st.AccentSet = false; }
             if (BackdropApi) Native.SetDwm(h, Native.DWMWA_SYSTEMBACKDROP_TYPE, 0);
         }
