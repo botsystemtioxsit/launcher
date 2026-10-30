@@ -134,3 +134,17 @@ $p | Stop-Process -Force -ErrorAction SilentlyContinue
 Get-Process explorer -ErrorAction SilentlyContinue | Out-Null
 Remove-Item $exeLnk -ErrorAction SilentlyContinue
 Say "=== конец ==="
+
+Say ""
+Say "=== полное обновление значков: Проводник перезапускается сам, кэш чистится ==="
+$cacheDir = Join-Path $env:LOCALAPPDATA 'Microsoft\Windows\Explorer'
+Say ("файлов iconcache до: " + @(Get-ChildItem $cacheDir -Filter 'iconcache_*.db' -ErrorAction SilentlyContinue).Count)
+$expPidBefore = (Get-Process explorer -ErrorAction SilentlyContinue | Select-Object -First 1).Id
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+Run-Exe 'full-refresh' @('--full-refresh') 120
+$sw.Stop()
+Start-Sleep -Seconds 3
+$expPidAfter = (Get-Process explorer -ErrorAction SilentlyContinue | Select-Object -First 1).Id
+Say ("Проводник: было $expPidBefore, стало $expPidAfter; панель есть: " + ([W]::FindWindow('Shell_TrayWnd', $null) -ne [IntPtr]::Zero) + "; заняло " + [int]$sw.Elapsed.TotalSeconds + " с")
+Say ("файлов iconcache после: " + @(Get-ChildItem $cacheDir -Filter 'iconcache_*.db' -ErrorAction SilentlyContinue).Count)
+Say (Shot (Join-Path $Out '99-после-полного-обновления.png'))

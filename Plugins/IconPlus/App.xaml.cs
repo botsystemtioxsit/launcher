@@ -32,6 +32,7 @@ public partial class App : Application
         if (probe != null) { SelfTest.Probe(probe); Shutdown(); return; }
         var packTest = Arg(e, "--pack-test=");
         if (packTest != null) { SelfTest.PackTest(packTest, Arg(e, "--out=") ?? "."); Shutdown(); return; }
+        if (e.Args.Contains("--full-refresh")) { Native.FullIconRefresh(); Shutdown(); return; }
         var machine = Arg(e, "--machine=");
         if (machine != null) { Shutdown(Machine.Work(machine.Trim('"'))); return; }
         var color = Arg(e, "--apply-color=");
