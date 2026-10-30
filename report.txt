@@ -1,0 +1,286 @@
+=== значок самой программы ===
+значок из IconPlus.exe извлечён: 32x32
+
+=== окно настроек (снимки без показа) ===
+screenshot : код 0
+  файл: icon-plus-ui-0.png (224534 байт)
+  файл: icon-plus-ui-1.png (33664 байт)
+  файл: icon-plus-ui-3.png (80616 байт)
+
+=== самопроверка: перекраска и возврат ===
+selftest : код 0
+перекраска: сделано 648, не вышло 30, записей запомнено 470
+Icon Plus 1.3.2.0 · Windows 10.0.26100.0 · 2026-10-30 14:59
+Изменено: 648, не получилось: 30
+
+[Жёсткий диск] изменено 2
+
+[Этот компьютер] изменено 1
+
+[Корзина (пустая)] изменено 1
+
+[Сеть] изменено 1
+
+[Текст (txt, log, ini, md)] изменено 5
+
+[Архив (zip, rar, 7z)] изменено 5
+
+[Картинка (png, jpg, gif)] изменено 6
+
+[Музыка (mp3, wav)] изменено 5
+
+[PDF] изменено 1
+
+[Документ (doc, docx, rtf)] изменено 4
+
+[Ярлыки на рабочем столе (и ярлыки-ссылки Steam)] изменено 4
+
+[Все остальные типы файлов (по списку Windows)] изменено 397, не получилось 28
+  значок не читается (28): prog:CATFile, prog:CERFile, prog:CertificateStoreFile, prog:CRLFile, prog:DLNA-PLAYSINGLE, prog:DVD, prog:P7RFile, prog:P7SFile, prog:PFXFile, prog:SPCFile, prog:VisualStudio.coffee.86cffae3, prog:VisualStudio.dsl.86cffae3, …
+
+[Папки пользователя: Документы, Загрузки, Рабочий стол…] изменено 6
+
+[Приложения «Пуска» без ярлыков (магазинные и системные: Блокнот, Терминал, Безопасность Windows…)] изменено 43
+
+[Папка (спросит разрешение администратора)] изменено 1
+
+[Ярлыки на общем рабочем столе (для всех; спросит разрешение администратора)] изменено 7
+
+[Ярлыки в меню «Пуск» (общие; спросит разрешение администратора)] изменено 159, не получилось 2
+  ярлык не записывается (нет доступа или файл занят) (2): Windows PowerShell ISE (x86), Windows PowerShell ISE
+
+[Ярлыки с идентификатором программы (AUMID): 13] — имя | идентификатор | результат
+  Firefox | 308046B0AF4A39CB | ok
+  Google Chrome | Chrome | ok
+  Microsoft Edge | MSEdge | ok
+  Unity Hub | com.unity3d.unityhub | ok
+  Blend for Visual Studio | Blend.86cffae3 | ok
+  Firefox Private Browsing | 308046B0AF4A39CB;PrivateBrowsingAUMID | ok
+  Visual Studio Installer | Microsoft.VisualStudio.Installer | ok
+  Visual Studio | VisualStudio.86cffae3 | ok
+  WSL | Microsoft.WSL | ok
+  Remote Desktop Connection | Microsoft.Windows.RemoteDesktop | ok
+  Windows Media Player Legacy | Microsoft.Windows.MediaPlayer32 | ok
+  Anaconda PowerShell Prompt | anaconda.PowerShell.Miniconda.base | ok
+  Anaconda Prompt | anaconda.CmdExe.Miniconda.base | ok
+
+превью: previews.png
+--- после перекраски (ожидаем изменения)
+folder    изменилось     было: C:\Windows\system32\imageres.dll,-3   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\2621bd9295b8d448.ico,0
+drive-C   изменилось     было: C:\Windows\system32\imageres.dll,-36   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\dbb664ac669be7e2.ico,0
+thispc    изменилось     было: C:\Windows\System32\imageres.dll,-109   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\1a52a436fe6bbd0f.ico,0
+recycle   изменилось     было: C:\Windows\System32\imageres.dll,-55   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\bc4a8fdb1495efe3.ico,0
+network   изменилось     было: C:\Windows\System32\imageres.dll,-25   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\4850b614b9e2142f.ico,0
+a.txt     изменилось     было: C:\Windows\system32\imageres.dll,-102   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\ba97f0d0050124a0.ico
+b.zip     изменилось     было: C:\Windows\system32\zipfldr.dll   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\56ca49d864535ecf.ico
+c.png     изменилось     было: C:\Windows\system32\shell32.dll,-16823   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\a7ef2b1f156d9901.ico
+d.mp3     изменилось     было: C:\Windows\system32\wmploc.dll,-732   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\5d6ec1a19acb3cc1.ico
+e.pdf     изменилось     было: C:\Program Files (x86)\Microsoft\Edge\Application\155.0.4283.62\msedge.exe,11   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\713ac76136933a93.ico
+f.docx    НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\shell32.dll,0   стало: C:\Windows\System32\shell32.dll,0
+lnk       изменилось     было: ,0   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\59ec8e7abaf7511c.ico,0
+url       изменилось     было: C:\Windows\System32\imageres.dll,5   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\6a32182a0fad8233.ico,0
+url-public изменилось     было: C:\Windows\System32\imageres.dll,5   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\6a32182a0fad8233.ico,0
+lnk-broken изменилось     было: C:\NoSuchFolder\nope.ico,0   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\59ec8e7abaf7511c.ico,0
+docs-ini  изменилось     было: %SystemRoot%\system32\imageres.dll,-112   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\d8d4bf19add06979.ico,0
+assoc.ttf изменилось     было: C:\Windows\System32\fontext.dll,-419   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\3579e0455c552b83.ico
+assoc.cab изменилось     было: C:\Windows\system32\cabview.dll,0   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\72086b481bb7b030.ico
+assoc.reg изменилось     было: C:\Windows\regedit.exe,1   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\e82df2c242e561d7.ico
+assoc.msi изменилось     было: C:\Windows\System32\msiexec.exe,0   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\11b9115519cf5d16.ico
+lnk-public изменилось     было: ,0   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\59ec8e7abaf7511c.ico,0
+lnk-startall изменилось     было: ,0   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\59ec8e7abaf7511c.ico,0
+вернули: 637 изменений, осталось запомнено 0
+--- после «вернуть как было» (ожидаем как было)
+folder    как было       было: C:\Windows\system32\imageres.dll,-3   стало: C:\Windows\system32\imageres.dll,-3
+drive-C   как было       было: C:\Windows\system32\imageres.dll,-36   стало: C:\Windows\system32\imageres.dll,-36
+thispc    как было       было: C:\Windows\System32\imageres.dll,-109   стало: C:\Windows\System32\imageres.dll,-109
+recycle   как было       было: C:\Windows\System32\imageres.dll,-55   стало: C:\Windows\System32\imageres.dll,-55
+network   как было       было: C:\Windows\System32\imageres.dll,-25   стало: C:\Windows\System32\imageres.dll,-25
+a.txt     как было       было: C:\Windows\system32\imageres.dll,-102   стало: C:\Windows\system32\imageres.dll,-102
+b.zip     как было       было: C:\Windows\system32\zipfldr.dll   стало: C:\Windows\system32\zipfldr.dll
+c.png     как было       было: C:\Windows\system32\shell32.dll,-16823   стало: C:\Windows\system32\shell32.dll,-16823
+d.mp3     как было       было: C:\Windows\system32\wmploc.dll,-732   стало: C:\Windows\system32\wmploc.dll,-732
+e.pdf     как было       было: C:\Program Files (x86)\Microsoft\Edge\Application\155.0.4283.62\msedge.exe,11   стало: C:\Program Files (x86)\Microsoft\Edge\Application\155.0.4283.62\msedge.exe,11
+f.docx    как было       было: C:\Windows\System32\shell32.dll,0   стало: C:\Windows\System32\shell32.dll,0
+lnk       как было       было: ,0   стало: ,0
+url       как было       было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+url-public как было       было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+lnk-broken как было       было: C:\NoSuchFolder\nope.ico,0   стало: C:\NoSuchFolder\nope.ico,0
+docs-ini  как было       было: %SystemRoot%\system32\imageres.dll,-112   стало: %SystemRoot%\system32\imageres.dll,-112
+assoc.ttf как было       было: C:\Windows\System32\fontext.dll,-419   стало: C:\Windows\System32\fontext.dll,-419
+assoc.cab как было       было: C:\Windows\system32\cabview.dll,0   стало: C:\Windows\system32\cabview.dll,0
+assoc.reg как было       было: C:\Windows\regedit.exe,1   стало: C:\Windows\regedit.exe,1
+assoc.msi как было       было: C:\Windows\System32\msiexec.exe,0   стало: C:\Windows\System32\msiexec.exe,0
+lnk-public как было       было: ,0   стало: ,0
+lnk-startall как было       было: ,0   стало: ,0
+ярлык приложения «Пуска»: файл есть: True, AUMID в нём: Microsoft.Windows.Explorer
+
+значок папок после самопроверки (должен быть чист): 
+
+=== набор значков: архивы ===
+pack-test zip : код 0
+pack-test 7z : код 0
+--- pack-7z.txt
+набор «TestPack7»: значков 20
+  drive-fixed      ← hard drive.ico
+  drive-optical    ← dvd.ico
+  drive-removable  ← usb drive.ico
+  folder           ← folder.ico
+  ft-archive       ← zip.ico
+  ft-audio         ← music.ico
+  ft-code          ← code.ico
+  ft-doc           ← doc.ico
+  ft-image         ← image.ico
+  ft-pdf           ← pdf.ico
+  ft-sheet         ← xls.ico
+  ft-text          ← txt.ico
+  ft-video         ← video.ico
+  ft-web           ← html.ico
+  network          ← network.ico
+  recycle-empty    ← recycle bin empty.ico
+  recycle-full     ← recycle bin full.ico
+  thispc           ← computer.ico
+  userfiles        ← user.ico
+не подобрано: drive-network, ft-slides, ft-script
+применено: 53, не вышло 0
+--- с набором
+folder    изменилось     было: C:\Windows\system32\imageres.dll,-3   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\folder.ico,0
+drive-C   изменилось     было: C:\Windows\system32\imageres.dll,-36   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\hard drive.ico,0
+thispc    изменилось     было: C:\Windows\System32\imageres.dll,-109   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\computer.ico,0
+recycle   изменилось     было: C:\Windows\System32\imageres.dll,-55   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\recycle bin empty.ico,0
+network   изменилось     было: C:\Windows\System32\imageres.dll,-25   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\network.ico,0
+a.txt     изменилось     было: C:\Windows\system32\imageres.dll,-102   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\txt.ico
+b.zip     изменилось     было: C:\Windows\system32\zipfldr.dll   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\zip.ico
+c.png     изменилось     было: C:\Windows\system32\shell32.dll,-16823   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\image.ico
+d.mp3     изменилось     было: C:\Windows\system32\wmploc.dll,-732   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\music.ico
+e.pdf     изменилось     было: C:\Program Files (x86)\Microsoft\Edge\Application\155.0.4283.62\msedge.exe,11   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\pdf.ico
+f.docx    НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\shell32.dll,0   стало: C:\Windows\System32\shell32.dll,0
+lnk       НЕ ИЗМЕНИЛОСЬ  было: ,0   стало: ,0
+url       НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+url-public НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+lnk-broken НЕ ИЗМЕНИЛОСЬ  было: C:\NoSuchFolder\nope.ico,0   стало: C:\NoSuchFolder\nope.ico,0
+docs-ini  НЕ ИЗМЕНИЛОСЬ  было: %SystemRoot%\system32\imageres.dll,-112   стало: %SystemRoot%\system32\imageres.dll,-112
+assoc.ttf НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\fontext.dll,-419   стало: C:\Windows\System32\fontext.dll,-419
+assoc.cab НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\system32\cabview.dll,0   стало: C:\Windows\system32\cabview.dll,0
+assoc.reg НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\regedit.exe,1   стало: C:\Windows\regedit.exe,1
+assoc.msi НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\msiexec.exe,0   стало: C:\Windows\System32\msiexec.exe,0
+lnk-public НЕ ИЗМЕНИЛОСЬ  было: ,0   стало: ,0
+lnk-startall НЕ ИЗМЕНИЛОСЬ  было: ,0   стало: ,0
+--- после возврата
+folder    как было       было: C:\Windows\system32\imageres.dll,-3   стало: C:\Windows\system32\imageres.dll,-3
+drive-C   как было       было: C:\Windows\system32\imageres.dll,-36   стало: C:\Windows\system32\imageres.dll,-36
+thispc    как было       было: C:\Windows\System32\imageres.dll,-109   стало: C:\Windows\System32\imageres.dll,-109
+recycle   как было       было: C:\Windows\System32\imageres.dll,-55   стало: C:\Windows\System32\imageres.dll,-55
+network   как было       было: C:\Windows\System32\imageres.dll,-25   стало: C:\Windows\System32\imageres.dll,-25
+a.txt     как было       было: C:\Windows\system32\imageres.dll,-102   стало: C:\Windows\system32\imageres.dll,-102
+b.zip     как было       было: C:\Windows\system32\zipfldr.dll   стало: C:\Windows\system32\zipfldr.dll
+c.png     как было       было: C:\Windows\system32\shell32.dll,-16823   стало: C:\Windows\system32\shell32.dll,-16823
+d.mp3     как было       было: C:\Windows\system32\wmploc.dll,-732   стало: C:\Windows\system32\wmploc.dll,-732
+e.pdf     как было       было: C:\Program Files (x86)\Microsoft\Edge\Application\155.0.4283.62\msedge.exe,11   стало: C:\Program Files (x86)\Microsoft\Edge\Application\155.0.4283.62\msedge.exe,11
+f.docx    как было       было: C:\Windows\System32\shell32.dll,0   стало: C:\Windows\System32\shell32.dll,0
+lnk       как было       было: ,0   стало: ,0
+url       как было       было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+url-public как было       было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+lnk-broken как было       было: C:\NoSuchFolder\nope.ico,0   стало: C:\NoSuchFolder\nope.ico,0
+docs-ini  как было       было: %SystemRoot%\system32\imageres.dll,-112   стало: %SystemRoot%\system32\imageres.dll,-112
+assoc.ttf как было       было: C:\Windows\System32\fontext.dll,-419   стало: C:\Windows\System32\fontext.dll,-419
+assoc.cab как было       было: C:\Windows\system32\cabview.dll,0   стало: C:\Windows\system32\cabview.dll,0
+assoc.reg как было       было: C:\Windows\regedit.exe,1   стало: C:\Windows\regedit.exe,1
+assoc.msi как было       было: C:\Windows\System32\msiexec.exe,0   стало: C:\Windows\System32\msiexec.exe,0
+lnk-public как было       было: ,0   стало: ,0
+lnk-startall как было       было: ,0   стало: ,0
+--- pack-zip.txt
+набор «TestPack»: значков 20
+  drive-fixed      ← hard drive.ico
+  drive-optical    ← dvd.ico
+  drive-removable  ← usb drive.ico
+  folder           ← folder.ico
+  ft-archive       ← zip.ico
+  ft-audio         ← music.ico
+  ft-code          ← code.ico
+  ft-doc           ← doc.ico
+  ft-image         ← image.ico
+  ft-pdf           ← pdf.ico
+  ft-sheet         ← xls.ico
+  ft-text          ← txt.ico
+  ft-video         ← video.ico
+  ft-web           ← html.ico
+  network          ← network.ico
+  recycle-empty    ← recycle bin empty.ico
+  recycle-full     ← recycle bin full.ico
+  thispc           ← computer.ico
+  userfiles        ← user.ico
+не подобрано: drive-network, ft-slides, ft-script
+применено: 53, не вышло 0
+--- с набором
+folder    изменилось     было: C:\Windows\system32\imageres.dll,-3   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\folder.ico,0
+drive-C   изменилось     было: C:\Windows\system32\imageres.dll,-36   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\hard drive.ico,0
+thispc    изменилось     было: C:\Windows\System32\imageres.dll,-109   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\computer.ico,0
+recycle   изменилось     было: C:\Windows\System32\imageres.dll,-55   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\recycle bin empty.ico,0
+network   изменилось     было: C:\Windows\System32\imageres.dll,-25   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\network.ico,0
+a.txt     изменилось     было: C:\Windows\system32\imageres.dll,-102   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\txt.ico
+b.zip     изменилось     было: C:\Windows\system32\zipfldr.dll   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\zip.ico
+c.png     изменилось     было: C:\Windows\system32\shell32.dll,-16823   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\image.ico
+d.mp3     изменилось     было: C:\Windows\system32\wmploc.dll,-732   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\music.ico
+e.pdf     изменилось     было: C:\Program Files (x86)\Microsoft\Edge\Application\155.0.4283.62\msedge.exe,11   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\pdf.ico
+f.docx    НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\shell32.dll,0   стало: C:\Windows\System32\shell32.dll,0
+lnk       НЕ ИЗМЕНИЛОСЬ  было: ,0   стало: ,0
+url       НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+url-public НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+lnk-broken НЕ ИЗМЕНИЛОСЬ  было: C:\NoSuchFolder\nope.ico,0   стало: C:\NoSuchFolder\nope.ico,0
+docs-ini  НЕ ИЗМЕНИЛОСЬ  было: %SystemRoot%\system32\imageres.dll,-112   стало: %SystemRoot%\system32\imageres.dll,-112
+assoc.ttf НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\fontext.dll,-419   стало: C:\Windows\System32\fontext.dll,-419
+assoc.cab НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\system32\cabview.dll,0   стало: C:\Windows\system32\cabview.dll,0
+assoc.reg НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\regedit.exe,1   стало: C:\Windows\regedit.exe,1
+assoc.msi НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\msiexec.exe,0   стало: C:\Windows\System32\msiexec.exe,0
+lnk-public НЕ ИЗМЕНИЛОСЬ  было: ,0   стало: ,0
+lnk-startall НЕ ИЗМЕНИЛОСЬ  было: ,0   стало: ,0
+--- после возврата
+folder    как было       было: C:\Windows\system32\imageres.dll,-3   стало: C:\Windows\system32\imageres.dll,-3
+drive-C   как было       было: C:\Windows\system32\imageres.dll,-36   стало: C:\Windows\system32\imageres.dll,-36
+thispc    как было       было: C:\Windows\System32\imageres.dll,-109   стало: C:\Windows\System32\imageres.dll,-109
+recycle   как было       было: C:\Windows\System32\imageres.dll,-55   стало: C:\Windows\System32\imageres.dll,-55
+network   как было       было: C:\Windows\System32\imageres.dll,-25   стало: C:\Windows\System32\imageres.dll,-25
+a.txt     как было       было: C:\Windows\system32\imageres.dll,-102   стало: C:\Windows\system32\imageres.dll,-102
+b.zip     как было       было: C:\Windows\system32\zipfldr.dll   стало: C:\Windows\system32\zipfldr.dll
+c.png     как было       было: C:\Windows\system32\shell32.dll,-16823   стало: C:\Windows\system32\shell32.dll,-16823
+d.mp3     как было       было: C:\Windows\system32\wmploc.dll,-732   стало: C:\Windows\system32\wmploc.dll,-732
+e.pdf     как было       было: C:\Program Files (x86)\Microsoft\Edge\Application\155.0.4283.62\msedge.exe,11   стало: C:\Program Files (x86)\Microsoft\Edge\Application\155.0.4283.62\msedge.exe,11
+f.docx    как было       было: C:\Windows\System32\shell32.dll,0   стало: C:\Windows\System32\shell32.dll,0
+lnk       как было       было: ,0   стало: ,0
+url       как было       было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+url-public как было       было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+lnk-broken как было       было: C:\NoSuchFolder\nope.ico,0   стало: C:\NoSuchFolder\nope.ico,0
+docs-ini  как было       было: %SystemRoot%\system32\imageres.dll,-112   стало: %SystemRoot%\system32\imageres.dll,-112
+assoc.ttf как было       было: C:\Windows\System32\fontext.dll,-419   стало: C:\Windows\System32\fontext.dll,-419
+assoc.cab как было       было: C:\Windows\system32\cabview.dll,0   стало: C:\Windows\system32\cabview.dll,0
+assoc.reg как было       было: C:\Windows\regedit.exe,1   стало: C:\Windows\regedit.exe,1
+assoc.msi как было       было: C:\Windows\System32\msiexec.exe,0   стало: C:\Windows\System32\msiexec.exe,0
+lnk-public как было       было: ,0   стало: ,0
+lnk-startall как было       было: ,0   стало: ,0
+
+=== Проводник: значки до и после перекраски ===
+снимок: results\explorer-1-до.png (1024x768)
+apply-color : код 0
+снимок: results\explorer-2-перекрашено.png (1024x768)
+снимок: results\explorer-2b-после-перезапуска-проводника.png (1024x768)
+restore : код 0
+снимок: results\explorer-3-вернули.png (1024x768)
+
+=== опыт: значок обычной папки без прав администратора? ===
+до : folder=C:\Windows\system32\imageres.dll,-3
+HKCU Shell Icons 3 : folder=C:\Windows\system32\imageres.dll,-3
+снимок: results\folder-HKCUShellIcons.png (1024x768)
+HKLM Shell Icons 3 (нужны права администратора) : folder=C:\Users\RUNNER~1\AppData\Local\Temp\folder-test.ico,0
+снимок: results\folder-HKLMShellIcons.png (1024x768)
+
+=== окно плагина на экране (вкладка «Сайт с иконками») ===
+снимок: results\window-site.png (1024x768)
+снимок: results\window-color.png (1024x768)
+=== конец ===
+
+=== полное обновление значков: Проводник перезапускается сам, кэш чистится ===
+файлов iconcache до: 15
+full-refresh : код 0
+Проводник: было 8736, стало 1492; панель есть: True; заняло 9 с
+файлов iconcache после: 15
+снимок: results\99-после-полного-обновления.png (1024x768)
