@@ -117,6 +117,7 @@ namespace
         std::wstring layoutSig;
         std::string islandsListed;
         std::string rectsWritten;
+        int rectsLogged = 0;
         std::vector<Rule> rules;
         std::string rulesSig = "?";
         // счётчики читает поток наблюдателя
@@ -919,6 +920,7 @@ namespace
                 host.borders.clear(); // дерево, вероятно, пересоздано
             }
 
+            if (T().rectsLogged < 8) { ++T().rectsLogged; Log(L"узел панели %d: фон=%d, элементов %d, размер %dx%d, острова=%d", (int)hk, host.fill ? 1 : 0, (int)list.size(), (int)width, (int)hostH, (int)draw.size()); }
             if (host.fill && !list.empty())
             {
                 try
