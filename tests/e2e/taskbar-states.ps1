@@ -37,7 +37,7 @@ Say ("Экран: " + [System.Windows.Forms.SystemInformation]::VirtualScreen)
 Say (Shot (Join-Path $Out '00-до.png'))
 
 $p = Start-Process -FilePath 'out-test/TaskbarPlus.exe' -ArgumentList '--background' -PassThru
-$st = Wait-File $status { param($t) $t -match 'state=ready' -and $t -match 'engine=4' -and $t -match 'bgfill=[1-9]' } 90
+$st = Wait-File $status { param($t) $t -match 'state=ready' -and $t -match 'engine=5' -and $t -match 'bgfill=[1-9]' } 90
 Start-Sleep -Seconds 6
 Mark '01-плагин-работает'
 
@@ -61,6 +61,17 @@ Say ""; Say "=== пуск после перезапуска ==="
 Start-Sleep -Seconds 4
 Mark '05-пуск-после-перезапуска'
 [System.Windows.Forms.SendKeys]::SendWait('{ESC}')
+
+Say ""; Say "=== Color Plus: цвет панели «сплошной» (розовый) поверх островов ==="
+$csettings = @{ TaskbarOn = $true; TaskbarMode = 'solid'; TaskbarColor = '#FF2A9D'; TaskbarOpacity = 90 }
+($csettings | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
+$cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
+Start-Sleep -Seconds 12
+Mark '07-цвет-панели-розовый'
+Get-Content (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyContinue | ForEach-Object { Say "  link: $_" }
+Quit-Plugin $cp 'color-plus'
+Remove-Item (Join-Path $data 'color-plus-settings.json') -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 3
 
 Copy-Item (Join-Path $data 'taskbar-plus-engine.log') (Join-Path $Out 'engine.log') -Force -ErrorAction SilentlyContinue
 Copy-Item (Join-Path $data 'taskbar-plus-engine.cfg') (Join-Path $Out 'engine.cfg') -Force -ErrorAction SilentlyContinue

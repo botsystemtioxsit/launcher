@@ -320,7 +320,7 @@ namespace
         }
         else
         {
-            const int mode = (bar && appsSt.mode >= 0) ? appsSt.mode : c.bgMode;
+            const int mode = (bar && appsSt.mode > 0) ? appsSt.mode : c.bgMode;   // свой режим острова (цвет, прозрачный, размытие) главнее; «как в Windows» — берёт цвет Color Plus
             const unsigned color = (bar && appsSt.color >= 0) ? (unsigned)appsSt.color : c.color;
             const int opacity = (bar && appsSt.opacity >= 0) ? appsSt.opacity : c.opacity;
             if (mode == 0)
@@ -876,7 +876,7 @@ namespace
                     b.Height(h);
                     b.CornerRadius(xaml::CornerRadius{ r, r, r, r });
 
-                    const int mode = st.mode >= 0 ? st.mode : c.bgMode;
+                    const int mode = st.mode > 0 ? st.mode : c.bgMode;   // «как в Windows» у острова = взять общий цвет (Color Plus), а не серый
                     const unsigned color = st.color >= 0 ? (unsigned)st.color : c.color;
                     const int opacity = st.opacity >= 0 ? st.opacity : c.opacity;
                     if (mode == 0 && host.nativeFill) b.Background(host.nativeFill);
