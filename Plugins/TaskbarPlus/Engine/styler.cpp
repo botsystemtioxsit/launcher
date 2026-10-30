@@ -684,6 +684,7 @@ namespace
         }
         if (text == T().rectsWritten) return;
         T().rectsWritten = text;
+        Log(L"прямоугольники панели: %d шт, обрезка %s, окно %dx%d", (int)rects.size(), safe ? L"разрешена" : L"запрещена", (int)std::lround(pw), (int)std::lround(ph));
         WriteTextAtomic(DataDir() + L"\\taskbar-plus-engine-rects-" + std::to_wstring(GetCurrentThreadId()) + L".txt", text);
     }
 
@@ -941,8 +942,9 @@ namespace
                         if (!inside) { safe = false; break; }
                     }
                     if (width > 0 && hostH > 0) WriteRects(rects, width, hostH, safe);
+                    else Log(L"прямоугольники панели: у панели нет размера (%d x %d)", (int)width, (int)hostH);
                 }
-                catch (...) {}
+                catch (...) { Log(L"прямоугольники панели: ошибка при измерении"); }
             }
         }
 

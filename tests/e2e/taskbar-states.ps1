@@ -93,6 +93,7 @@ Quit-Plugin $cp 'color-plus'
 Remove-Item (Join-Path $data 'color-plus-settings.json') -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 3
 
+Get-ChildItem $data -Filter 'taskbar-plus-engine-*' -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName (Join-Path $Out ('data-' + $_.Name)) -Force -ErrorAction SilentlyContinue }
 Copy-Item (Join-Path $data 'taskbar-plus-engine.log') (Join-Path $Out 'engine.log') -Force -ErrorAction SilentlyContinue
 Copy-Item (Join-Path $data 'taskbar-plus-engine.cfg') (Join-Path $Out 'engine.cfg') -Force -ErrorAction SilentlyContinue
 Quit-Plugin $p 'taskbar-plus'
