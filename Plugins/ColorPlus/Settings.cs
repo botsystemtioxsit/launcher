@@ -55,6 +55,7 @@ class ColorSettings
     public bool SelectionOn { get; set; }
     public string SelectionColor { get; set; } = "#0078D7";
     public string SelectionTextColor { get; set; } = "#FFFFFF";
+    public bool SelectionTextAuto { get; set; } = true;   // «Авто» — буквы выделения остаются такими, как в Windows (читаются всегда); «Свой» — цвет из SelectionTextColor (розовый на розовом был нечитаем)
     public bool AccentOn { get; set; }
     public string AccentColor { get; set; } = "#00F0FF";
 

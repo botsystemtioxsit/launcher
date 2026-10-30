@@ -305,7 +305,10 @@ sealed class MainWindow : Window
         if (settings.SelectionOn)
         {
             rows.Add(Row("Цвет подсветки", "Фон выделенного текста", ColorPicker(settings.SelectionColor, hex => { settings.SelectionColor = hex; Changed(); })));
-            rows.Add(Row("Цвет текста", "Цвет выделенных букв", ColorPicker(settings.SelectionTextColor, hex => { settings.SelectionTextColor = hex; Changed(); })));
+            rows.Add(Row("Цвет текста", "Авто — буквы остаются как в Windows и читаются всегда. Свой — любой цвет (розовый на розовом не читается)",
+                Seg(new[] { "Авто", "Свой" }, settings.SelectionTextAuto ? 0 : 1, i => { settings.SelectionTextAuto = i == 0; Changed(); Build(); })));
+            if (!settings.SelectionTextAuto)
+                rows.Add(Row("Свой цвет текста", "Цвет выделенных букв", ColorPicker(settings.SelectionTextColor, hex => { settings.SelectionTextColor = hex; Changed(); })));
         }
         rows.Add(Row("Акцентный цвет Windows", "Тот же, что в Параметрах → Персонализация → Цвета: выделенные строки в Проводнике, кнопки, меню «Пуск».",
             Seg(new[] { "Выкл", "Вкл" }, settings.AccentOn ? 1 : 0, i => { settings.AccentOn = i == 1; Changed(); Build(); })));

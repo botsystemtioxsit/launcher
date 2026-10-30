@@ -58,3 +58,21 @@ Quit-Plugin $cp 'color-plus'
 Start-Sleep -Seconds 3
 Say ("после выхода: игра " + [W]::Describe($hg) + " | обычное " + [W]::Describe($hp))
 Stop-Process -Id $g.Id, $p.Id -Force -ErrorAction SilentlyContinue
+
+# Цвет текста выделения: «Авто» оставляет буквы как в Windows, «Свой» ставит выбранный цвет; после выхода всё возвращается
+Say ""
+Say "=== цвет текста выделения ==="
+Add-Type -MemberDefinition '[DllImport("user32.dll")] public static extern int GetSysColor(int i);' -Name S -Namespace N
+function Run-Sel($name, $auto) {
+    $s = @{ SelectionOn = $true; SelectionColor = '#FF2A9D'; SelectionTextColor = '#FF2A9D'; SelectionTextAuto = $auto }
+    ($s | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
+    $c = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
+    Start-Sleep -Seconds 6
+    Say ("$name : HIGHLIGHT=0x{0:X} HIGHLIGHTTEXT=0x{1:X}" -f [N.S]::GetSysColor(13), [N.S]::GetSysColor(14))
+    Quit-Plugin $c 'color-plus'
+    Start-Sleep -Seconds 3
+    Say ("$name после выхода : HIGHLIGHT=0x{0:X} HIGHLIGHTTEXT=0x{1:X}" -f [N.S]::GetSysColor(13), [N.S]::GetSysColor(14))
+}
+Say ("до: HIGHLIGHT=0x{0:X} HIGHLIGHTTEXT=0x{1:X}" -f [N.S]::GetSysColor(13), [N.S]::GetSysColor(14))
+Run-Sel 'Авто (ожидается HIGHLIGHT=0x9D2AFF, HIGHLIGHTTEXT как до)' $true
+Run-Sel 'Свой розовый (ожидается HIGHLIGHT=0x9D2AFF, HIGHLIGHTTEXT=0x9D2AFF)' $false

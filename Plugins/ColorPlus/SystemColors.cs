@@ -78,7 +78,9 @@ sealed class SystemColors
             orig.SelectionChanged = true;
             Save(); // сначала запоминаем, потом меняем
         }
-        Native.SetSysColors(2, new[] { COLOR_HIGHLIGHT, COLOR_HIGHLIGHTTEXT }, new[] { ToColorRef(s.SelectionColor), ToColorRef(s.SelectionTextColor) });
+        // «Авто» — цвет букв остаётся прежним (оригинал Windows): подсветка меняется, а текст на ней всегда читается
+        var text = s.SelectionTextAuto ? orig.HighlightText : ToColorRef(s.SelectionTextColor);
+        Native.SetSysColors(2, new[] { COLOR_HIGHLIGHT, COLOR_HIGHLIGHTTEXT }, new[] { ToColorRef(s.SelectionColor), text });
     }
 
     void RestoreSelection()
