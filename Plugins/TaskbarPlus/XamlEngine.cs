@@ -15,7 +15,7 @@ namespace TaskbarPlusApp;
 sealed class XamlEngine : IDisposable
 {
     const string ResourceName = "GhostShellTap.dll";
-    const string EngineVersion = "3";   // должна совпадать с GS_ENGINE_VERSION в Engine/common.h
+    const string EngineVersion = "4";   // должна совпадать с GS_ENGINE_VERSION в Engine/common.h
 
     static readonly string DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BattleLauncher");
     static readonly string CfgPath = Path.Combine(DataDir, "taskbar-plus-engine.cfg");
@@ -48,6 +48,7 @@ sealed class XamlEngine : IDisposable
     long connectedSince;
     long expectedRestartUntil;
     bool crashCounted;
+    bool autoReported;
 
     string[] rules = LoadCachedRules();
 
@@ -185,6 +186,14 @@ sealed class XamlEngine : IDisposable
                 {
                     SetState($"Новый движок работает. Элементов панели: {nodes}, значков: {apps}.", true);
                     if (now - connectedSince > 90_000 && health.Crashes != 0) { health.Crashes = 0; SaveHealth(); }
+                    // Один раз за запуск, когда панель уже обжилась, отчёт уходит разработчику сам (владелец не нажимает кнопки ради отчётов).
+                    if (!autoReported && now - connectedSince > 45_000)
+                    {
+                        bool send;
+                        lock (gate) send = settings.AutoReport;
+                        autoReported = true;
+                        if (send) _ = UploadReportAsync();
+                    }
                 }
                 else if (now - connectedSince > 10_000)
                 {
@@ -192,7 +201,7 @@ sealed class XamlEngine : IDisposable
                     int.TryParse(st.GetValueOrDefault("widgets"), out var wid);
                     int.TryParse(st.GetValueOrDefault("sessions"), out var sessions);
                     SetState($"Движок подключился (окон XAML: {sessions}, элементов {nodes}, значков {apps}, системная область {sysCount}, виджеты {wid}), но фон панели не нашёл. " +
-                             "Нажмите «Отправить отчёт разработчику»; пока действует обычный способ.", false);
+                             "Панель остаётся как в Windows; отчёт уйдёт разработчику сам.", false);
                 }
                 else
                     SetState("Подключился, ищу элементы панели…", false);

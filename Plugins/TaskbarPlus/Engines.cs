@@ -1,7 +1,7 @@
 namespace TaskbarPlusApp;
 
 // Два способа менять панель: обычный (вырез окна, работает и в Windows 10) и новый (движок XAML для Windows 11).
-// Пока новый движок не подключился и не нашёл панель, работает обычный; как только он заработал — обычный снимается.
+// Новый движок работает всегда, когда он возможен (Windows 11, 64-бит, не заблокирован); обычный способ — только если нового быть не может.
 sealed class Engines : IDisposable
 {
     readonly TaskbarEngine classic = new();
@@ -37,7 +37,9 @@ sealed class Engines : IDisposable
     {
         var c = settings.Clone();
         c.UseXaml = false;
-        if (settings.UseXaml && xaml.Ready) c.Shape = AppearanceSettings.ShapeNone; // форму уже держит новый движок
+        // Форму держит новый движок. Пока он подключается (после перезапуска Проводника, при долгом ответе), обычный способ не включаем:
+        // он вырезает часы и трей, если рядом нет места, — значки пропадали. Обычный способ — только там, где нового движка быть не может.
+        if (settings.UseXaml && XamlEngine.UnavailableReason == null && !xaml.Blocked) c.Shape = AppearanceSettings.ShapeNone;
         classic.Update(c);
     }
 

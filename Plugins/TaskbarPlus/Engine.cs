@@ -130,6 +130,13 @@ sealed class TaskbarEngine : IDisposable
                 islandCache[h] = c;
             }
             clusters = c.Clusters;
+            if (clusters.Count == 0 && st.SideMargin > 0)
+            {
+                // Часы и трей не нашлись, а бока панели обрезаны: вырез спрятал бы их совсем. Лучше оставить панель как есть.
+                notes.Add("не нашёл часы и трей — форму не применяю, чтобы они не пропали");
+                if (owned.Contains(h)) ClearRegion(h);
+                return;
+            }
             if (clusters.Count == 0)
                 notes.Add(islands ? "не нашёл значки панели — острова заменены плавающей панелью"
                                   : "не нашёл часы и трей — при большом отступе они могут оказаться спрятанными");

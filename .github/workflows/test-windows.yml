@@ -10,7 +10,7 @@ on:
         description: 'plugins — проверка обоих плагинов; bg — опыты с прозрачным фоном окон; glass — опыты со «стеклом» под окном'
         default: plugins
         type: choice
-        options: [plugins, bg, glass, site, icons, store, startapps]
+        options: [plugins, bg, glass, site, icons, store, startapps, taskbar]
 
 permissions:
   contents: write
@@ -24,12 +24,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
-        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'icons' || env.SCENARIO == 'startapps'
+        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'icons' || env.SCENARIO == 'startapps' || env.SCENARIO == 'taskbar'
         with:
           dotnet-version: 8.0.x
 
       - name: Build engine
-        if: env.SCENARIO == 'plugins'
+        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'taskbar'
         shell: pwsh
         run: |
           cmake -S Plugins/TaskbarPlus/Engine -B Plugins/TaskbarPlus/Engine/build -A x64
@@ -38,7 +38,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'cmake: сборка не удалась' }
 
       - name: Publish plugins
-        if: env.SCENARIO == 'plugins'
+        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'taskbar'
         shell: pwsh
         run: |
           foreach ($p in 'TaskbarPlus', 'ColorPlus') {
@@ -62,6 +62,7 @@ jobs:
           elseif ($env:SCENARIO -eq 'icons') { ./tests/e2e/icon-plus.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'store') { ./tests/e2e/store-probe.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'startapps') { ./tests/e2e/startapps.ps1 -Out results }
+          elseif ($env:SCENARIO -eq 'taskbar') { ./tests/e2e/taskbar-states.ps1 -Out results }
           else { ./tests/e2e/run.ps1 -Out results }
         continue-on-error: true
 
@@ -75,7 +76,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } elseif ($env:SCENARIO -eq 'site') { 'ci-e2e-site' } elseif ($env:SCENARIO -eq 'icons') { 'ci-e2e-icons' } elseif ($env:SCENARIO -eq 'store') { 'ci-e2e-store' } elseif ($env:SCENARIO -eq 'startapps') { 'ci-e2e-startapps' } else { 'ci-e2e' }
+          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } elseif ($env:SCENARIO -eq 'site') { 'ci-e2e-site' } elseif ($env:SCENARIO -eq 'icons') { 'ci-e2e-icons' } elseif ($env:SCENARIO -eq 'store') { 'ci-e2e-store' } elseif ($env:SCENARIO -eq 'startapps') { 'ci-e2e-startapps' } elseif ($env:SCENARIO -eq 'taskbar') { 'ci-e2e-taskbar' } else { 'ci-e2e' }
           $dir = Join-Path $env:RUNNER_TEMP 'e2e-branch'
           New-Item -ItemType Directory -Force $dir | Out-Null
           Copy-Item results/* $dir -Recurse -ErrorAction SilentlyContinue

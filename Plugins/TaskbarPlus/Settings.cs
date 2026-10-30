@@ -42,6 +42,7 @@ class AppearanceSettings
     public int BgOpacity { get; set; } = 85;            // 0–100
     public bool HideStroke { get; set; }                // убрать тонкую линию панели
     public bool XamlConsentShown { get; set; }
+    public bool AutoReport { get; set; } = true;        // после подключения к панели отправить отчёт разработчику сам (версии, настройки, названия элементов; без имени пользователя и компьютера)
 
     // Расположение трёх групп: виджеты, системная область (часы, сеть, трей, скрытые значки — всегда одним объектом), значки приложений.
     public const string ZoneDefault = "default", ZoneLeft = "left", ZoneCenter = "center", ZoneRight = "right";
