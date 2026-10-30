@@ -82,6 +82,17 @@ Quit-Plugin $cp 'color-plus'
 Remove-Item (Join-Path $data 'color-plus-settings.json') -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 3
 
+Say ""; Say "=== Color Plus: «размытая» панель (розовый) при островах Taskbar Plus: цвет на островах, между ними прозрачно ==="
+$csettings = @{ TaskbarOn = $true; TaskbarMode = 'blur'; TaskbarColor = '#FF2A9D'; TaskbarOpacity = 90 }
+($csettings | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
+$cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
+Start-Sleep -Seconds 14
+Mark '09-размытая-панель-с-островами'
+Get-Content (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyContinue | ForEach-Object { Say "  link: $_" }
+Quit-Plugin $cp 'color-plus'
+Remove-Item (Join-Path $data 'color-plus-settings.json') -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 3
+
 Copy-Item (Join-Path $data 'taskbar-plus-engine.log') (Join-Path $Out 'engine.log') -Force -ErrorAction SilentlyContinue
 Copy-Item (Join-Path $data 'taskbar-plus-engine.cfg') (Join-Path $Out 'engine.cfg') -Force -ErrorAction SilentlyContinue
 Quit-Plugin $p 'taskbar-plus'

@@ -21,6 +21,23 @@ static class TaskbarLink
         public bool HideStroke { get; set; }
     }
 
+    static readonly string TaskbarPlusSettingsPath = Path.Combine(Dir, "taskbar-plus-settings.json");
+
+    // Включены ли в Taskbar Plus острова (плавающая панель, вкладка, острова) и работает ли его движок. Тогда окно панели целиком заливать нельзя:
+    // цвет и размытие окна видны и между островами сплошной полосой, а вырезать их по островам Windows не даёт. Цвет ложится на сами острова.
+    public static bool IslandsActive()
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(TaskbarPlusSettingsPath));
+            var r = doc.RootElement;
+            var useXaml = r.TryGetProperty("UseXaml", out var u) && u.ValueKind == JsonValueKind.True;
+            var shape = r.TryGetProperty("Shape", out var sh) && sh.ValueKind == JsonValueKind.String ? sh.GetString() : "none";
+            return useXaml && (shape == "pill" || shape == "tab" || shape == "islands") && EngineState().Ready;
+        }
+        catch { return false; }
+    }
+
     public static void Write(ColorSettings s)
     {
         var on = s.TaskbarOn && s.TaskbarMode != ColorSettings.TbDefault;
@@ -28,7 +45,8 @@ static class TaskbarLink
         {
             Active = on,
             // «Размытая»: фон панели делаем прозрачным, размытие за ним рисует Windows (см. WindowEffects.ApplyTaskbar)
-            BgMode = s.TaskbarMode switch { ColorSettings.TbSolid => "solid", ColorSettings.TbDefault => "default", _ => "clear" },
+            // «Размытая» при островах: острова красятся цветом с прозрачностью (размытие окна залило бы и промежутки между ними)
+            BgMode = s.TaskbarMode switch { ColorSettings.TbSolid => "solid", ColorSettings.TbDefault => "default", ColorSettings.TbBlur when IslandsActive() => "solid", _ => "clear" },
             BgColor = s.TaskbarColor,
             BgOpacity = s.TaskbarOpacity,
             HideStroke = on && s.TaskbarHideStroke,

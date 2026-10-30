@@ -413,17 +413,24 @@ sealed class WindowEffects : IDisposable
     // ---------- панель задач ----------
     // Размытие или цвет «за» панелью. В Windows 11 панель рисует свой фон сама (XAML): чтобы размытие было видно,
     // фон должен стать прозрачным — это делает движок Taskbar Plus (см. TaskbarLink).
+    (DateTime At, bool On) islandsCache = (DateTime.MinValue, false);
+    bool lastIslands;
+
     void ApplyTaskbar(ColorSettings s)
     {
         var on = s.TaskbarOn && s.TaskbarMode != ColorSettings.TbDefault;
         if (on)
         {
+            // с островами окно панели не заливается (иначе цвет виден и между островами); состояние островов проверяем раз в 2 с
+            if (DateTime.UtcNow - islandsCache.At > TimeSpan.FromSeconds(2)) islandsCache = (DateTime.UtcNow, TaskbarLink.IslandsActive());
+            var islands = islandsCache.On;
+            if (islands != lastIslands) { lastIslands = islands; try { TaskbarLink.Write(s); } catch { } }
             var windows = TaskbarWindows();
             foreach (var h in windows)
             {
                 var ok = s.TaskbarMode switch
                 {
-                    ColorSettings.TbBlur => Native.SetAccent(h, Native.AccentAcrylic, Native.Abgr(s.TaskbarColor, s.TaskbarOpacity)),
+                    ColorSettings.TbBlur => islands ? Native.SetAccent(h, Native.AccentTransparentGradient, 0) : Native.SetAccent(h, Native.AccentAcrylic, Native.Abgr(s.TaskbarColor, s.TaskbarOpacity)),
                     // В Windows 11 панель рисует XAML внутри Проводника: сплошной цвет красит движок Taskbar Plus (фон и острова), а окно целиком
                     // заливать нельзя — цвет виден и между островами, а при перезапуске Проводника (движок подключается не сразу) панель на несколько секунд
                     // вспыхивает сплошным цветом. Заливка окна — только для Windows 10, где панель обычная.
