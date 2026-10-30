@@ -163,7 +163,7 @@ sealed class MainWindow : Window
             Seg(BackdropLabels, bdIdx, i => { settings.Backdrop = Backdrops[i]; Changed(); Build(); })));
         if (settings.Backdrop is ColorSettings.BdBlur or ColorSettings.BdAcrylic)
         {
-            rows.Add(Row("Оттенок стекла", "Цвет, которым подкрашено размытие", ColorPicker(settings.Tint, hex => { settings.Tint = hex; Changed(); })));
+            rows.Add(Row("Оттенок стекла", "Цвет, которым подкрашено размытие. Красит только фон окна. Ставится окнам, где это безопасно (Chrome, Edge, Firefox, Electron, современные приложения), и программам с «Своими настройками» в списке ниже; у остальных (Проводник и др.) оттенок закрасил бы и текст, поэтому им ставится системное размытие без оттенка", ColorPicker(settings.Tint, hex => { settings.Tint = hex; Changed(); })));
             rows.Add(SliderRow("Сила оттенка", "Чем меньше, тем прозрачнее стекло", 0, 100, settings.TintOpacity, "%", v => { settings.TintOpacity = v; Changed(); }));
         }
         if (settings.Backdrop != ColorSettings.BdNone)
