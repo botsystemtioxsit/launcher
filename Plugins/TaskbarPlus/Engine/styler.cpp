@@ -116,6 +116,7 @@ namespace
         int appliedGen = -1;
         std::wstring layoutSig;
         std::string islandsListed;
+        std::string rectsWritten;
         std::vector<Rule> rules;
         std::string rulesSig = "?";
         // счётчики читает поток наблюдателя
@@ -667,12 +668,32 @@ namespace
         WriteTextAtomic(DataDir() + L"\\taskbar-plus-engine-islands.txt", text);
     }
 
+    // Прямоугольники, которые на панели видны (острова, середина плавающей панели): плагин по ним обрезает окно панели,
+    // чтобы между островами было прозрачно, а не залито цветом окна (размытие или акцент Windows). Единицы — DIP, отсчёт от окна панели.
+    struct RectOut { double l, t, w, h, r; };
+
+    void WriteRects(const std::vector<RectOut>& rects, double pw, double ph, bool safe)
+    {
+        std::string text = "pid=" + std::to_string(GetCurrentProcessId()) + "\npanel=" + std::to_string((int)std::lround(pw)) + "," + std::to_string((int)std::lround(ph)) +
+                           "\nsafe=" + std::string(safe ? "1" : "0") + "\n";
+        char buf[160];
+        for (auto& r : rects)
+        {
+            _snprintf_s(buf, _TRUNCATE, "r=%.1f,%.1f,%.1f,%.1f,%.1f\n", r.l, r.t, r.w, r.h, r.r);
+            text += buf;
+        }
+        if (text == T().rectsWritten) return;
+        T().rectsWritten = text;
+        WriteTextAtomic(DataDir() + L"\\taskbar-plus-engine-rects-" + std::to_wstring(GetCurrentThreadId()) + L".txt", text);
+    }
+
     void Relayout(const Config& c, bool force)
     {
         const bool wantIslands = NeedsIslands(c);
         const bool wantLayout = c.enabled && c.LayoutActive();
         if (!wantIslands && !wantLayout)
         {
+            WriteRects({}, 0, 0, false);
             if (!T().hosts.empty()) RemoveIslands();
             ClearAllShifts();
             T().layoutSig.clear();
@@ -771,7 +792,7 @@ namespace
                 catch (...) {}
             }
 
-            if (!wantIslands) continue;
+            if (!wantIslands) { WriteRects({}, 0, 0, false); continue; }
 
             // ----- острова -----
             std::vector<Spec> specs;
@@ -822,6 +843,13 @@ namespace
             }
             totalIslands += (int)draw.size();
 
+            std::vector<RectOut> rects;
+            for (auto& sp : specs)
+            {
+                auto st = EffectiveStyle(c, sp.group, sp.key);
+                if (st.hidden) rects.push_back({ sp.b.l - 2, sp.b.t, sp.b.r - sp.b.l + 4, sp.b.b - sp.b.t, 0 });   // остров не рисуется, но значки на месте — их обрезать нельзя
+            }
+
             try
             {
                 auto children = host.panel.Children();
@@ -870,6 +898,7 @@ namespace
                     const double want = st.radius >= 0 ? st.radius : c.radius;
                     const double cap = (st.radius >= 0 ? 0.5 : 0.4) * (tabStyle ? w : std::min(w, h));
                     const double r = std::min(want, cap);
+                    rects.push_back({ o.l, o.t, w, h, r });
 
                     b.Margin(xaml::Thickness{ o.l, o.t, 0, 0 });
                     b.Width(w);
@@ -887,6 +916,33 @@ namespace
             {
                 Log(L"острова: ошибка 0x%08X", (unsigned)e.code().value);
                 host.borders.clear(); // дерево, вероятно, пересоздано
+            }
+
+            if (host.fill && !list.empty())
+            {
+                try
+                {
+                    if (c.shape == 1 || c.shape == 2)
+                        if (auto fe = host.fill.try_as<xaml::FrameworkElement>())
+                        {
+                            auto pt = fe.TransformToVisual(host.panel).TransformPoint(wf::Point{ 0, 0 });
+                            const auto appsSt = EffectiveStyle(c, 2, "apps");
+                            rects.push_back({ pt.X, pt.Y, fe.ActualWidth(), fe.ActualHeight(), appsSt.radius >= 0 ? (double)appsSt.radius : (double)c.radius });
+                        }
+                    // обрезать можно, только если каждый значок панели лежит внутри какого-то прямоугольника (иначе часы или трей пропали бы)
+                    bool safe = !rects.empty() && hostH > 0;
+                    for (auto& m : list)
+                    {
+                        const int g = GroupOf(m.it->kind);
+                        const double cx = (m.b.l + m.b.r) / 2 + dx[g], cy = (m.b.t + m.b.b) / 2;
+                        bool inside = false;
+                        for (auto& rr : rects)
+                            if (cx >= rr.l - 1 && cx <= rr.l + rr.w + 1 && cy >= rr.t - 1 && cy <= rr.t + rr.h + 1) { inside = true; break; }
+                        if (!inside) { safe = false; break; }
+                    }
+                    if (width > 0 && hostH > 0) WriteRects(rects, width, hostH, safe);
+                }
+                catch (...) {}
             }
         }
 

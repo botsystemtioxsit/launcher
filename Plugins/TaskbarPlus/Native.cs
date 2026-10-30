@@ -26,6 +26,7 @@ static class Native
     [DllImport("user32.dll")] public static extern int SetWindowRgn(IntPtr h, IntPtr rgn, bool redraw);
     [DllImport("user32.dll")] public static extern int GetWindowRgnBox(IntPtr h, out RECT r);
     [DllImport("user32.dll")] public static extern uint GetDpiForWindow(IntPtr h);
+    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
     [DllImport("user32.dll")] static extern IntPtr MonitorFromWindow(IntPtr h, uint flags);
     [DllImport("user32.dll")] static extern bool GetMonitorInfo(IntPtr mon, ref MONITORINFO mi);
     [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW")] static extern bool SpiGetInt(uint action, uint param, out int value, uint winIni);

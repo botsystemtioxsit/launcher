@@ -38,7 +38,7 @@ Say ("Экран: " + [System.Windows.Forms.SystemInformation]::VirtualScreen)
 Say (Shot (Join-Path $Out '00-до.png'))
 
 $p = Start-Process -FilePath 'out-test/TaskbarPlus.exe' -ArgumentList '--background' -PassThru
-$st = Wait-File $status { param($t) $t -match 'state=ready' -and $t -match 'engine=5' -and $t -match 'bgfill=[1-9]' } 90
+$st = Wait-File $status { param($t) $t -match 'state=ready' -and $t -match 'engine=6' -and $t -match 'bgfill=[1-9]' } 90
 Start-Sleep -Seconds 6
 Mark '01-плагин-работает'
 
@@ -78,6 +78,17 @@ Start-Sleep -Seconds 2
 Mark '08-проводник-+3с-цвет'
 Start-Sleep -Seconds 6
 Mark '08-проводник-+9с-цвет'
+Quit-Plugin $cp 'color-plus'
+Remove-Item (Join-Path $data 'color-plus-settings.json') -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 3
+
+Say ""; Say "=== Color Plus: размытая панель (розовый тон) + обрезка по островам ==="
+$csettings = @{ TaskbarOn = $true; TaskbarMode = 'blur'; TaskbarColor = '#FF2A9D'; TaskbarOpacity = 90 }
+($csettings | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
+$cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
+Start-Sleep -Seconds 12
+Mark '09-размытая-панель-обрезка-по-островам'
+Get-ChildItem $data -Filter 'taskbar-plus-engine-rects-*.txt' | ForEach-Object { Say ("  " + $_.Name); Get-Content $_.FullName | ForEach-Object { Say ("    " + $_) } }
 Quit-Plugin $cp 'color-plus'
 Remove-Item (Join-Path $data 'color-plus-settings.json') -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 3
