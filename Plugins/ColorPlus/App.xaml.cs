@@ -41,6 +41,7 @@ public partial class App : Application
         settings = ColorSettings.Load();
         controller = new Controller();
         controller.Apply(settings); // тихо применяем сохранённое (и возвращаем то, что мог оставить аварийно закрытый прошлый запуск)
+        controller.StartReporting(settings);
 
         var ev = showEvent;
         new Thread(() =>

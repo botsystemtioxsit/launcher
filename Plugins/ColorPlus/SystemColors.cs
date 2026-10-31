@@ -128,8 +128,10 @@ sealed class SystemColors
         WriteDword(DwmKey, "AccentColor", Abgr(s.AccentColor));
         WriteDword(DwmKey, "ColorizationColor", Argb(s.AccentColor));
         WriteDword(DwmKey, "ColorizationAfterglow", Argb(s.AccentColor));
-        WriteDword(AccentKey, "AccentColorMenu", Abgr(s.AccentColor));
-        WriteDword(AccentKey, "StartColorMenu", Abgr(s.AccentColor));
+        // Цвет меню «Пуск» и панели задач (при «Показывать акцентный цвет на панели») НЕ меняем и возвращаем прежний, даже если прошлая версия его сменила:
+        // панель красится только своими настройками, а не через акцент Windows — иначе она розовела после каждого перезапуска Проводника.
+        WriteDword(AccentKey, "AccentColorMenu", orig.MenuAccent);
+        WriteDword(AccentKey, "StartColorMenu", orig.StartAccent);
         Broadcast(Argb(s.AccentColor));
     }
 
