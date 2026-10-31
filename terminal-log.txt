@@ -1,0 +1,6 @@
+00:24:45 init webview
+00:24:47 webview ready
+00:24:47 screenshot start
+00:24:48 navigation completed: ok=True status=Unknown
+00:24:48 navigated or timeout
+00:24:54 captured
