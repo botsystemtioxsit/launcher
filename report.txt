@@ -1,0 +1,45 @@
+окно «игры»: 131414   обычное окно: 66050
+до: игра ex=0x50100 layered=0 backdrop=3 dark=0 | обычное ex=0x50100 layered=0 backdrop=0 dark=0
+снимок: results\01-до.png (1024x768)
+Color Plus работает: игра ex=0x50100 layered=0 backdrop=0 dark=0 | обычное ex=0x50100 layered=0 backdrop=3 dark=0
+снимок: results\02-плагин-работает.png (1024x768)
+после выхода: игра ex=0x50100 layered=0 backdrop=0 dark=0 | обычное ex=0x50100 layered=0 backdrop=0 dark=0
+
+=== цвет текста выделения ===
+до: HIGHLIGHT=0xD47800 HIGHLIGHTTEXT=0xFFFFFF
+Авто (ожидается HIGHLIGHT=0x9D2AFF, HIGHLIGHTTEXT как до) : HIGHLIGHT=0x9D2AFF HIGHLIGHTTEXT=0xFFFFFF
+Авто (ожидается HIGHLIGHT=0x9D2AFF, HIGHLIGHTTEXT как до) после выхода : HIGHLIGHT=0xD47800 HIGHLIGHTTEXT=0xFFFFFF
+Свой розовый (ожидается HIGHLIGHT=0x9D2AFF, HIGHLIGHTTEXT=0x9D2AFF) : HIGHLIGHT=0x9D2AFF HIGHLIGHTTEXT=0x9D2AFF
+Свой розовый (ожидается HIGHLIGHT=0x9D2AFF, HIGHLIGHTTEXT=0x9D2AFF) после выхода : HIGHLIGHT=0xD47800 HIGHLIGHTTEXT=0xFFFFFF
+
+=== отчёт Color Plus ===
+отчёт: код 0
+Color Plus — отчёт
+Время: 2026-10-31 00:24:06   повод: проверка
+Плагин: 1.3.2.0   Windows: 10.0.26100.0
+Состояние: (проверка)
+
+--- настройки Color Plus ---
+{"WindowsOn":false,"WindowMode":"none","GlassAlpha":85,"GlassTint":"#101018","GlassBlur":45,"GlassKeepStrip":true,"WindowOpacity":90,"Backdrop":"none","Tint":"#101018","TintOpacity":60,"ExtendFrame":false,"DarkTitle":false,"TitleColor":null,"TitleTextColor":null,"Apps":{},"TaskbarOn":false,"TaskbarMode":"default","TaskbarColor":"#101018","TaskbarOpacity":60,"TaskbarHideStroke":false,"SelectionOn":true,"SelectionColor":"#FF2A9D","SelectionTextColor":"#FF2A9D","SelectionTextAuto":false,"AccentOn":false,"AccentColor":"#00F0FF","BackgroundHintShown":false,"AutoReport":true}
+--- связь с Taskbar Plus (color-plus-taskbar.json) ---
+{"Active":false,"BgMode":"default","BgColor":"#101018","BgOpacity":60,"HideStroke":false}
+--- настройки Taskbar Plus ---
+(нет файла)
+--- движок Taskbar Plus ---
+(нет файла)
+острова включены (по мнению Color Plus): False
+
+--- процессы ---
+explorer:1 запущен 00:20:52; ColorPlus:1; 
+--- цвета Windows ---
+ColorPrevalence=0x00000000 SystemUsesLightTheme=0x00000001 AppsUseLightTheme=0x00000001 EnableTransparency=0x00000001
+AccentColorMenu=0xFFD47800 StartColorMenu=0xFFC06700 AutoColorization=—
+DWM AccentColor=0xFFD47800 ColorizationColor=0xC40078D4 ColorPrevalence=0x00000000
+--- что запомнено для возврата (color-plus-originals.json) ---
+{"SelectionChanged":false,"Highlight":13924352,"HighlightText":16777215,"AccentChanged":false,"DwmAccentColor":null,"DwmColorization":null,"DwmAfterglow":null,"MenuAccent":null,"StartAccent":null}
+--- окно панели задач ---
+handle=196730 rect=0,720,1024,768 ex=0x88
+--- цвета пикселей вдоль нижнего края экрана ---
+y=764: #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE 
+y=744: #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #FAFAFA #FAFAFA #FFD14F #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE 
+y=724: #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE #EEEEEE 
