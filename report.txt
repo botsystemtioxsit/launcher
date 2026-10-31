@@ -1,0 +1,5 @@
+исходные значения: ColorPrevalence=0; SystemUsesLightTheme=1; AccentColor=4292114432; StartColorMenu=4290799360; ColorizationColor=3288365268; AccentColorMenu=4292114432; AppsUseLightTheme=1
+снимок: results\01-до.png (1024x768)
+снимок: results\02-акцент-розовый-на-панели-ВКЛ-после-перезапуска.png (1024x768)
+снимок: results\03-акцент-розовый-но-цвет-панели-не-тронут.png (1024x768)
+снимок: results\04-после-возврата.png (1024x768)
