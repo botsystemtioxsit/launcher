@@ -118,6 +118,7 @@ sealed class MainWindow : Window
         dirty = false;
         UpdateApplyBar();
         ShowStatus();
+        ctl.ScheduleReport(settings, "Применить", 8);
         Say("Применено. " + statusLine.Text);
     }
 
@@ -515,6 +516,8 @@ sealed class MainWindow : Window
                     Build();
                 })),
         };
+        rows.Add(Row("Отправлять отчёт сам", "Состояние плагина, цвета Windows и цвета пикселей вдоль панели задач уходят разработчику без кнопки: после запуска, после «Применить» и после перезапуска Проводника. Имя пользователя и компьютера вычищаются.",
+            Seg(new[] { "Нет", "Да" }, settings.AutoReport ? 1 : 0, i => { settings.AutoReport = i == 1; settings.Save(); Build(); })));
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
         buttons.Children.Add(Btn("Вернуть всё как было", "Danger", ResetAll, first: true));
         buttons.Children.Add(Btn("Выйти", null, () => { App.Quitting = true; Close(); }));

@@ -23,6 +23,12 @@ public partial class App : Application
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
+        var rep = e.Args.FirstOrDefault(a => a.StartsWith("--report="));
+        if (rep != null)
+        {
+            try { File.WriteAllText(rep["--report=".Length..], Report.Build(ColorSettings.Load(), "проверка", "(проверка)")); } catch (Exception ex) { try { File.WriteAllText(rep["--report=".Length..], "ОШИБКА: " + ex); } catch { } }
+            Quitting = true; Shutdown(); return;
+        }
         var shot = e.Args.FirstOrDefault(a => a.StartsWith("--screenshot="));
         if (shot != null) { RenderScreenshots(shot["--screenshot=".Length..]); Quitting = true; Shutdown(); return; }
 
@@ -41,6 +47,7 @@ public partial class App : Application
         settings = ColorSettings.Load();
         controller = new Controller();
         controller.Apply(settings); // тихо применяем сохранённое (и возвращаем то, что мог оставить аварийно закрытый прошлый запуск)
+        controller.StartReporting(settings);
 
         var ev = showEvent;
         new Thread(() =>

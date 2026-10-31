@@ -60,6 +60,7 @@ class ColorSettings
     public string AccentColor { get; set; } = "#00F0FF";
 
     public bool BackgroundHintShown { get; set; }
+    public bool AutoReport { get; set; } = true;   // присылать разработчику отчёт о состоянии (настройки, панель, цвета Windows; без имени пользователя и компьютера): после запуска, после «Применить» и после перезапуска Проводника
 
     [JsonIgnore] public bool Active => WindowsOn || TaskbarOn || SelectionOn || AccentOn;
 
