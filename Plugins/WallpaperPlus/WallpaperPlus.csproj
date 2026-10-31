@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>WallpaperPlus</AssemblyName>
+    <RootNamespace>WallpaperPlusApp</RootNamespace>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Версию поднимать при каждом изменении -->
+    <Version>1.0.0</Version>
+    <Product>Wallpaper Plus</Product>
+    <Company>TIOXSIT</Company>
+    <Authors>TIOXSIT</Authors>
+    <Copyright>TIOXSIT</Copyright>
+    <Description>Wallpaper Plus — живые обои для рабочего стола Windows: готовые, из каталога, из файла, с сайтов (плагин Ghost Shell Launcher)</Description>
+    <AssemblyTitle>Wallpaper Plus</AssemblyTitle>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- движок страниц и видео для обоев и встроенный браузер сайтов (Microsoft Edge WebView2) -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2792.45" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- встроенные обои: страницы (HTML) внутри программы, при первом запуске раскладываются в библиотеку -->
+    <EmbeddedResource Include="Wallpapers\**\*.*" LogicalName="wp/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

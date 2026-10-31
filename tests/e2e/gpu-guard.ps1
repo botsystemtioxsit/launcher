@@ -76,3 +76,11 @@ function Run-Sel($name, $auto) {
 Say ("до: HIGHLIGHT=0x{0:X} HIGHLIGHTTEXT=0x{1:X}" -f [N.S]::GetSysColor(13), [N.S]::GetSysColor(14))
 Run-Sel 'Авто (ожидается HIGHLIGHT=0x9D2AFF, HIGHLIGHTTEXT как до)' $true
 Run-Sel 'Свой розовый (ожидается HIGHLIGHT=0x9D2AFF, HIGHLIGHTTEXT=0x9D2AFF)' $false
+
+# отчёт Color Plus (то, что плагин присылает сам): строится локально, чтобы проверить содержимое
+Say ""
+Say "=== отчёт Color Plus ==="
+$repFile = Join-Path (Resolve-Path $Out).Path 'color-plus-report.txt'
+$pr = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList "--report=$repFile" -PassThru
+if (-not $pr.WaitForExit(60000)) { $pr.Kill(); Say 'отчёт: не завершился' } else { Say "отчёт: код $($pr.ExitCode)" }
+if (Test-Path $repFile) { Get-Content $repFile | ForEach-Object { Say $_ } }
