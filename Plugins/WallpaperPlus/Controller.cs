@@ -24,13 +24,21 @@ sealed class Controller : IDisposable
     public bool Running => hosts.Count > 0;
 
     static string Sign(WpSettings s, Wallpaper w, List<Native.Monitor> monitors) =>
-        $"{w.Id}|{w.Values.Count}|{string.Join(",", w.Values.OrderBy(k => k.Key).Select(k => k.Key + "=" + k.Value))}|{s.Fit}|{s.Fps}|{s.Mute}|{s.AllMonitors}|{w.Online}|" +
+        $"{w.Id}|{w.Background}|{BgSign(w)}|{w.Values.Count}|{string.Join(",", w.Values.OrderBy(k => k.Key).Select(k => k.Key + "=" + k.Value))}|{s.Fit}|{s.Fps}|{s.Mute}|{s.AllMonitors}|{w.Online}|" +
         string.Join(";", monitors.Select(m => $"{m.Rect.Left},{m.Rect.Top},{m.Rect.Width},{m.Rect.Height}"));
+
+    // Фон под слоем: если его значения поменялись, окна пересоздаются
+    static string BgSign(Wallpaper w)
+    {
+        var bg = WallpaperView.BackgroundOf(w, null);
+        return bg == null ? "" : bg.Id + ":" + string.Join(",", bg.Values.OrderBy(k => k.Key).Select(k => k.Key + "=" + k.Value)) + bg.Online;
+    }
 
     // Применить настройки: включить, сменить или убрать обои. Повторный вызов с теми же настройками ничего не пересоздаёт.
     public async Task ApplyAsync(WpSettings s)
     {
         settings = s.Clone();
+        TelemetryHub.I.SetConfig(settings);   // настройки данных для «Терминала» (звук, журнал, город для погоды) действуют сразу, без пересоздания окон
         if (busy) return;
         busy = true;
         try

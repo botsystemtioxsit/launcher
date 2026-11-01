@@ -47,6 +47,24 @@ sealed partial class MainWindow
                 Seg(new[] { "Выкл", "Вкл" }, settings.PauseWhenCovered ? 1 : 0, i => { settings.PauseWhenCovered = i == 1; ApplySettings(); BuildSettings(); })),
         }));
 
+        // данные компьютера для обоев «Терминал»
+        var cityBox = new TextBox { Text = settings.WeatherQuery.Length > 0 ? settings.WeatherQuery : settings.WeatherName, Width = 220, Padding = new Thickness(6, 4, 6, 4), VerticalContentAlignment = VerticalAlignment.Center };
+        var cityStatus = new TextBlock { Foreground = Res("Accent2"), FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8), Text = settings.WeatherName.Length > 0 ? "Город: " + settings.WeatherName : "Город не выбран — погода в терминале не показывается." };
+        var cityRow = new StackPanel { Orientation = Orientation.Horizontal };
+        cityRow.Children.Add(cityBox);
+        cityRow.Children.Add(Btn("Найти", "Primary", () => FindCity(cityBox.Text, cityStatus)));
+        p.Children.Add(Card("Терминал: данные компьютера", new UIElement[]
+        {
+            Note("Обои «Терминал» показывают время, погоду, звук, что играет, курсор и журнал событий. Ничего не записывается на диск и не отправляется: " +
+                 "единственный запрос в интернет — погода у бесплатного сервиса Open-Meteo, и в нём только название города."),
+            Row("Город для погоды", "Например: Москва", cityRow),
+            cityStatus,
+            Row("Звук и музыка", "Уровень громкости системы, полосы-«эквалайзер» и что сейчас играет. Звук не записывается: из него берутся только высоты полос.",
+                Seg(new[] { "Выкл", "Вкл" }, settings.TelAudio ? 1 : 0, i => { settings.TelAudio = i == 1; ApplySettings(); BuildSettings(); })),
+            Row("Журнал событий", "Какие программы открыты и закрыты, смена окна, сеть, громкость, нагрузка. Только названия программ, без заголовков окон.",
+                Seg(new[] { "Выкл", "Вкл" }, settings.TelJournal ? 1 : 0, i => { settings.TelJournal = i == 1; ApplySettings(); BuildSettings(); })),
+        }));
+
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
         buttons.Children.Add(Btn("Выключить обои", "Danger", () => { Activate(""); }, first: true));
         buttons.Children.Add(Btn("Выйти", null, () => { App.Quitting = true; Close(); }));
@@ -63,6 +81,20 @@ sealed partial class MainWindow
             Note("Системные обои Windows плагин не меняет: его обои — отдельное окно за значками. «Выключить» или «Выйти» — и рабочий стол такой, как был. " +
                  "Если запущен Wallpaper Engine или Lively, выключите их: две программы с живыми обоями мешают друг другу."),
         }));
+    }
+
+    async void FindCity(string query, TextBlock status)
+    {
+        status.Text = "Ищу…";
+        try
+        {
+            var r = await Weather.FindAsync(query);
+            if (r == null) { status.Text = "Такой город не найден. Попробуйте написать иначе."; return; }
+            settings.WeatherQuery = query.Trim(); settings.WeatherName = r.Value.Label; settings.WeatherLat = r.Value.Lat; settings.WeatherLon = r.Value.Lon;
+            ApplySettings();
+            status.Text = "Город: " + r.Value.Label;
+        }
+        catch (Exception ex) { status.Text = "Нет связи с сервисом погоды: " + ex.Message; }
     }
 
     readonly System.Windows.Threading.DispatcherTimer fpsTimer = CreateFpsTimer();

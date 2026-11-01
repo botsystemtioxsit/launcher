@@ -42,7 +42,7 @@ sealed class HostWindow : Window
         Desktop.Attach(Handle, Monitor.Rect);
     }
 
-    public Task LoadAsync(Wallpaper w, WpSettings s) => WallpaperView.LoadAsync(web, w, s);
+    public Task LoadAsync(Wallpaper w, WpSettings s) => WallpaperView.LoadAsync(web, w, s, null, new LoadOptions { IsPaused = () => Paused });
 
     public void SetMuted(bool muted) { try { if (web.CoreWebView2 != null) web.CoreWebView2.IsMuted = muted; } catch { } }
 
@@ -69,6 +69,7 @@ sealed class HostWindow : Window
 
     public void Release()
     {
+        WallpaperView.Detach(web);
         try { web.Dispose(); } catch { }
         try { Close(); } catch { }
     }
