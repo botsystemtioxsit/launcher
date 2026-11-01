@@ -37,7 +37,13 @@ sealed partial class MainWindow
         Color Hsv(double h, double s, double v)
         {
             h = (h % 360 + 360) % 360; var c = v * s; var x = c * (1 - Math.Abs(h / 60 % 2 - 1)); var m = v - c;
-            (double r, double g, double bl) = h < 60 ? (c, x, 0) : h < 120 ? (x, c, 0) : h < 180 ? (0, c, x) : h < 240 ? (0, x, c) : h < 300 ? (x, 0, c) : (c, 0, x);
+            double r, g, bl;
+            if (h < 60) { r = c; g = x; bl = 0; }
+            else if (h < 120) { r = x; g = c; bl = 0; }
+            else if (h < 180) { r = 0; g = c; bl = x; }
+            else if (h < 240) { r = 0; g = x; bl = c; }
+            else if (h < 300) { r = x; g = 0; bl = c; }
+            else { r = c; g = 0; bl = x; }
             return Color.FromRgb((byte)((r + m) * 255), (byte)((g + m) * 255), (byte)((bl + m) * 255));
         }
         var h1 = b[0] / 255.0 * 360;
