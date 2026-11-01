@@ -83,6 +83,10 @@ Remove-Item (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyCon
 
 # ---- 4. «Новый движок» у Taskbar Plus выключен (как у владельца: серая панель) — Color Plus включает его при «Применить» ----
 Say ""; Say "=== Taskbar Plus с ВЫКЛЮЧЕННЫМ новым движком: Color Plus включает его сам ==="
+# чистый Проводник: движок прошлого шага остаётся загруженным в нём после выхода плагина
+Set-Content (Join-Path $data 'explorer-restart.txt') ([DateTime]::UtcNow.ToString('o'))
+Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 12
 $progDir = Join-Path $env:LOCALAPPDATA 'Programs\TaskbarPlus'
 New-Item -ItemType Directory -Force $progDir | Out-Null
 Copy-Item 'out-test/TaskbarPlus.exe' (Join-Path $progDir 'TaskbarPlus.exe') -Force

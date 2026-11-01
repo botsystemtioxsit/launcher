@@ -34,8 +34,9 @@ static class TaskbarPlusControl
         var running = Running();
         if (!running && !File.Exists(ExePath)) return State.NotInstalled;
         if (!running) return State.NotRunning;
-        if (TaskbarLink.EngineState().Ready) return State.Ready;
-        return EngineSetting() ? State.Starting : State.EngineOff;
+        // «готов» — только если движок включён в самом Taskbar Plus: старая копия движка может висеть в Проводнике и писать статус после выхода плагина
+        if (!EngineSetting()) return State.EngineOff;
+        return TaskbarLink.EngineState().Ready ? State.Ready : State.Starting;
     }
 
     public static string Text(State s) => s switch
