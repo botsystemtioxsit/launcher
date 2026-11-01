@@ -122,6 +122,17 @@
       }
     },
     {
+      "id": "color-plus",
+      "name": "Color Plus",
+      "desc": "Один цвет для окон, выделения и панели задач: выберите, посмотрите на предпросмотре и примените.",
+      "desktop": {
+        "repo": "launcher",
+        "tag": "latest",
+        "asset": "ColorPlus.exe",
+        "name": "Color Plus"
+      }
+    },
+    {
       "id": "icon-plus",
       "name": "Icon Plus",
       "desc": "Значки Windows по-своему: один цвет для всех значков или готовый набор иконок, сайт с иконками внутри.",
