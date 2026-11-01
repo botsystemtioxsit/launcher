@@ -38,6 +38,22 @@ static class SelfTest
                     L("после правки: " + c2?.Title + " c1=" + (c2 != null && c2.Values.TryGetValue("c1", out var v) ? v : "?"));
                 }
             }
+            // «Терминал» поверх «Звёздного поля» со своей раскладкой
+            var term = Library.Get("b-terminal-hud");
+            if (term == null) L("нет шаблона b-terminal-hud");
+            else
+            {
+                var layout = "{\"v\":1,\"widgets\":[{\"id\":\"x1\",\"type\":\"clock\",\"x\":0.35,\"y\":0.42,\"w\":0.3,\"opts\":{\"label\":\"NOW\",\"panel\":true,\"scale\":2}},{\"id\":\"x2\",\"type\":\"log\",\"x\":0.95,\"y\":0.7,\"w\":0.32,\"opts\":{\"align\":\"right\"}},{\"id\":\"x3\",\"type\":\"sys\",\"x\":0.05,\"y\":0.7,\"w\":0.27,\"opts\":{}}]}";
+                var (t, tm) = Library.CreateFrom(term, "Терминал на звёздах", new Dictionary<string, string> { ["layout"] = layout, ["lang"] = "en" }, "b-starfield");
+                L("терминал: " + (t?.Id ?? "нет") + " | " + tm);
+                if (t != null)
+                {
+                    File.WriteAllText(Path.Combine(folder, "terminal-id.txt"), t.Id);
+                    var bg = WallpaperView.BackgroundOf(t, null);
+                    L("терминал: данные=" + string.Join(",", t.Telemetry) + " фон=" + (bg?.Id ?? "нет") + " слой=" + t.Overlay);
+                    L("url слоя: " + WallpaperView.EntryUrl(t, new WpSettings(), null, WallpaperView.FgHost, "compose=1").Length + " знаков");
+                }
+            }
             L("всего обоев в библиотеке: " + Library.List().Count);
         }
         catch (Exception ex) { L("ОШИБКА: " + ex); }

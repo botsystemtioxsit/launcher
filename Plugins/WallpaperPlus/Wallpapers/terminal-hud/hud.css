@@ -1,0 +1,50 @@
+@font-face{font-family:'Share Tech Mono';src:url('fonts/ShareTechMono-Regular.ttf')}
+:root{--acc:#c9a7ff;--accrgb:201,167,255;--bg:#07030f;--bgrgb:7,3,15;--g:1;--scan:.5;--fill:1;--s:1;--panelw:0px}
+html,body{margin:0;height:100%;overflow:hidden;background:transparent;font-family:'Share Tech Mono','Cascadia Mono',Consolas,'Lucida Console',monospace;-webkit-user-select:none;user-select:none}
+body{background:rgba(var(--bgrgb),var(--fill))}
+#stage{position:fixed;left:0;top:0;right:var(--panelw);bottom:0;overflow:hidden;font-size:calc(16px*var(--s));color:var(--acc)}
+#layer{position:absolute;inset:0;filter:blur(calc(.28px*var(--g)));animation:flick 6s infinite}
+@keyframes flick{0%,100%{opacity:1}91%{opacity:1}92%{opacity:.8}93%{opacity:1}96%{opacity:.9}97%{opacity:1}}
+#vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,transparent 52%,rgba(0,0,0,.55) 100%)}
+#scan{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,calc(var(--scan)*.55)) 0 1px,transparent 1px 3px)}
+.w{position:absolute;line-height:1.4;letter-spacing:.07em;white-space:nowrap;transform-origin:50% 50%;
+ text-shadow:calc(-1.1px*var(--g)) 0 rgba(255,50,110,.6),calc(1.1px*var(--g)) 0 rgba(50,190,255,.6),0 0 .55em rgba(var(--accrgb),.55)}
+.w.panel::before{content:'';position:absolute;inset:-.35em -.9em;z-index:-1;background:linear-gradient(90deg,rgba(var(--accrgb),.14),rgba(var(--accrgb),.03));border-left:2px solid rgba(var(--accrgb),.4)}
+.w.r.panel::before{background:linear-gradient(270deg,rgba(var(--accrgb),.14),rgba(var(--accrgb),.03));border-left:0;border-right:2px solid rgba(var(--accrgb),.4)}
+.w .big{font-size:1.15em;letter-spacing:.12em}
+.w .dim{opacity:.55}
+.w .row{display:flex;gap:1.4em;align-items:baseline}
+.w.r .row{justify-content:flex-end}
+.w.r .row>.lab{order:9}
+.w .lab{opacity:.5;min-width:3.2em}
+.w.r .lab{text-align:right}
+.w .grp{display:inline-block;min-width:1.8em;text-align:center}
+.w .fl{margin-left:auto}
+.w .bar .f{color:var(--acc)}
+.w .bar .e{opacity:.3}
+.w .chev{animation:chev 1.2s steps(4) infinite;display:inline-block;overflow:hidden;width:4ch;vertical-align:bottom}
+@keyframes chev{0%{width:0}100%{width:4ch}}
+.w .lv-ERROR{color:#ff6b8f}.w .lv-WARN{color:#ffd27a}.w .lv-INFO{color:var(--acc)}
+.w .logl{display:flex;gap:1.4em}.w .logl .tm{margin-left:auto;opacity:.5}
+.w .evt span{margin-left:1.2em;opacity:.35}.w .evt span.on{opacity:1}
+.w.r .evt span{margin-left:0;margin-right:1.2em}
+.w canvas{display:block}
+.glt{animation:glt .16s steps(2) 1}
+@keyframes glt{0%{transform:translateX(4px) skewX(6deg)}50%{transform:translateX(-5px)}100%{transform:none}}
+/* редактор */
+body.edit #stage{outline:1px dashed rgba(var(--accrgb),.35);background-image:linear-gradient(rgba(var(--accrgb),.07) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--accrgb),.07) 1px,transparent 1px);background-size:5% 5%}
+body.edit .w{cursor:move;outline:1px solid rgba(var(--accrgb),.25)}
+body.edit .w.sel{outline:2px solid #fff}
+body.edit .w .rz{position:absolute;right:-6px;bottom:-6px;width:12px;height:12px;background:#fff;cursor:nwse-resize}
+body.edit .w.r .rz{right:auto;left:-6px;cursor:nesw-resize}
+body.edit #vig,body.edit #scan{display:none}
+#panel{position:fixed;top:0;right:0;bottom:0;width:var(--panelw);box-sizing:border-box;background:#0d0b1a;color:#e6f4ff;border-left:1px solid #2d2060;padding:12px;overflow:auto;font:13px 'Segoe UI',sans-serif;text-shadow:none;letter-spacing:0;line-height:1.35;-webkit-user-select:none}
+#panel h4{margin:12px 0 6px;font-size:12px;letter-spacing:.08em;color:#8b86b8;text-transform:uppercase}
+#panel button{background:#15112b;color:#e6f4ff;border:1px solid #2d2060;padding:5px 9px;margin:0 4px 4px 0;font:inherit;cursor:pointer;border-radius:3px}
+#panel button:hover{border-color:#00f0ff}
+#panel button.danger{color:#ff3366}
+#panel label{display:block;margin:6px 0 2px;color:#8b86b8;font-size:12px}
+#panel input[type=text],#panel textarea,#panel select{width:100%;box-sizing:border-box;background:#06050d;color:#e6f4ff;border:1px solid #2d2060;padding:4px 6px;font:inherit}
+#panel textarea{height:80px;resize:vertical}
+#panel input[type=range]{width:100%}
+#panel .hint{color:#8b86b8;font-size:12px;margin:4px 0}

@@ -15,6 +15,12 @@ sealed class WpSettings
     public int Fps { get; set; } = 60;                     // ограничение частоты кадров у встроенных обоев (15–60)
     public bool Autostart { get; set; }                    // запускаться вместе с Windows
     public bool Paused { get; set; }                       // пауза вручную
+    public bool TelAudio { get; set; } = true;             // «Терминал» может показывать уровень звука системы и что сейчас играет
+    public bool TelJournal { get; set; } = true;           // «Терминал» ведёт журнал событий (какие программы открыты, сеть, громкость)
+    public string WeatherQuery { get; set; } = "";         // что человек ввёл в поле «Город»
+    public string WeatherName { get; set; } = "";          // найденный город (пусто — погода не настроена)
+    public double WeatherLat { get; set; }
+    public double WeatherLon { get; set; }
 
     public void Normalize()
     {

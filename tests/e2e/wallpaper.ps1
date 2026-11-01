@@ -48,8 +48,14 @@ Say ("за пределы библиотеки записано: " + ((Get-Child
 (New-Object -ComObject Shell.Application).MinimizeAll()
 Start-Sleep -Seconds 3
 Say (Shot (Join-Path $Out '00-до.png'))
+# город для погоды (бесплатный сервис Open-Meteo) — чтобы проверить и погоду в «Терминале»
+$settingsFile = Join-Path $env:APPDATA 'BattleLauncher\wallpaper-plus-settings.json'
+New-Item -ItemType Directory -Force (Split-Path $settingsFile) | Out-Null
+(@{ WeatherQuery = 'Москва'; WeatherName = 'Москва, Россия'; WeatherLat = 55.7558; WeatherLon = 37.6173 } | ConvertTo-Json) | Set-Content $settingsFile -Encoding UTF8
+$terminal = if (Test-Path (Join-Path $st 'terminal-id.txt')) { (Get-Content (Join-Path $st 'terminal-id.txt') -Raw).Trim() } else { '' }
 $created = if (Test-Path (Join-Path $st 'created-id.txt')) { (Get-Content (Join-Path $st 'created-id.txt') -Raw).Trim() } else { '' }
-$ids = if ($env:WP_IDS) { $env:WP_IDS.Split(',') } else { @('b-neon-grid', 'b-digital-rain', 'b-starfield', 'b-aurora', 'b-neon-clock') }
+$ids = if ($env:WP_IDS) { $env:WP_IDS.Split(',') } else { @('b-terminal-hud', 'b-neon-grid', 'b-starfield', 'b-neon-clock') }
+if ($terminal) { $ids += $terminal }
 if ($created) { $ids += $created }
 $first = $true
 foreach ($id in $ids) {
@@ -75,6 +81,16 @@ foreach ($pg in @(2, 3)) {
     $pw = Start-Process -FilePath $exe -ArgumentList "--page=$pg" -PassThru
     Start-Sleep -Seconds 25
     Say (Shot (Join-Path $Out "03-вкладка-$pg.png"))
+    Quit-Plugin $pw 'wallpaper-plus'
+    Start-Sleep -Seconds 2
+}
+
+# ---- 4. «Создать» для «Терминала» и редактор панелей ----
+foreach ($mode in @(@('--create=b-terminal-hud', 'создать-терминал'), @('--create=b-terminal-hud --editor', 'редактор-терминала'))) {
+    Say ""; Say "=== $($mode[1]) ==="
+    $pw = Start-Process -FilePath $exe -ArgumentList $mode[0].Split(' ') -PassThru
+    Start-Sleep -Seconds 30
+    Say (Shot (Join-Path $Out ("04-" + $mode[1] + ".png")))
     Quit-Plugin $pw 'wallpaper-plus'
     Start-Sleep -Seconds 2
 }

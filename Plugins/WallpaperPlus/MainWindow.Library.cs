@@ -73,6 +73,12 @@ sealed partial class MainWindow
         info.Children.Add(title);
         if (w.Description.Length > 0 && w.Type == "html") info.Children.Add(new TextBlock { Text = w.Description, Foreground = Res("Muted"), FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
         info.Children.Add(new TextBlock { Text = $"{w.TypeLabel} · {SizeText(w.SizeBytes)} · {w.Source}" + (w.Online ? " · интернет разрешён" : ""), Foreground = Res("Muted"), FontSize = 11, Margin = new Thickness(0, 4, 0, 0) });
+        if (w.Telemetry.Count > 0)
+        {
+            var names = new Dictionary<string, string> { ["sys"] = "процессор и память", ["audio"] = "звук", ["media"] = "что играет", ["input"] = "курсор", ["journal"] = "журнал событий", ["weather"] = "погода" };
+            var bg = WallpaperView.BackgroundOf(w, null);
+            info.Children.Add(new TextBlock { Text = "Использует: " + string.Join(", ", w.Telemetry.Select(k => names.TryGetValue(k, out var n) ? n : k)) + (bg != null ? " · под ним: " + bg.Title : ""), Foreground = Res("Muted"), FontSize = 11, Margin = new Thickness(0, 2, 0, 0), TextWrapping = TextWrapping.Wrap });
+        }
         Grid.SetColumn(info, 1);
         grid.Children.Add(info);
 

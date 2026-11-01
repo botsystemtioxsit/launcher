@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -11,7 +11,7 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Product>Wallpaper Plus</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
@@ -24,11 +24,15 @@
   <ItemGroup>
     <!-- движок страниц и видео для обоев и встроенный браузер сайтов (Microsoft Edge WebView2) -->
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2792.45" />
+    <!-- уровень и спектр звука системы для «Терминала» (MIT) -->
+    <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- встроенные обои: страницы (HTML) внутри программы, при первом запуске раскладываются в библиотеку -->
     <EmbeddedResource Include="Wallpapers\**\*.*" LogicalName="wp/%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- служебные файлы для страниц обоев: gs.js (данные компьютера) и compose.html (фон + слой поверх) -->
+    <EmbeddedResource Include="Resources\*.*" LogicalName="res/%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

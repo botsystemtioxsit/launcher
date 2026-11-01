@@ -16,6 +16,8 @@ public partial class App : Application
     WpSettings settings = new();
     MainWindow? window;
     int startPage;
+    string? createId;     // для проверки в CI: сразу открыть «Создать» с этими обоями
+    bool openEditor;
     public static bool Quitting { get; set; }
 
     static string? Arg(StartupEventArgs e, string prefix) => e.Args.FirstOrDefault(a => a.StartsWith(prefix, StringComparison.Ordinal))?[prefix.Length..];
@@ -72,6 +74,8 @@ public partial class App : Application
             Dispatcher.BeginInvoke(new Action(() => { Quitting = true; Shutdown(); }));
         }) { IsBackground = true }.Start();
 
+        createId = Arg(e, "--create=");
+        openEditor = e.Args.Contains("--editor");
         if (int.TryParse(Arg(e, "--page="), out var pg)) startPage = pg;   // для проверки в CI: открыть нужную вкладку
         var background = e.Args.Contains("--background") || apply != null;
         if (background && settings.Active.Length == 0) { Quitting = true; Shutdown(); return; }   // фоновый запуск без обоев — делать нечего
@@ -85,6 +89,7 @@ public partial class App : Application
         if (window.WindowState == WindowState.Minimized) window.WindowState = WindowState.Normal;
         window.Show();
         window.Activate();
+        if (!string.IsNullOrEmpty(createId)) { var id = createId; createId = null; window.OpenCreate(id, openEditor); }
     }
 
     protected override void OnExit(ExitEventArgs e)

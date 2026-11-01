@@ -1,0 +1,7 @@
+<!doctype html><html><head><meta charset="utf-8"><title>compose</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#000}iframe{position:fixed;left:0;top:0;width:100vw;height:100vh;border:0;background:transparent}</style></head><body>
+<script>
+// Составные обои: фон (любые обои) и поверх него прозрачный слой (например, «Терминал»). Адреса слоёв передаёт Wallpaper Plus.
+const q=new URLSearchParams(location.search);
+for(const k of ['bg','fg']){const u=q.get(k);if(!u)continue;const f=document.createElement('iframe');f.src=u;f.setAttribute('allowtransparency','true');f.allow='autoplay';document.body.appendChild(f)}
+</script></body></html>

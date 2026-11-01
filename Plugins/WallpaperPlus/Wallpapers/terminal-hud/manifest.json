@@ -1,0 +1,22 @@
+{
+  "Id": "terminal-hud",
+  "Title": "Терминал",
+  "Type": "html",
+  "Entry": "index.html",
+  "Description": "Вайбовый терминал на рабочем столе: часы, погода, звук и музыка, курсор, журнал событий. Любые панели можно двигать, добавлять и убирать, а под ними поставить другие обои (например, космос).",
+  "Author": "Ghost Shell",
+  "Version": 1,
+  "Template": true,
+  "Overlay": true,
+  "Telemetry": ["sys", "audio", "media", "input", "journal", "weather"],
+  "Params": [
+    { "Key": "acc", "Label": "Цвет текста и свечения", "Type": "color", "Default": "#C9A7FF" },
+    { "Key": "bgc", "Label": "Цвет тёмной подложки", "Type": "color", "Default": "#07030F" },
+    { "Key": "fill", "Label": "Непрозрачность подложки (0 — видно обои под терминалом)", "Type": "range", "Min": 0, "Max": 1, "Step": 0.05, "Default": "1" },
+    { "Key": "glitch", "Label": "Сбой изображения (цветная «дрожь»)", "Type": "range", "Min": 0, "Max": 3, "Step": 0.1, "Default": "1" },
+    { "Key": "scan", "Label": "Строки развёртки (как у старого монитора)", "Type": "range", "Min": 0, "Max": 1, "Step": 0.05, "Default": "0.5" },
+    { "Key": "size", "Label": "Размер текста", "Type": "range", "Min": 0.6, "Max": 1.8, "Step": 0.05, "Default": "1" },
+    { "Key": "lang", "Label": "Язык подписей", "Type": "choice", "Options": ["ru", "en"], "Default": "ru" },
+    { "Key": "layout", "Label": "Расположение панелей", "Type": "layout", "Default": "" }
+  ]
+}

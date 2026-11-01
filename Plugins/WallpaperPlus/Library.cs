@@ -13,7 +13,8 @@ sealed class WpParam
 {
     public string Key { get; set; } = "";
     public string Label { get; set; } = "";
-    public string Type { get; set; } = "range";       // color | range
+    public string Type { get; set; } = "range";       // color | range | choice | text | layout (скрытое: раскладку правит редактор)
+    public List<string> Options { get; set; } = new(); // варианты для choice
     public double Min { get; set; }
     public double Max { get; set; } = 1;
     public double Step { get; set; } = 0.1;
@@ -36,6 +37,9 @@ sealed class Wallpaper
     public List<WpParam> Params { get; set; } = new();
     public Dictionary<string, string> Values { get; set; } = new();
     public bool Template { get; set; }                // шаблон: на его основе в окне «Создать» делаются свои обои
+    public bool Overlay { get; set; }                 // прозрачный слой (например «Терминал»): под ним можно поставить другие обои
+    public string Background { get; set; } = "";      // идентификатор обоев, которые лежат под слоем
+    public List<string> Telemetry { get; set; } = new(); // какие данные компьютера нужны странице: sys, audio, media, input, journal, weather
 
     [JsonIgnore] public string Dir => Path.Combine(Paths.Library, Id);
     [JsonIgnore] public bool Builtin => Id.StartsWith("b-", StringComparison.Ordinal);
@@ -370,12 +374,13 @@ static class Library
 
     // ---------- свои обои на основе шаблона ----------
     // Копирует шаблон (или уже созданные обои) в новые обои с выбранными значениями. Страница обоев остаётся той же, меняются только параметры в адресе.
-    public static (Wallpaper? Wallpaper, string Message) CreateFrom(Wallpaper template, string title, Dictionary<string, string> values)
+    public static (Wallpaper? Wallpaper, string Message) CreateFrom(Wallpaper template, string title, Dictionary<string, string> values, string background = "")
     {
         try
         {
             var w = NewWallpaper(title.Trim().Length > 0 ? title : template.Title + " (мои)", template.Type, "создано в Wallpaper Plus");
             w.Entry = template.Entry; w.Description = template.Description; w.Author = ""; w.Params = template.Params; w.Values = new Dictionary<string, string>(values); w.Template = false;
+            w.Overlay = template.Overlay; w.Telemetry = new List<string>(template.Telemetry); w.Background = template.Overlay ? background : "";
             Directory.CreateDirectory(w.Dir);
             foreach (var f in Directory.EnumerateFiles(template.Dir, "*", SearchOption.AllDirectories))
             {
@@ -391,10 +396,11 @@ static class Library
         catch (Exception ex) { Paths.Log("создание обоев: " + ex); return (null, "Не получилось: " + ex.Message); }
     }
 
-    public static void UpdateValues(Wallpaper w, Dictionary<string, string> values, string? title = null)
+    public static void UpdateValues(Wallpaper w, Dictionary<string, string> values, string? title = null, string? background = null)
     {
         if (w.Builtin) return;
         w.Values = new Dictionary<string, string>(values);
+        if (background != null && w.Overlay) w.Background = background;
         if (!string.IsNullOrWhiteSpace(title)) w.Title = title.Trim();
         Save(w);
     }
