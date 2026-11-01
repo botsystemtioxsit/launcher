@@ -11,10 +11,8 @@
   "Telemetry": ["sys", "audio", "media", "input", "journal", "weather"],
   "Params": [
     { "Key": "acc", "Label": "Цвет текста и свечения", "Type": "color", "Default": "#C9A7FF" },
-    { "Key": "bgc", "Label": "Оттенок тёмной подложки (яркость ограничена — подложка всегда тёмная)", "Type": "color", "Default": "#07030F" },
-    { "Key": "fill", "Label": "Непрозрачность тёмной подложки (когда под терминалом нет других обоев)", "Type": "range", "Min": 0, "Max": 1, "Step": 0.05, "Default": "1" },
     { "Key": "glitch", "Label": "Сбой изображения (цветная «дрожь»)", "Type": "range", "Min": 0, "Max": 3, "Step": 0.1, "Default": "1" },
-    { "Key": "scan", "Label": "Строки развёртки (как у старого монитора)", "Type": "range", "Min": 0, "Max": 1, "Step": 0.05, "Default": "0.5" },
+    { "Key": "scan", "Label": "Строки развёртки (как у старого монитора; затемняют картинку, по умолчанию выключены)", "Type": "range", "Min": 0, "Max": 1, "Step": 0.05, "Default": "0" },
     { "Key": "size", "Label": "Размер текста", "Type": "range", "Min": 0.6, "Max": 1.8, "Step": 0.05, "Default": "1" },
     { "Key": "lang", "Label": "Язык подписей", "Type": "choice", "Options": ["ru", "en"], "Default": "ru" },
     { "Key": "layout", "Label": "Расположение панелей", "Type": "layout", "Default": "" }

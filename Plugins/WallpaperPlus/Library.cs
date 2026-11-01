@@ -198,12 +198,27 @@ static class Library
                         Directory.CreateDirectory(Path.Combine(dir, "fonts"));
                         foreach (var ff in Directory.GetFiles(fonts)) File.Copy(ff, Path.Combine(dir, "fonts", Path.GetFileName(ff)), true);
                     }
+                    DropTerminalBackdrop(dir);
                     File.WriteAllText(mark, version);
                 }
                 catch (Exception ex) { Paths.Log("обновление копии терминала " + dir + ": " + ex.Message); }
             }
         }
         catch (Exception ex) { Paths.Log("копии терминала: " + ex.Message); }
+    }
+
+    // 1.1.2: у «Терминала» убрана подложка. В уже сделанных копиях выкидываем её настройки и старое значение строк развёртки (0.5 затемняло картинку).
+    static void DropTerminalBackdrop(string dir)
+    {
+        var mf = Path.Combine(dir, ManifestName);
+        if (!File.Exists(mf)) return;
+        var w = JsonSerializer.Deserialize<Wallpaper>(File.ReadAllText(mf));
+        if (w == null) return;
+        var changed = w.Params.RemoveAll(p => p.Key is "bgc" or "fill") > 0;
+        foreach (var k in new[] { "bgc", "fill" }) changed |= w.Values.Remove(k);
+        foreach (var p in w.Params.Where(p => p.Key == "scan" && p.Default != "0")) { p.Default = "0"; changed = true; }
+        if (w.Values.TryGetValue("scan", out var sv) && sv == "0.5") { w.Values.Remove("scan"); changed = true; }
+        if (changed) File.WriteAllText(mf, JsonSerializer.Serialize(w, Json));
     }
 
     // ---------- установка ----------

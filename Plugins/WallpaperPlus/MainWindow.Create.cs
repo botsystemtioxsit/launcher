@@ -109,10 +109,10 @@ sealed partial class MainWindow
         {
             // что лежит под слоем: «Ничего» или любые другие обои из библиотеки (космос, северное сияние, видео…)
             var under = Library.List().Where(x => !x.Overlay && x.Id != baseW.Id).ToList();
-            var labels = new List<string> { "Ничего (тёмная подложка)" };
+            var labels = new List<string> { "Ничего (чёрный экран)" };
             labels.AddRange(under.Select(x => x.Title));
             var sel = createBackground.Length == 0 ? 0 : Math.Max(0, under.FindIndex(x => x.Id == createBackground) + 1);
-            rows.Add(Row("Что под терминалом", "Терминал рисуется поверх других обоев: можно поставить космос, сияние или своё видео. «Ничего» — тёмный фон.",
+            rows.Add(Row("Что под терминалом", "Терминал рисуется поверх других обоев: можно поставить космос, сияние или своё видео. «Ничего» — чёрный экран.",
                 Seg(labels.ToArray(), sel, i => { createBackground = i == 0 ? "" : under[i - 1].Id; SchedulePreview(); BuildCreate(); }, 900)));
         }
         if (baseW.Params.Any(x => x.Type == "layout"))
