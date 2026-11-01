@@ -1,11 +1,9 @@
 @font-face{font-family:'Share Tech Mono';src:url('fonts/ShareTechMono-Regular.ttf')}
-:root{--acc:#c9a7ff;--accrgb:201,167,255;--bg:#07030f;--bgrgb:7,3,15;--g:1;--scan:.5;--fill:1;--s:1;--panelw:0px}
+:root{--acc:#c9a7ff;--accrgb:201,167,255;--g:1;--scan:0;--s:1;--panelw:0px}
 html,body{margin:0;height:100%;overflow:hidden;background:transparent;font-family:'Share Tech Mono','Cascadia Mono',Consolas,'Lucida Console',monospace;-webkit-user-select:none;user-select:none}
-body{background:rgba(var(--bgrgb),var(--fill))}
 #stage{position:fixed;left:0;top:0;right:var(--panelw);bottom:0;overflow:hidden;font-size:calc(16px*var(--s));color:var(--acc)}
 #layer{position:absolute;inset:0;filter:blur(calc(.28px*var(--g)));animation:flick 6s infinite}
 @keyframes flick{0%,100%{opacity:1}91%{opacity:1}92%{opacity:.8}93%{opacity:1}96%{opacity:.9}97%{opacity:1}}
-#vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,transparent 52%,rgba(0,0,0,.55) 100%)}
 #scan{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,calc(var(--scan)*.55)) 0 1px,transparent 1px 3px)}
 .w{position:absolute;line-height:1.4;letter-spacing:.07em;white-space:nowrap;transform-origin:50% 50%;
  text-shadow:calc(-1.1px*var(--g)) 0 rgba(255,50,110,.6),calc(1.1px*var(--g)) 0 rgba(50,190,255,.6),0 0 .55em rgba(var(--accrgb),.55)}
@@ -37,7 +35,7 @@ body.edit .w{cursor:move;outline:1px solid rgba(var(--accrgb),.25)}
 body.edit .w.sel{outline:2px solid #fff}
 body.edit .w .rz{position:absolute;right:-6px;bottom:-6px;width:12px;height:12px;background:#fff;cursor:nwse-resize}
 body.edit .w.r .rz{right:auto;left:-6px;cursor:nesw-resize}
-body.edit #vig,body.edit #scan{display:none}
+body.edit #scan{display:none}
 #panel{position:fixed;top:0;right:0;bottom:0;width:var(--panelw);box-sizing:border-box;background:#0d0b1a;color:#e6f4ff;border-left:1px solid #2d2060;padding:12px;overflow:auto;font:13px 'Segoe UI',sans-serif;text-shadow:none;letter-spacing:0;line-height:1.35;-webkit-user-select:none}
 #panel h4{margin:12px 0 6px;font-size:12px;letter-spacing:.08em;color:#8b86b8;text-transform:uppercase}
 #panel button{background:#15112b;color:#e6f4ff;border:1px solid #2d2060;padding:5px 9px;margin:0 4px 4px 0;font:inherit;cursor:pointer;border-radius:3px}

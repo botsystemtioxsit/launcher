@@ -12,19 +12,10 @@ const GS = window.GS || { on() {}, data: {}, send() {} };
 // ---------- оформление ----------
 const hex = h => { h = (h || '').replace('#', ''); return [parseInt(h.slice(0, 2), 16) || 0, parseInt(h.slice(2, 4), 16) || 0, parseInt(h.slice(4, 6), 16) || 0]; };
 const root = document.documentElement.style;
-// «Подложка» всегда тёмная: цвет сохраняет оттенок, но яркость ограничена — иначе выбранный яркий (например, розовый) заливал весь экран
-// и тонул текст. Хочется светлый фон — для этого есть обои «Неоновые часы» и другие.
-function capBright(h, maxV) {
-  const [r, g, b] = hex(h).map(x => x / 255), mx = Math.max(r, g, b);
-  if (mx <= maxV || mx === 0) return h;
-  const k = maxV / mx, t = v => Math.round(v * k * 255).toString(16).padStart(2, '0');
-  return '#' + t(r) + t(g) + t(b);
-}
-const acc = P('acc', '#C9A7FF'), bgc = capBright(P('bgc', '#07030F'), 0.3);
+// Подложки нет вообще: страница прозрачная, под ней видно то, что выбрано (космос, сияние, видео). Без обоев под терминалом экран чёрный.
+const acc = P('acc', '#C9A7FF');
 root.setProperty('--acc', acc); root.setProperty('--accrgb', hex(acc).join(','));
-root.setProperty('--bg', bgc); root.setProperty('--bgrgb', hex(bgc).join(','));
-root.setProperty('--g', P('glitch', '1')); root.setProperty('--scan', P('scan', '0.5'));
-root.setProperty('--fill', COMPOSE ? '0' : P('fill', '1'));   // поверх других обоев тёмной подложки нет: под терминалом видно то, что выбрано
+root.setProperty('--g', P('glitch', '1')); root.setProperty('--scan', P('scan', '0'));
 const textScale = parseFloat(P('size', '1')) || 1;
 const stage = document.getElementById('stage'), layer = document.getElementById('layer');
 function rescale() {
