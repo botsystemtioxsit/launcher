@@ -13,6 +13,9 @@ public partial class App : Application
     Mutex? mutex;
     EventWaitHandle? showEvent, quitEvent;
     MainWindow? window;
+    bool forceBackground;
+    internal static TitleEngine Engine { get; } = new();
+    internal static bool QuitRequested { get; set; }
 
     static string? Arg(StartupEventArgs e, string prefix) => e.Args.FirstOrDefault(a => a.StartsWith(prefix, StringComparison.Ordinal))?[prefix.Length..];
 
@@ -22,7 +25,14 @@ public partial class App : Application
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         // служебные режимы для проверки в CI (без окна)
-        if (e.Args.Contains("--revert")) { new Applier().RevertAll(); var st = ColorSettings.Load(); st.Applied = false; st.Save(); Shutdown(); return; }
+        if (e.Args.Contains("--revert"))
+        {
+            // если Color Plus уже работает в фоне — просим его выйти (он вернёт цвета окон), потом возвращаем всё остальное
+            try { using var q = EventWaitHandle.OpenExisting(QuitEventName); q.Set(); Thread.Sleep(3000); } catch { }
+            new Applier().RevertAll();
+            var st = ColorSettings.Load(); st.Applied = false; st.Save();
+            Shutdown(); return;
+        }
         var apply = Arg(e, "--apply=");
         if (apply != null)
         {
@@ -31,9 +41,10 @@ public partial class App : Application
             s.Windows = !e.Args.Contains("--no-windows"); s.Taskbar = !e.Args.Contains("--no-taskbar");
             var err = new Applier().Apply(s);
             s.Applied = true; s.Save();
+            Applier.SetAutostart(s.Windows);
             if (err != null) { try { File.WriteAllText(Path.Combine(Path.GetTempPath(), "color-plus-error.txt"), err); } catch { } }
-            Thread.Sleep(2500);   // дать Windows разослать изменения
-            Shutdown(); return;
+            if (!s.Windows) { Thread.Sleep(2000); Shutdown(); return; }
+            forceBackground = true;   // дальше работаем в фоне и красим заголовки окон
         }
         var shot = Arg(e, "--screenshot=");
         if (shot != null)
@@ -64,9 +75,14 @@ public partial class App : Application
         new Thread(() =>
         {
             try { qe.WaitOne(); } catch { return; }
-            Dispatcher.BeginInvoke(new Action(Shutdown));
+            Dispatcher.BeginInvoke(new Action(() => { QuitRequested = true; Engine.Stop(); Shutdown(); }));
         }) { IsBackground = true }.Start();
 
+        TitleEngine.RecoverLeftovers();   // следы аварийно закрытого прошлого запуска
+        var saved = ColorSettings.Load();
+        if (saved.Applied && saved.Windows) Engine.Set(saved.Color);
+        var background = forceBackground || e.Args.Contains("--background");
+        if (background) { if (!Engine.Running) Shutdown(); return; }   // фоновый запуск: если красить заголовки нечего — сразу выходим
         ShowWindow();
     }
 
@@ -80,6 +96,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        try { Engine.Stop(); } catch { }
         try { mutex?.ReleaseMutex(); } catch { }
         base.OnExit(e);
     }

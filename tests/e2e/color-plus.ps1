@@ -40,21 +40,22 @@ Dump 'до'
 Say (Shot (Join-Path $Out '01-до.png'))
 
 Say ""; Say "=== применить #FF2A9D (окна и выделение, без панели) ==="
-$p1 = Start-Process -FilePath $cp -ArgumentList '--apply=#FF2A9D', '--no-taskbar' -PassThru
-if (-not $p1.WaitForExit(60000)) { $p1.Kill(); Say 'apply не завершился' }
+$p1 = Start-Process -FilePath $cp -ArgumentList '--apply=#FF2A9D', '--no-taskbar' -PassThru   # остаётся работать в фоне и красит заголовки
+Start-Sleep -Seconds 9
 if (Test-Path (Join-Path $env:TEMP 'color-plus-error.txt')) { Say ('ошибка: ' + (Get-Content (Join-Path $env:TEMP 'color-plus-error.txt') -Raw)) }
-Start-Sleep -Seconds 4
 Dump 'после'
+Say "фоновый процесс работает: $(-not $p1.HasExited)"
 Say (Shot (Join-Path $Out '02-после-применить.png'))
-# окна, открытые после применения
+# окно, открытое после применения, тоже должно покраситься
 Start-Process notepad -ArgumentList 'C:\Windows\win.ini'
-Start-Sleep -Seconds 4
+Start-Sleep -Seconds 5
 Say (Shot (Join-Path $Out '03-новое-окно.png'))
 
 Say ""; Say "=== вернуть как было ==="
 $p2 = Start-Process -FilePath $cp -ArgumentList '--revert' -PassThru
 if (-not $p2.WaitForExit(60000)) { $p2.Kill(); Say 'revert не завершился' }
 Start-Sleep -Seconds 4
+Say "фоновый процесс после возврата работает: $(-not $p1.HasExited)"
 Dump 'после возврата'
 Say (Shot (Join-Path $Out '04-после-возврата.png'))
 Get-Process notepad -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue

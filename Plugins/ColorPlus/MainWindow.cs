@@ -49,7 +49,7 @@ sealed class MainWindow : Window
         page.Margin = new Thickness(28, 22, 28, 24);
         Content = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = page };
         BuildPage();
-        Closed += (_, _) => Application.Current.Shutdown();
+        Closed += (_, _) => { if (!App.Engine.Running) Application.Current.Shutdown(); };
         engineTimer.Tick += (_, _) => ShowEngine();
         engineTimer.Start();
     }
@@ -117,7 +117,7 @@ sealed class MainWindow : Window
         // что покрасить
         page.Children.Add(Card("Что покрасить", new UIElement[]
         {
-            Switch("Окна и выделение", "Заголовки и рамки окон, подсветка выделенного, акцентный цвет Windows. Меню «Пуск» и панель задач этим цветом не красятся.", () => draft.Windows, v => draft.Windows = v),
+            Switch("Окна и выделение", "Заголовки и рамки окон, подсветка выделенного, акцентный цвет Windows. Меню «Пуск» и панель задач этим цветом не красятся. Заголовки красит сам Color Plus: после «Применить» он остаётся в фоне и запускается вместе с Windows.", () => draft.Windows, v => draft.Windows = v),
             Switch("Панель задач", "Цвет получают острова нашей панели (нужен запущенный Taskbar Plus). Обычная панель Windows цветом не заливается.", () => draft.Taskbar, v => draft.Taskbar = v),
             engineLine,
         }));
@@ -130,7 +130,7 @@ sealed class MainWindow : Window
         buttons.Children.Add(Btn("Вернуть как было", "Danger", Revert));
         page.Children.Add(buttons);
         page.Children.Add(status);
-        page.Children.Add(Note("Что нужно знать: заголовки и выделение обновляются сразу, но часть программ (современные из магазина, Chrome, Steam) рисует свои окна сама и подхватит цвет только после перезапуска или не подхватит совсем. Игры Color Plus не трогает — он ничего не рисует поверх программ."));
+        page.Children.Add(Note("Что нужно знать: цвет получают обычные окна Windows 11 (Проводник, Блокнот и подобные); окна, которые рисуют свои заголовки сами (Chrome, Steam, современные приложения из магазина), остаются как есть. Игры и окна, рисуемые видеокартой, Color Plus не трогает никогда. «Вернуть как было» останавливает его и возвращает всё."));
 
         ShowEngine();
         Refresh();
@@ -165,11 +165,20 @@ sealed class MainWindow : Window
         SetColor(Col.FromHsv(hueSlider.Value, sat, valSlider.Value / 100.0), true);
     }
 
+    // Закрытие окна: пока Color Plus красит заголовки, он остаётся работать в фоне (нужен для новых окон)
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        if (App.Engine.Running && !App.QuitRequested) { e.Cancel = true; Hide(); return; }
+        base.OnClosing(e);
+    }
+
     void Apply()
     {
         var err = applier.Apply(draft);
         draft.Applied = true;
         draft.Save();
+        if (draft.Windows && App.Engine.Supported) App.Engine.Set(draft.Color); else App.Engine.Stop();
+        Applier.SetAutostart(draft.Windows && App.Engine.Supported);
         status.Text = err == null
             ? "Применено: " + draft.Color + ". " + (draft.Taskbar ? TaskbarLink.EngineState().Text : "")
             : "Применилось не всё: " + err;
@@ -177,6 +186,7 @@ sealed class MainWindow : Window
 
     void Revert()
     {
+        App.Engine.Stop();
         applier.RevertAll();
         draft.Applied = false;
         draft.Save();

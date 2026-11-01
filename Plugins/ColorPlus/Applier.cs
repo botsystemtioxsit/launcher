@@ -80,6 +80,7 @@ sealed class Applier
     {
         try { RestoreWindows(); } catch { }
         try { TaskbarLink.Write(false, "#101018"); } catch { }
+        SetAutostart(false);
     }
 
     // ---------- окна и выделение ----------
@@ -91,10 +92,8 @@ sealed class Applier
     {
         if (orig.WindowsChanged) return;
         orig.DwmAccent = ReadDword(DwmKey, "AccentColor");
-        orig.DwmAccentInactive = ReadDword(DwmKey, "AccentColorInactive");
         orig.DwmColorization = ReadDword(DwmKey, "ColorizationColor");
         orig.DwmAfterglow = ReadDword(DwmKey, "ColorizationAfterglow");
-        orig.DwmPrevalence = ReadDword(DwmKey, "ColorPrevalence");
         orig.PersPrevalence = ReadDword(PersKey, "ColorPrevalence");
         orig.Palette = ReadBinary(AccentKey, "AccentPalette");
         orig.RegHilight = ReadString(ColorsKey, "Hilight");
@@ -124,12 +123,10 @@ sealed class Applier
     void ApplyWindows(string hex)
     {
         Backup();
-        var inactive = Col.Mix(hex, "#202028", 0.55);                      // неактивные окна — потемнее
+        // заголовки и рамки красит TitleEngine (по окнам); здесь — акцентный цвет самой Windows (выделенные строки, кнопки, ползунки)
         WriteDword(DwmKey, "AccentColor", Abgr(hex));
-        WriteDword(DwmKey, "AccentColorInactive", Abgr(inactive));
         WriteDword(DwmKey, "ColorizationColor", Argb(hex));
         WriteDword(DwmKey, "ColorizationAfterglow", Argb(hex));
-        WriteDword(DwmKey, "ColorPrevalence", 1);                           // акцент на заголовках окон и рамках
         WriteDword(PersKey, "ColorPrevalence", 0);                          // «Пуск» и панель задач акцентом не красятся
         WriteBinary(AccentKey, "AccentPalette", BuildPalette(hex, orig.Palette));
         // выделение: подсветка нашим цветом, буквы на ней — чёрные или белые (что читается)
@@ -145,10 +142,8 @@ sealed class Applier
     {
         if (!orig.WindowsChanged) return;
         WriteDword(DwmKey, "AccentColor", orig.DwmAccent);
-        WriteDword(DwmKey, "AccentColorInactive", orig.DwmAccentInactive);
         WriteDword(DwmKey, "ColorizationColor", orig.DwmColorization);
         WriteDword(DwmKey, "ColorizationAfterglow", orig.DwmAfterglow);
-        WriteDword(DwmKey, "ColorPrevalence", orig.DwmPrevalence);
         WriteDword(PersKey, "ColorPrevalence", orig.PersPrevalence);
         WriteBinary(AccentKey, "AccentPalette", orig.Palette);
         WriteString(ColorsKey, "Hilight", orig.RegHilight);
@@ -178,6 +173,17 @@ sealed class Applier
     {
         using var k = Registry.CurrentUser.CreateSubKey(path);
         if (value != null) k.SetValue(name, value, RegistryValueKind.String); else k.DeleteValue(name, false);
+    }
+
+    // Запуск вместе с Windows нужен только для окрашивания заголовков (TitleEngine работает, пока Color Plus запущен)
+    public static void SetAutostart(bool on)
+    {
+        try
+        {
+            using var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
+            if (on) k.SetValue("ColorPlus", "\"" + Environment.ProcessPath + "\" --background"); else k.DeleteValue("ColorPlus", false);
+        }
+        catch { }
     }
 
     // Сообщаем Windows и программам, что цвета поменялись (в фоне: окно, которое долго отвечает, не должно вешать плагин)
