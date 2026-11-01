@@ -237,7 +237,7 @@ static class SelfTest
             var all = PackageIcons.All(400);
             log.AppendLine($"приложений в установленных пакетах: {all.Count}");
             var sheet = new List<(string Name, System.Windows.Media.Imaging.BitmapSource? Img)>();
-            int ok = 0, blankPkg = 0, none = 0, shellBlank = 0, shellOk = 0;
+            int ok = 0, blankPkg = 0, none = 0, shellBlank = 0, shellOk = 0, blankSamples = 0;
             foreach (var (aumid, root) in all)
             {
                 var logo = PackageIcons.FindLogo(aumid);
@@ -247,7 +247,8 @@ static class SelfTest
                 var sb2 = shell != null && IconData.IsBlank(shell);
                 if (pkg == null) none++; else if (pb) blankPkg++; else ok++;
                 if (shell != null) { if (sb2) shellBlank++; else shellOk++; }
-                log.AppendLine($"  {aumid} | файл: {(logo == null ? "нет" : Path.GetFileName(logo))} | из пакета: {(pkg == null ? "нет" : pb ? "ПУСТО" : "ok")} | Проводник: {(shell == null ? "нет" : sb2 ? "ПУСТО" : "ok")}");
+                log.AppendLine($"  {aumid} | файл: {(logo == null ? "нет" : Path.GetFileName(logo))} | из пакета: {(pkg == null ? "нет" : pb ? "ПУСТО (" + IconData.BlankInfo(pkg!).Info + ")" : "ok")} | Проводник: {(shell == null ? "нет" : sb2 ? "ПУСТО (" + IconData.BlankInfo(shell!).Info + ")" : "ok")}");
+                if (pkg != null && pb && blankSamples < 6) { blankSamples++; try { File.WriteAllBytes(Path.Combine(outDir, "blank-" + blankSamples + ".png"), IconData.Png(pkg)); log.AppendLine("    ↑ картинка сохранена: blank-" + blankSamples + ".png"); } catch { } }
                 if (pkg != null && !pb && sheet.Count < 40) sheet.Add((aumid.Split('!')[0].Split('_')[0], pkg));
             }
             log.AppendLine($"итог: из пакета хороших {ok}, пустых {blankPkg}, нет {none}; Проводник: хороших {shellOk}, пустых {shellBlank}");

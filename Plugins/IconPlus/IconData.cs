@@ -64,23 +64,33 @@ static class IconData
 
     // «Пустой» значок: почти ничего не нарисовано или это сплошная плашка одного цвета (пустая плитка магазинного приложения).
     // Такой значок красить нечего, а записать его в ярлык значит получить квадрат вместо значка.
-    public static bool IsBlank(BitmapSource img)
+    // Значок-силуэт одного цвета (белый глиф на прозрачном фоне) пустым не считается: у него неполное заполнение рамки.
+    public static bool IsBlank(BitmapSource img) => BlankInfo(img).Blank;
+
+    public static (bool Blank, string Info) BlankInfo(BitmapSource img)
     {
         const int n = 64;
         var px = Pixels(Resize(img, n));
         long count = 0, total = n * n;
+        int minX = n, minY = n, maxX = -1, maxY = -1;
         double sb = 0, sg = 0, sr = 0, qb = 0, qg = 0, qr = 0;
-        for (var i = 0; i < px.Length; i += 4)
-        {
-            if (px[i + 3] < 40) continue;
-            count++;
-            double b = px[i], g = px[i + 1], r = px[i + 2];
-            sb += b; sg += g; sr += r; qb += b * b; qg += g * g; qr += r * r;
-        }
-        if (count < total / 50) return true;                      // почти прозрачный
+        for (var y = 0; y < n; y++)
+            for (var x = 0; x < n; x++)
+            {
+                var i = (y * n + x) * 4;
+                if (px[i + 3] < 40) continue;
+                count++;
+                if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
+                double b = px[i], g = px[i + 1], r = px[i + 2];
+                sb += b; sg += g; sr += r; qb += b * b; qg += g * g; qr += r * r;
+            }
+        if (count < total / 50) return (true, "почти прозрачный");
         double Sd(double sum, double sq) { var m = sum / count; return Math.Sqrt(Math.Max(0, sq / count - m * m)); }
         var sd = Math.Max(Sd(sb, qb), Math.Max(Sd(sg, qg), Sd(sr, qr)));
-        return count > total * 0.3 && sd < 12;                   // широкая плашка без рисунка
+        var box = (long)(maxX - minX + 1) * (maxY - minY + 1);
+        var cover = count / (double)box;
+        var info = $"заполнение рамки {cover:0.00}, разброс цвета {sd:0.0}, рамка {box * 100 / total}%";
+        return (sd < 12 && cover >= 0.9 && box >= total / 5, info);
     }
 
     public static bool IsBlank(IReadOnlyList<BitmapSource> sizes)
