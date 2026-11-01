@@ -113,6 +113,20 @@ jobs:
           $h = (Get-FileHash out/IconPlus.exe -Algorithm SHA256).Hash.ToLower()
           Set-Content -Path out/IconPlus.exe.sha256 -Value "$h  IconPlus.exe" -NoNewline
 
+      # Wallpaper Plus — четвёртый плагин: живые обои рабочего стола (видео, GIF, страницы), каталог, сайты, конструктор
+      - name: Publish Wallpaper Plus
+        run: >
+          dotnet publish Plugins/WallpaperPlus/WallpaperPlus.csproj -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-wallpaperplus
+
+      - name: Checksum Wallpaper Plus
+        shell: pwsh
+        run: |
+          Copy-Item out-wallpaperplus/WallpaperPlus.exe out/WallpaperPlus.exe
+          $h = (Get-FileHash out/WallpaperPlus.exe -Algorithm SHA256).Hash.ToLower()
+          Set-Content -Path out/WallpaperPlus.exe.sha256 -Value "$h  WallpaperPlus.exe" -NoNewline
+
       # Честные скриншоты самого лаунчера для Microsoft Store: служебный режим --screenshot открывает
       # настоящие окна (с выдуманными данными, без сети) и сохраняет их в PNG.
       - name: Скриншоты лаунчера
@@ -162,6 +176,7 @@ jobs:
             out/TaskbarPlus.exe*
             out/ColorPlus.exe*
             out/IconPlus.exe*
+            out/WallpaperPlus.exe*
 
       # Из main — выпуск: релиз v<версия из Launcher.csproj>. Версию поднимай в csproj:
       # пока она та же, файлы в релизе просто перезаписываются.
@@ -174,7 +189,7 @@ jobs:
           $v = (Select-String -Path Launcher/Launcher.csproj -Pattern '<Version>(.+)</Version>').Matches[0].Groups[1].Value
           gh release view "v$v" *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 --clobber
+            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 --clobber
           } else {
-            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 --title "Лаунчер $v" --notes "BattleLauncher.exe — лаунчер (скачай и запусти). TIOXSITTerminal.exe — Терминал, админ-панель в виде приложения. TaskbarPlus.exe — плагин Taskbar Plus, ColorPlus.exe — плагин Color Plus, IconPlus.exe — плагин Icon Plus (ставятся из лаунчера, вкладка «Плагины»)."
+            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 --title "Лаунчер $v" --notes "BattleLauncher.exe — лаунчер (скачай и запусти). TIOXSITTerminal.exe — Терминал, админ-панель в виде приложения. TaskbarPlus.exe — плагин Taskbar Plus, ColorPlus.exe — плагин Color Plus, IconPlus.exe — плагин Icon Plus, WallpaperPlus.exe — плагин Wallpaper Plus (ставятся из лаунчера, вкладка «Плагины»)."
           }

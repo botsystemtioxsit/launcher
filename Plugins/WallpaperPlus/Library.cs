@@ -340,6 +340,29 @@ static class Library
         finally { try { Directory.Delete(temp, true); } catch { } }
     }
 
+    // Скачанное из каталога: папка с manifest.json, идентификатор в манифесте должен совпасть с ожидаемым (c-<имя>)
+    public static (Wallpaper? Wallpaper, string Message) InstallDownloaded(string tempDir, string id)
+    {
+        try
+        {
+            var mf = Path.Combine(tempDir, ManifestName);
+            if (!File.Exists(mf)) return (null, "В обоях из каталога нет manifest.json.");
+            var w = JsonSerializer.Deserialize<Wallpaper>(File.ReadAllText(mf));
+            if (w == null) return (null, "manifest.json не читается.");
+            if (!IdRe.IsMatch(id)) return (null, "Недопустимое имя обоев.");
+            w.Id = id; w.Source = "каталог";
+            var dir = Path.Combine(Paths.Library, id);
+            if (Directory.Exists(dir)) Directory.Delete(dir, true);
+            Directory.CreateDirectory(dir);
+            var (copied, skipped, err) = CopyFolder(tempDir, dir);
+            if (err != null) { try { Directory.Delete(dir, true); } catch { } return (null, err); }
+            Save(w);
+            var read = Read(dir);
+            return read == null ? (null, "Главный файл обоев не найден после установки.") : (read, "Установлено: " + read.Title);
+        }
+        catch (Exception ex) { Paths.Log("установка из каталога: " + ex); return (null, "Не получилось: " + ex.Message); }
+    }
+
     // ---------- свои обои на основе шаблона ----------
     // Копирует шаблон (или уже созданные обои) в новые обои с выбранными значениями. Страница обоев остаётся той же, меняются только параметры в адресе.
     public static (Wallpaper? Wallpaper, string Message) CreateFrom(Wallpaper template, string title, Dictionary<string, string> values)

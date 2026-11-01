@@ -34,6 +34,10 @@ public partial class App : Application
             Quitting = true; Shutdown(); return;
         }
 
+        // служебная проверка для CI: ввоз файлов и создание своих обоев без окна
+        var self = Arg(e, "--selftest=");
+        if (self != null) { Directory.CreateDirectory(self); SelfTest.Run(self); Quitting = true; Shutdown(); return; }
+
         // Одна копия: повторный запуск (из лаунчера или ярлыка) просто показывает окно уже работающей.
         mutex = new Mutex(true, MutexName, out var first);
         showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);

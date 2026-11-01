@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Лава-лампа</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{display:block;width:100vw;height:100vh}</style></head><body>
+<canvas id="c"></canvas>
+<script>
+const q=new URLSearchParams(location.search),P=(k,d)=>q.get(k)||d;
+const c1=P('c1','#FF2A9D'),c2=P('c2','#6C4DFF'),bg=P('bg','#0B0A1A'),speed=parseFloat(P('speed','1')),fps=Math.min(parseInt(P('fps','60')),45);
+const cv=document.getElementById('c'),g=cv.getContext('2d');
+// маленький холст растягивается на весь экран: капли получаются мягкими и почти не грузят компьютер
+const W=cv.width=640,H=cv.height=360;
+function rgb(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16)||0,parseInt(h.slice(2,4),16)||0,parseInt(h.slice(4,6),16)||0]}
+const C=[rgb(c1),rgb(c2)];
+const blobs=Array.from({length:9},(_,i)=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*26,vy:(Math.random()-0.5)*26,r:50+Math.random()*60,c:C[i%2],p:Math.random()*6.28}));
+let last=0,t=0;
+function frame(now){requestAnimationFrame(frame);if(now-last<1000/fps-1)return;const dt=Math.min(0.1,(now-last)/1000);last=now;t+=dt*speed;
+ g.globalCompositeOperation='source-over';g.fillStyle=bg;g.fillRect(0,0,W,H);g.globalCompositeOperation='lighter';
+ for(const b of blobs){
+  b.x+=b.vx*dt*speed;b.y+=b.vy*dt*speed;
+  if(b.x<-b.r||b.x>W+b.r)b.vx*=-1;if(b.y<-b.r||b.y>H+b.r)b.vy*=-1;
+  const r=b.r*(1+0.12*Math.sin(t*0.8+b.p));
+  const gr=g.createRadialGradient(b.x,b.y,0,b.x,b.y,r);
+  gr.addColorStop(0,'rgba('+b.c[0]+','+b.c[1]+','+b.c[2]+',0.85)');gr.addColorStop(1,'rgba('+b.c[0]+','+b.c[1]+','+b.c[2]+',0)');
+  g.fillStyle=gr;g.fillRect(b.x-r,b.y-r,r*2,r*2);
+ }
+}
+requestAnimationFrame(frame);
+</script></body></html>

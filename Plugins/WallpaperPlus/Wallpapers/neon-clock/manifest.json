@@ -1,0 +1,17 @@
+{
+  "Id": "neon-clock",
+  "Title": "Неоновые часы",
+  "Type": "html",
+  "Entry": "index.html",
+  "Description": "Большие неоновые часы и дата посреди рабочего стола. Цвет свечения, фон и размер настраиваются.",
+  "Author": "Ghost Shell",
+  "Version": 1,
+  "Template": true,
+  "Params": [
+    { "Key": "c1", "Label": "Цвет часов", "Type": "color", "Default": "#00F0FF" },
+    { "Key": "c2", "Label": "Цвет даты", "Type": "color", "Default": "#FF2A9D" },
+    { "Key": "bg", "Label": "Цвет фона", "Type": "color", "Default": "#06050D" },
+    { "Key": "size", "Label": "Размер часов", "Type": "range", "Min": 8, "Max": 30, "Step": 1, "Default": "18" },
+    { "Key": "sec", "Label": "Показывать секунды (0 — нет, 1 — да)", "Type": "range", "Min": 0, "Max": 1, "Step": 1, "Default": "0" }
+  ]
+}

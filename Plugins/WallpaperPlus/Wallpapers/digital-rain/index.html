@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Цифровой дождь</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{display:block;width:100vw;height:100vh}</style></head><body>
+<canvas id="c"></canvas>
+<script>
+const q=new URLSearchParams(location.search),P=(k,d)=>q.get(k)||d;
+const c1=P('c1','#00FF88'),bg=P('bg','#02060A'),speed=parseFloat(P('speed','1')),fs=Math.max(8,parseInt(P('size','20'))),fps=parseInt(P('fps','60'));
+const cv=document.getElementById('c'),g=cv.getContext('2d');
+const chars='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFZ<>=+*';
+let W,H,cols,drops,acc=0;
+function size(){const s=Math.min(1,1920/innerWidth);W=cv.width=Math.round(innerWidth*s);H=cv.height=Math.round(innerHeight*s);cols=Math.ceil(W/fs);drops=Array.from({length:cols},()=>Math.random()*-H/fs);g.fillStyle=bg;g.fillRect(0,0,W,H)}
+addEventListener('resize',size);size();
+let last=0;
+function frame(now){requestAnimationFrame(frame);if(now-last<1000/fps-1)return;const dt=Math.min(0.1,(now-last)/1000);last=now;
+ acc+=dt*speed*14;const steps=Math.floor(acc);acc-=steps;
+ g.globalAlpha=Math.min(1,0.09+dt*2);g.fillStyle=bg;g.fillRect(0,0,W,H);g.globalAlpha=1;
+ g.font=fs+'px monospace';
+ for(let i=0;i<cols;i++){
+  const x=i*fs,y=drops[i]*fs;
+  if(y>0){g.fillStyle='#fff';g.globalAlpha=0.9;g.fillText(chars[Math.floor(Math.random()*chars.length)],x,y);
+   g.globalAlpha=1;g.fillStyle=c1;g.fillText(chars[Math.floor(Math.random()*chars.length)],x,y-fs)}
+  drops[i]+=steps*(0.6+((i*37)%10)/12);
+  if(drops[i]*fs>H+fs*8&&Math.random()>0.975)drops[i]=Math.random()*-20;
+ }
+}
+requestAnimationFrame(frame);
+</script></body></html>

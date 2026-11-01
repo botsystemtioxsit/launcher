@@ -1,0 +1,16 @@
+{
+  "Id": "lava-lamp",
+  "Title": "Лава-лампа",
+  "Type": "html",
+  "Entry": "index.html",
+  "Description": "Мягкие цветные капли медленно плывут и сливаются, как в лава-лампе.",
+  "Author": "Ghost Shell",
+  "Version": 1,
+  "Template": true,
+  "Params": [
+    { "Key": "c1", "Label": "Первый цвет", "Type": "color", "Default": "#FF2A9D" },
+    { "Key": "c2", "Label": "Второй цвет", "Type": "color", "Default": "#6C4DFF" },
+    { "Key": "bg", "Label": "Цвет фона", "Type": "color", "Default": "#0B0A1A" },
+    { "Key": "speed", "Label": "Скорость", "Type": "range", "Min": 0.2, "Max": 3, "Step": 0.1, "Default": "1" }
+  ]
+}

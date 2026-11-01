@@ -142,6 +142,17 @@
         "asset": "IconPlus.exe",
         "name": "Icon Plus"
       }
+    },
+    {
+      "id": "wallpaper-plus",
+      "name": "Wallpaper Plus",
+      "desc": "Живые обои рабочего стола: видео, GIF и анимированные страницы. Каталог, свои файлы и сайты, конструктор своих обоев.",
+      "desktop": {
+        "repo": "launcher",
+        "tag": "latest",
+        "asset": "WallpaperPlus.exe",
+        "name": "Wallpaper Plus"
+      }
     }
   ]
 }
