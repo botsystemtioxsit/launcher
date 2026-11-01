@@ -16,7 +16,7 @@ const acc = P('acc', '#C9A7FF'), bgc = P('bgc', '#07030F');
 root.setProperty('--acc', acc); root.setProperty('--accrgb', hex(acc).join(','));
 root.setProperty('--bg', bgc); root.setProperty('--bgrgb', hex(bgc).join(','));
 root.setProperty('--g', P('glitch', '1')); root.setProperty('--scan', P('scan', '0.5'));
-root.setProperty('--fill', COMPOSE ? P('fill', '0') : P('fill', '1'));
+root.setProperty('--fill', COMPOSE ? '0' : P('fill', '1'));   // поверх других обоев тёмной подложки нет: под терминалом видно то, что выбрано
 const textScale = parseFloat(P('size', '1')) || 1;
 const stage = document.getElementById('stage'), layer = document.getElementById('layer');
 function rescale() {

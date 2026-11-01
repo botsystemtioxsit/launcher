@@ -85,6 +85,7 @@ sealed partial class MainWindow
         var btns = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
         btns.Children.Add(Btn(active ? "Выключить" : "Включить", active ? null : "Primary", () => Activate(active ? "" : w.Id), first: true));
         if (w.Params.Count > 0) btns.Children.Add(Btn(w.Builtin ? "Сделать свои на основе…" : "Настроить", null, () => StartCreate(w)));
+        if (w.Overlay && w.Builtin) btns.Children.Add(Btn("Поверх космоса", null, () => OverStars(w)));
         if (w.Type == "html" && !w.Builtin) btns.Children.Add(Btn(w.Online ? "Закрыть интернет" : "Разрешить интернет", null, () => ToggleOnline(w)));
         if (!w.Builtin) btns.Children.Add(Btn("Удалить", "Danger", () => DeleteWallpaper(w)));
         foreach (UIElement b in btns.Children) if (b is FrameworkElement fe) fe.Margin = new Thickness(0, 0, 0, 6);
@@ -96,6 +97,21 @@ sealed partial class MainWindow
             Background = Res("Panel"), BorderBrush = active ? Res("Accent") : Res("Line"), BorderThickness = new Thickness(active ? 2 : 1), CornerRadius = new CornerRadius(4),
             Padding = new Thickness(16), Margin = new Thickness(0, 0, 0, 12), Child = grid,
         };
+    }
+
+    // Быстрый вариант: слой (например «Терминал») поверх «Звёздного поля» — создаётся один раз и сразу включается
+    void OverStars(Wallpaper layer)
+    {
+        const string title = "Терминал на космосе";
+        var have = Library.List().FirstOrDefault(x => x.Title == title && x.Overlay && x.Background == "b-starfield");
+        if (have == null)
+        {
+            var (created, msg) = Library.CreateFrom(layer, title, new Dictionary<string, string>(), "b-starfield");
+            if (created == null) { Say(msg); return; }
+            have = created;
+        }
+        Activate(have.Id);
+        Say("Включено: " + have.Title + ". Расположение панелей меняется в «Создать» → «Открыть редактор панелей».");
     }
 
     void ToggleOnline(Wallpaper w)
