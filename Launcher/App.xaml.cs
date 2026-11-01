@@ -37,6 +37,7 @@ public partial class App : Application
 
         // Остатки прошлой версии после самообновления — убираем при следующем запуске.
         SelfUpdate.CleanupLeftovers();
+        _ = Task.Run(() => NativeInstaller.RemoveRetired());   // убранные плагины (Color Plus) удаляются сами
 
         // Скачанный файл предлагает поставить себя на компьютер (ярлыки, список приложений).
         // Из Microsoft Store это не нужно: там всё делает сам Store.

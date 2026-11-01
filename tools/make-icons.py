@@ -125,7 +125,6 @@ JOBS = {
     "Launcher/app.ico": ghost,
     "Terminal/app.ico": terminal,
     "Plugins/TaskbarPlus/app.ico": taskbar,
-    "Plugins/ColorPlus/app.ico": color,
     "Plugins/IconPlus/app.ico": icons,
     "Plugins/WallpaperPlus/app.ico": wallpaper,
 }

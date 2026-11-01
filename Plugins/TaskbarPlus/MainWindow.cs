@@ -174,8 +174,7 @@ sealed class MainWindow : Window
 
         if (settings.UseXaml)
         {
-            rows.Add(Note("Фон панели — прозрачность, размытие, цвет и тонкая линия — теперь настраивается в плагине Color Plus (раздел «Панель задач»). " +
-                          "Пока он включён, движок отсюда применяет его выбор. Здесь — форма панели, острова и расположение частей."));
+            rows.Add(Note("Фон панели (цвет, прозрачность) здесь пока не настраивается — для него будет отдельный плагин. Здесь — форма панели, острова и расположение частей."));
 
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
             buttons.Children.Add(Btn("Отправить отчёт разработчику", "Primary", () => { _ = UploadReportAsync(); }, first: true));

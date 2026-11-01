@@ -50,13 +50,13 @@ Say (Shot (Join-Path $Out '00-до.png'))
 # ---------- Внешний вид окон настроек (рисуются в PNG без показа) ----------
 Say ""
 Say "=== Окна настроек ==="
-foreach ($e in 'TaskbarPlus', 'ColorPlus') {
+foreach ($e in 'TaskbarPlus') {
     $pr = Start-Process -FilePath "out-test/$e.exe" -ArgumentList "--screenshot=$((Resolve-Path $Out).Path)" -PassThru
     if (-not $pr.WaitForExit(60000)) { $pr.Kill(); Say "$e --screenshot: не завершился" } else { Say "$e --screenshot: код $($pr.ExitCode)" }
 }
 Get-ChildItem $Out -Filter '*ui*' | ForEach-Object { Say "файл: $($_.Name) ($($_.Length) байт)" }
 
-# ---------- Taskbar Plus + Color Plus: панель ----------
+# ---------- Taskbar Plus: панель (фон панели задаёт файл color-plus-taskbar.json — его пишет плагин цвета, которого сейчас нет; здесь файл кладётся вручную) ----------
 $base = @{ UseXaml = $true; XamlConsentShown = $true; Shape = 'none' }
 Run-Taskbar '10-фон-цвет' $base @{ Active = $true; BgMode = 'solid'; BgColor = '#FF2A9D'; BgOpacity = 100; HideStroke = $true } $true
 Run-Taskbar '11-фон-прозрачный' $base @{ Active = $true; BgMode = 'clear'; BgColor = '#101018'; BgOpacity = 60; HideStroke = $true }
@@ -68,153 +68,6 @@ Run-Taskbar '15-вкладка-края' (@{ UseXaml = $true; XamlConsentShown =
 # после выхода из плагина панель должна вернуться как была
 Say ""
 Say (Shot (Join-Path $Out '19-панель-после-всех-выходов.png'))
-
-# ---------- Color Plus: окна ----------
-Say ""
-Say "=== Color Plus (окна) ==="
-Remove-Item (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyContinue
-# за тестовым окном — большое ярко-розовое окно другой программы (powershell), чтобы прозрачность была хорошо видна
-$backScript = Join-Path (Get-Location) 'backdrop.ps1'
-@'
-Add-Type -AssemblyName System.Windows.Forms, System.Drawing
-$f = New-Object System.Windows.Forms.Form
-$f.Text = "E2E-BACKDROP"; $f.BackColor = [System.Drawing.Color]::FromArgb(255, 0, 140); $f.StartPosition = "Manual"; $f.Left = 0; $f.Top = 0; $f.Width = 1000; $f.Height = 700
-[void]$f.ShowDialog()
-'@ | Set-Content $backScript -Encoding UTF8
-$backdrop = Start-Process powershell -ArgumentList '-NoProfile', '-File', $backScript -PassThru
-Start-Sleep -Seconds 5
-# тестовое окно: белый фон, тёмно-синий текст, красная плашка
-$formScript = Join-Path (Get-Location) 'e2e-form.ps1'
-@'
-Add-Type -AssemblyName System.Windows.Forms, System.Drawing
-$f = New-Object System.Windows.Forms.Form
-$f.Text = "E2E-TEST-WINDOW"; $f.Width = 560; $f.Height = 360; $f.BackColor = [System.Drawing.Color]::White; $f.StartPosition = "Manual"; $f.Left = 200; $f.Top = 150
-$l = New-Object System.Windows.Forms.Label
-$l.Text = "TEXT STAYS OPAQUE"; $l.Font = New-Object System.Drawing.Font("Segoe UI", 24); $l.ForeColor = [System.Drawing.Color]::FromArgb(0, 20, 120); $l.AutoSize = $true; $l.Left = 30; $l.Top = 30
-$f.Controls.Add($l)
-$p = New-Object System.Windows.Forms.Panel
-$p.BackColor = [System.Drawing.Color]::Crimson; $p.Left = 30; $p.Top = 120; $p.Width = 160; $p.Height = 80
-$f.Controls.Add($p)
-[void]$f.ShowDialog()
-'@ | Set-Content $formScript -Encoding UTF8
-$form = Start-Process pwsh -ArgumentList '-NoProfile', '-File', $formScript -PassThru
-Start-Sleep -Seconds 6
-$hw = [IntPtr]::Zero
-foreach ($line in [W]::List()) { if ($line -match 'E2E-TEST-WINDOW') { $hw = [IntPtr][long]($line.Split('|')[0]) } }
-Say "тестовое окно: $hw"
-if ($hw -ne [IntPtr]::Zero) { Say ("до: " + [W]::Describe($hw)) }
-Say (Shot (Join-Path $Out '20-окно-до.png'))
-
-function Run-ColorPlus([string]$name, $s) {
-    if (-not $s.Apps) { $s.Apps = @{} }
-    $s.Apps['powershell'] = @{ Mode = 'skip' }
-    ($s | ConvertTo-Json -Depth 6) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
-    $cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
-    Start-Sleep -Seconds 7
-    if ($hw -ne [IntPtr]::Zero) { Say ("$name : " + [W]::Describe($hw)) }
-    Say (Shot (Join-Path $Out "$name.png"))
-    Quit-Plugin $cp 'color-plus'
-    Start-Sleep -Seconds 3
-    if ($hw -ne [IntPtr]::Zero) { Say ("$name после выхода: " + [W]::Describe($hw)) }
-}
-Run-ColorPlus '21-окна-прозрачность-слюда-заголовок' @{ WindowsOn = $true; WindowMode = 'alpha'; WindowOpacity = 55; Backdrop = 'mica'; DarkTitle = $true; TitleColor = '#FF2A9D'; TitleTextColor = '#FFFFFF' }
-Run-ColorPlus '22-окна-размытие-акрил-на-всё-окно' @{ WindowsOn = $true; WindowMode = 'none'; WindowOpacity = 100; Backdrop = 'acrylic'; Tint = '#6C4DFF'; TintOpacity = 70; ExtendFrame = $true }
-Run-ColorPlus '23-окна-не-трогать-программу' @{ WindowsOn = $true; WindowMode = 'alpha'; WindowOpacity = 40; Apps = @{ pwsh = @{ Mode = 'skip' } } }
-
-Run-ColorPlus '24-окна-только-фон-форма-по-правилу-программы' @{ WindowsOn = $true; WindowMode = 'none'; Apps = @{ pwsh = @{ Mode = 'custom'; WinMode = 'background'; Opacity = 100 } } }
-
-# Chrome: «только фон» невозможен (рисуется видеокартой) — проверяем, что окно не ломается, и что запасной вариант «целиком» работает
-$page = Join-Path (Get-Location) 'e2e-page.html'
-@'
-<!doctype html><html><head><meta charset="utf-8"><title>E2E-CHROME-PAGE</title></head>
-<body style="margin:0;background:#0F0F0F;color:#fff;font:26px Segoe UI">
-<h1 style="margin:20px">ТОЛЬКО ФОН ПРОЗРАЧНЫЙ</h1>
-<p style="margin:20px">Текст, картинка и видео остаются плотными.</p>
-<div style="margin:20px;width:260px;height:120px;background:linear-gradient(135deg,#ff2a9d,#00f0ff,#2cff9a)"></div>
-</body></html>
-'@ | Set-Content $page -Encoding UTF8
-$chromePath = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
-if (Test-Path $chromePath) {
-    Start-Process $chromePath -ArgumentList '--new-window', '--no-first-run', '--no-default-browser-check', '--window-position=120,80', '--window-size=760,520', ([System.Uri]$page).AbsoluteUri | Out-Null
-    Start-Sleep -Seconds 10
-    $ch = [IntPtr]::Zero
-    foreach ($line in [W]::List()) { if ($line -match 'E2E-CHROME-PAGE' -and $line -match '\|vis=1\|') { $ch = [IntPtr][long]($line.Split('|')[0]) } }
-    Say "окно Chrome: $ch"
-    if ($ch -ne [IntPtr]::Zero) { Say ("Chrome до: " + [W]::Describe($ch)) }
-    Say (Shot (Join-Path $Out '25-хром-до.png'))
-    Run-ColorPlus '26-хром-только-фон-по-правилу-невозможен' @{ WindowsOn = $true; WindowMode = 'none'; Apps = @{ chrome = @{ Mode = 'custom'; WinMode = 'background'; Opacity = 100 } } }
-    if ($ch -ne [IntPtr]::Zero) { Say ("Chrome после (без запасного): " + [W]::Describe($ch)) }
-    Run-ColorPlus '27-хром-общая-прозрачность-целиком' @{ WindowsOn = $true; WindowMode = 'alpha'; WindowOpacity = 60 }
-    if ($ch -ne [IntPtr]::Zero) { Say ("Chrome после (с запасным): " + [W]::Describe($ch)) }
-    # «Стекло» для Chrome: окно слегка прозрачное, под ним наше размытое стекло, шапка накрыта копией
-    ($sgl = @{ WindowsOn = $true; WindowMode = 'none'; GlassAlpha = 75; GlassBlur = 35; GlassKeepStrip = $true; Apps = @{ chrome = @{ Mode = 'custom'; WinMode = 'glass'; Opacity = 100 }; powershell = @{ Mode = 'skip' }; pwsh = @{ Mode = 'skip' } } }) | Out-Null
-    ($sgl | ConvertTo-Json -Depth 6) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
-    $cpg = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
-    Start-Sleep -Seconds 9
-    if ($ch -ne [IntPtr]::Zero) { Say ("29-хром-стекло : Chrome " + [W]::Describe($ch)) }
-    foreach ($line in [W]::List()) { if ($line -match 'Color Plus') { Say ("окно плагина: " + $line) } }
-    Say (Shot (Join-Path $Out '29-хром-стекло.png'))
-    Quit-Plugin $cpg 'color-plus'
-    Start-Sleep -Seconds 3
-    if ($ch -ne [IntPtr]::Zero) { Say ("29-хром-стекло после выхода : Chrome " + [W]::Describe($ch)) }
-    foreach ($line in [W]::List()) { if ($line -match 'Color Plus') { Say ("окно плагина осталось: " + $line) } }
-    Get-Process chrome -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-} else { Say "Chrome не найден" }
-
-
-# Защита (после ошибки 1.1.0: «только фон» для всех окон ломал Steam и Wallpaper Engine):
-# окно без своей строки заголовка общими настройками не трогается; окно со строкой — трогается; после аварийного закрытия плагина окно возвращается при следующем запуске
-Say ""
-Say "=== Color Plus: защита ==="
-$frameScript = Join-Path (Get-Location) 'e2e-frameless.ps1'
-@'
-Add-Type -AssemblyName System.Windows.Forms, System.Drawing
-$f = New-Object System.Windows.Forms.Form
-$f.Text = "E2E-FRAMELESS"; $f.FormBorderStyle = "None"; $f.StartPosition = "Manual"; $f.Left = 420; $f.Top = 430; $f.Width = 560; $f.Height = 260; $f.BackColor = [System.Drawing.Color]::FromArgb(24, 24, 32)
-[void]$f.ShowDialog()
-'@ | Set-Content $frameScript -Encoding UTF8
-Start-Process pwsh -ArgumentList '-NoProfile', '-File', $frameScript | Out-Null
-Start-Sleep -Seconds 5
-$hf = [IntPtr]::Zero
-foreach ($line in [W]::List()) { if ($line -match 'E2E-FRAMELESS') { $hf = [IntPtr][long]($line.Split('|')[0]) } }
-Say "окно без заголовка: $hf"
-($sg = @{ WindowsOn = $true; WindowMode = 'alpha'; WindowOpacity = 40; Apps = @{ powershell = @{ Mode = 'skip' } } }) | Out-Null
-($sg | ConvertTo-Json -Depth 6) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
-$cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
-Start-Sleep -Seconds 7
-if ($hf -ne [IntPtr]::Zero) { Say ("общая прозрачность 40%: окно БЕЗ заголовка (ожидается layered=0): " + [W]::Describe($hf)) }
-if ($hw -ne [IntPtr]::Zero) { Say ("общая прозрачность 40%: окно СО строкой заголовка (ожидается layered=1 alpha=102): " + [W]::Describe($hw)) }
-Say (Shot (Join-Path $Out '28-защита-окно-без-заголовка.png'))
-# аварийное закрытие: плагин «убит» — окно со строкой остаётся слоёным
-Stop-Process -Id $cp.Id -Force
-Start-Sleep -Seconds 2
-if ($hw -ne [IntPtr]::Zero) { Say ("после аварийного закрытия плагина (окно осталось прозрачным): " + [W]::Describe($hw)) }
-# следующий запуск (даже без эффектов) возвращает оставшееся
-(@{ WindowsOn = $false } | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
-$cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
-Start-Sleep -Seconds 6
-if ($hw -ne [IntPtr]::Zero) { Say ("после следующего запуска (ожидается layered=0): " + [W]::Describe($hw)) }
-Get-Process ColorPlus -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-Get-Process pwsh -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -eq 'E2E-FRAMELESS' } | Stop-Process -Force -ErrorAction SilentlyContinue
-
-# Цвет выделения и акцент: проверяем системные значения до / во время / после
-Say ""
-Say "=== Color Plus: выделение и акцент ==="
-Add-Type -MemberDefinition '[DllImport("user32.dll")] public static extern int GetSysColor(int i);' -Name S -Namespace N
-$hl0 = [N.S]::GetSysColor(13)
-$ac0 = (Get-ItemProperty 'HKCU:\SOFTWARE\Microsoft\Windows\DWM' -ErrorAction SilentlyContinue).AccentColor
-($s = @{ SelectionOn = $true; SelectionColor = '#FF0000'; SelectionTextColor = '#FFFFFF'; AccentOn = $true; AccentColor = '#20C27A' }) | Out-Null
-($s | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
-$cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
-Start-Sleep -Seconds 6
-$hl1 = [N.S]::GetSysColor(13)
-$ac1 = (Get-ItemProperty 'HKCU:\SOFTWARE\Microsoft\Windows\DWM' -ErrorAction SilentlyContinue).AccentColor
-Quit-Plugin $cp 'color-plus'
-Start-Sleep -Seconds 3
-$hl2 = [N.S]::GetSysColor(13)
-$ac2 = (Get-ItemProperty 'HKCU:\SOFTWARE\Microsoft\Windows\DWM' -ErrorAction SilentlyContinue).AccentColor
-Say ("COLOR_HIGHLIGHT: до=0x{0:X} во время=0x{1:X} после=0x{2:X}  (ожидается во время 0x0000FF)" -f $hl0, $hl1, $hl2)
-Say ("DWM AccentColor: до=$ac0 во время=$ac1 после=$ac2")
 
 Get-Process pwsh, powershell -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -in 'E2E-TEST-WINDOW', 'E2E-BACKDROP' } | Stop-Process -Force -ErrorAction SilentlyContinue
 Say "=== конец ==="

@@ -122,17 +122,6 @@
       }
     },
     {
-      "id": "color-plus",
-      "name": "Color Plus",
-      "desc": "Прозрачность, размытие и цвет для окон всех программ, панели задач и выделения мышкой.",
-      "desktop": {
-        "repo": "launcher",
-        "tag": "latest",
-        "asset": "ColorPlus.exe",
-        "name": "Color Plus"
-      }
-    },
-    {
       "id": "icon-plus",
       "name": "Icon Plus",
       "desc": "Значки Windows по-своему: один цвет для всех значков или готовый набор иконок, сайт с иконками внутри.",
