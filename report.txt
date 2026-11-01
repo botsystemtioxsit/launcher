@@ -1,0 +1,27 @@
+ui: color-plus-ui.png 166467
+[до] DWM: AccentColor=FFD47800 Inactive= Prevalence=0 | Personalize.ColorPrevalence=0 | Palette=99EBFF004CC2FF000091F8000078D4000067C000003E9200001A6800F7630C00 | Hilight='0 120 212' HilightText='255 255 255' | GetSysColor(13)=0xD47800
+снимок: results\01-до.png (1024x768)
+
+=== применить #FF2A9D (окна и выделение, без панели) ===
+[после] DWM: AccentColor=FF9D2AFF Inactive= Prevalence=0 | Personalize.ColorPrevalence=0 | Palette=FFEBF6FFFF9FD3FFFF4EADFFFF2A9DFFFF1694FFE7007DFFB90064FFF7630C00 | Hilight='255 42 157' HilightText='255 255 255' | GetSysColor(13)=0x9D2AFF
+фоновый процесс работает: True
+снимок: results\02-после-применить.png (1024x768)
+снимок: results\03-новое-окно.png (1024x768)
+
+=== вернуть как было ===
+фоновый процесс после возврата работает: False
+[после возврата] DWM: AccentColor=FFD47800 Inactive= Prevalence=0 | Personalize.ColorPrevalence=0 | Palette=99EBFF004CC2FF000091F8000078D4000067C000003E9200001A6800F7630C00 | Hilight='0 120 212' HilightText='255 255 255' | GetSysColor(13)=0xD47800
+снимок: results\04-после-возврата.png (1024x768)
+
+=== панель: Taskbar Plus (острова) + Color Plus ===
+снимок: results\05-панель-до.png (1024x768)
+снимок: results\06-панель-цвет-на-островах.png (1024x768)
+  link: {"Active":true,"BgMode":"solid","BgColor":"#FF2A9D","BgOpacity":85,"HideStroke":false}
+снимок: results\07-панель-после-возврата.png (1024x768)
+
+=== Taskbar Plus с ВЫКЛЮЧЕННЫМ новым движком: Color Plus включает его сам ===
+снимок: results\08-движок-выключен-серая-панель.png (1024x768)
+настройки Taskbar Plus после: {"UseXaml":true,"Radius":7,"SideMargin":300,"XamlConsentShown":true,"Shape":"pill","BottomGap":6}
+статус движка: state=ready | engine=5 | pid=10084 | tick=370093 | module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-4ec9ad3b16c3.dll | sessions=1 | threads=1 | nodes=290 | bgfill=1 | stroke=1 | apps=5 | widgets=0 | system=41 | hosts=3 | islands=1 | rects=11 | rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon][RunningIndicator][ShowDesktopPipe][LeftDropInsertionMarker][RightDropInsertionMarker] | applied=1 | queue=1 | tries=9 | error= | 
+снимок: results\09-движок-включён-цвет.png (1024x768)
+=== конец ===
