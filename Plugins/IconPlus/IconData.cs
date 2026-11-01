@@ -17,13 +17,14 @@ static class IconData
         // особые источники: «shell:<путь>» — значок как его рисует Проводник, «lnktarget:<ярлык>» — значок цели ярлыка
         if (location.StartsWith("shell:", StringComparison.Ordinal)) return ShellIcon.Render(location[6..], size);
         if (location.StartsWith("lnktarget:", StringComparison.Ordinal)) return ShellIcon.RenderLnkTarget(location[10..], size);
+        if (location.StartsWith("pkg:", StringComparison.Ordinal)) return PackageIcons.Render(location[4..], size);
         ParseLocation(location, out var file, out var index);
         if (file.Length == 0 || !File.Exists(Environment.ExpandEnvironmentVariables(file))) return null;
         file = Environment.ExpandEnvironmentVariables(file);
         var ext = Path.GetExtension(file).ToLowerInvariant();
         try
         {
-            if (ext is ".png" or ".bmp" or ".jpg" or ".jpeg" or ".gif") return FromImageFile(file, size);
+            if (ext is ".png" or ".bmp" or ".jpg" or ".jpeg" or ".gif") return LoadImageFile(file, size);
             var h = Native.ExtractIcon(file, index, size);
             if (h == IntPtr.Zero) return null;
             try
@@ -45,16 +46,48 @@ static class IconData
         if (comma > 0 && int.TryParse(loc[(comma + 1)..].Trim(), out var i)) { index = i; file = loc[..comma].Trim().Trim('"'); }
     }
 
-    static BitmapSource? FromImageFile(string file, int size)
+    internal static BitmapSource? LoadImageFile(string file, int size)
     {
-        var bmp = new BitmapImage();
-        bmp.BeginInit();
-        bmp.CacheOption = BitmapCacheOption.OnLoad;
-        bmp.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
-        bmp.UriSource = new Uri(file);
-        bmp.EndInit();
-        bmp.Freeze();
-        return Resize(ToBgra(bmp), size);
+        try
+        {
+            var bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.CacheOption = BitmapCacheOption.OnLoad;
+            bmp.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+            bmp.UriSource = new Uri(file);
+            bmp.EndInit();
+            bmp.Freeze();
+            return Resize(ToBgra(bmp), size);
+        }
+        catch { return null; }
+    }
+
+    // «Пустой» значок: почти ничего не нарисовано или это сплошная плашка одного цвета (пустая плитка магазинного приложения).
+    // Такой значок красить нечего, а записать его в ярлык значит получить квадрат вместо значка.
+    public static bool IsBlank(BitmapSource img)
+    {
+        const int n = 64;
+        var px = Pixels(Resize(img, n));
+        long count = 0, total = n * n;
+        double sb = 0, sg = 0, sr = 0, qb = 0, qg = 0, qr = 0;
+        for (var i = 0; i < px.Length; i += 4)
+        {
+            if (px[i + 3] < 40) continue;
+            count++;
+            double b = px[i], g = px[i + 1], r = px[i + 2];
+            sb += b; sg += g; sr += r; qb += b * b; qg += g * g; qr += r * r;
+        }
+        if (count < total / 50) return true;                      // почти прозрачный
+        double Sd(double sum, double sq) { var m = sum / count; return Math.Sqrt(Math.Max(0, sq / count - m * m)); }
+        var sd = Math.Max(Sd(sb, qb), Math.Max(Sd(sg, qg), Sd(sr, qr)));
+        return count > total * 0.3 && sd < 12;                   // широкая плашка без рисунка
+    }
+
+    public static bool IsBlank(IReadOnlyList<BitmapSource> sizes)
+    {
+        // судим по самому большому размеру: на мелких пикселях рисунок может слипнуться
+        var big = sizes.OrderByDescending(x => x.PixelWidth).FirstOrDefault();
+        return big == null || IsBlank(big);
     }
 
     public static BitmapSource ToBgra(BitmapSource src)

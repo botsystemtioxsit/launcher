@@ -40,7 +40,8 @@ class AppearanceSettings
     public string BgMode { get; set; } = BgDefault;     // default — как в Windows | solid — свой цвет | clear — прозрачный | acrylic — размытие
     public string BgColor { get; set; } = "#202020";    // #RRGGBB
     public int BgOpacity { get; set; } = 85;            // 0–100
-    public bool HideStroke { get; set; }                // убрать тонкую линию панели
+    public bool HideStroke { get; set; }                // (старое поле, не используется)
+    public bool ShowStroke { get; set; }                // показывать тонкую линию по краю панели (по умолчанию нет: владельцу она мешает)
     public bool XamlConsentShown { get; set; }
     public bool AutoReport { get; set; } = true;        // после подключения к панели отправить отчёт разработчику сам (версии, настройки, названия элементов; без имени пользователя и компьютера)
 

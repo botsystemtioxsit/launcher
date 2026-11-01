@@ -420,7 +420,7 @@ sealed class XamlEngine : IDisposable
         Put("radius", s.Radius);
         Put("side", s.SideMargin);
         Put("gap", s.BottomGap);
-        Put("hideStroke", bg.Active && bg.HideStroke ? 1 : 0);
+        Put("hideStroke", s.ShowStroke ? 0 : 1);   // тонкая линия по краю панели скрыта, если её не попросили вернуть
         Put("keepEdges", s.KeepEdges ? 1 : 0);
         Put("unifySystem", 1);
         Put("islandMode", s.IslandMode == "group" ? 1 : 0);

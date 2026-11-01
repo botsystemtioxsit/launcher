@@ -203,9 +203,13 @@ sealed partial class MainWindow : Window
     // Служебный режим для проверки внешнего вида: рисует все страницы (кроме сайта) в PNG без показа окна.
     public void RenderTo(string folder)
     {
+        previewGen++;   // фоновую загрузку значков отменяем: ниже загружаем сразу и ждём
+        var loaded = ComputePreviewBase(settings);
+        taskbarBase = loaded.Taskbar; typeBase = loaded.Types;
         for (var i = 0; i < pages.Length; i++)
         {
             if (i == 2) continue;
+            if (i == 0) BuildColor();
             ShowPage(i);
             var content = pages[i];
             var sv = (ScrollViewer)host.Children[i];
