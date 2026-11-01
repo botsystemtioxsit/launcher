@@ -411,42 +411,54 @@ sealed class WindowEffects : IDisposable
     }
 
     // ---------- панель задач ----------
-    // Размытие или цвет «за» панелью. В Windows 11 панель рисует свой фон сама (XAML): чтобы размытие было видно,
-    // фон должен стать прозрачным — это делает движок Taskbar Plus (см. TaskbarLink).
-    (DateTime At, bool On) islandsCache = (DateTime.MinValue, false);
-    bool lastIslands;
+    // ПРАВИЛО ВЛАДЕЛЬЦА: обычную панель Windows Color Plus не красит и не размывает никогда. Цвет и «размытие» получает только наша панель
+    // (острова Taskbar Plus) — через его движок (см. TaskbarLink). Окно панели Windows при этом остаётся прозрачным. Пока Taskbar Plus не запущен,
+    // панель Windows остаётся как есть (никаких розовых полос). Заливка окна панели — только в Windows 10, где нашей панели нет.
+    (DateTime At, bool Ready) engineCache = (DateTime.MinValue, false);
+    bool taskbarCleaned;
 
     void ApplyTaskbar(ColorSettings s)
     {
         var on = s.TaskbarOn && s.TaskbarMode != ColorSettings.TbDefault;
-        if (on)
+        if (Win11 && !taskbarCleaned)
         {
-            // с островами окно панели не заливается (иначе цвет виден и между островами); состояние островов проверяем раз в 2 с
-            if (DateTime.UtcNow - islandsCache.At > TimeSpan.FromSeconds(2)) islandsCache = (DateTime.UtcNow, TaskbarLink.IslandsActive());
-            var islands = islandsCache.On;
-            if (islands != lastIslands) { lastIslands = islands; try { TaskbarLink.Write(s); } catch { } }
-            var windows = TaskbarWindows();
-            foreach (var h in windows)
-            {
-                var ok = s.TaskbarMode switch
-                {
-                    ColorSettings.TbBlur => islands ? Native.SetAccent(h, Native.AccentTransparentGradient, 0) : Native.SetAccent(h, Native.AccentAcrylic, Native.Abgr(s.TaskbarColor, s.TaskbarOpacity)),
-                    // В Windows 11 панель рисует XAML внутри Проводника: сплошной цвет красит движок Taskbar Plus (фон и острова), а окно целиком
-                    // заливать нельзя — цвет виден и между островами, а при перезапуске Проводника (движок подключается не сразу) панель на несколько секунд
-                    // вспыхивает сплошным цветом. Заливка окна — только для Windows 10, где панель обычная.
-                    ColorSettings.TbSolid => Win11 ? Native.SetAccent(h, Native.AccentTransparentGradient, 0)
-                                                   : Native.SetAccent(h, Native.AccentGradient, Native.Abgr(s.TaskbarColor, Math.Max(1, s.TaskbarOpacity))),
-                    _ => Native.SetAccent(h, Native.AccentTransparentGradient, 0),
-                };
-                if (ok) taskbarTouched.Add(h);
-            }
-            taskbarWasOn = true;
-        }
-        else if (taskbarWasOn)
-        {
+            // следы прошлых версий плагина (залитое окно панели) убираются один раз при запуске
+            taskbarCleaned = true;
+            foreach (var h in TaskbarWindows()) taskbarTouched.Add(h);
             ResetTaskbar();
-            taskbarWasOn = false;
         }
+        if (!on)
+        {
+            if (taskbarWasOn) { ResetTaskbar(); taskbarWasOn = false; }
+            return;
+        }
+        if (Win11)
+        {
+            if (DateTime.UtcNow - engineCache.At > TimeSpan.FromSeconds(2)) engineCache = (DateTime.UtcNow, TaskbarLink.EngineState().Ready);
+            if (!engineCache.Ready)
+            {
+                // нашей панели нет (Taskbar Plus не запущен или его движок ещё подключается): панель Windows не трогаем
+                if (taskbarTouched.Count > 0) ResetTaskbar();
+                taskbarWasOn = true;
+                return;
+            }
+            foreach (var h in TaskbarWindows())
+                if (Native.SetAccent(h, Native.AccentTransparentGradient, 0)) taskbarTouched.Add(h);
+            taskbarWasOn = true;
+            return;
+        }
+        // Windows 10: панель обычная, красится целиком
+        foreach (var h in TaskbarWindows())
+        {
+            var ok = s.TaskbarMode switch
+            {
+                ColorSettings.TbBlur => Native.SetAccent(h, Native.AccentAcrylic, Native.Abgr(s.TaskbarColor, s.TaskbarOpacity)),
+                ColorSettings.TbSolid => Native.SetAccent(h, Native.AccentGradient, Native.Abgr(s.TaskbarColor, Math.Max(1, s.TaskbarOpacity))),
+                _ => Native.SetAccent(h, Native.AccentTransparentGradient, 0),
+            };
+            if (ok) taskbarTouched.Add(h);
+        }
+        taskbarWasOn = true;
     }
 
     static List<IntPtr> TaskbarWindows()

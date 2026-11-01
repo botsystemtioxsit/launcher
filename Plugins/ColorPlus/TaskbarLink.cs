@@ -44,9 +44,9 @@ static class TaskbarLink
         var link = new Link
         {
             Active = on,
-            // «Размытая»: фон панели делаем прозрачным, размытие за ним рисует Windows (см. WindowEffects.ApplyTaskbar)
-            // «Размытая» при островах: острова красятся цветом с прозрачностью (размытие окна залило бы и промежутки между ними)
-            BgMode = s.TaskbarMode switch { ColorSettings.TbSolid => "solid", ColorSettings.TbDefault => "default", ColorSettings.TbBlur when IslandsActive() => "solid", _ => "clear" },
+            // Цвет и «размытая» панель — это цвет с прозрачностью на островах Taskbar Plus (окно панели Windows не заливается и не размывается никогда).
+            // «Прозрачная» — фон панели Windows убирается совсем.
+            BgMode = s.TaskbarMode switch { ColorSettings.TbSolid => "solid", ColorSettings.TbBlur => "solid", ColorSettings.TbDefault => "default", _ => "clear" },
             BgColor = s.TaskbarColor,
             BgOpacity = s.TaskbarOpacity,
             HideStroke = on && s.TaskbarHideStroke,

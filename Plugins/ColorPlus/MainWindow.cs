@@ -291,8 +291,12 @@ sealed class MainWindow : Window
                         settings.TaskbarOn = i > 0;
                         Changed(); Build();
                     })));
-                if (islandsActive && settings.TaskbarOn && settings.TaskbarMode == ColorSettings.TbBlur)
-                    rows.Add(Note("В Taskbar Plus включены острова, поэтому «Размытая» красит сами острова цветом с прозрачностью: размытие окна залило бы и промежутки между ними."));
+                if (settings.TaskbarOn)
+                {
+                    rows.Add(Note("Цвет получает наша панель — острова Taskbar Plus. Обычная панель Windows цветом не заливается: она остаётся прозрачной. «Размытая» — это цвет с прозрачностью на островах."));
+                    var (ready, engineText) = TaskbarLink.EngineState();
+                    if (!ready) rows.Add(Note("Сейчас Taskbar Plus не работает, поэтому панель Windows не меняется. " + engineText));
+                }
                 if (settings.TaskbarOn && settings.TaskbarMode is ColorSettings.TbBlur or ColorSettings.TbSolid)
                     rows.Add(SliderRow("Плотность цвета", "Меньше — панель прозрачнее", 0, 100, settings.TaskbarOpacity, "%", v => { settings.TaskbarOpacity = v; Changed(); }));
                 break;
@@ -477,7 +481,7 @@ sealed class MainWindow : Window
 
         var (_, text) = TaskbarLink.EngineState();
         rows.Add(Note(text));
-        rows.Add(Note("Фон панели Windows 11 рисует сама панель, поэтому прозрачность и цвет здесь делает движок Taskbar Plus, а размытие за прозрачной панелью — Windows."));
+        rows.Add(Note("Работает только вместе с Taskbar Plus: он красит свои острова и убирает фон обычной панели. Без него Color Plus панель Windows не трогает."));
         return Card("Панель задач", rows);
     }
 

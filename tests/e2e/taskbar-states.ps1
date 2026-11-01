@@ -98,3 +98,15 @@ Copy-Item (Join-Path $data 'taskbar-plus-engine.cfg') (Join-Path $Out 'engine.cf
 Quit-Plugin $p 'taskbar-plus'
 Start-Sleep -Seconds 3
 Say ""; Mark '06-после-выхода'
+
+Say ""; Say "=== Color Plus «размытая» розовая панель БЕЗ Taskbar Plus: панель Windows не должна окраситься (правило владельца) ==="
+$csettings = @{ TaskbarOn = $true; TaskbarMode = 'blur'; TaskbarColor = '#FF2A9D'; TaskbarOpacity = 90 }
+($csettings | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
+$cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
+Start-Sleep -Seconds 12
+Say (Shot (Join-Path $Out '10-размытая-без-taskbar-plus.png'))
+Kill-Explorer
+Start-Sleep -Seconds 8
+Say (Shot (Join-Path $Out '11-размытая-без-taskbar-plus-после-перезапуска-проводника.png'))
+Quit-Plugin $cp 'color-plus'
+Remove-Item (Join-Path $data 'color-plus-settings.json') -ErrorAction SilentlyContinue
