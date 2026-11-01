@@ -42,6 +42,7 @@ public partial class App : Application
             var err = new Applier().Apply(s);
             s.Applied = true; s.Save();
             Applier.SetAutostart(s.Windows);
+            if (s.Taskbar) { var problem = Task.Run(() => TaskbarPlusControl.EnsureEngineAsync()).GetAwaiter().GetResult(); if (problem != null) { try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "color-plus-error.txt"), "панель: " + problem); } catch { } } }
             if (err != null) { try { File.WriteAllText(Path.Combine(Path.GetTempPath(), "color-plus-error.txt"), err); } catch { } }
             if (!s.Windows) { Thread.Sleep(2000); Shutdown(); return; }
             forceBackground = true;   // дальше работаем в фоне и красим заголовки окон

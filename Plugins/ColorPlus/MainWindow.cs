@@ -172,16 +172,21 @@ sealed class MainWindow : Window
         base.OnClosing(e);
     }
 
-    void Apply()
+    async void Apply()
     {
         var err = applier.Apply(draft);
         draft.Applied = true;
         draft.Save();
         if (draft.Windows && App.Engine.Supported) App.Engine.Set(draft.Color); else App.Engine.Stop();
         Applier.SetAutostart(draft.Windows && App.Engine.Supported);
-        status.Text = err == null
-            ? "Применено: " + draft.Color + ". " + (draft.Taskbar ? TaskbarLink.EngineState().Text : "")
-            : "Применилось не всё: " + err;
+        status.Text = err == null ? "Применено: " + draft.Color + "." : "Применилось не всё: " + err;
+        if (draft.Taskbar)
+        {
+            // наша панель красится только движком Taskbar Plus: если он выключен или не запущен — включаем его
+            var problem = await TaskbarPlusControl.EnsureEngineAsync(t => Dispatcher.BeginInvoke(new Action(() => status.Text = t)));
+            status.Text = problem == null ? "Применено: " + draft.Color + ". Острова панели получили цвет." : "Применено: " + draft.Color + ". Панель: " + problem;
+            ShowEngine();
+        }
     }
 
     void Revert()
@@ -195,9 +200,9 @@ sealed class MainWindow : Window
 
     void ShowEngine()
     {
-        var (ready, text) = TaskbarLink.EngineState();
-        engineLine.Text = draft.Taskbar ? text : "";
-        engineLine.Foreground = ready ? Res("Green") : Res("Muted");
+        var st = TaskbarPlusControl.Get();
+        engineLine.Text = draft.Taskbar ? TaskbarPlusControl.Text(st) : "";
+        engineLine.Foreground = st == TaskbarPlusControl.State.Ready ? Res("Green") : Res("Muted");
         engineLine.FontSize = 12; engineLine.TextWrapping = TextWrapping.Wrap; engineLine.Margin = new Thickness(0, 0, 0, 4);
     }
 

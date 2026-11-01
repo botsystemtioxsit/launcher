@@ -172,6 +172,38 @@ static class Library
             }
         }
         catch (Exception ex) { Paths.Log("встроенные обои: " + ex.Message); }
+        RefreshTerminalCopies();
+    }
+
+    // Свои обои, сделанные из «Терминала», — это копии его папки: код (страница, стили, шрифт) в них обновляется вместе с плагином,
+    // а манифест, выбранные цвета и раскладка остаются как есть.
+    static void RefreshTerminalCopies()
+    {
+        try
+        {
+            var src = Path.Combine(Paths.Library, "b-terminal-hud");
+            if (!Directory.Exists(src) || !Directory.Exists(Paths.Library)) return;
+            var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0";
+            foreach (var dir in Directory.EnumerateDirectories(Paths.Library, "u-*"))
+            {
+                try
+                {
+                    if (!File.Exists(Path.Combine(dir, "hud.js"))) continue;
+                    var mark = Path.Combine(dir, ".hud-version");
+                    if (File.Exists(mark) && File.ReadAllText(mark) == version) continue;
+                    foreach (var f in new[] { "index.html", "hud.css", "hud.js" }) File.Copy(Path.Combine(src, f), Path.Combine(dir, f), true);
+                    var fonts = Path.Combine(src, "fonts");
+                    if (Directory.Exists(fonts))
+                    {
+                        Directory.CreateDirectory(Path.Combine(dir, "fonts"));
+                        foreach (var ff in Directory.GetFiles(fonts)) File.Copy(ff, Path.Combine(dir, "fonts", Path.GetFileName(ff)), true);
+                    }
+                    File.WriteAllText(mark, version);
+                }
+                catch (Exception ex) { Paths.Log("обновление копии терминала " + dir + ": " + ex.Message); }
+            }
+        }
+        catch (Exception ex) { Paths.Log("копии терминала: " + ex.Message); }
     }
 
     // ---------- установка ----------

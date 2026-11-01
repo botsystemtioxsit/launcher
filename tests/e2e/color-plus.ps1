@@ -80,4 +80,34 @@ Start-Sleep -Seconds 5
 Say (Shot (Join-Path $Out '07-панель-после-возврата.png'))
 Quit-Plugin $t 'taskbar-plus'
 Remove-Item (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyContinue
+
+# ---- 4. «Новый движок» у Taskbar Plus выключен (как у владельца: серая панель) — Color Plus включает его при «Применить» ----
+Say ""; Say "=== Taskbar Plus с ВЫКЛЮЧЕННЫМ новым движком: Color Plus включает его сам ==="
+# чистый Проводник: движок прошлого шага остаётся загруженным в нём после выхода плагина
+Set-Content (Join-Path $data 'explorer-restart.txt') ([DateTime]::UtcNow.ToString('o'))
+Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 12
+$progDir = Join-Path $env:LOCALAPPDATA 'Programs\TaskbarPlus'
+New-Item -ItemType Directory -Force $progDir | Out-Null
+Copy-Item 'out-test/TaskbarPlus.exe' (Join-Path $progDir 'TaskbarPlus.exe') -Force
+$tp2 = @{ UseXaml = $false; XamlConsentShown = $false; Shape = 'pill'; Radius = 7; SideMargin = 300; BottomGap = 6 }
+($tp2 | ConvertTo-Json) | Set-Content (Join-Path $data 'taskbar-plus-settings.json') -Encoding UTF8
+Remove-Item $status -ErrorAction SilentlyContinue
+Remove-Item (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyContinue
+$t2 = Start-Process -FilePath (Join-Path $progDir 'TaskbarPlus.exe') -ArgumentList '--background' -PassThru
+Start-Sleep -Seconds 12
+Say (Shot (Join-Path $Out '08-движок-выключен-серая-панель.png'))
+$p5 = Start-Process -FilePath $cp -ArgumentList '--apply=#FF2A9D', '--no-windows' -PassThru
+if (-not $p5.WaitForExit(170000)) { $p5.Kill(); Say 'apply не завершился за 170 секунд' }
+if (Test-Path (Join-Path $env:TEMP 'color-plus-error.txt')) { Say ('ошибка: ' + (Get-Content (Join-Path $env:TEMP 'color-plus-error.txt') -Raw)) }
+Start-Sleep -Seconds 6
+Say ("настройки Taskbar Plus после: " + (Get-Content (Join-Path $data 'taskbar-plus-settings.json') -Raw))
+Say ("статус движка: " + ((Get-Content $status -Raw -ErrorAction SilentlyContinue) -replace "`r?`n", ' | '))
+Say (Shot (Join-Path $Out '09-движок-включён-цвет.png'))
+$p6 = Start-Process -FilePath $cp -ArgumentList '--revert' -PassThru
+if (-not $p6.WaitForExit(60000)) { $p6.Kill() }
+Get-Process TaskbarPlus -ErrorAction SilentlyContinue | ForEach-Object { try { $ev = [System.Threading.EventWaitHandle]::OpenExisting('GhostShell.Plugin.Quit.taskbar-plus'); [void]$ev.Set() } catch { } }
+Start-Sleep -Seconds 4
+Get-Process TaskbarPlus -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Remove-Item (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyContinue
 Say "=== конец ==="
