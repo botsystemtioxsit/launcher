@@ -59,7 +59,7 @@ sealed partial class MainWindow
         p.Children.Add(Card("1. Основа", new UIElement[]
         {
             Note(createEditing ? "Вы настраиваете свои обои. Изменения сохраняются кнопкой «Сохранить изменения»." : "Выберите, что взять за основу. Встроенные обои не меняются — получится новая копия со своими цветами."),
-            Seg(names, Math.Max(0, templates.FindIndex(t => t.Id == baseW.Id)), i => { createBase = templates[i]; createEditing = !templates[i].Builtin; createTitle = createEditing ? templates[i].Title : ""; createValues = new(templates[i].Values); BuildCreate(); }),
+            Seg(names, Math.Max(0, templates.FindIndex(t => t.Id == baseW.Id)), i => { createBase = templates[i]; createEditing = !templates[i].Builtin; createTitle = createEditing ? templates[i].Title : ""; createValues = new(templates[i].Values); BuildCreate(); }, 900),
         }));
 
         // настройки

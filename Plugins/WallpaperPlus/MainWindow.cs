@@ -190,9 +190,9 @@ sealed partial class MainWindow : Window
         return b;
     }
 
-    WrapPanel Seg(string[] labels, int selected, Action<int> choose)
+    WrapPanel Seg(string[] labels, int selected, Action<int> choose, double maxWidth = 460)
     {
-        var seg = new WrapPanel { Orientation = Orientation.Horizontal, MaxWidth = 460 };
+        var seg = new WrapPanel { Orientation = Orientation.Horizontal, MaxWidth = maxWidth, HorizontalAlignment = HorizontalAlignment.Left };
         for (var i = 0; i < labels.Length; i++)
         {
             var idx = i;

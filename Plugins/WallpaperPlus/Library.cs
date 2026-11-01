@@ -332,8 +332,13 @@ static class Library
                 if (Directory.GetFiles(root).Length == 0 && dirs.Length == 1) root = dirs[0]; else break;
             }
             var res = InstallFolder(root, source);
-            if (res.Item1 != null && string.IsNullOrWhiteSpace(res.Item1.Title)) { }
-            if (res.Item1 != null && res.Item1.Title == Path.GetFileName(root)) { res.Item1.Title = Path.GetFileNameWithoutExtension(zip); Save(res.Item1); }
+            // архив без манифеста: название берётся из имени архива, а не из временной папки
+            if (res.Item1 != null && res.Item1.Title == Path.GetFileName(root))
+            {
+                res.Item1.Title = Path.GetFileNameWithoutExtension(zip);
+                Save(res.Item1);
+                return (res.Item1, "Добавлено: " + res.Item1.Title);
+            }
             return res;
         }
         catch (InvalidDataException) { return (null, "Архив повреждён или это не zip."); }

@@ -68,3 +68,13 @@ foreach ($id in $ids) {
     Start-Sleep -Seconds 3
     Say (Shot (Join-Path $Out "02-$id-после-выхода.png"))
 }
+
+# ---- 3. живые вкладки окна: «Создать» (предпросмотр WebView2) и «Сайты» (встроенный браузер) ----
+foreach ($pg in @(2, 3)) {
+    Say ""; Say "=== окно, вкладка $pg ==="
+    $pw = Start-Process -FilePath $exe -ArgumentList "--page=$pg" -PassThru
+    Start-Sleep -Seconds 25
+    Say (Shot (Join-Path $Out "03-вкладка-$pg.png"))
+    Quit-Plugin $pw 'wallpaper-plus'
+    Start-Sleep -Seconds 2
+}

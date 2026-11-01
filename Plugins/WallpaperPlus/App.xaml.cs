@@ -15,6 +15,7 @@ public partial class App : Application
     Controller? controller;
     WpSettings settings = new();
     MainWindow? window;
+    int startPage;
     public static bool Quitting { get; set; }
 
     static string? Arg(StartupEventArgs e, string prefix) => e.Args.FirstOrDefault(a => a.StartsWith(prefix, StringComparison.Ordinal))?[prefix.Length..];
@@ -71,6 +72,7 @@ public partial class App : Application
             Dispatcher.BeginInvoke(new Action(() => { Quitting = true; Shutdown(); }));
         }) { IsBackground = true }.Start();
 
+        if (int.TryParse(Arg(e, "--page="), out var pg)) startPage = pg;   // для проверки в CI: открыть нужную вкладку
         var background = e.Args.Contains("--background") || apply != null;
         if (background && settings.Active.Length == 0) { Quitting = true; Shutdown(); return; }   // фоновый запуск без обоев — делать нечего
         if (!background) ShowWindow();
@@ -79,7 +81,7 @@ public partial class App : Application
     void ShowWindow()
     {
         if (controller == null) return;
-        window ??= new MainWindow(controller, settings);
+        window ??= new MainWindow(controller, settings, startPage);
         if (window.WindowState == WindowState.Minimized) window.WindowState = WindowState.Normal;
         window.Show();
         window.Activate();
