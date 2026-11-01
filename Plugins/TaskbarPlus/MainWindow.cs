@@ -188,7 +188,9 @@ sealed class MainWindow : Window
         root.Children.Add(statusLine);
 
         // редкое
-        root.Children.Add(Btn(moreOpen ? "Ещё настройки ▾" : "Ещё настройки ▸", null, () => { moreOpen = !moreOpen; Build(); }, first: true));
+        var more = Btn(moreOpen ? "Ещё настройки ▾" : "Ещё настройки ▸", null, () => { moreOpen = !moreOpen; Build(); }, first: true);
+        more.HorizontalAlignment = HorizontalAlignment.Left; more.Margin = new Thickness(0, 4, 0, 10);
+        root.Children.Add(more);
         if (moreOpen) root.Children.Add(MoreCard());
     }
 
