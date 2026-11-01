@@ -28,6 +28,8 @@ public partial class App : Application
         if (self != null) { SelfTest.Run(self); Shutdown(); return; }
         var startApps = Arg(e, "--startapps-test=");
         if (startApps != null) { SelfTest.StartAppsTest(startApps); Shutdown(); return; }
+        var pkgTest = Arg(e, "--pkg-test=");
+        if (pkgTest != null) { SelfTest.PackageTest(pkgTest); Shutdown(); return; }
         var probe = Arg(e, "--probe=");
         if (probe != null) { SelfTest.Probe(probe); Shutdown(); return; }
         var packTest = Arg(e, "--pack-test=");

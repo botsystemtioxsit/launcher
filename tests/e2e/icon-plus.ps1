@@ -36,6 +36,12 @@ Run-Exe 'selftest' @("--selftest=$(Join-Path $outFull 'self')") 900
 if (Test-Path (Join-Path $outFull 'self/report.txt')) { Get-Content (Join-Path $outFull 'self/report.txt') | ForEach-Object { Say $_ } }
 
 Say ""
+Say "=== значки магазинных приложений и «пустые» значки ==="
+New-Item -ItemType Directory -Force (Join-Path $outFull 'pkg') | Out-Null
+Run-Exe 'pkg-test' @("--pkg-test=$(Join-Path $outFull 'pkg')") 600
+if (Test-Path (Join-Path $outFull 'pkg/report.txt')) { Get-Content (Join-Path $outFull 'pkg/report.txt') | ForEach-Object { Say $_ } }
+
+Say ""
 Say "значок папок после самопроверки (должен быть чист): " + ((Get-ItemProperty 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons' -ErrorAction SilentlyContinue) | Out-String).Trim()
 Say ""
 Say "=== набор значков: архивы ==="

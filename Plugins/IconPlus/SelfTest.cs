@@ -216,6 +216,109 @@ static class SelfTest
         File.WriteAllText(Path.Combine(outDir, "report.txt"), log.ToString());
     }
 
+    // «Пустые» значки и значки магазинных приложений: что отдаёт Проводник, что лежит в пакете, и сквозная проверка ярлыка с идентификатором программы.
+    public static void PackageTest(string outDir)
+    {
+        Directory.CreateDirectory(outDir);
+        var log = new StringBuilder();
+        try
+        {
+            // 1. детектор пустых значков
+            var flat = new byte[256 * 256 * 4];
+            for (var i = 0; i < flat.Length; i += 4) { flat[i] = 0xE5; flat[i + 1] = 0x6B; flat[i + 2] = 0x1E; flat[i + 3] = 255; }
+            var glyph = (byte[])flat.Clone();
+            for (var y = 80; y < 176; y++) for (var x = 80; x < 176; x++) { var o = (y * 256 + x) * 4; glyph[o] = glyph[o + 1] = glyph[o + 2] = 255; }
+            var clear = new byte[256 * 256 * 4];
+            log.AppendLine($"сплошная плитка пустая: {IconData.IsBlank(IconData.FromPixels(flat, 256, 256))} (ждём True)");
+            log.AppendLine($"плитка с рисунком пустая: {IconData.IsBlank(IconData.FromPixels(glyph, 256, 256))} (ждём False)");
+            log.AppendLine($"прозрачная картинка пустая: {IconData.IsBlank(IconData.FromPixels(clear, 256, 256))} (ждём True)");
+
+            // 2. значки приложений из пакетов
+            var all = PackageIcons.All(400);
+            log.AppendLine($"приложений в установленных пакетах: {all.Count}");
+            var sheet = new List<(string Name, System.Windows.Media.Imaging.BitmapSource? Img)>();
+            int ok = 0, blankPkg = 0, none = 0, shellBlank = 0, shellOk = 0, blankSamples = 0;
+            foreach (var (aumid, root) in all)
+            {
+                var logo = PackageIcons.FindLogo(aumid);
+                var pkg = logo == null ? null : PackageIcons.Render(aumid, 128);
+                var shell = ShellIcon.Render(StartApps.AppsFolderPath(aumid), 128);
+                var pb = pkg != null && IconData.IsBlank(pkg);
+                var sb2 = shell != null && IconData.IsBlank(shell);
+                if (pkg == null) none++; else if (pb) blankPkg++; else ok++;
+                if (shell != null) { if (sb2) shellBlank++; else shellOk++; }
+                log.AppendLine($"  {aumid} | файл: {(logo == null ? "нет" : Path.GetFileName(logo))} | из пакета: {(pkg == null ? "нет" : pb ? "ПУСТО (" + IconData.BlankInfo(pkg!).Info + ")" : "ok")} | Проводник: {(shell == null ? "нет" : sb2 ? "ПУСТО (" + IconData.BlankInfo(shell!).Info + ")" : "ok")}");
+                if (pkg != null && pb && blankSamples < 6) { blankSamples++; try { File.WriteAllBytes(Path.Combine(outDir, "blank-" + blankSamples + ".png"), IconData.Png(pkg)); log.AppendLine("    ↑ картинка сохранена: blank-" + blankSamples + ".png"); } catch { } }
+                if (pkg != null && !pb && sheet.Count < 40) sheet.Add((aumid.Split('!')[0].Split('_')[0], pkg));
+            }
+            log.AppendLine($"итог: из пакета хороших {ok}, пустых {blankPkg}, нет {none}; Проводник: хороших {shellOk}, пустых {shellBlank}");
+            WriteSheet(sheet, new IconSettings { Color = "#FF2A9D", Style = Tint.Mono, Strength = 100 }, Path.Combine(outDir, "pkg-icons.png"));
+
+            // 3. сквозная проверка: ярлык на рабочем столе с идентификатором магазинного приложения → значок из файлов пакета, перекрашенный
+            var engine = new IconEngine();
+            var pick = all.Where(a => PackageIcons.FindLogo(a.Aumid) != null).Take(3).ToList();
+            var made = new List<string>();
+            foreach (var (aumid, _) in pick)
+            {
+                var lnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "IconPlusPkg-" + aumid.Split('!')[0].Split('_')[0] + ".lnk");
+                try { StartApps.CreateLink(lnk, aumid, ""); made.Add(lnk); } catch (Exception ex) { log.AppendLine("ярлык не создался: " + ex.Message); }
+            }
+            var s = new IconSettings { Color = "#FF2A9D", Style = Tint.Mono, Strength = 100, Enabled = new() { "lnk-desktop" } };
+            s.Normalize();
+            var res = engine.ApplyColor(s);
+            log.AppendLine($"ярлыки на столе: сделано {res.Done}, не вышло {res.Failed}");
+            foreach (var lnk in made)
+            {
+                var item = Path.GetFileNameWithoutExtension(lnk);
+                Shortcuts.ReadIcon(lnk, out var ip, out _);
+                var img = ip.Length > 0 && File.Exists(ip) ? IconData.Load(ip, 128) : null;
+                var outcome = res.Outcomes.FirstOrDefault(o => o.Item == item);
+                log.AppendLine($"  {item}: итог {outcome?.Result ?? "?"}; откуда: {(res.How.TryGetValue(item, out var h) ? h : "-")}; значок в ярлыке: {ip}; пустой: {(img == null ? "нет картинки" : IconData.IsBlank(img).ToString())}; {Mean(img)}");
+                if (img != null) File.WriteAllBytes(Path.Combine(outDir, item + "-tinted.png"), IconData.Png(img));
+            }
+            engine.RestoreAll();
+            foreach (var lnk in made)
+            {
+                Shortcuts.ReadIcon(lnk, out var ip2, out _);
+                log.AppendLine($"  после возврата {Path.GetFileNameWithoutExtension(lnk)}: значок в ярлыке «{ip2}» (должен быть не из generated: {!ip2.StartsWith(Paths.Generated, StringComparison.OrdinalIgnoreCase)})");
+                try { File.Delete(lnk); } catch { }
+            }
+        }
+        catch (Exception ex) { log.AppendLine("ОШИБКА: " + ex); }
+        File.WriteAllText(Path.Combine(outDir, "report.txt"), log.ToString());
+    }
+
+    // Таблица значков «до → после» (для проверки глазами).
+    static void WriteSheet(List<(string Name, System.Windows.Media.Imaging.BitmapSource? Img)> items, IconSettings s, string file)
+    {
+        const int cols = 5, cw = 230, ch = 80;
+        var rows = Math.Max(1, (items.Count + cols - 1) / cols);
+        var visual = new DrawingVisual();
+        using (var dc = visual.RenderOpen())
+        {
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(13, 11, 26)), null, new Rect(0, 0, cw * cols, ch * rows));
+            for (var i = 0; i < items.Count; i++)
+            {
+                var (name, img) = items[i];
+                var x = (i % cols) * cw + 8; var y = (i / cols) * ch + 6;
+                if (img != null)
+                {
+                    var small = IconData.Resize(img, 48);
+                    dc.DrawImage(small, new Rect(x, y, 48, 48));
+                    dc.DrawImage(IconData.FromPixels(Tint.Apply(IconData.Pixels(small), s.Color, s.Style, s.Strength), 48, 48), new Rect(x + 70, y, 48, 48));
+                }
+                var ft = new FormattedText(name.Length > 28 ? name[..28] : name, CultureInfo.GetCultureInfo("ru-RU"), FlowDirection.LeftToRight, new Typeface("Segoe UI"), 11, Brushes.White, 1.0);
+                dc.DrawText(ft, new Point(x, y + 54));
+            }
+        }
+        var rtb = new RenderTargetBitmap(cw * cols, ch * rows, 96, 96, PixelFormats.Pbgra32);
+        rtb.Render(visual);
+        var enc = new PngBitmapEncoder();
+        enc.Frames.Add(BitmapFrame.Create(rtb));
+        using var fs = File.Create(file);
+        enc.Save(fs);
+    }
+
     // Набор значков: ввоз архива, подбор по именам, применение и возврат.
     public static void PackTest(string archive, string outDir)
     {

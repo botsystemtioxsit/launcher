@@ -14,19 +14,43 @@ sealed record Outcome(string Group, string Item, string Result)
 sealed record ApplyResult(int Done, int Failed, List<string> Messages, List<Outcome> Outcomes)
 {
     public Dictionary<string, string> Aumids { get; init; } = new();   // ярлык → идентификатор программы (для отчёта)
+    public Dictionary<string, string> How { get; init; } = new();      // пункт → откуда взят исходный значок (для отчёта)
 }
 
 // Применяет значки: перекрашивает исходные значки Windows в выбранный цвет или ставит значки из набора.
 // Всё — в настройках текущего пользователя (HKCU и ярлыки пользователя); каждое прежнее значение запоминается в state.json.
 sealed class IconEngine
 {
-    sealed record Sink(string Key, Func<string> Source, Action<string> Write, Func<string>? Fallback = null);
+    sealed record Sink(string Key, Func<string> Source, Action<string> Write, Func<IEnumerable<string>>? Fallbacks = null);
+
+    // Выбранный исходный значок: откуда взят, как называется способ и все его размеры.
+    sealed record Pick(string Location, string How, List<System.Windows.Media.Imaging.BitmapSource> Sizes);
+
+    // Версия способа перекраски: меняется, когда прежние сохранённые значки нельзя использовать (старые «пустые квадраты» не должны жить в кэше).
+    const string AlgoSalt = "v3";
 
     readonly IconState state;
     readonly RegistryWriter reg;
     MachineJob job = new();   // действия, для которых нужны права администратора, собираются сюда и выполняются разом
 
-    public IconEngine() { Paths.Ensure(); state = StateStore.Load(); reg = new RegistryWriter(state); }
+    public IconEngine() { Paths.Ensure(); state = StateStore.Load(); reg = new RegistryWriter(state); DropBlankOriginals(); }
+
+    // Прошлые версии могли запомнить как «оригинал» пустую плитку (так выглядели магазинные приложения). Такие записи выбрасываем — исходный значок возьмём заново.
+    void DropBlankOriginals()
+    {
+        try
+        {
+            foreach (var kv in state.Sources.ToList())
+            {
+                if (!kv.Value.StartsWith(Paths.Originals, StringComparison.OrdinalIgnoreCase)) continue;
+                var sizes = File.Exists(kv.Value) ? IconData.LoadAllSizes(kv.Value) : null;
+                if (sizes != null && !IconData.IsBlank(sizes)) continue;
+                state.Sources.Remove(kv.Key);
+                try { File.Delete(kv.Value); } catch { }
+            }
+        }
+        catch { }
+    }
     public IconState State => state;
     public int ChangesCount => state.Reg.Count + state.Lnk.Count + state.Ini.Count + state.Created.Count;
 
@@ -71,7 +95,7 @@ sealed class IconEngine
                     yield return new Sink("ext:" + e, () => { var a = Native.AssocDefaultIcon("." + e); return a.Length > 0 ? a : Native.IconLocation("x." + e, true); }, p =>
                     {
                         foreach (var progId in ProgIds(e)) reg.Set(@"Software\Classes\" + progId + @"\DefaultIcon", "", p);
-                    }, () => ShellSample(e));
+                    }, () => new[] { ShellSample(e) });
                 }
                 break;
             case TargetKind.Shortcuts:
@@ -80,7 +104,7 @@ sealed class IconEngine
                     var file = f;
                     var machine = t.NeedsAdmin;
                     yield return new Sink("lnk:" + file, () => LnkSource(file), p => { if (machine) job.Lnks.Add(new MachineLnk { File = file, Ico = p }); else WriteLnk(file, p); },
-                        () => Shortcuts.IsUrl(file) ? "shell:" + file : "lnktarget:" + file);
+                        () => LnkFallbacks(file));
                 }
                 break;
             case TargetKind.KnownFolders:
@@ -96,7 +120,8 @@ sealed class IconEngine
                 {
                     var app = a;
                     appNames["app:" + app.AppId] = app.Name;
-                    yield return new Sink("app:" + app.AppId, () => "shell:" + StartApps.AppsFolderPath(app.AppId), p => WriteStartApp(app, p));
+                    yield return new Sink("app:" + app.AppId, () => PackageIcons.FindLogo(app.AppId) != null ? "pkg:" + app.AppId : "shell:" + StartApps.AppsFolderPath(app.AppId),
+                        p => WriteStartApp(app, p), () => new[] { "shell:" + StartApps.AppsFolderPath(app.AppId) });
                 }
                 break;
             case TargetKind.AllFileTypes:
@@ -238,14 +263,36 @@ sealed class IconEngine
         }
     }
 
-    static string LnkSource(string file)
+    // Что другое, кроме значка ярлыка, может служить источником: идентификатор программы магазинного приложения → файлы пакета; затем — как рисует Проводник.
+    IEnumerable<string> LnkFallbacks(string file)
     {
+        var au = Shortcuts.IsUrl(file) ? "" : Shortcuts.ReadAumid(file);
+        if (au.Contains('!') && PackageIcons.FindLogo(au) != null) yield return "pkg:" + au;
+        yield return Shortcuts.IsUrl(file) ? "shell:" + file : "lnktarget:" + file;
+    }
+
+    // Ярлык, значок которого мы уже меняли, читаем по прежнему значку (state.Lnk), а не по нашему сгенерированному.
+    (string Path, int Index)? OriginalLnkIcon(string file)
+    {
+        var c = state.Lnk.FirstOrDefault(x => string.Equals(x.File, file, StringComparison.OrdinalIgnoreCase));
+        return c == null ? null : (c.OldPath, c.OldIndex);
+    }
+
+    string LnkSource(string file)
+    {
+        var orig = OriginalLnkIcon(file);
         if (Shortcuts.IsUrl(file))
         {
-            if (Shortcuts.ReadIcon(file, out var up, out var ui) && up.Length > 0 && File.Exists(Environment.ExpandEnvironmentVariables(up))) return Environment.ExpandEnvironmentVariables(up) + "," + ui;
+            string up; int ui;
+            if (orig != null) { up = orig.Value.Path; ui = orig.Value.Index; }
+            else if (!Shortcuts.ReadIcon(file, out up, out ui)) return "shell:" + file;
+            if (up.Length > 0 && File.Exists(Environment.ExpandEnvironmentVariables(up))) return Environment.ExpandEnvironmentVariables(up) + "," + ui;
             return "shell:" + file;
         }
-        if (Shortcuts.ReadIcon(file, out var p, out var i) && p.Length > 0)
+        string p; int i;
+        if (orig != null) { p = orig.Value.Path; i = orig.Value.Index; }
+        else if (!Shortcuts.ReadIcon(file, out p, out i)) { p = ""; i = 0; }
+        if (p.Length > 0 && !p.StartsWith(Paths.Generated, StringComparison.OrdinalIgnoreCase))
         {
             var full = Environment.ExpandEnvironmentVariables(p);
             if (File.Exists(full)) return full + "," + i;
@@ -272,17 +319,23 @@ sealed class IconEngine
         if (!Shortcuts.WriteIcon(file, icoPath, 0)) throw new IOException("ярлык не записывается");
     }
 
-    // Откуда брать исходный значок. Запоминается при первом обращении, чтобы потом (когда значок уже заменён нами) красить именно оригинал.
+    // Откуда брать исходный значок (простой вариант — для наборов: достаточно запомнить оригинал до замены).
     string SourceOf(string key, Func<string> query)
     {
         if (state.Sources.TryGetValue(key, out var v) && v.Length > 0) return v;
         v = query();
-        if (v.StartsWith("shell:", StringComparison.Ordinal) || v.StartsWith("lnktarget:", StringComparison.Ordinal)) v = CaptureOriginal(v) ?? "";
+        if (IsVirtual(v)) v = CaptureOriginal(v) ?? "";
         if (!string.IsNullOrEmpty(v)) state.Sources[key] = v;
         return v;
     }
 
-    // Значок, который рисует Проводник (а не лежит в файле), запоминаем как файл — после замены Проводник покажет уже наш значок, а красить надо оригинал.
+    static bool IsVirtual(string loc) => loc.StartsWith("shell:", StringComparison.Ordinal) || loc.StartsWith("lnktarget:", StringComparison.Ordinal) || loc.StartsWith("pkg:", StringComparison.Ordinal);
+
+    static string HowOf(string loc) => loc.StartsWith("pkg:", StringComparison.Ordinal) ? "значок из файлов приложения"
+        : loc.StartsWith("shell:", StringComparison.Ordinal) || loc.StartsWith("lnktarget:", StringComparison.Ordinal) ? "как рисует Проводник" : "файл значка";
+
+    // Значок, который рисует Проводник или который лежит в пакете приложения (а не в файле), запоминаем как файл — после замены Проводник покажет уже наш значок,
+    // а красить надо оригинал.
     static string? CaptureOriginal(string location)
     {
         var key = Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(location))).ToLowerInvariant()[..16];
@@ -294,6 +347,46 @@ sealed class IconEngine
         return path;
     }
 
+    IEnumerable<string> Candidates(Sink sink)
+    {
+        if (state.Sources.TryGetValue(sink.Key, out var saved) && saved.Length > 0) yield return saved;
+        var live = sink.Source();
+        if (live.Length > 0) yield return live;
+        if (sink.Fallbacks != null) foreach (var f in sink.Fallbacks()) if (f.Length > 0) yield return f;
+    }
+
+    // Находит исходный значок для пункта: сохранённый оригинал → то, что есть сейчас → запасные способы (файлы пакета приложения, «как рисует Проводник»).
+    // «Пустые» значки (сплошная плитка без рисунка) пропускаются: красить там нечего, а записать такой значок в ярлык — получить квадрат.
+    // fast — настройки, если нужен только быстрый путь: оригинал уже известен и перекрашенный значок уже лежит в кэше (тогда картинки не грузим).
+    Pick? ResolvePick(Sink sink, out string problem, IconSettings? fast = null)
+    {
+        problem = "";
+        var count = 0;
+        var sawBlank = false;
+        foreach (var loc in Candidates(sink).Distinct())
+        {
+            count++;
+            var real = IsVirtual(loc) ? CaptureOriginal(loc) : loc;
+            if (string.IsNullOrEmpty(real)) continue;
+            if (real.StartsWith(Paths.Generated, StringComparison.OrdinalIgnoreCase)) continue;   // это уже наш перекрашенный значок
+            if (fast != null && state.Sources.TryGetValue(sink.Key, out var known) && known == real && File.Exists(GeneratedPath(real, fast)))
+                return new Pick(real, HowOf(loc), new List<System.Windows.Media.Imaging.BitmapSource>());
+            var sizes = IconData.LoadAllSizes(real);
+            if (sizes == null) continue;
+            if (IconData.IsBlank(sizes))
+            {
+                sawBlank = true;
+                if (real.StartsWith(Paths.Originals, StringComparison.OrdinalIgnoreCase)) { try { File.Delete(real); } catch { } }
+                continue;
+            }
+            state.Sources[sink.Key] = real;
+            return new Pick(real, HowOf(loc), sizes);
+        }
+        state.Sources.Remove(sink.Key);
+        problem = sawBlank ? "значок пустой (плитка без рисунка) — красить нечего" : count == 0 ? "значок не найден" : "значок не читается";
+        return null;
+    }
+
     // ---------- перекраска ----------
     public ApplyResult ApplyColor(IconSettings s, Action<string>? progress = null)
     {
@@ -301,6 +394,7 @@ sealed class IconEngine
         var msgs = new List<string>();
         var outcomes = new List<Outcome>();
         var aumids = new Dictionary<string, string>();
+        var how = new Dictionary<string, string>();
         job = new MachineJob();
         foreach (var id in s.Enabled)
         {
@@ -317,18 +411,17 @@ sealed class IconEngine
                 }
                 try
                 {
-                    string? ico = null;
-                    var src = SourceOf(sink.Key, sink.Source);
-                    if (src.Length > 0) ico = GeneratedIcon(src, s);
-                    if (ico == null && sink.Fallback != null)
+                    var pick = ResolvePick(sink, out var problem, s);
+                    if (pick == null)
                     {
-                        var fb = sink.Fallback();
-                        var captured = fb.StartsWith("shell:", StringComparison.Ordinal) || fb.StartsWith("lnktarget:", StringComparison.Ordinal) ? CaptureOriginal(fb) : fb;
-                        if (captured != null) ico = GeneratedIcon(captured, s);
-                        if (ico != null) state.Sources[sink.Key] = captured!;
+                        failed++; outcomes.Add(new Outcome(t.Title, item, problem));
+                        // если раньше мы уже поставили этому ярлыку значок, а теперь хорошего взять негде — возвращаем прежний, а не оставляем квадрат
+                        if (sink.Key.StartsWith("lnk:", StringComparison.Ordinal) && !t.NeedsAdmin) RevertLnk(sink.Key[4..]);
+                        continue;
                     }
-                    if (ico == null) { failed++; outcomes.Add(new Outcome(t.Title, item, src.Length == 0 ? "значок не найден" : "значок не читается")); continue; }
+                    var ico = GeneratedIcon(pick, s);
                     sink.Write(ico);
+                    how[item] = pick.How;
                     done++;
                     if (!(t.NeedsAdmin && t.Kind is TargetKind.Shortcuts or TargetKind.Folder)) outcomes.Add(new Outcome(t.Title, item, "ok"));
                     else pendingMachine.Add((sink.Key, t.Title, item));
@@ -341,7 +434,7 @@ sealed class IconEngine
         state.Applied = "color";
         StateStore.Save(state);
         Native.NotifyIconsChanged();
-        return new ApplyResult(done, failed, msgs, outcomes) { Aumids = aumids };
+        return new ApplyResult(done, failed, msgs, outcomes) { Aumids = aumids, How = how };
     }
 
     // «Пуск» должен склеить наш ярлык с самим приложением. Если на этой версии Windows он показывает обе записи — наши ярлыки убираем (лучше без значка, чем с дублем).
@@ -371,28 +464,62 @@ sealed class IconEngine
     // Пункты, которые ждут ответа от действия администратора (ключ → группа и имя)
     readonly List<(string Key, string Group, string Item)> pendingMachine = new();
 
-    static string? GeneratedIcon(string sourceLocation, IconSettings s)
+    static string GeneratedPath(string location, IconSettings s)
     {
-        var key = Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(sourceLocation + "|" + s.Color + "|" + s.Style + "|" + s.Strength))).ToLowerInvariant()[..16];
-        var path = Path.Combine(Paths.Generated, key + ".ico");
+        var key = Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(location + "|" + s.Color + "|" + s.Style + "|" + s.Strength + "|" + AlgoSalt))).ToLowerInvariant()[..16];
+        return Path.Combine(Paths.Generated, key + ".ico");
+    }
+
+    static string GeneratedIcon(Pick pick, IconSettings s)
+    {
+        var path = GeneratedPath(pick.Location, s);
         if (File.Exists(path)) return path;
-        var imgs = IconData.LoadAllSizes(sourceLocation, (px, _, _) => Tint.Apply(px, s.Color, s.Style, s.Strength));
-        if (imgs == null) return null;
+        var imgs = pick.Sizes.Select(img => IconData.FromPixels(Tint.Apply(IconData.Pixels(img), s.Color, s.Style, s.Strength), img.PixelWidth, img.PixelHeight)).ToList();
         IconData.WriteIco(path, imgs);
         return path;
     }
 
-    // Превью для окна: исходный значок цели и его перекрашенная копия (размер 48).
+    // Вернуть ярлыку прежний значок (если мы его меняли) — когда новый хороший значок получить не удалось.
+    void RevertLnk(string file)
+    {
+        var c = state.Lnk.FirstOrDefault(x => string.Equals(x.File, file, StringComparison.OrdinalIgnoreCase));
+        if (c == null) return;
+        try { if (File.Exists(file) && Shortcuts.WriteIcon(file, c.OldPath, c.OldIndex)) state.Lnk.Remove(c); } catch { }
+    }
+
+    // Превью для окна: исходный значок цели и его перекрашенная копия (размер 48). Problem — почему показать нечего.
+    public sealed record PreviewItem(string Name, System.Windows.Media.Imaging.BitmapSource? Before, System.Windows.Media.Imaging.BitmapSource? After, string Problem, string How);
+
+    PreviewItem PreviewOf(Sink sink, string name, IconSettings s)
+    {
+        var pick = ResolvePick(sink, out var problem);
+        if (pick == null) return new PreviewItem(name, null, null, problem, "");
+        var big = pick.Sizes.OrderBy(x => Math.Abs(x.PixelWidth - 48)).First();
+        var before = IconData.Resize(big, 48);
+        var after = IconData.FromPixels(Tint.Apply(IconData.Pixels(before), s.Color, s.Style, s.Strength), 48, 48);
+        return new PreviewItem(name, before, after, "", pick.How);
+    }
+
     public (System.Windows.Media.Imaging.BitmapSource? Before, System.Windows.Media.Imaging.BitmapSource? After) Preview(Target t, IconSettings s)
     {
         if (t.Kind == TargetKind.StartApps) return (null, null);   // список приложений «Пуска» долго собирается — превью не нужно
         var sink = SinksFor(t).FirstOrDefault();
         if (sink == null) return (null, null);
-        var src = SourceOf(sink.Key, sink.Source);
-        var before = src.Length > 0 ? IconData.Load(src, 48) : null;
-        if (before == null) return (null, null);
-        var after = IconData.FromPixels(Tint.Apply(IconData.Pixels(before), s.Color, s.Style, s.Strength), before.PixelWidth, before.PixelHeight);
-        return (before, after);
+        var p = PreviewOf(sink, t.Title, s);
+        return (p.Before, p.After);
+    }
+
+    // Превью настоящих ярлыков (например закреплённых на панели задач): так сразу видно, какие значки выйдут, а какие нет.
+    public List<PreviewItem> PreviewShortcuts(string targetId, IconSettings s, int max)
+    {
+        var res = new List<PreviewItem>();
+        var t = Target.ById(targetId);
+        if (t == null) return res;
+        foreach (var sink in SinksFor(t).Take(max))
+        {
+            try { res.Add(PreviewOf(sink, ItemName(sink.Key), s)); } catch { }
+        }
+        return res;
     }
 
     // ---------- набор значков ----------

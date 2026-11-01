@@ -250,6 +250,15 @@ sealed class MainWindow : Window
             Note("Эти настройки применяются сразу, без кнопки «Применить»."),
             Row("Автоскрытие панели", "Панель прячется, пока курсор не у края экрана", Seg(new[] { "Выкл", "Вкл" }, autoHide ? 1 : 0, i => SetAutoHideAsync(i == 1))),
         };
+        rows.Add(Row("Тонкая линия по краю панели", "Светлая линия сверху панели. По умолчанию она убрана.",
+            Seg(new[] { "Убрана", "Показывать" }, settings.ShowStroke ? 1 : 0, i =>
+            {
+                settings.ShowStroke = i == 1;
+                engine.Update(settings);
+                settings.Save();
+                Say(i == 1 ? "Линия по краю панели показывается." : "Линия по краю панели убрана.");
+                Build();
+            })));
         foreach (var o in RegistrySettings.Options.Where(RegistrySettings.Available))
         {
             var opt = o;

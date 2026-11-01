@@ -41,12 +41,21 @@ static class Report
                 sb.AppendLine($"  {why.Key} ({why.Count()}): " + string.Join(", ", names) + (why.Count() > names.Count ? ", …" : ""));
             }
         }
+        var tb = Target.ById("lnk-taskbar");
+        var tbItems = tb == null ? new List<Outcome>() : r.Outcomes.Where(o => o.Group == tb.Title).ToList();
+        if (tbItems.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"[Панель задач — закреплённые значки: {tbItems.Count}] — имя | идентификатор программы | откуда значок | итог");
+            foreach (var it in tbItems)
+                sb.AppendLine($"  {it.Item} | {(r.Aumids.TryGetValue(it.Item, out var au) ? au : "-")} | {(r.How.TryGetValue(it.Item, out var hw) ? hw : "-")} | {it.Result}");
+        }
         if (r.Aumids.Count > 0)
         {
             sb.AppendLine();
-            sb.AppendLine($"[Ярлыки с идентификатором программы (AUMID): {r.Aumids.Count}] — имя | идентификатор | результат");
+            sb.AppendLine($"[Ярлыки с идентификатором программы (AUMID): {r.Aumids.Count}] — имя | идентификатор | откуда значок | результат");
             var res = r.Outcomes.GroupBy(o => o.Item).ToDictionary(g => g.Key, g => g.First().Result);
-            foreach (var kv in r.Aumids.Take(150)) sb.AppendLine($"  {kv.Key} | {kv.Value} | {(res.TryGetValue(kv.Key, out var v) ? v : "?")}");
+            foreach (var kv in r.Aumids.Take(150)) sb.AppendLine($"  {kv.Key} | {kv.Value} | {(r.How.TryGetValue(kv.Key, out var h2) ? h2 : "-")} | {(res.TryGetValue(kv.Key, out var v) ? v : "?")}");
         }
         foreach (var m in r.Messages.Take(20)) sb.AppendLine("• " + m);
         return sb.ToString();
