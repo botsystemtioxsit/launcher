@@ -1,0 +1,25 @@
+{
+  "items": [
+    {
+      "id": "lava-lamp",
+      "title": "Лава-лампа",
+      "description": "Мягкие цветные капли медленно плывут и сливаются, как в лава-лампе. Цвета, фон и скорость настраиваются в «Создать».",
+      "type": "html",
+      "files": ["manifest.json", "index.html"]
+    },
+    {
+      "id": "particle-network",
+      "title": "Сеть частиц",
+      "description": "Светящиеся точки плывут по экрану и соединяются линиями, когда оказываются рядом.",
+      "type": "html",
+      "files": ["manifest.json", "index.html"]
+    },
+    {
+      "id": "snow",
+      "title": "Снегопад",
+      "description": "Тихий снегопад над тёмным небом: количество снежинок, скорость и цвет настраиваются.",
+      "type": "html",
+      "files": ["manifest.json", "index.html"]
+    }
+  ]
+}

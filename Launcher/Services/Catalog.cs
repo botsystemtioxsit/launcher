@@ -51,6 +51,8 @@ static class Catalog
             "launcher", "Color Plus", null, "ColorPlus.exe", "Color Plus", IsPlugin: true),
         new AppDef("icon-plus", "Icon Plus", "Значки Windows по-своему: один цвет для всех значков или готовый набор иконок, сайт с иконками внутри.",
             "launcher", "Icon Plus", null, "IconPlus.exe", "Icon Plus", IsPlugin: true),
+        new AppDef("wallpaper-plus", "Wallpaper Plus", "Живые обои рабочего стола: видео, GIF и анимированные страницы. Каталог, свои файлы и сайты, конструктор своих обоев.",
+            "launcher", "Wallpaper Plus", null, "WallpaperPlus.exe", "Wallpaper Plus", IsPlugin: true),
     };
 
     public static AppDef? ById(string id) => Apps.Concat(Plugins).FirstOrDefault(a => a.Id == id);

@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Неоновые часы</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;font-family:'Segoe UI',Consolas,monospace}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center}
+#t{font-weight:700;letter-spacing:.04em;line-height:1}
+#d{margin-top:2vh;font-size:2.4vh;letter-spacing:.3em;text-transform:uppercase}
+</style></head><body>
+<div id="t"></div><div id="d"></div>
+<script>
+const q=new URLSearchParams(location.search),P=(k,d)=>q.get(k)||d;
+const c1=P('c1','#00F0FF'),c2=P('c2','#FF2A9D'),bg=P('bg','#06050D'),size=parseFloat(P('size','18')),sec=P('sec','0')==='1';
+document.documentElement.style.background=bg;
+document.body.style.background='radial-gradient(ellipse at 50% 55%,'+c1+'26,'+bg+'00 62%)';
+const t=document.getElementById('t'),d=document.getElementById('d');
+t.style.fontSize=size+'vw';t.style.color=c1;t.style.textShadow='0 0 .15em '+c1+',0 0 .5em '+c1+'99';
+d.style.color=c2;d.style.textShadow='0 0 .6em '+c2+'aa';
+const two=n=>String(n).padStart(2,'0');
+function tick(){const n=new Date();t.textContent=two(n.getHours())+':'+two(n.getMinutes())+(sec?':'+two(n.getSeconds()):'');
+ d.textContent=n.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'})}
+tick();setInterval(tick,1000);
+</script></body></html>

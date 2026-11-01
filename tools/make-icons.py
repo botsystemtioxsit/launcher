@@ -105,12 +105,29 @@ def icons():
     glow(img, l2, YEL, 16, 0.7)
     return img
 
+def wallpaper():
+    img, _ = base()
+    # экран с горами-волнами и «солнцем» + треугольник «играть»: живые обои
+    l = layer(); d = ImageDraw.Draw(l)
+    d.rounded_rectangle([170, 250, S - 170, 700], radius=58, outline=CYAN + (255,), width=20)
+    glow(img, l, CYAN, 22, 0.8)
+    l2 = layer(); d2 = ImageDraw.Draw(l2)
+    d2.ellipse([620, 320, 740, 440], fill=YEL + (255,))
+    pts = [(190, 640), (330, 470), (430, 560), (560, 430), (680, 560), (S - 190, 500), (S - 190, 680), (190, 680)]
+    d2.polygon(pts, fill=MAG + (255,))
+    glow(img, l2, MAG, 22, 0.8)
+    l3 = layer(); d3 = ImageDraw.Draw(l3)
+    d3.polygon([(450, 770), (450, 880), (550, 825)], fill=GREEN + (255,))
+    glow(img, l3, GREEN, 16, 0.8)
+    return img
+
 JOBS = {
     "Launcher/app.ico": ghost,
     "Terminal/app.ico": terminal,
     "Plugins/TaskbarPlus/app.ico": taskbar,
     "Plugins/ColorPlus/app.ico": color,
     "Plugins/IconPlus/app.ico": icons,
+    "Plugins/WallpaperPlus/app.ico": wallpaper,
 }
 
 if __name__ == "__main__":

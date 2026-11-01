@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Звёздное поле</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{display:block;width:100vw;height:100vh}</style></head><body>
+<canvas id="c"></canvas>
+<script>
+const q=new URLSearchParams(location.search),P=(k,d)=>q.get(k)||d;
+const c1=P('c1','#BFE8FF'),bg=P('bg','#04050F'),speed=parseFloat(P('speed','1')),N=Math.max(50,parseInt(P('count','800'))),fps=parseInt(P('fps','60'));
+const cv=document.getElementById('c'),g=cv.getContext('2d');
+let W,H;function size(){const s=Math.min(1,2560/innerWidth);W=cv.width=Math.round(innerWidth*s);H=cv.height=Math.round(innerHeight*s)}addEventListener('resize',size);size();
+const stars=Array.from({length:N},()=>({x:(Math.random()-0.5)*2,y:(Math.random()-0.5)*2,z:Math.random()}));
+function rgb(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16)||255,parseInt(h.slice(2,4),16)||255,parseInt(h.slice(4,6),16)||255]}
+const [sr,sg,sb]=rgb(c1);
+let last=0;
+function frame(now){requestAnimationFrame(frame);if(now-last<1000/fps-1)return;const dt=Math.min(0.1,(now-last)/1000);last=now;
+ g.fillStyle=bg;g.fillRect(0,0,W,H);
+ const cx=W/2,cy=H/2,f=Math.max(W,H)*0.6;
+ for(const s of stars){
+  const pz=s.z;s.z-=dt*0.18*speed;
+  if(s.z<=0.01){s.x=(Math.random()-0.5)*2;s.y=(Math.random()-0.5)*2;s.z=1;continue}
+  const x=cx+s.x/s.z*f*0.5,y=cy+s.y/s.z*f*0.5,px=cx+s.x/pz*f*0.5,py=cy+s.y/pz*f*0.5;
+  if(x<-50||x>W+50||y<-50||y>H+50){s.x=(Math.random()-0.5)*2;s.y=(Math.random()-0.5)*2;s.z=1;continue}
+  const a=Math.min(1,(1-s.z)*1.8+0.25);
+  g.strokeStyle='rgba('+sr+','+sg+','+sb+','+a.toFixed(2)+')';g.lineWidth=Math.max(1,(1-s.z)*H/300);
+  g.beginPath();g.moveTo(px,py);g.lineTo(x,y);g.stroke();
+ }
+}
+requestAnimationFrame(frame);
+</script></body></html>

@@ -1,0 +1,16 @@
+{
+  "Id": "snow",
+  "Title": "Снегопад",
+  "Type": "html",
+  "Entry": "index.html",
+  "Description": "Тихий снегопад над тёмным небом.",
+  "Author": "Ghost Shell",
+  "Version": 1,
+  "Template": true,
+  "Params": [
+    { "Key": "c1", "Label": "Цвет снега", "Type": "color", "Default": "#FFFFFF" },
+    { "Key": "bg", "Label": "Цвет ночного неба", "Type": "color", "Default": "#0A1326" },
+    { "Key": "speed", "Label": "Скорость", "Type": "range", "Min": 0.2, "Max": 3, "Step": 0.1, "Default": "1" },
+    { "Key": "count", "Label": "Количество снежинок", "Type": "range", "Min": 50, "Max": 600, "Step": 50, "Default": "250" }
+  ]
+}

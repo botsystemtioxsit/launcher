@@ -1,0 +1,16 @@
+{
+  "Id": "particle-network",
+  "Title": "Сеть частиц",
+  "Type": "html",
+  "Entry": "index.html",
+  "Description": "Светящиеся точки плывут по экрану и соединяются линиями, когда оказываются рядом.",
+  "Author": "Ghost Shell",
+  "Version": 1,
+  "Template": true,
+  "Params": [
+    { "Key": "c1", "Label": "Цвет точек и линий", "Type": "color", "Default": "#00F0FF" },
+    { "Key": "bg", "Label": "Цвет фона", "Type": "color", "Default": "#06050D" },
+    { "Key": "speed", "Label": "Скорость", "Type": "range", "Min": 0.2, "Max": 3, "Step": 0.1, "Default": "1" },
+    { "Key": "count", "Label": "Количество точек", "Type": "range", "Min": 20, "Max": 200, "Step": 10, "Default": "90" }
+  ]
+}
