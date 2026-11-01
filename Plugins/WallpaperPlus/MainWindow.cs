@@ -27,7 +27,7 @@ sealed partial class MainWindow : Window
         this.ctl = ctl;
         this.settings = settings;
         Title = "Wallpaper Plus";
-        Width = 1040; Height = 860; MinWidth = 720; MinHeight = 520;
+        Width = Math.Min(1040, SystemParameters.WorkArea.Width - 40); Height = Math.Min(860, SystemParameters.WorkArea.Height - 40); MinWidth = 640; MinHeight = 480;
         Background = Res("Bg");
         Foreground = Res("Text");
         FontFamily = new FontFamily("Segoe UI");
