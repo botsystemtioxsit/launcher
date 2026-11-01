@@ -1,0 +1,16 @@
+{
+  "Id": "neon-grid",
+  "Title": "Неоновая сетка",
+  "Type": "html",
+  "Entry": "index.html",
+  "Description": "Синтвейв: бесконечная сетка уходит к горизонту, над ней садится неоновое солнце.",
+  "Author": "Ghost Shell",
+  "Version": 1,
+  "Template": true,
+  "Params": [
+    { "Key": "c1", "Label": "Цвет линий сетки", "Type": "color", "Default": "#FF2A9D" },
+    { "Key": "c2", "Label": "Цвет солнца", "Type": "color", "Default": "#00F0FF" },
+    { "Key": "bg", "Label": "Цвет неба", "Type": "color", "Default": "#0B0A1A" },
+    { "Key": "speed", "Label": "Скорость", "Type": "range", "Min": 0.2, "Max": 3, "Step": 0.1, "Default": "1" }
+  ]
+}

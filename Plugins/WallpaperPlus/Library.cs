@@ -9,6 +9,17 @@ using System.Text.RegularExpressions;
 
 namespace WallpaperPlusApp;
 
+sealed class WpParam
+{
+    public string Key { get; set; } = "";
+    public string Label { get; set; } = "";
+    public string Type { get; set; } = "range";       // color | range
+    public double Min { get; set; }
+    public double Max { get; set; } = 1;
+    public double Step { get; set; } = 0.1;
+    public string Default { get; set; } = "";
+}
+
 sealed class Wallpaper
 {
     public string Id { get; set; } = "";
@@ -21,9 +32,26 @@ sealed class Wallpaper
     public int Version { get; set; } = 1;
     public bool Online { get; set; }                  // обоям разрешён доступ в интернет (по умолчанию нет)
 
+    // Настройки обоев-шаблонов (цвета, скорость…): описание (Params) лежит в манифесте шаблона, выбранные значения — в манифесте самих обоев.
+    public List<WpParam> Params { get; set; } = new();
+    public Dictionary<string, string> Values { get; set; } = new();
+    public bool Template { get; set; }                // шаблон: на его основе в окне «Создать» делаются свои обои
+
     [JsonIgnore] public string Dir => Path.Combine(Paths.Library, Id);
     [JsonIgnore] public bool Builtin => Id.StartsWith("b-", StringComparison.Ordinal);
     [JsonIgnore] public long SizeBytes { get; set; }
+
+    // Параметры страницы обоев в адресе: выбранные значения, а где их нет — значения по умолчанию
+    public string ParamQuery()
+    {
+        var parts = new List<string>();
+        foreach (var p in Params)
+        {
+            var v = Values.TryGetValue(p.Key, out var x) && x.Length > 0 ? x : p.Default;
+            parts.Add(Uri.EscapeDataString(p.Key) + "=" + Uri.EscapeDataString(v));
+        }
+        return string.Join("&", parts);
+    }
 
     public string TypeLabel => Type switch { "video" => "видео", "gif" => "анимация GIF", "image" => "картинка", _ => "страница" };
 }
@@ -310,6 +338,37 @@ static class Library
         }
         catch (InvalidDataException) { return (null, "Архив повреждён или это не zip."); }
         finally { try { Directory.Delete(temp, true); } catch { } }
+    }
+
+    // ---------- свои обои на основе шаблона ----------
+    // Копирует шаблон (или уже созданные обои) в новые обои с выбранными значениями. Страница обоев остаётся той же, меняются только параметры в адресе.
+    public static (Wallpaper? Wallpaper, string Message) CreateFrom(Wallpaper template, string title, Dictionary<string, string> values)
+    {
+        try
+        {
+            var w = NewWallpaper(title.Trim().Length > 0 ? title : template.Title + " (мои)", template.Type, "создано в Wallpaper Plus");
+            w.Entry = template.Entry; w.Description = template.Description; w.Author = ""; w.Params = template.Params; w.Values = new Dictionary<string, string>(values); w.Template = false;
+            Directory.CreateDirectory(w.Dir);
+            foreach (var f in Directory.EnumerateFiles(template.Dir, "*", SearchOption.AllDirectories))
+            {
+                var rel = Path.GetRelativePath(template.Dir, f);
+                if (rel is ManifestName or ".builtin-version") continue;
+                var dest = Path.Combine(w.Dir, rel);
+                Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                File.Copy(f, dest, true);
+            }
+            Save(w);
+            return (Read(w.Dir), "Создано: " + w.Title);
+        }
+        catch (Exception ex) { Paths.Log("создание обоев: " + ex); return (null, "Не получилось: " + ex.Message); }
+    }
+
+    public static void UpdateValues(Wallpaper w, Dictionary<string, string> values, string? title = null)
+    {
+        if (w.Builtin) return;
+        w.Values = new Dictionary<string, string>(values);
+        if (!string.IsNullOrWhiteSpace(title)) w.Title = title.Trim();
+        Save(w);
     }
 
     // ---------- вспомогательное ----------
