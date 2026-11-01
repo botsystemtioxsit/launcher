@@ -63,36 +63,6 @@ Start-Sleep -Seconds 4
 Mark '05-пуск-после-перезапуска'
 [System.Windows.Forms.SendKeys]::SendWait('{ESC}')
 
-Say ""; Say "=== Color Plus: цвет панели «сплошной» (розовый) поверх островов ==="
-$csettings = @{ TaskbarOn = $true; TaskbarMode = 'solid'; TaskbarColor = '#FF2A9D'; TaskbarOpacity = 90 }
-($csettings | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
-$cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
-Start-Sleep -Seconds 12
-Mark '07-цвет-панели-розовый'
-Get-Content (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyContinue | ForEach-Object { Say "  link: $_" }
-Say ""; Say "=== перезапуск Проводника при работающем Color Plus: панель не должна вспыхнуть сплошным цветом ==="
-Kill-Explorer
-Start-Sleep -Seconds 1
-Mark '08-проводник-+1с-цвет'
-Start-Sleep -Seconds 2
-Mark '08-проводник-+3с-цвет'
-Start-Sleep -Seconds 6
-Mark '08-проводник-+9с-цвет'
-Quit-Plugin $cp 'color-plus'
-Remove-Item (Join-Path $data 'color-plus-settings.json') -ErrorAction SilentlyContinue
-Start-Sleep -Seconds 3
-
-Say ""; Say "=== Color Plus: «размытая» панель (розовый) при островах Taskbar Plus: цвет на островах, между ними прозрачно ==="
-$csettings = @{ TaskbarOn = $true; TaskbarMode = 'blur'; TaskbarColor = '#FF2A9D'; TaskbarOpacity = 90 }
-($csettings | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-settings.json') -Encoding UTF8
-$cp = Start-Process -FilePath 'out-test/ColorPlus.exe' -ArgumentList '--background' -PassThru
-Start-Sleep -Seconds 14
-Mark '09-размытая-панель-с-островами'
-Get-Content (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyContinue | ForEach-Object { Say "  link: $_" }
-Quit-Plugin $cp 'color-plus'
-Remove-Item (Join-Path $data 'color-plus-settings.json') -ErrorAction SilentlyContinue
-Start-Sleep -Seconds 3
-
 Copy-Item (Join-Path $data 'taskbar-plus-engine.log') (Join-Path $Out 'engine.log') -Force -ErrorAction SilentlyContinue
 Copy-Item (Join-Path $data 'taskbar-plus-engine.cfg') (Join-Path $Out 'engine.cfg') -Force -ErrorAction SilentlyContinue
 Quit-Plugin $p 'taskbar-plus'

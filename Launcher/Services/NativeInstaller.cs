@@ -192,6 +192,22 @@ static class NativeInstaller
         try { Directory.Delete(DirFor(d), true); } catch { }
     }
 
+    // Убранные плагины (Catalog.Retired): остановить, стереть файлы, ярлыки, запись в «Установленные приложения» и автозапуск.
+    // Если плагин сейчас не закрылся, попробуем при следующем запуске лаунчера.
+    public static void RemoveRetired()
+    {
+        foreach (var d in Catalog.Retired)
+        {
+            try
+            {
+                if (Find(d) != null || Directory.Exists(DirFor(d))) Uninstall(d);
+                using var run = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+                run?.DeleteValue(FolderName(d), false);
+            }
+            catch { }
+        }
+    }
+
     // Из списка «Установленные приложения»: BattleLauncher.exe --uninstall-native=<id>
     public static void UninstallById(string id)
     {

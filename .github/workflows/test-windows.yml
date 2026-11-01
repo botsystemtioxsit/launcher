@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
     inputs:
       scenario:
-        description: 'plugins — проверка обоих плагинов; bg — опыты с прозрачным фоном окон; glass — опыты со «стеклом» под окном'
+        description: 'plugins — проверка плагина панели; bg — опыты с прозрачным фоном окон; glass — опыты со «стеклом» под окном'
         default: plugins
         type: choice
-        options: [plugins, bg, glass, site, icons, store, startapps, taskbar, gpu, extend, accent, wallpaper]
+        options: [plugins, bg, glass, site, icons, store, startapps, taskbar, wallpaper]
 
 permissions:
   contents: write
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
-        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'icons' || env.SCENARIO == 'startapps' || env.SCENARIO == 'taskbar' || env.SCENARIO == 'gpu' || env.SCENARIO == 'extend' || env.SCENARIO == 'wallpaper'
+        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'icons' || env.SCENARIO == 'startapps' || env.SCENARIO == 'taskbar' || env.SCENARIO == 'wallpaper'
         with:
           dotnet-version: 8.0.x
 
@@ -41,17 +41,10 @@ jobs:
         if: env.SCENARIO == 'plugins' || env.SCENARIO == 'taskbar'
         shell: pwsh
         run: |
-          foreach ($p in 'TaskbarPlus', 'ColorPlus') {
+          foreach ($p in 'TaskbarPlus') {
             dotnet publish Plugins/$p/$p.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-test
             if ($LASTEXITCODE -ne 0) { throw "publish $p не удался" }
           }
-
-      - name: Publish Color Plus
-        if: env.SCENARIO == 'gpu' || env.SCENARIO == 'extend'
-        shell: pwsh
-        run: |
-          dotnet publish Plugins/ColorPlus/ColorPlus.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-test
-          if ($LASTEXITCODE -ne 0) { throw 'publish ColorPlus не удался' }
 
       - name: Publish Wallpaper Plus
         if: env.SCENARIO == 'wallpaper'
@@ -77,9 +70,6 @@ jobs:
           elseif ($env:SCENARIO -eq 'store') { ./tests/e2e/store-probe.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'startapps') { ./tests/e2e/startapps.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'taskbar') { ./tests/e2e/taskbar-states.ps1 -Out results }
-          elseif ($env:SCENARIO -eq 'gpu') { ./tests/e2e/gpu-guard.ps1 -Out results }
-          elseif ($env:SCENARIO -eq 'extend') { ./tests/e2e/explorer-extend.ps1 -Out results }
-          elseif ($env:SCENARIO -eq 'accent') { ./tests/e2e/accent-taskbar.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'wallpaper') { ./tests/e2e/wallpaper.ps1 -Out results }
           else { ./tests/e2e/run.ps1 -Out results }
         continue-on-error: true
