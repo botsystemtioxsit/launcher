@@ -1,0 +1,22 @@
+встроенные: b-starfield*, b-neon-grid*, b-neon-clock*, b-aurora*, b-terminal-hud*, b-digital-rain*
+archive.7z -> отказ | Формат .7z не поддерживается. Нужны видео (mp4, webm), GIF, картинка, страница (html) или архив zip.
+bad.exe -> отказ | Файл .exe — это программа, а не обои. Он не запускается и не добавляется.
+clip.mp4 -> OK u-clip-4ec92a тип=video файл=_player.html | Добавлено: clip
+   url: https://wallpaper.example/_player.html?fit=cover&fps=60&muted=1&f=clip.mp4&t=video
+evil.zip -> OK u-unzip-c9b03324-854bf8 тип=html файл=index.html | Добавлено: evil
+   url: https://wallpaper.example/index.html?fit=cover&fps=60&muted=1
+pack.zip -> OK u-lively-71f2a8 тип=html файл=index.html | Добавлено: Пакет из Lively
+   url: https://wallpaper.example/index.html?fit=cover&fps=60&muted=1
+single.html -> OK u-single-848b1c тип=html файл=single.html | Добавлено: single
+   url: https://wallpaper.example/single.html?fit=cover&fps=60&muted=1
+tiny.gif -> OK u-tiny-d29c98 тип=gif файл=_player.html | Добавлено: tiny
+   url: https://wallpaper.example/_player.html?fit=cover&fps=60&muted=1&f=tiny.gif&t=gif
+tiny.png -> OK u-tiny-85d9b1 тип=image файл=_player.html | Добавлено: tiny
+   url: https://wallpaper.example/_player.html?fit=cover&fps=60&muted=1&f=tiny.png&t=image
+создание: u-331ce7 | Создано: Тест красные
+url: https://wallpaper.example/index.html?fit=cover&fps=60&muted=1&c1=%23FF0000&c2=%23FFAA00&bg=%2306050D&size=18&sec=0
+после правки: Тест зелёные c1=#00FF00
+терминал: u-bef35f | Создано: Терминал на звёздах
+терминал: данные=sys,audio,media,input,journal,weather фон=b-starfield слой=True
+url слоя: 630 знаков
+всего обоев в библиотеке: 14
