@@ -8,6 +8,12 @@
 порядок файлов отсортирован, переводы строк в текстовых файлах приведены к LF. Благодаря этому лаунчер не видит
 «обновление» там, где ничего не менялось (он сравнивает контрольную сумму).
 """
+import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8')   # консоль Windows (cp1252) не печатает кириллицу
+except Exception:
+    pass
+
 import hashlib, json, os, sys, zipfile
 
 root = os.path.dirname(os.path.abspath(__file__))

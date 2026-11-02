@@ -161,6 +161,8 @@ jobs:
       # Лаунчер скачивает его во вкладке «Плагины → Для браузера». Архив детерминированный: пока файлы те же, сумма та же.
       - name: Package Mask Plus extension
         shell: pwsh
+        env:
+          PYTHONIOENCODING: utf-8
         run: |
           python tools/mask-plus/generate.py
           if ($LASTEXITCODE -ne 0) { throw 'generate.py не отработал' }

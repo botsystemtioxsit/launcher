@@ -9,6 +9,12 @@
 странице до её скриптов, поэтому настройки нельзя прочитать из хранилища — они «запечены» в файлы.
 Запуск: python3 tools/mask-plus/generate.py
 """
+import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8')   # консоль Windows (cp1252) не печатает кириллицу
+except Exception:
+    pass
+
 import json, os, re, subprocess, itertools
 
 root = os.path.dirname(os.path.abspath(__file__))

@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """Значок Mask Plus (киберпанк-маска) → BrowserPlugins/MaskPlus/icons/{16,32,48,128}.png.
 Запуск: python3 tools/mask-plus/make-icon.py"""
+import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8')   # консоль Windows (cp1252) не печатает кириллицу
+except Exception:
+    pass
+
 import os
 from PIL import Image, ImageDraw, ImageFilter
 
