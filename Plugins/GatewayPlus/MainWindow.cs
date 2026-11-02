@@ -7,6 +7,9 @@ using System.Windows.Threading;
 
 namespace GatewayPlusApp;
 
+// Что показывать в служебном режиме --screenshot (чтобы окно можно было снять без сети и аккаунта)
+enum GwDemo { None, Account, NoAccount, Blocked }
+
 // Окно Gateway Plus: один экран. Сверху — каким вас видят сайты, ниже — шлюз (профиль, «Подключить»/«Отключить»), свой сервер в Германии и пояснения.
 sealed class MainWindow : Window
 {
@@ -21,13 +24,12 @@ sealed class MainWindow : Window
     bool keyShown;
 
     // Что показывать вместо настоящих данных в служебном режиме --screenshot (чтобы окно можно было снять без сети и аккаунта)
-    public enum DemoState { None, Account, NoAccount, Blocked }
-    readonly DemoState demo;
+    readonly GwDemo demo;
     bool Blocked => access?.Blocked ?? false;
 
     static Brush Res(string key) => (Brush)Application.Current.FindResource(key);
 
-    public MainWindow(DemoState demo = DemoState.None)
+    public MainWindow(GwDemo demo = GwDemo.None)
     {
         this.demo = demo;
         Title = "Gateway Plus";
@@ -39,17 +41,17 @@ sealed class MainWindow : Window
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         page.Margin = new Thickness(28, 22, 28, 24);
         Content = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = page };
-        if (demo == DemoState.None) account = Account.Load();
+        if (demo == GwDemo.None) account = Account.Load();
         else
         {
-            if (demo != DemoState.NoAccount) account = new Account.Info { Key = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567", Name = "Alex", TermsV = Terms.Version };
-            if (demo == DemoState.Blocked) access = new Cloud.Access(true, "использование в коммерческих целях", false);
-            else if (demo == DemoState.Account) access = new Cloud.Access(false, "", false);
+            if (demo != GwDemo.NoAccount) account = new Account.Info { Key = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567", Name = "Alex", TermsV = Terms.Version };
+            if (demo == GwDemo.Blocked) access = new Cloud.Access(true, "использование в коммерческих целях", false);
+            else if (demo == GwDemo.Account) access = new Cloud.Access(false, "", false);
         }
         BuildPage();
         Loaded += async (_, _) =>
         {
-            if (demo != DemoState.None) return;
+            if (demo != GwDemo.None) return;
             await CheckAccessAsync(true);
             await RefreshAsync(true);
         };
@@ -64,7 +66,7 @@ sealed class MainWindow : Window
         var now = name.Length > 0 && await Task.Run(() => Wg.IsRunning(name));
         if (now != connected) await RefreshAsync(true);
         // блокировку проверяем раз в 10 минут; если шлюз включён, а доступ закрыли — отключаем (одно окно разрешения Windows)
-        if (demo == DemoState.None && account != null && DateTime.UtcNow - lastAccessCheck > TimeSpan.FromMinutes(10))
+        if (demo == GwDemo.None && account != null && DateTime.UtcNow - lastAccessCheck > TimeSpan.FromMinutes(10))
         {
             await CheckAccessAsync(false);
             if (connected && Blocked) { status.Text = "Доступ закрыт владельцем проекта — отключаю шлюз."; Disconnect(); }

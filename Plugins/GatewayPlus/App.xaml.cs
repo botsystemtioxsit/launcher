@@ -32,9 +32,9 @@ public partial class App : Application
             try
             {
                 Directory.CreateDirectory(shot);
-                new MainWindow(MainWindow.DemoState.Account).RenderTo(Path.Combine(shot, "gateway-plus-ui.png"));
-                new MainWindow(MainWindow.DemoState.NoAccount).RenderTo(Path.Combine(shot, "gateway-plus-ui-noaccount.png"));
-                new MainWindow(MainWindow.DemoState.Blocked).RenderTo(Path.Combine(shot, "gateway-plus-ui-blocked.png"));
+                new MainWindow(GwDemo.Account).RenderTo(Path.Combine(shot, "gateway-plus-ui.png"));
+                new MainWindow(GwDemo.NoAccount).RenderTo(Path.Combine(shot, "gateway-plus-ui-noaccount.png"));
+                new MainWindow(GwDemo.Blocked).RenderTo(Path.Combine(shot, "gateway-plus-ui-blocked.png"));
                 new AccountWindow(false).RenderTo(Path.Combine(shot, "gateway-plus-account.png"));
                 new AccountWindow(true).RenderTo(Path.Combine(shot, "gateway-plus-account-key.png"));
                 new WizardWindow().RenderTo(Path.Combine(shot, "gateway-plus-wizard.png"), demo: true);
