@@ -63,6 +63,8 @@ static class Catalog
             "launcher", "Cursor Plus", null, "CursorPlus.exe", "Cursor Plus", IsPlugin: true),
         new AppDef("gateway-plus", "Gateway Plus", "Шлюз: весь интернет с компьютера идёт через ваш сервер (WireGuard), сайты видят его адрес и страну — например Германию.",
             "launcher", "Gateway Plus", null, "GatewayPlus.exe", "Gateway Plus", IsPlugin: true),
+        new AppDef("skin-loader", "Skin Loader", "Скины Windows: отметьте, какие плагины входят (панель задач, цвет, значки, обои, курсор), соберите скин и применяйте его одной кнопкой. Скин можно сохранить в файл и отдать другу.",
+            "launcher", "Skin Loader", null, "SkinLoader.exe", "Skin Loader", IsPlugin: true),
     };
 
     static BrowserPluginDef[] DefaultBrowserPlugins() => new[]

@@ -156,6 +156,27 @@ def gateway():
     glow(img, l3, MAG, 16, 0.9)
     return img
 
+def skinloader():
+    img, _ = base()
+    # три «карточки-скина» веером и цветная полоса-палитра снизу
+    for i, (dx, rot, col) in enumerate([(-170, -12, MAG), (0, 0, CYAN), (170, 12, GREEN)]):
+        l = layer(); d = ImageDraw.Draw(l)
+        card = Image.new("RGBA", (260, 360), (0, 0, 0, 0))
+        cd = ImageDraw.Draw(card)
+        cd.rounded_rectangle([6, 6, 254, 354], radius=28, outline=col + (255,), width=18)
+        cd.rounded_rectangle([40, 52, 220, 190], radius=14, fill=col + (110,))
+        cd.line([(40, 236), (190, 236)], fill=col + (255,), width=14)
+        cd.line([(40, 280), (140, 280)], fill=col + (200,), width=12)
+        card = card.rotate(rot, resample=Image.BICUBIC, expand=True)
+        l.paste(card, (S // 2 + dx - card.width // 2, 400 - card.height // 2 + (0 if i == 1 else 26)), card)
+        glow(img, l, col, 18, 0.7)
+    l = layer(); d = ImageDraw.Draw(l)
+    for i, col in enumerate([MAG, YEL, GREEN, CYAN]):
+        x = 262 + i * 128
+        d.rounded_rectangle([x, 760, x + 108, 836], radius=24, fill=col + (255,))
+    glow(img, l, CYAN, 14, 0.5)
+    return img
+
 JOBS = {
     "Launcher/app.ico": ghost,
     "Terminal/app.ico": terminal,
@@ -165,6 +186,7 @@ JOBS = {
     "Plugins/WallpaperPlus/app.ico": wallpaper,
     "Plugins/CursorPlus/app.ico": cursor,
     "Plugins/GatewayPlus/app.ico": gateway,
+    "Plugins/SkinLoader/app.ico": skinloader,
 }
 
 if __name__ == "__main__":
