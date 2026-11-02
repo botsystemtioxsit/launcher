@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Windows;
 using Microsoft.Win32;
 
@@ -44,37 +45,29 @@ static class NativeInstaller
         catch { return null; }
     }
 
-    // Последний релиз лаунчера: в нём лежит и сам EXE, и его контрольная сумма
+    // Последний релиз: в нём лежит и сам EXE, и его контрольная сумма.
+    // Берём прямые адреса файлов релиза, а не API GitHub: у API лимит 60 запросов в час на адрес, и при проверке нескольких
+    // плагинов подряд он быстро кончается — кнопка «Скачать» тогда гасла без объяснений. У прямых адресов лимита нет.
     public static async Task<NativeRelease?> Latest(AppDef d, bool force = false, CancellationToken ct = default)
     {
         if (d.NativeExe == null) return null;
         if (!force && cache.TryGetValue(d.Id, out var c) && DateTime.UtcNow - c.At < CacheFor) return c.Value;
-        var which = d.NativeTag == "latest" ? "latest" : "tags/" + d.NativeTag;
+        var baseUrl = d.NativeTag == "latest"
+            ? $"https://github.com/{Catalog.Owner}/{d.NativeRepo}/releases/latest/download/"
+            : $"https://github.com/{Catalog.Owner}/{d.NativeRepo}/releases/download/{d.NativeTag}/";
+        var exeUrl = baseUrl + d.NativeExe;
         string text;
-        try { text = await Net.GetText($"https://api.github.com/repos/{Catalog.Owner}/{d.NativeRepo}/releases/{which}", ct); }
+        try { text = await Net.GetText(exeUrl + ".sha256", ct); }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            // релиза (или всего репозитория) пока нет — Desktop-версия ещё не вышла; кнопка просто остаётся закрытой
+            // релиза (или файла в нём) пока нет — Desktop-версия ещё не вышла; кнопка просто остаётся закрытой
             cache[d.Id] = (DateTime.UtcNow, null);
             return null;
         }
-        using var doc = JsonDocument.Parse(text);
-        var root = doc.RootElement;
-        var tag = (root.GetProperty("tag_name").GetString() ?? "").TrimStart('v');
-        string? exeUrl = null, shaUrl = null;
-        foreach (var a in root.GetProperty("assets").EnumerateArray())
-        {
-            var name = a.GetProperty("name").GetString();
-            var url = a.GetProperty("browser_download_url").GetString();
-            if (name == d.NativeExe) exeUrl = url;
-            else if (name == d.NativeExe + ".sha256") shaUrl = url;
-        }
+        var sha = text.Trim().Split(' ', '\t', '\r', '\n')[0].ToLowerInvariant();
         NativeRelease? rel = null;
-        if (exeUrl != null && shaUrl != null && Net.IsTrustedDownload(exeUrl, d.NativeRepo))
-        {
-            var sha = (await Net.GetText(shaUrl, ct)).Trim().Split(' ', '\t')[0].ToLowerInvariant();
-            rel = new NativeRelease(tag, exeUrl, sha);
-        }
+        if (Net.IsTrustedDownload(exeUrl, d.NativeRepo) && Regex.IsMatch(sha, "^[0-9a-f]{64}$"))
+            rel = new NativeRelease(d.NativeTag == "latest" ? "latest" : d.NativeTag.TrimStart('v'), exeUrl, sha);
         cache[d.Id] = (DateTime.UtcNow, rel);
         return rel;
     }
