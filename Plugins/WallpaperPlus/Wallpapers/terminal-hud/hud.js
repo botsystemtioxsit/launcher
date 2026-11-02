@@ -43,6 +43,43 @@ function zoned(tz) {
   r.dow = SHORT[r.weekday] ?? 0;
   return r;
 }
+// Полное «настенное» время в поясе: для разницы часов и смены суток
+const wallCache = {};
+function wall(tz) {
+  let f = wallCache[tz || ''];
+  if (!f) {
+    const o = { hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    try { f = new Intl.DateTimeFormat('en-GB', tz ? { ...o, timeZone: tz } : o); } catch (e) { f = new Intl.DateTimeFormat('en-GB', o); }
+    wallCache[tz || ''] = f;
+  }
+  const r = {}; for (const p of f.formatToParts(new Date())) r[p.type] = p.value;
+  r.ms = Date.UTC(+r.year, +r.month - 1, +r.day, +r.hour % 24, +r.minute, +r.second);
+  return r;
+}
+// Города для «Мирового времени»: [код, по-русски, по-английски, часовой пояс]
+const CITIES = [
+  ['msk', 'Москва', 'Moscow', 'Europe/Moscow'], ['kgd', 'Калининград', 'Kaliningrad', 'Europe/Kaliningrad'], ['sam', 'Самара', 'Samara', 'Europe/Samara'],
+  ['svx', 'Екатеринбург', 'Yekaterinburg', 'Asia/Yekaterinburg'], ['oms', 'Омск', 'Omsk', 'Asia/Omsk'], ['nsk', 'Новосибирск', 'Novosibirsk', 'Asia/Novosibirsk'],
+  ['kja', 'Красноярск', 'Krasnoyarsk', 'Asia/Krasnoyarsk'], ['irk', 'Иркутск', 'Irkutsk', 'Asia/Irkutsk'], ['yks', 'Якутск', 'Yakutsk', 'Asia/Yakutsk'],
+  ['vvo', 'Владивосток', 'Vladivostok', 'Asia/Vladivostok'], ['gdx', 'Магадан', 'Magadan', 'Asia/Magadan'], ['pkc', 'Камчатка', 'Kamchatka', 'Asia/Kamchatka'],
+  ['kyiv', 'Киев', 'Kyiv', 'Europe/Kiev'], ['minsk', 'Минск', 'Minsk', 'Europe/Minsk'], ['almaty', 'Алматы', 'Almaty', 'Asia/Almaty'], ['tashkent', 'Ташкент', 'Tashkent', 'Asia/Tashkent'],
+  ['baku', 'Баку', 'Baku', 'Asia/Baku'], ['tbilisi', 'Тбилиси', 'Tbilisi', 'Asia/Tbilisi'], ['yerevan', 'Ереван', 'Yerevan', 'Asia/Yerevan'],
+  ['reykjavik', 'Рейкьявик', 'Reykjavik', 'Atlantic/Reykjavik'], ['london', 'Лондон', 'London', 'Europe/London'], ['lisbon', 'Лиссабон', 'Lisbon', 'Europe/Lisbon'],
+  ['paris', 'Париж', 'Paris', 'Europe/Paris'], ['berlin', 'Берлин', 'Berlin', 'Europe/Berlin'], ['rome', 'Рим', 'Rome', 'Europe/Rome'], ['madrid', 'Мадрид', 'Madrid', 'Europe/Madrid'],
+  ['amsterdam', 'Амстердам', 'Amsterdam', 'Europe/Amsterdam'], ['prague', 'Прага', 'Prague', 'Europe/Prague'], ['warsaw', 'Варшава', 'Warsaw', 'Europe/Warsaw'],
+  ['stockholm', 'Стокгольм', 'Stockholm', 'Europe/Stockholm'], ['helsinki', 'Хельсинки', 'Helsinki', 'Europe/Helsinki'], ['athens', 'Афины', 'Athens', 'Europe/Athens'],
+  ['istanbul', 'Стамбул', 'Istanbul', 'Europe/Istanbul'], ['dubai', 'Дубай', 'Dubai', 'Asia/Dubai'], ['telaviv', 'Тель-Авив', 'Tel Aviv', 'Asia/Jerusalem'],
+  ['cairo', 'Каир', 'Cairo', 'Africa/Cairo'], ['lagos', 'Лагос', 'Lagos', 'Africa/Lagos'], ['nairobi', 'Найроби', 'Nairobi', 'Africa/Nairobi'],
+  ['joburg', 'Йоханнесбург', 'Johannesburg', 'Africa/Johannesburg'], ['delhi', 'Дели', 'Delhi', 'Asia/Kolkata'], ['dhaka', 'Дакка', 'Dhaka', 'Asia/Dhaka'],
+  ['bangkok', 'Бангкок', 'Bangkok', 'Asia/Bangkok'], ['jakarta', 'Джакарта', 'Jakarta', 'Asia/Jakarta'], ['beijing', 'Пекин', 'Beijing', 'Asia/Shanghai'],
+  ['hongkong', 'Гонконг', 'Hong Kong', 'Asia/Hong_Kong'], ['singapore', 'Сингапур', 'Singapore', 'Asia/Singapore'], ['manila', 'Манила', 'Manila', 'Asia/Manila'],
+  ['seoul', 'Сеул', 'Seoul', 'Asia/Seoul'], ['tokyo', 'Токио', 'Tokyo', 'Asia/Tokyo'], ['perth', 'Перт', 'Perth', 'Australia/Perth'], ['sydney', 'Сидней', 'Sydney', 'Australia/Sydney'],
+  ['auckland', 'Окленд', 'Auckland', 'Pacific/Auckland'], ['honolulu', 'Гонолулу', 'Honolulu', 'Pacific/Honolulu'], ['anchorage', 'Анкоридж', 'Anchorage', 'America/Anchorage'],
+  ['la', 'Лос-Анджелес', 'Los Angeles', 'America/Los_Angeles'], ['denver', 'Денвер', 'Denver', 'America/Denver'], ['chicago', 'Чикаго', 'Chicago', 'America/Chicago'],
+  ['mexico', 'Мехико', 'Mexico City', 'America/Mexico_City'], ['newyork', 'Нью-Йорк', 'New York', 'America/New_York'], ['toronto', 'Торонто', 'Toronto', 'America/Toronto'],
+  ['bogota', 'Богота', 'Bogota', 'America/Bogota'], ['lima', 'Лима', 'Lima', 'America/Lima'], ['saopaulo', 'Сан-Паулу', 'Sao Paulo', 'America/Sao_Paulo'],
+  ['buenosaires', 'Буэнос-Айрес', 'Buenos Aires', 'America/Argentina/Buenos_Aires'],
+];
 function bar(pct, n) {
   const k = Math.max(0, Math.min(n, Math.round(pct / 100 * n)));
   const s = el('span', 'bar'), a = el('span', 'f', '0'.repeat(k)), b = el('span', 'e', '·'.repeat(n - k));
@@ -83,7 +120,7 @@ reg('title', {
 
 reg('clock', {
   name: 'Часы', w: 0.27, defs: { label: 'TIME', tz: '', sec: true, date: true },
-  schema: [{ k: 'label', t: 'text', l: 'Подпись' }, { k: 'tz', t: 'text', l: 'Часовой пояс (например Europe/London; пусто — ваш)' }, { k: 'sec', t: 'bool', l: 'Секунды' }, { k: 'date', t: 'bool', l: 'Дата и день недели' }],
+  schema: [{ k: 'label', t: 'text', l: 'Подпись' }, { k: 'tz', t: 'choice', l: 'Часовой пояс', o: [''].concat(CITIES.map(c => c[3])), ol: [T('ваш (как на компьютере)', 'yours (as on this PC)')].concat(CITIES.map(c => RU ? c[1] : c[2])) }, { k: 'sec', t: 'bool', l: 'Секунды' }, { k: 'date', t: 'bool', l: 'Дата и день недели' }],
   mount(box, o) {
     const r1 = el('div', 'row'), r2 = el('div', 'row');
     const l1 = el('span', 'lab', o.label), g = [el('span', 'grp'), el('span', 'grp'), el('span', 'grp')];
@@ -92,6 +129,47 @@ reg('clock', {
     r2.append(l2, ...d);
     box.append(r1); if (o.date) box.append(r2);
     return { tick() { const z = zoned(o.tz); g[0].textContent = z.hour; g[1].textContent = z.minute; g[2].textContent = z.second; l2.textContent = (RU ? DAYS_RU : DAYS_EN)[z.dow]; d[0].textContent = z.day; d[1].textContent = z.month; d[2].textContent = z.year; } };
+  }
+});
+
+reg('world', {
+  name: 'Мировое время', w: 0.3,
+  defs: { cities: 'london,newyork,tokyo', title: true, me: false, diff: true, sec: false, h12: false },
+  schema: [
+    { k: 'cities', t: 'multi', l: 'Города (отметьте нужные)', o: CITIES.map(c => c[0]), ol: CITIES.map(c => RU ? c[1] : c[2]) },
+    { k: 'title', t: 'bool', l: 'Заголовок «Мировое время»' }, { k: 'me', t: 'bool', l: 'Показывать и ваше время' },
+    { k: 'diff', t: 'bool', l: 'Разница с вашим временем' }, { k: 'sec', t: 'bool', l: 'Секунды' }, { k: 'h12', t: 'bool', l: '12-часовой формат (AM/PM)' },
+  ],
+  mount(box, o) {
+    const list = String(o.cities || '').split(',').map(id => CITIES.find(c => c[0] === id)).filter(Boolean);
+    if (o.title) box.append(el('div', 'dim', T('МИРОВОЕ ВРЕМЯ', 'WORLD TIME')));
+    const rows = [];
+    const add = (name, tz, me) => {
+      const r = el('div', 'wcity'), ct = el('span', 'ct'), cd = el('span', 'cd'), cm = el('span', 'cm'), cx = el('span', 'cx');
+      r.append(el('span', 'cn', name), ct); if (o.diff && !me) r.append(cd); r.append(cm, cx); box.append(r);
+      rows.push({ tz, me, ct, cd, cm, cx });
+    };
+    if (o.me) add(T('ВЫ', 'YOU'), '', true);
+    for (const c of list) add((RU ? c[1] : c[2]).toUpperCase(), c[3], false);
+    if (!rows.length) box.append(el('div', 'dim', T('выберите города в редакторе', 'pick cities in the editor')));
+    return {
+      tick() {
+        const loc = wall('');
+        for (const r of rows) {
+          const z = wall(r.tz), h = +z.hour % 24;
+          let t;
+          if (o.h12) t = pad(h % 12 || 12) + ':' + z.minute + (o.sec ? ':' + z.second : '') + (h < 12 ? ' AM' : ' PM');
+          else t = z.hour + ':' + z.minute + (o.sec ? ':' + z.second : '');
+          r.ct.textContent = t;
+          r.cm.textContent = h >= 7 && h < 19 ? '☀' : '☾';
+          if (r.me) { r.cx.textContent = ''; continue; }
+          const min = Math.round((z.ms - loc.ms) / 60000), a = Math.abs(min);
+          r.cd.textContent = min === 0 ? T('как у вас', 'same') : (min > 0 ? '+' : '−') + Math.floor(a / 60) + (a % 60 ? ':' + pad(a % 60) : '') + T(' ч', ' h');
+          const dd = Math.floor(z.ms / 864e5) - Math.floor(loc.ms / 864e5);
+          r.cx.textContent = dd > 0 ? T('завтра', 'tomorrow') : dd < 0 ? T('вчера', 'yesterday') : '';
+        }
+      }
+    };
   }
 });
 
@@ -373,6 +451,15 @@ function drawPanel() {
       else if (s.t === 'area') { inp = el('textarea'); inp.value = cur; inp.onchange = () => set(inp.value); }
       else if (s.t === 'bool') { inp = el('input'); inp.type = 'checkbox'; inp.checked = !!cur; inp.onchange = () => set(inp.checked); }
       else if (s.t === 'num') { inp = el('input'); inp.type = 'range'; inp.min = s.min; inp.max = s.max; inp.step = s.step; inp.value = cur; inp.onchange = () => set(parseFloat(inp.value)); }
+      else if (s.t === 'multi') {
+        const chosen = new Set(String(cur).split(',').filter(Boolean));
+        inp = el('div', 'multi');
+        s.o.forEach((v, i) => {
+          const lb = el('label'), cb = el('input'); cb.type = 'checkbox'; cb.checked = chosen.has(v);
+          cb.onchange = () => { if (cb.checked) chosen.add(v); else chosen.delete(v); set(s.o.filter(x => chosen.has(x)).join(',')); };
+          lb.append(cb, document.createTextNode(' ' + (s.ol || s.o)[i])); inp.append(lb);
+        });
+      }
       else if (s.t === 'choice') { inp = el('select'); s.o.forEach((v, i) => { const op = el('option', '', (s.ol || s.o)[i]); op.value = v; inp.append(op); }); inp.value = cur; inp.onchange = () => set(inp.value); }
       p.append(inp);
     };
