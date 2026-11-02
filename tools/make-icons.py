@@ -121,6 +121,20 @@ def wallpaper():
     glow(img, l3, GREEN, 16, 0.8)
     return img
 
+def cursor():
+    img, _ = base()
+    # стрелка-курсор с хвостом-шлейфом из кружков
+    l = layer(); d = ImageDraw.Draw(l)
+    for i, (x, y, r, a) in enumerate(((250, 760, 40, 90), (330, 690, 52, 140), (420, 610, 64, 200), (520, 530, 76, 255))):
+        d.ellipse([x - r, y - r, x + r, y + r], fill=CYAN + (a,))
+    glow(img, l, CYAN, 20, 0.7)
+    l2 = layer(); d2 = ImageDraw.Draw(l2)
+    arrow = [(520, 220), (520, 760), (650, 640), (740, 840), (830, 800), (740, 600), (900, 600)]
+    d2.polygon(arrow, fill=MAG + (255,))
+    d2.line(arrow + [arrow[0]], fill=(10, 6, 24, 255), width=22, joint="curve")
+    glow(img, l2, MAG, 26, 0.9)
+    return img
+
 JOBS = {
     "Launcher/app.ico": ghost,
     "Terminal/app.ico": terminal,
@@ -128,6 +142,7 @@ JOBS = {
     "Plugins/ColorPlus/app.ico": color,
     "Plugins/IconPlus/app.ico": icons,
     "Plugins/WallpaperPlus/app.ico": wallpaper,
+    "Plugins/CursorPlus/app.ico": cursor,
 }
 
 if __name__ == "__main__":

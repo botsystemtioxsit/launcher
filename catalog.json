@@ -153,6 +153,17 @@
         "asset": "WallpaperPlus.exe",
         "name": "Wallpaper Plus"
       }
+    },
+    {
+      "id": "cursor-plus",
+      "name": "Cursor Plus",
+      "desc": "Свой курсор: цвет, форма, шлейф за мышью (комета, искры, звёзды…) и эффекты клика. Можно нарисовать курсор самому.",
+      "desktop": {
+        "repo": "launcher",
+        "tag": "latest",
+        "asset": "CursorPlus.exe",
+        "name": "Cursor Plus"
+      }
     }
   ]
 }

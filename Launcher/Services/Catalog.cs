@@ -53,6 +53,8 @@ static class Catalog
             "launcher", "Icon Plus", null, "IconPlus.exe", "Icon Plus", IsPlugin: true),
         new AppDef("wallpaper-plus", "Wallpaper Plus", "Живые обои рабочего стола: видео, GIF и анимированные страницы. Каталог, свои файлы и сайты, конструктор своих обоев.",
             "launcher", "Wallpaper Plus", null, "WallpaperPlus.exe", "Wallpaper Plus", IsPlugin: true),
+        new AppDef("cursor-plus", "Cursor Plus", "Свой курсор: цвет, форма, шлейф за мышью (комета, искры, звёзды…) и эффекты клика. Можно нарисовать курсор самому.",
+            "launcher", "Cursor Plus", null, "CursorPlus.exe", "Cursor Plus", IsPlugin: true),
     };
 
     // Плагины, убранные из лаунчера (владелец их удалил): если такой остался на компьютере, при запуске лаунчер сам его закрывает и удаляет.
