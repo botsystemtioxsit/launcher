@@ -39,6 +39,41 @@ static class Rtdb
         };
     }
 
+    // Пути к узлам базы собираются только из безопасных звеньев (ключи push-записей содержат буквы, цифры, «-» и «_»)
+    static string CleanPath(string path)
+    {
+        var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0 || parts.Length > 6 || !parts.All(x => Net.SafeId.IsMatch(x))) throw new ArgumentException("Некорректный путь в базе");
+        return string.Join('/', parts);
+    }
+
+    // Новая запись с ключом, который выдаёт сама база (push). Возвращает ключ.
+    public static async Task<string> PostJson(string path, string json, CancellationToken ct = default)
+    {
+        using var res = await Net.Http.PostAsync($"{DbUrl}/{CleanPath(path)}.json", new StringContent(json, Encoding.UTF8, "application/json"), ct);
+        res.EnsureSuccessStatusCode();
+        using var doc = JsonDocument.Parse(await res.Content.ReadAsStringAsync(ct));
+        var key = doc.RootElement.TryGetProperty("name", out var n) ? n.GetString() : null;
+        if (key == null || !Net.SafeId.IsMatch(key)) throw new InvalidOperationException("База не вернула номер записи");
+        return key;
+    }
+
+    public static async Task PutJson(string path, string json, CancellationToken ct = default)
+    {
+        using var res = await Net.Http.PutAsync($"{DbUrl}/{CleanPath(path)}.json", new StringContent(json, Encoding.UTF8, "application/json"), ct);
+        res.EnsureSuccessStatusCode();
+    }
+
+    public static async Task PatchJson(string path, string json, CancellationToken ct = default)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Patch, $"{DbUrl}/{CleanPath(path)}.json") { Content = new StringContent(json, Encoding.UTF8, "application/json") };
+        using var res = await Net.Http.SendAsync(req, ct);
+        res.EnsureSuccessStatusCode();
+    }
+
+    // Значение узла как JSON-текст («null», если узла нет)
+    public static Task<string> GetJson(string path, CancellationToken ct = default) => Net.GetText($"{DbUrl}/{CleanPath(path)}.json", ct);
+
     static void CheckId(string id)
     {
         if (!Net.SafeId.IsMatch(id)) throw new ArgumentException("Некорректный id");

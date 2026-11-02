@@ -396,6 +396,8 @@ public partial class MainWindow : Window
         currentView = name;
         AppsView.Visibility = name == "apps" ? Visibility.Visible : Visibility.Collapsed;
         PluginsView.Visibility = name == "plugins" ? Visibility.Visible : Visibility.Collapsed;
+        FeedbackView.Visibility = name == "feedback" ? Visibility.Visible : Visibility.Collapsed;
+        NavFeedback.Foreground = name == "feedback" ? Res("Text") : Res("Muted");
         // «Аккаунт»: без входа показываем форму входа, со входом — сведения об аккаунте
         var signedIn = store.Active != null;
         LoginView.Visibility = name == "account" && !signedIn ? Visibility.Visible : Visibility.Collapsed;
@@ -405,6 +407,7 @@ public partial class MainWindow : Window
         NavAccount.Foreground = name == "account" ? Res("Text") : Res("Muted");
         if (name == "apps") _ = LoadApps(false);
         if (name == "plugins") { _ = LoadPlugins(false); _ = LoadBrowserPlugins(false); }
+        if (name == "feedback") OpenFeedback();
     }
 
     // ---------- плагины ----------
@@ -726,6 +729,7 @@ public partial class MainWindow : Window
     void NavApps_Click(object sender, RoutedEventArgs e) => ShowView("apps");
     void NavPlugins_Click(object sender, RoutedEventArgs e) => ShowView("plugins");
     void NavAccount_Click(object sender, RoutedEventArgs e) => ShowView("account");
+    void NavFeedback_Click(object sender, RoutedEventArgs e) => ShowView("feedback");
 
     void AddAccount_Click(object sender, RoutedEventArgs e) { store.ActiveId = null; store.Save(); Render(); }
 
@@ -1068,6 +1072,16 @@ public partial class MainWindow : Window
             ShowView("plugins");
             SetPluginsTab("browser");
             RenderBrowserPlugins();
+        });
+        await Capture(Path.Combine(dir, "launcher-4-feedback.png"), () =>
+        {
+            ShowView("feedback");
+            SetFeedbackType("bug");
+            fbText!.Text = "После включения формы «Острова» панель задач мигает при наведении мыши на часы.\nШаги: 1) включил форму 2) нажал «Применить» 3) навёл мышь на часы.";
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            fbSentBox!.Children.Clear();
+            fbSentBox.Children.Add(FeedbackSentCard(new FeedbackSent("demo1", "bug", "Панель задач мигает после включения плагина…", now - 7200_000), new FeedbackState("done", "Спасибо! Исправили в версии 1.34.1 — обновите лаунчер.", now - 3600_000, false)));
+            fbSentBox.Children.Add(FeedbackSentCard(new FeedbackSent("demo2", "idea", "Добавьте тёмную тему для окна плагина…", now - 86400_000), new FeedbackState("new", null, null, false)));
         });
         Application.Current.Shutdown();
     }
