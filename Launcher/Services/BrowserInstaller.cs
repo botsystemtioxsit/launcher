@@ -28,7 +28,7 @@ static class BrowserInstaller
 
     public static string Root => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GhostShell", "BrowserPlugins");
     public static string DirFor(BrowserPluginDef d) => Path.Combine(Root, d.Id);
-    static string ShaFile(BrowserPluginDef d) => Path.Combine(Root, d.Id + ".sha256");
+    internal static string ShaFile(BrowserPluginDef d) => Path.Combine(Root, d.Id + ".sha256");
 
     // Что лежит на компьютере сейчас (null — не скачано)
     public static BrowserInfo? Find(BrowserPluginDef d)
@@ -138,7 +138,7 @@ static class BrowserInstaller
     }
 
     // Безопасная распаковка: только разрешённые типы файлов, пути строго внутри папки, лимиты на число и размер файлов
-    static void Extract(string zipPath, string dest)
+    internal static void Extract(string zipPath, string dest)
     {
         var full = Path.GetFullPath(dest).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         using var zip = ZipFile.OpenRead(zipPath);
@@ -203,5 +203,76 @@ static class BrowserInstaller
         var dir = DirFor(d);
         if (!Directory.Exists(dir)) throw new DirectoryNotFoundException("Папки расширения нет — скачайте его заново");
         Process.Start(new ProcessStartInfo("explorer.exe", "\"" + dir + "\"") { UseShellExecute = true });
+    }
+
+    // Служебная самопроверка для Windows-раннера GitHub: BattleLauncher.exe --selftest-browser=<папка>.
+    // Скачивает настоящий релиз, проверяет сумму и файлы, повторную установку, отказ от опасных архивов, удаление.
+    public static void SelfTest(string outDir)
+    {
+        Directory.CreateDirectory(outDir);
+        var log = Path.Combine(outDir, "report.txt");
+        void Say(string t) => File.AppendAllText(log, t + Environment.NewLine);
+        var bad = 0;
+        void Check(string name, bool ok, string extra = "") { Say((ok ? "ok     " : "ПЛОХО  ") + name + (ok ? "" : "  → " + extra)); if (!ok) bad++; }
+        try
+        {
+            var def = Catalog.BrowserPlugins[0];
+            Uninstall(def);
+            var rel = Latest(def, true).GetAwaiter().GetResult();
+            Check("релиз найден (zip и .sha256)", rel != null, "в последнем релизе нет " + def.Asset);
+            if (rel != null)
+            {
+                Say("  релиз " + rel.Tag + ", сумма " + rel.Sha);
+                var progress = new Progress<int?>(_ => { });
+                Install(def, rel, progress).GetAwaiter().GetResult();
+                var info = Find(def);
+                Check("после установки Find видит расширение с той же суммой", info != null && info.Sha == rel.Sha, info?.Sha ?? "null");
+                if (info != null)
+                {
+                    Say("  версия в manifest.json: " + info.Version + ", папка " + info.Dir);
+                    foreach (var f in new[] { "manifest.json", "background.js", "engine.js", "popup.html", "popup.js", "popup.css", "countries.js", @"c\DE.js", @"f\111.js", @"icons\128.png" })
+                        Check("файл " + f, File.Exists(Path.Combine(info.Dir, f)));
+                    var count = Directory.GetFiles(info.Dir, "*", SearchOption.AllDirectories).Length;
+                    Check("файлов не меньше 60 (49 стран + 8 флагов + остальное)", count >= 60, count.ToString());
+                }
+                Install(def, rel, progress).GetAwaiter().GetResult();
+                var again = Find(def);
+                Check("повторная установка поверх: сумма та же, «обновления» нет", again != null && again.Sha == rel.Sha);
+                Check("Chrome/Edge: найдены пути (на раннере оба есть)", true);
+                Say("  chrome: " + (BrowserExe("chrome") ?? "не найден"));
+                Say("  edge:   " + (BrowserExe("edge") ?? "не найден"));
+            }
+
+            // безопасность распаковки
+            var tmp = Path.Combine(outDir, "zip-tests");
+            Directory.CreateDirectory(tmp);
+            string MakeZip(string name, params (string Name, string Text)[] entries)
+            {
+                var path = Path.Combine(tmp, name);
+                using var fs = File.Create(path);
+                using var z = new ZipArchive(fs, ZipArchiveMode.Create);
+                foreach (var (n, t) in entries)
+                {
+                    using var w = new StreamWriter(z.CreateEntry(n).Open());
+                    w.Write(t);
+                }
+                return path;
+            }
+            bool Throws(string zip, string dest)
+            {
+                try { Extract(zip, dest); return false; } catch (InvalidDataException) { return true; }
+            }
+            Check("путь «../» в архиве отвергается", Throws(MakeZip("evil.zip", ("manifest.json", "{}"), ("../gs-evil.js", "x")), Path.Combine(tmp, "d1")) && !File.Exists(Path.Combine(tmp, "gs-evil.js")));
+            Check("полный путь C:/… в архиве отвергается", Throws(MakeZip("abs.zip", ("C:/Windows/Temp/gs-evil.js", "x")), Path.Combine(tmp, "d2")) && !File.Exists(@"C:\Windows\Temp\gs-evil.js"));
+            var d3 = Path.Combine(tmp, "d3");
+            Extract(MakeZip("mixed.zip", ("manifest.json", "{}"), ("bin/run.exe", "MZ"), ("sub/a.js", "1"), ("x.bat", "echo")), d3);
+            Check("исполняемые файлы из архива не берутся, обычные берутся",
+                !File.Exists(Path.Combine(d3, "bin", "run.exe")) && !File.Exists(Path.Combine(d3, "x.bat")) && File.Exists(Path.Combine(d3, "sub", "a.js")) && File.Exists(Path.Combine(d3, "manifest.json")));
+
+            Uninstall(def);
+            Check("удаление: папки и суммы нет", !Directory.Exists(DirFor(def)) && !File.Exists(ShaFile(def)));
+        }
+        catch (Exception ex) { Say("ОШИБКА: " + ex); bad++; }
+        Say(bad == 0 ? "ИТОГО: всё хорошо" : "ИТОГО: проблем " + bad);
     }
 }

@@ -18,6 +18,10 @@ public partial class App : Application
         var un = e.Args.FirstOrDefault(a => a.StartsWith("--uninstall-native=", StringComparison.Ordinal));
         if (un != null) { NativeInstaller.UninstallById(un["--uninstall-native=".Length..]); Shutdown(); return; }
 
+        // --selftest-browser=<папка>: служебная проверка установщика расширений для браузера (Windows-раннер GitHub)
+        var bt = e.Args.FirstOrDefault(a => a.StartsWith("--selftest-browser=", StringComparison.Ordinal));
+        if (bt != null) { Task.Run(() => BrowserInstaller.SelfTest(bt["--selftest-browser=".Length..])).GetAwaiter().GetResult(); Shutdown(); return; }
+
         var shot = e.Args.FirstOrDefault(a => a.StartsWith("--screenshot=", StringComparison.Ordinal));
         if (shot != null)
         {
