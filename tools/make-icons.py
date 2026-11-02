@@ -135,6 +135,27 @@ def cursor():
     glow(img, l2, MAG, 26, 0.9)
     return img
 
+def gateway():
+    img, _ = base()
+    # щит с глобусом внутри и стрелкой-«шлюзом», которая входит слева и выходит справа
+    l = layer(); d = ImageDraw.Draw(l)
+    shield = [(512, 170), (800, 270), (800, 540), (700, 700), (512, 850), (324, 700), (224, 540), (224, 270)]
+    d.polygon(shield, outline=CYAN + (255,), width=26)
+    glow(img, l, CYAN, 22, 0.8)
+    l2 = layer(); d2 = ImageDraw.Draw(l2)
+    cx, cy, r = 512, 500, 150
+    d2.ellipse([cx - r, cy - r, cx + r, cy + r], outline=GREEN + (255,), width=18)
+    d2.ellipse([cx - 70, cy - r, cx + 70, cy + r], outline=GREEN + (255,), width=14)
+    d2.line([(cx - r, cy), (cx + r, cy)], fill=GREEN + (255,), width=14)
+    d2.line([(cx - 120, cy - 78), (cx + 120, cy - 78)], fill=GREEN + (255,), width=10)
+    d2.line([(cx - 120, cy + 78), (cx + 120, cy + 78)], fill=GREEN + (255,), width=10)
+    glow(img, l2, GREEN, 16, 0.7)
+    l3 = layer(); d3 = ImageDraw.Draw(l3)
+    d3.rounded_rectangle([110, 484, 330, 516], radius=14, fill=MAG + (255,))
+    d3.polygon([(310, 440), (400, 500), (310, 560)], fill=MAG + (255,))
+    glow(img, l3, MAG, 16, 0.9)
+    return img
+
 JOBS = {
     "Launcher/app.ico": ghost,
     "Terminal/app.ico": terminal,
@@ -143,6 +164,7 @@ JOBS = {
     "Plugins/IconPlus/app.ico": icons,
     "Plugins/WallpaperPlus/app.ico": wallpaper,
     "Plugins/CursorPlus/app.ico": cursor,
+    "Plugins/GatewayPlus/app.ico": gateway,
 }
 
 if __name__ == "__main__":

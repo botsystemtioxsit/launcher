@@ -164,6 +164,17 @@
         "asset": "CursorPlus.exe",
         "name": "Cursor Plus"
       }
+    },
+    {
+      "id": "gateway-plus",
+      "name": "Gateway Plus",
+      "desc": "Шлюз: весь интернет с компьютера идёт через ваш сервер (WireGuard), сайты видят его адрес и страну — например Германию.",
+      "desktop": {
+        "repo": "launcher",
+        "tag": "latest",
+        "asset": "GatewayPlus.exe",
+        "name": "Gateway Plus"
+      }
     }
   ]
 }

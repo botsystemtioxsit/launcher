@@ -55,6 +55,8 @@ static class Catalog
             "launcher", "Wallpaper Plus", null, "WallpaperPlus.exe", "Wallpaper Plus", IsPlugin: true),
         new AppDef("cursor-plus", "Cursor Plus", "Свой курсор: цвет, форма, шлейф за мышью (комета, искры, звёзды…) и эффекты клика. Можно нарисовать курсор самому.",
             "launcher", "Cursor Plus", null, "CursorPlus.exe", "Cursor Plus", IsPlugin: true),
+        new AppDef("gateway-plus", "Gateway Plus", "Шлюз: весь интернет с компьютера идёт через ваш сервер (WireGuard), сайты видят его адрес и страну — например Германию.",
+            "launcher", "Gateway Plus", null, "GatewayPlus.exe", "Gateway Plus", IsPlugin: true),
     };
 
     // Плагины, убранные из лаунчера (владелец их удалил): если такой остался на компьютере, при запуске лаунчер сам его закрывает и удаляет.
