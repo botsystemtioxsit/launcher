@@ -58,6 +58,9 @@ sealed class CursorApplier
             if (img == null)
             {
                 if (!main && !s.All) return null;
+                // указатели, которые Windows рисует «наоборот» (невидимы при чтении) или красным, рисуем сами в цвете курсора
+                var self = role.Reg switch { "IBeam" => "ibeam", "Crosshair" => "crosshair", "No" => "no", _ => "" };
+                if (self.Length > 0) { img = Shapes.Render(self, px, fill, line); if (img != null) { list.Add(img); continue; } }
                 var sys = SysCursors.Load(role.Ocr, px);
                 if (sys == null) continue;
                 img = SysCursors.Tint(sys, fill, line, role.Dark);

@@ -10,19 +10,19 @@ sealed record Role(string Reg, int Ocr, string Title, bool Dark);
 
 static class Roles
 {
-    // Dark — указатель нарисован тёмным с белой каймой (текст, размеры): его «тело» красим, кайму оставляем светлой.
+    // Dark — для указателей с тёмным телом и светлой каймой (в Windows 11 таких нет: все белые с тёмной обводкой), оставлено на будущее.
     public static readonly Role[] All =
     {
         new("Arrow", 32512, "Обычный", false),
         new("Help", 32651, "Справка", false),
-        new("Crosshair", 32515, "Точный выбор", true),
-        new("IBeam", 32513, "Текст", true),
+        new("Crosshair", 32515, "Точный выбор", false),
+        new("IBeam", 32513, "Текст", false),
         new("No", 32648, "Недоступно", false),
-        new("SizeNS", 32645, "Размер ↕", true),
-        new("SizeWE", 32644, "Размер ↔", true),
-        new("SizeNWSE", 32642, "Размер ↘", true),
-        new("SizeNESW", 32643, "Размер ↙", true),
-        new("SizeAll", 32646, "Переместить", true),
+        new("SizeNS", 32645, "Размер ↕", false),
+        new("SizeWE", 32644, "Размер ↔", false),
+        new("SizeNWSE", 32642, "Размер ↘", false),
+        new("SizeNESW", 32643, "Размер ↙", false),
+        new("SizeAll", 32646, "Переместить", false),
         new("UpArrow", 32516, "Выбор вверх", false),
         new("Hand", 32649, "Ссылка", false),
     };

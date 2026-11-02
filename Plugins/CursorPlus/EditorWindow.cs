@@ -36,9 +36,9 @@ sealed class EditorWindow : Window
     readonly Grid stage = new() { Width = Canvas, Height = Canvas };
     readonly System.Windows.Shapes.Path gridLines = new() { IsHitTestVisible = false, Stroke = new SolidColorBrush(Color.FromArgb(46, 255, 255, 255)), StrokeThickness = 0.5 };
     readonly TextBox nameBox = new() { Text = "Мой курсор", Width = 220 };
-    readonly TextBlock info = new() { Foreground = Brushes.Gray, FontSize = 12, TextWrapping = TextWrapping.Wrap };
+    readonly TextBlock info = new() { Foreground = Brushes.Gray, FontSize = 12, TextWrapping = TextWrapping.Wrap, MaxWidth = 190 };
     readonly StackPanel toolRow = new() { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
-    readonly TextBox hexBox = new() { Text = "#FF2A9D", Width = 96 };
+    readonly TextBox hexBox = new() { Text = "#FF2A9D", Width = 112, Padding = new Thickness(8, 4, 8, 4), VerticalContentAlignment = VerticalAlignment.Center };
     bool painting;
 
     public MineEntry? Result { get; private set; }

@@ -83,10 +83,12 @@ static class Shapes
         switch (shape)
         {
             case "classic":
-                dc.DrawGeometry(B(fill), P(line, 2.4, 255, false), Poly(Arrow));
+                dc.DrawGeometry(null, P(line, 2.8, 255, false), Poly(Arrow));   // сначала обводка, потом заливка поверх: обводка видна только снаружи
+                dc.DrawGeometry(B(fill), null, Poly(Arrow));
                 break;
             case "round":
-                dc.DrawGeometry(B(fill), P(line, 3.2), Poly(Arrow));
+                dc.DrawGeometry(null, P(line, 3.4), Poly(Arrow));
+                dc.DrawGeometry(B(fill), null, Poly(Arrow));
                 break;
             case "neon":
             {
@@ -98,7 +100,8 @@ static class Shapes
                 break;
             }
             case "dot":
-                dc.DrawEllipse(B(fill), P(line, 2.6), new Point(16, 16), 6.6, 6.6);
+                dc.DrawEllipse(null, P(line, 3.2), new Point(16, 16), 6.6, 6.6);
+                dc.DrawEllipse(B(fill), null, new Point(16, 16), 6.6, 6.6);
                 dc.DrawEllipse(B(Col.Mix(fill, (255, 255, 255), 0.55), 150), null, new Point(14.2, 14.2), 2.2, 2.2);
                 break;
             case "ring":
@@ -118,12 +121,40 @@ static class Shapes
                 dc.DrawEllipse(B(fill), P(line, 1.4), new Point(16, 16), 1.7, 1.7);
                 break;
             case "ghost":
-                dc.DrawGeometry(B(fill), P(line, 2.2), GhostBody());
+                dc.DrawGeometry(null, P(line, 2.8), GhostBody());
+                dc.DrawGeometry(B(fill), null, GhostBody());
                 dc.DrawEllipse(B(line), null, new Point(12, 14), 1.9, 2.8);
                 dc.DrawEllipse(B(line), null, new Point(20, 14), 1.9, 2.8);
                 break;
             case "star":
-                dc.DrawGeometry(B(fill), P(line, 2.2), StarGeom());
+                dc.DrawGeometry(null, P(line, 2.8), StarGeom());
+                dc.DrawGeometry(B(fill), null, StarGeom());
+                break;
+            // указатели, которые Windows рисует «наоборот» (текст, точный выбор) или красным (недоступно): рисуем сами в цвете курсора
+            case "ibeam":
+                foreach (var (w, c) in new[] { (5.0, line), (2.2, fill) })
+                {
+                    var pen = P(c, w);
+                    dc.DrawLine(pen, new Point(16, 5.5), new Point(16, 26.5));
+                    dc.DrawLine(pen, new Point(11, 5.5), new Point(21, 5.5));
+                    dc.DrawLine(pen, new Point(11, 26.5), new Point(21, 26.5));
+                }
+                break;
+            case "crosshair":
+                foreach (var (w, c) in new[] { (5.0, line), (2.2, fill) })
+                {
+                    var pen = P(c, w);
+                    dc.DrawLine(pen, new Point(2.5, 16), new Point(13, 16));
+                    dc.DrawLine(pen, new Point(19, 16), new Point(29.5, 16));
+                    dc.DrawLine(pen, new Point(16, 2.5), new Point(16, 13));
+                    dc.DrawLine(pen, new Point(16, 19), new Point(16, 29.5));
+                }
+                break;
+            case "no":
+                dc.DrawEllipse(null, P(line, 6.2), new Point(16, 16), 10, 10);
+                dc.DrawEllipse(null, P(fill, 3.0), new Point(16, 16), 10, 10);
+                dc.DrawLine(P(line, 5.8), new Point(9.4, 9.4), new Point(22.6, 22.6));
+                dc.DrawLine(P(fill, 2.8), new Point(9.4, 9.4), new Point(22.6, 22.6));
                 break;
         }
     }
@@ -131,7 +162,7 @@ static class Shapes
     // Форма нужного размера (квадрат px × px). null — для «windows» и «свой» это делают другие классы.
     public static CurImg? Render(string shape, int px, (int R, int G, int B) fill, (int R, int G, int B) line)
     {
-        if (!IsProcedural(shape)) return null;
+        if (!IsProcedural(shape) && shape is not ("ibeam" or "crosshair" or "no")) return null;
         var k = px / 32.0;
         var dv = new DrawingVisual();
         using (var dc = dv.RenderOpen())

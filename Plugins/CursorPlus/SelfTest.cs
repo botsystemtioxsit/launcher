@@ -79,6 +79,24 @@ static class SelfTest
             Thread.Sleep(600);
             log.AppendLine($"результат: {err ?? "ok"}; CursorBaseSize: {RegValue("CursorBaseSize")}; SM_CXCURSOR: {Native.GetSystemMetrics(Native.SM_CXCURSOR)}; Arrow 64px: {Mean(SysCursors.Load(32512, 64))}");
 
+            // 3б. другие способы сменить размер указателя сразу (для справки: что из этого Windows принимает)
+            log.AppendLine("--- пробуем другие способы сменить размер указателя сразу");
+            try
+            {
+                using (var k = Registry.CurrentUser.CreateSubKey(@"Control Panel\Cursors")) k.SetValue("CursorBaseSize", 96, RegistryValueKind.DWord);
+                Native.ReloadCursors(); Thread.Sleep(400);
+                log.AppendLine($"реестр 96 + SPI_SETCURSORS: SM_CXCURSOR = {Native.GetSystemMetrics(Native.SM_CXCURSOR)}");
+                Native.SystemParametersInfo(0x2029, 0, (IntPtr)96, 0x03); Thread.Sleep(400);
+                log.AppendLine($"SPI 0x2029 (pvParam=96): SM_CXCURSOR = {Native.GetSystemMetrics(Native.SM_CXCURSOR)}");
+                Native.SystemParametersInfo(0x2029, 96, IntPtr.Zero, 0x03); Thread.Sleep(400);
+                log.AppendLine($"SPI 0x2029 (uiParam=96): SM_CXCURSOR = {Native.GetSystemMetrics(Native.SM_CXCURSOR)}");
+                Native.SystemParametersInfo(0x2029, 0, (IntPtr)5, 0x03); Thread.Sleep(400);
+                log.AppendLine($"SPI 0x2029 (pvParam=5): SM_CXCURSOR = {Native.GetSystemMetrics(Native.SM_CXCURSOR)}");
+                var t = Native.LoadImage(IntPtr.Zero, (IntPtr)32512, Native.IMAGE_CURSOR, 0, 0, 0x8040);   // LR_DEFAULTSIZE | LR_SHARED
+                log.AppendLine($"системная стрелка в размере по умолчанию: {Mean(t == IntPtr.Zero ? null : SysCursors.Load(32512, Native.GetSystemMetrics(Native.SM_CXCURSOR)))}");
+            }
+            catch (Exception ex) { log.AppendLine("пробы размера: " + ex.Message); }
+
             // 4. вернуть
             err = ap.Revert();
             Thread.Sleep(600);
@@ -127,7 +145,7 @@ static class SelfTest
                     var y = i * rh + 8;
                     dc.DrawText(Text(role.Title, 12, Brushes.White), new Point(6, y + 20));
                     var src = SysCursors.Load(role.Ocr, 64);
-                    var tint = src == null ? null : SysCursors.Tint(src, fill, line, role.Dark);
+                    var tint = CursorApplier.Build(role, s, new[] { 64 })?.FirstOrDefault();
                     Draw(dc, src, 150, y); Draw(dc, tint, 150 + cw, y);
                     Draw(dc, src, 150 + 2 * cw, y); Draw(dc, tint, 150 + 3 * cw, y);
                 }

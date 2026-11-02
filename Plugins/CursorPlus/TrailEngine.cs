@@ -65,7 +65,7 @@ sealed class TrailEngine
     {
         "comet" => Math.Max(1.2, spec.Size * 0.30),
         "glow" => Math.Max(2.0, spec.Size * 0.55),
-        "sparks" => 9,
+        "sparks" => 6,
         "stars" => 16,
         "bubbles" => 20,
         "hearts" => 24,
@@ -134,12 +134,12 @@ sealed class TrailEngine
                 for (var i = 0; i < 1 + rnd.Next(2); i++)
                 {
                     var ang = Rnd() * Math.PI * 2; var sp = 30 + Rnd() * 150;
-                    Add(Spark, x, y, life * (0.5 + Rnd() * 0.6), size * 0.3 * (0.6 + Rnd() * 0.8) + 1,
+                    Add(Spark, x, y, life * (0.6 + Rnd() * 0.7), size * 0.34 * (0.7 + Rnd() * 0.8) + 1.2,
                         Math.Cos(ang) * sp - ux * 25, Math.Sin(ang) * sp - uy * 25, 260);
                 }
                 break;
             case "stars":
-                Add(Star, x + (Rnd() - 0.5) * size, y + (Rnd() - 0.5) * size, life * (0.8 + Rnd() * 0.5), size * (0.7 + Rnd() * 0.7),
+                Add(Star, x + (Rnd() - 0.5) * size, y + (Rnd() - 0.5) * size, life * (0.8 + Rnd() * 0.5), size * (1.1 + Rnd() * 0.9),
                     (Rnd() - 0.5) * 30, 20 + Rnd() * 30, 0, 0, Rnd() * Math.PI, (Rnd() - 0.5) * 4);
                 break;
             case "bubbles":
@@ -278,7 +278,7 @@ sealed class TrailEngine
             {
                 float dx = x + 0.5f - cx, dy = y + 0.5f - cy;
                 float rx = (dx * cs - dy * sn) / rad, ry = (dx * sn + dy * cs) / rad;
-                var v = 1 - ((float)Math.Pow(Math.Abs(rx), 0.55) + (float)Math.Pow(Math.Abs(ry), 0.55));
+                var v = 1 - ((float)Math.Pow(Math.Abs(rx), 0.5) + (float)Math.Pow(Math.Abs(ry), 0.5));
                 if (v > 0) Put(b, w, h, x, y, r, g, bl, a * (float)Math.Pow(Math.Min(1, v * 2.2f), 0.8));
             }
     }
@@ -358,7 +358,7 @@ sealed class TrailEngine
             {
                 var a = 0.85f * (float)Math.Pow(1 - u, 1.2);
                 var rad = p.Size * (0.7f + 0.5f * u);
-                RingShape(b, w, h, cx, cy, rad, Math.Max(1.2f, rad * 0.2f), a, r, g, bl);
+                RingShape(b, w, h, cx, cy, rad, Math.Max(1.6f, rad * 0.26f), Math.Min(1f, a * 1.15f), r, g, bl);
                 Disc(b, w, h, cx - rad * 0.35f, cy - rad * 0.35f, Math.Max(1f, rad * 0.22f), 0.55f * a, 255, 255, 255, 1f);
                 break;
             }
