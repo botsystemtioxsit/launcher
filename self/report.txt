@@ -1,0 +1,32 @@
+Cursor Plus 1.0.0.0 · Windows 10.0.26100.0
+файл .cur: 2357 байт; прочитан Windows: 64×64, цвет R161 G28 B103, точка 4,3; ожидали точку 4,3; исходник 64×64, цвет R161 G28 B103, точка 4,3
+--- указатели Windows до применения
+Arrow в реестре: «C:\Windows\cursors\aero_arrow.cur»; размер указателя (SM_CXCURSOR): 32; CursorBaseSize: 32; системная стрелка: 32×32, цвет R154 G155 B160, точка 0,0
+  Arrow      32px: 32×32, цвет R154 G155 B160, точка 0,0
+  Help       32px: 32×32, цвет R138 G138 B144, точка 0,0
+  Crosshair  32px: прозрачная
+  IBeam      32px: прозрачная
+  No         32px: 32×32, цвет R235 G99 B99, точка 8,8
+  SizeNS     32px: 32×32, цвет R113 G113 B121, точка 4,11
+  SizeWE     32px: 32×32, цвет R113 G113 B121, точка 11,4
+  SizeNWSE   32px: 32×32, цвет R104 G104 B113, точка 8,8
+  SizeNESW   32px: 32×32, цвет R104 G104 B113, точка 8,8
+  SizeAll    32px: 32×32, цвет R117 G117 B125, точка 11,11
+  UpArrow    32px: 32×32, цвет R101 G101 B109, точка 4,0
+  Hand       32px: 32×32, цвет R181 G181 B187, точка 6,0
+--- применяем (классика, розовый, 100%)
+результат: ok; Arrow в реестре: «C:\Users\runneradmin\AppData\Roaming\BattleLauncher\cursor-plus\cursors\20261102-011555\Arrow.cur»; файл есть: True; SM_CXCURSOR: 32
+  Arrow  32px после: 32×32, цвет R165 G29 B106, точка 2,2
+  Hand   32px после: 32×32, цвет R189 G32 B119, точка 6,0
+  IBeam  32px после: 32×32, цвет R127 G23 B84, точка 16,16
+--- размер 200%
+результат: ok; CursorBaseSize: 64; SM_CXCURSOR: 32; Arrow 64px: 64×64, цвет R162 G28 B104, точка 4,4
+--- пробуем другие способы сменить размер указателя сразу
+реестр 96 + SPI_SETCURSORS: SM_CXCURSOR = 32
+SPI 0x2029 (pvParam=96): SM_CXCURSOR = 32
+SPI 0x2029 (uiParam=96): SM_CXCURSOR = 32
+SPI 0x2029 (pvParam=5): SM_CXCURSOR = 32
+системная стрелка в размере по умолчанию: 32×32, цвет R208 G35 B131, точка 0,0
+--- вернули
+результат: ok; Arrow в реестре: «C:\Windows\cursors\aero_arrow.cur»; CursorBaseSize: 32; SM_CXCURSOR: 32; системная стрелка: 32×32, цвет R64 G64 B75, точка 0,0
+папка с файлами убрана: True
