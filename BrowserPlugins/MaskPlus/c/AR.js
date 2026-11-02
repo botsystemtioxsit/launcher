@@ -1,0 +1,1 @@
+Object.defineProperty(globalThis,'__gsmask',{value:{"cc":"AR","tz":"America/Argentina/Buenos_Aires","locale":"es-AR","langs":["es-AR","es","en-US","en"],"lat":-34.6037,"lon":-58.3816},configurable:true});

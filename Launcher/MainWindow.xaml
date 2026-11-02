@@ -112,10 +112,17 @@
           <DockPanel x:Name="PluginsView" Visibility="Collapsed">
             <StackPanel DockPanel.Dock="Top" Margin="0,0,0,18">
               <TextBlock Text="Плагины" FontSize="22" FontWeight="SemiBold"/>
-              <TextBlock Text="Дополнения качаются отдельно: ставьте только те, что нужны. Каждый плагин можно удалить в любой момент." Foreground="{DynamicResource Muted}" Margin="0,4,16,0" TextWrapping="Wrap"/>
+              <TextBlock x:Name="PluginsHint" Text="Дополнения качаются отдельно: ставьте только те, что нужны. Каждый плагин можно удалить в любой момент." Foreground="{DynamicResource Muted}" Margin="0,4,16,0" TextWrapping="Wrap"/>
+              <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                <Button x:Name="PluginsTabPc" Content="Для компьютера" Style="{StaticResource Primary}" Click="PluginsTabPc_Click"/>
+                <Button x:Name="PluginsTabBrowser" Content="Для браузера" Style="{StaticResource Ghost}" Margin="10,0,0,0" Click="PluginsTabBrowser_Click"/>
+              </StackPanel>
             </StackPanel>
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-              <StackPanel x:Name="PluginList"/>
+              <StackPanel>
+                <StackPanel x:Name="PluginList"/>
+                <StackPanel x:Name="BrowserPluginList" Visibility="Collapsed"/>
+              </StackPanel>
             </ScrollViewer>
           </DockPanel>
 

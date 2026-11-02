@@ -17,6 +17,10 @@ record AppDef(string Id, string Name, string Desc, string Repo, string ProductNa
 // Os — для каких систем запись: лаунчер показывает только подходящие его системе ("windows", "linux", "android").
 record DownloadDef(string Id, string Name, string Desc, string Platform, string Url, string[] Os);
 
+// Расширение для браузера: zip в релизе репозитория. Лаунчер скачивает и распаковывает его в папку,
+// а человек один раз подключает эту папку в браузере («Загрузить распакованное расширение»).
+record BrowserPluginDef(string Id, string Name, string Desc, string Browsers, string Repo, string Tag, string Asset);
+
 // Что умеет ставить лаунчер. Список живёт в catalog.json в репозитории launcher и читается при каждом
 // запуске и обновлении списка: новое приложение или новая версия приложения (EXE, облегчённая) появляется
 // без обновления самого лаунчера. Кнопка Desktop-версии, у которой в релизе ещё нет файла, остаётся
@@ -31,6 +35,8 @@ static class Catalog
     // Плагины лаунчера — отдельные программы: ставятся только по кнопке (раздел "plugins" каталога), в «Приложения» не попадают.
     public static AppDef[] Plugins { get; private set; } = DefaultPlugins();
     public static DownloadDef[] Downloads { get; private set; } = Array.Empty<DownloadDef>();
+    // Плагины для браузера (раздел "browserPlugins" каталога): вкладка «Для браузера» в «Плагинах».
+    public static BrowserPluginDef[] BrowserPlugins { get; private set; } = DefaultBrowserPlugins();
 
     static AppDef[] Defaults() => new[]
     {
@@ -59,6 +65,13 @@ static class Catalog
             "launcher", "Gateway Plus", null, "GatewayPlus.exe", "Gateway Plus", IsPlugin: true),
     };
 
+    static BrowserPluginDef[] DefaultBrowserPlugins() => new[]
+    {
+        new BrowserPluginDef("mask-plus", "Mask Plus",
+            "Подменяет часовой пояс, язык и местоположение в браузере под выбранную страну и закрывает утечку адреса через WebRTC. IP-адрес не меняет — для него шлюз Gateway Plus.",
+            "Chrome · Edge · Brave · Opera · Vivaldi", "launcher", "latest", "MaskPlus-extension.zip"),
+    };
+
     // Плагины, убранные из лаунчера (владелец их удалил): если такой остался на компьютере, при запуске лаунчер сам его закрывает и удаляет.
     public static AppDef[] Retired { get; } = Array.Empty<AppDef>();
 
@@ -75,6 +88,8 @@ static class Catalog
             Downloads = ParseDownloads(text);
             var plugins = ParsePlugins(text);
             if (plugins.Length > 0) Plugins = plugins;
+            var browser = ParseBrowserPlugins(text);
+            if (browser.Length > 0) BrowserPlugins = browser;
             lastFetch = DateTime.UtcNow;
         }
         catch { /* нет сети или файл повреждён — остаётся прежний список */ }
@@ -171,6 +186,32 @@ static class Catalog
             }
         }
         catch { /* битый раздел — остаются прежние плагины */ }
+        return list.ToArray();
+    }
+
+    // Раздел "browserPlugins" каталога: zip с расширением в релизе репозитория нашего же аккаунта.
+    public static BrowserPluginDef[] ParseBrowserPlugins(string json)
+    {
+        var list = new List<BrowserPluginDef>();
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("browserPlugins", out var arr) || arr.ValueKind != JsonValueKind.Array) return Array.Empty<BrowserPluginDef>();
+            foreach (var p in arr.EnumerateArray())
+            {
+                string? S(JsonElement e, string k) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty(k, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+                var id = S(p, "id"); var name = S(p, "name");
+                if (id == null || name == null || !Net.SafeId.IsMatch(id)) continue;
+                p.TryGetProperty("zip", out var zip);
+                var asset = S(zip, "asset");
+                if (asset == null || !Safe.IsMatch(asset) || !asset.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) continue;
+                var repo = S(zip, "repo") is { } r && Safe.IsMatch(r) ? r : "launcher";
+                var tag = S(zip, "tag") is { } t && Safe.IsMatch(t) ? t : "latest";
+                var desc = S(p, "desc") ?? ""; var browsers = S(p, "browsers") ?? "";
+                list.Add(new BrowserPluginDef(id, name[..Math.Min(name.Length, 60)], desc[..Math.Min(desc.Length, 260)], browsers[..Math.Min(browsers.Length, 80)], repo, tag, asset));
+            }
+        }
+        catch { /* битый раздел — остаётся прежний список */ }
         return list.ToArray();
     }
 }
