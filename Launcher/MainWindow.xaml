@@ -39,6 +39,7 @@
               </StackPanel>
               <Button x:Name="NavApps" Content="Приложения" Style="{StaticResource Nav}" Click="NavApps_Click"/>
               <Button x:Name="NavPlugins" Content="Плагины" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavPlugins_Click"/>
+              <Button x:Name="NavFeedback" Content="Написать нам" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavFeedback_Click"/>
               <Button x:Name="NavAccount" Content="Аккаунт" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavAccount_Click"/>
             </StackPanel>
           </DockPanel>
@@ -125,6 +126,11 @@
               </StackPanel>
             </ScrollViewer>
           </DockPanel>
+
+          <!-- Написать нам: ошибки и предложения владельцу (содержимое строится в MainWindow.Feedback.cs) -->
+          <ScrollViewer x:Name="FeedbackView" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="FeedbackBody"/>
+          </ScrollViewer>
 
           <!-- Аккаунт -->
           <StackPanel x:Name="AccountView" Visibility="Collapsed">
