@@ -10,7 +10,7 @@ on:
         description: 'plugins — проверка плагина панели; bg — опыты с прозрачным фоном окон; glass — опыты со «стеклом» под окном'
         default: plugins
         type: choice
-        options: [plugins, bg, glass, site, icons, store, startapps, taskbar, wallpaper, colorplus]
+        options: [plugins, bg, glass, site, icons, store, startapps, taskbar, wallpaper, colorplus, cursor]
 
 permissions:
   contents: write
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
-        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'icons' || env.SCENARIO == 'startapps' || env.SCENARIO == 'taskbar' || env.SCENARIO == 'wallpaper' || env.SCENARIO == 'colorplus'
+        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'icons' || env.SCENARIO == 'startapps' || env.SCENARIO == 'taskbar' || env.SCENARIO == 'wallpaper' || env.SCENARIO == 'colorplus' || env.SCENARIO == 'cursor'
         with:
           dotnet-version: 8.0.x
 
@@ -60,6 +60,13 @@ jobs:
           dotnet publish Plugins/WallpaperPlus/WallpaperPlus.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-test
           if ($LASTEXITCODE -ne 0) { throw 'publish WallpaperPlus не удался' }
 
+      - name: Publish Cursor Plus
+        if: env.SCENARIO == 'cursor'
+        shell: pwsh
+        run: |
+          dotnet publish Plugins/CursorPlus/CursorPlus.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-test
+          if ($LASTEXITCODE -ne 0) { throw 'publish CursorPlus не удался' }
+
       - name: Publish Icon Plus
         if: env.SCENARIO == 'icons' || env.SCENARIO == 'startapps'
         shell: pwsh
@@ -79,6 +86,7 @@ jobs:
           elseif ($env:SCENARIO -eq 'taskbar') { ./tests/e2e/taskbar-states.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'wallpaper') { ./tests/e2e/wallpaper.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'colorplus') { ./tests/e2e/color-plus.ps1 -Out results }
+          elseif ($env:SCENARIO -eq 'cursor') { ./tests/e2e/cursor-plus.ps1 -Out results }
           else { ./tests/e2e/run.ps1 -Out results }
         continue-on-error: true
 
@@ -92,7 +100,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } elseif ($env:SCENARIO -eq 'site') { 'ci-e2e-site' } elseif ($env:SCENARIO -eq 'icons') { 'ci-e2e-icons' } elseif ($env:SCENARIO -eq 'store') { 'ci-e2e-store' } elseif ($env:SCENARIO -eq 'startapps') { 'ci-e2e-startapps' } elseif ($env:SCENARIO -eq 'taskbar') { 'ci-e2e-taskbar' } elseif ($env:SCENARIO -eq 'gpu') { 'ci-e2e-gpu' } elseif ($env:SCENARIO -eq 'extend') { 'ci-e2e-extend' } elseif ($env:SCENARIO -eq 'accent') { 'ci-e2e-accent' } elseif ($env:SCENARIO -eq 'wallpaper') { 'ci-e2e-wallpaper' } elseif ($env:SCENARIO -eq 'colorplus') { 'ci-e2e-colorplus' } else { 'ci-e2e' }
+          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } elseif ($env:SCENARIO -eq 'site') { 'ci-e2e-site' } elseif ($env:SCENARIO -eq 'icons') { 'ci-e2e-icons' } elseif ($env:SCENARIO -eq 'store') { 'ci-e2e-store' } elseif ($env:SCENARIO -eq 'startapps') { 'ci-e2e-startapps' } elseif ($env:SCENARIO -eq 'taskbar') { 'ci-e2e-taskbar' } elseif ($env:SCENARIO -eq 'gpu') { 'ci-e2e-gpu' } elseif ($env:SCENARIO -eq 'extend') { 'ci-e2e-extend' } elseif ($env:SCENARIO -eq 'accent') { 'ci-e2e-accent' } elseif ($env:SCENARIO -eq 'wallpaper') { 'ci-e2e-wallpaper' } elseif ($env:SCENARIO -eq 'colorplus') { 'ci-e2e-colorplus' } elseif ($env:SCENARIO -eq 'cursor') { 'ci-e2e-cursor' } else { 'ci-e2e' }
           $dir = Join-Path $env:RUNNER_TEMP 'e2e-branch'
           New-Item -ItemType Directory -Force $dir | Out-Null
           Copy-Item results/* $dir -Recurse -ErrorAction SilentlyContinue
