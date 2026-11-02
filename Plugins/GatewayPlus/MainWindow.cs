@@ -7,6 +7,9 @@ using System.Windows.Threading;
 
 namespace GatewayPlusApp;
 
+// Что показывать в служебном режиме --screenshot (чтобы окно можно было снять без сети и аккаунта)
+enum GwDemo { None, Account, NoAccount, Blocked }
+
 // Окно Gateway Plus: один экран. Сверху — каким вас видят сайты, ниже — шлюз (профиль, «Подключить»/«Отключить»), свой сервер в Германии и пояснения.
 sealed class MainWindow : Window
 {
@@ -15,11 +18,20 @@ sealed class MainWindow : Window
     readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromSeconds(5) };
     bool connected, busy;
     IpInfo.Info? ip;
+    Account.Info? account;
+    Cloud.Access? access;
+    DateTime lastAccessCheck = DateTime.MinValue;
+    bool keyShown;
+
+    // Что показывать вместо настоящих данных в служебном режиме --screenshot (чтобы окно можно было снять без сети и аккаунта)
+    readonly GwDemo demo;
+    bool Blocked => access?.Blocked ?? false;
 
     static Brush Res(string key) => (Brush)Application.Current.FindResource(key);
 
-    public MainWindow()
+    public MainWindow(GwDemo demo = GwDemo.None)
     {
+        this.demo = demo;
         Title = "Gateway Plus";
         Width = Math.Min(960, SystemParameters.WorkArea.Width - 40);
         Height = Math.Min(900, SystemParameters.WorkArea.Height - 40);
@@ -29,8 +41,20 @@ sealed class MainWindow : Window
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         page.Margin = new Thickness(28, 22, 28, 24);
         Content = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = page };
+        if (demo == GwDemo.None) account = Account.Load();
+        else
+        {
+            if (demo != GwDemo.NoAccount) account = new Account.Info { Key = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567", Name = "Alex", TermsV = Terms.Version };
+            if (demo == GwDemo.Blocked) access = new Cloud.Access(true, "использование в коммерческих целях", false);
+            else if (demo == GwDemo.Account) access = new Cloud.Access(false, "", false);
+        }
         BuildPage();
-        Loaded += async (_, _) => await RefreshAsync(true);
+        Loaded += async (_, _) =>
+        {
+            if (demo != GwDemo.None) return;
+            await CheckAccessAsync(true);
+            await RefreshAsync(true);
+        };
         timer.Tick += async (_, _) => await TickAsync();
         timer.Start();
     }
@@ -41,7 +65,97 @@ sealed class MainWindow : Window
         var name = Store.Active;
         var now = name.Length > 0 && await Task.Run(() => Wg.IsRunning(name));
         if (now != connected) await RefreshAsync(true);
+        // блокировку проверяем раз в 10 минут; если шлюз включён, а доступ закрыли — отключаем (одно окно разрешения Windows)
+        if (demo == GwDemo.None && account != null && DateTime.UtcNow - lastAccessCheck > TimeSpan.FromMinutes(10))
+        {
+            await CheckAccessAsync(false);
+            if (connected && Blocked) { status.Text = "Доступ закрыт владельцем проекта — отключаю шлюз."; Disconnect(); }
+        }
     }
+
+    async Task CheckAccessAsync(bool heartbeat)
+    {
+        lastAccessCheck = DateTime.UtcNow;
+        var dev = Account.DeviceHash();
+        access = await Cloud.CheckAccessAsync(account?.Id, dev);
+        if (heartbeat && account != null && !access.Blocked) _ = Cloud.HeartbeatAsync(account.Id, dev, Ui.Version, Store.List().Count, account.TermsV);
+        BuildPage();
+    }
+
+    // Перед включением шлюза и мастером: есть ли аккаунт, приняты ли (новые) правила, не закрыт ли доступ. «Отключить» и «Вернуть как было» этого не требуют.
+    async Task<bool> EnsureAllowedAsync()
+    {
+        if (account == null) { status.Text = "Сначала создайте аккаунт Gateway Plus (карточка «Аккаунт» вверху) или войдите по ключу."; return false; }
+        if (account.TermsV < Terms.Version)
+        {
+            var w = new AccountWindow(false, termsOnly: true) { Owner = this };
+            if (w.ShowDialog() != true) { status.Text = "Без согласия с обновлёнными правилами шлюз и мастер недоступны."; return false; }
+            account.TermsV = Terms.Version;
+            Account.Save(account);
+            _ = Cloud.HeartbeatAsync(account.Id, Account.DeviceHash(), Ui.Version, Store.List().Count, account.TermsV);
+        }
+        await CheckAccessAsync(false);
+        if (Blocked) { status.Text = "Доступ к Gateway Plus закрыт владельцем проекта."; return false; }
+        return true;
+    }
+
+    async void OpenAccount(bool login)
+    {
+        var w = new AccountWindow(login) { Owner = this };
+        w.ShowDialog();
+        account = Account.Load();
+        keyShown = false;
+        await CheckAccessAsync(true);
+    }
+
+    void Logout()
+    {
+        if (MessageBox.Show(this, "Выйти из аккаунта на этом компьютере?\n\nКлюч нужен, чтобы войти снова — убедитесь, что он у вас сохранён. Без аккаунта шлюз и мастер не включаются (уже работающий шлюз продолжит работать, его можно отключить).", "Выйти из аккаунта", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        Account.Clear(); account = null; access = null; keyShown = false;
+        BuildPage();
+    }
+
+    Border AccountCard()
+    {
+        var rows = new List<UIElement>();
+        if (account == null)
+        {
+            rows.Add(Note("Для шлюза и мастера нужен бесплатный аккаунт Gateway Plus. Без пароля и почты: вам выдаётся ключ, он и есть вход. Аккаунт нужен, чтобы действовали правила — только личное использование, без коммерции; владелец проекта может закрыть доступ тем, кто их нарушает."));
+            var b = new WrapPanel();
+            b.Children.Add(Btn("Создать аккаунт", "Primary", () => OpenAccount(false), first: true));
+            b.Children.Add(Btn("У меня есть ключ", null, () => OpenAccount(true)));
+            rows.Add(b);
+        }
+        else
+        {
+            rows.Add(new TextBlock { Text = account.Name + "  ·  номер " + account.Id[..8] + "…", FontSize = 16, FontWeight = FontWeights.SemiBold });
+            string st; Brush col;
+            if (Blocked) { st = "Доступ закрыт" + (access!.Offline ? " (по последним сведениям; нет связи с базой)" : "") + "."; col = Res("Red"); }
+            else if (account.TermsV < Terms.Version) { st = "Правила обновились — при следующем включении шлюза их нужно принять."; col = Res("Accent2"); }
+            else if (access == null) { st = "Проверяю…"; col = Res("Muted"); }
+            else if (access.Offline) { st = "Нет связи с базой — проверим позже. Правила приняты."; col = Res("Muted"); }
+            else { st = "Доступ открыт · правила приняты (версия " + account.TermsV + ")"; col = Res("Green"); }
+            rows.Add(new TextBlock { Text = st, Foreground = col, Margin = new Thickness(0, 4, 0, 8), TextWrapping = TextWrapping.Wrap });
+            if (keyShown)
+            {
+                rows.Add(new TextBox { Text = Account.Format(account.Key), IsReadOnly = true, FontFamily = (FontFamily)Application.Current.FindResource("Mono"), FontSize = 15, Margin = new Thickness(0, 0, 0, 4) });
+                rows.Add(Note("Никому не показывайте ключ: кто его знает, тот хозяин аккаунта."));
+            }
+            var b = new WrapPanel();
+            b.Children.Add(Btn(keyShown ? "Скрыть ключ" : "Показать ключ", null, () => { keyShown = !keyShown; BuildPage(); }, first: true));
+            if (keyShown) b.Children.Add(Btn("Скопировать ключ", null, () => { try { Clipboard.SetText(Account.Format(account.Key)); status.Text = "Ключ скопирован."; } catch { status.Text = "Не удалось скопировать."; } }));
+            b.Children.Add(Btn("Правила", null, () => new AccountWindow(false, termsOnly: true, readOnly: true) { Owner = this }.ShowDialog()));
+            b.Children.Add(Btn("Выйти из аккаунта", "Danger", Logout));
+            rows.Add(b);
+        }
+        return Card("Аккаунт Gateway Plus", rows);
+    }
+
+    Border BlockedCard() => Card("Доступ закрыт", new UIElement[]
+    {
+        new TextBlock { Text = "Владелец проекта закрыл доступ к Gateway Plus: " + (access?.Reason ?? ""), Foreground = Res("Red"), TextWrapping = TextWrapping.Wrap, FontSize = 15 },
+        Note("Включить шлюз и создать новый сервер сейчас нельзя. Отключить уже включённый шлюз и нажать «Вернуть как было» можно всегда. Если это ошибка — напишите нам: вкладка «Написать нам» в Ghost Shell Launcher."),
+    });
 
     async Task RefreshAsync(bool checkIp)
     {
@@ -57,6 +171,9 @@ sealed class MainWindow : Window
         page.Children.Clear();
         page.Children.Add(new TextBlock { Text = "GATEWAY PLUS", FontFamily = (FontFamily)Application.Current.FindResource("Mono"), FontSize = 24, FontWeight = FontWeights.Bold, Foreground = Res("Accent") });
         page.Children.Add(Note("Шлюз: весь интернет с этого компьютера идёт через ваш сервер, а сайты видят его адрес и страну, а не ваши. Сервер в Германии — значит Германия."));
+
+        page.Children.Add(AccountCard());
+        if (Blocked) page.Children.Add(BlockedCard());
 
         // 1. как видят
         var seen = new StackPanel();
@@ -106,7 +223,7 @@ sealed class MainWindow : Window
         if (!connected)
         {
             var c = Btn("Подключить", "Primary", Connect, first: true);
-            c.IsEnabled = wgPath != null && profiles.Count > 0 && active.Length > 0;
+            c.IsEnabled = wgPath != null && profiles.Count > 0 && active.Length > 0 && account != null && !Blocked;
             c.Padding = new Thickness(26, 11, 26, 11); c.FontSize = 16;
             buttons.Children.Add(c);
         }
@@ -122,12 +239,19 @@ sealed class MainWindow : Window
         gw.Add(Note("Включение и выключение шлюза требуют разрешения администратора Windows — оно спросит каждый раз. Если связь со шлюзом оборвётся, интернет не «утечёт» мимо него: пока шлюз включён, WireGuard закрывает прямой выход."));
         page.Children.Add(Card("Шлюз", gw));
 
-        // 3. свой сервер
-        page.Children.Add(Card("Свой сервер в Германии (если сервера ещё нет)", new UIElement[]
+        // 3. свой сервер: мастер и ручной путь
+        var wizBtn = Btn("Создать мой VPN на сервере…", "Primary", OpenWizard, first: true);
+        wizBtn.IsEnabled = account != null && !Blocked;
+        page.Children.Add(Card("Создать свой VPN", new UIElement[]
         {
-            Note("Чтобы сайты видели Германию, нужна машина в Германии — «точка выхода». Самый простой путь — арендовать маленький сервер (VPS) в Германии, обычно это несколько евро в месяц (Hetzner, Netcup, Contabo и подобные); адрес у него будет свой и постоянный. Ставьте Ubuntu 22.04/24.04 или Debian 12."),
-            Note("Что делать: 1) арендуйте сервер и зайдите в его консоль (веб-консоль хостинга или SSH). 2) Войдите как root (sudo -i). 3) Нажмите «Скопировать скрипт» и вставьте его в консоль. 4) В конце он напечатает конфиг между двумя линиями — скопируйте его. 5) Здесь нажмите «Добавить конфиг…» и вставьте. 6) В панели хостинга откройте порт 51820 по протоколу UDP, если он закрыт."),
-            Btn("Скопировать скрипт для сервера", null, () => { try { Clipboard.SetText(Store.ServerScript()); status.Text = "Скрипт скопирован. Вставьте его в консоль сервера."; } catch { status.Text = "Не удалось скопировать."; } }, first: true),
+            Note("Своя точка выхода — это ваш собственный сервер (VPS) в нужной стране: адрес у него свой и постоянный, трафик видите только вы. Мастер сам зайдёт на сервер по SSH (нужны адрес, логин и пароль от хостера), поставит WireGuard и сохранит готовый профиль. Подойдёт самый дешёвый сервер с Ubuntu 22.04/24.04 или Debian 12 (обычно 3–5 € в месяц; Hetzner, Netcup, Contabo и подобные)."),
+            wizBtn,
+            Note(account == null ? "Для мастера нужен аккаунт Gateway Plus — карточка «Аккаунт» вверху." : "Для личного использования. Продавать доступ к своему серверу или шлюзу нельзя (правила)."),
+        }));
+        page.Children.Add(Card("Вручную (если мастер не подходит)", new UIElement[]
+        {
+            Note("Если нельзя зайти по SSH или сервер уже настроен: 1) зайдите в консоль сервера как root (sudo -i). 2) Нажмите «Скопировать скрипт» и вставьте его в консоль. 3) В конце он напечатает конфиг между двумя линиями — скопируйте его. 4) Здесь нажмите «Добавить конфиг…» и вставьте. 5) В панели хостинга откройте порт 51820 по протоколу UDP, если он закрыт."),
+            Btn("Скопировать скрипт для сервера", null, async () => { if (!await EnsureAllowedAsync()) return; try { Clipboard.SetText(Store.ServerScript()); status.Text = "Скрипт скопирован. Вставьте его в консоль сервера."; } catch { status.Text = "Не удалось скопировать."; } }, first: true),
         }));
 
         // 4. границы
@@ -164,9 +288,21 @@ sealed class MainWindow : Window
         BuildPage();
     }
 
+    async void OpenWizard()
+    {
+        if (busy) return;
+        if (!await EnsureAllowedAsync()) return;
+        var w = new WizardWindow { Owner = this };
+        w.ShowDialog();
+        if (w.SavedName != null) status.Text = "Профиль «" + w.SavedName + "» сохранён. Нажмите «Подключить».";
+        if (account != null) _ = Cloud.HeartbeatAsync(account.Id, Account.DeviceHash(), Ui.Version, Store.List().Count, account.TermsV);
+        BuildPage();
+    }
+
     async void Connect()
     {
         if (busy) return;
+        if (!await EnsureAllowedAsync()) return;
         var name = Store.Active;
         var conf = name.Length > 0 ? Store.Load(name) : null;
         if (conf == null) { status.Text = "Сначала добавьте конфиг."; return; }

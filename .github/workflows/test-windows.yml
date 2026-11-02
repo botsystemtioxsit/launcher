@@ -10,13 +10,14 @@ on:
         description: 'plugins — проверка плагина панели; bg — опыты с прозрачным фоном окон; glass — опыты со «стеклом» под окном'
         default: plugins
         type: choice
-        options: [plugins, bg, glass, site, icons, store, startapps, taskbar, wallpaper, colorplus, cursor, gateway, browser, skins]
+        options: [plugins, bg, glass, site, icons, store, startapps, taskbar, wallpaper, colorplus, cursor, gateway, gateway-ssh, browser, skins]
 
 permissions:
   contents: write
 
 jobs:
   test:
+    if: inputs.scenario != 'gateway-ssh'
     runs-on: windows-latest
     env:
       SCENARIO: ${{ inputs.scenario || 'plugins' }}
@@ -144,3 +145,44 @@ jobs:
           git push -q --force origin $branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Мастер «Создать свой VPN» против настоящего sshd (Linux-машина GitHub): Plugins/GatewayPlus.SshTest берёт тот же код мастера (Provisioner.cs) и настоящий
+  # скрипт сервера и проходит: недоступный порт, неверный пароль, отпечаток (первый раз / знакомый / изменился / отказ), установка по ключу под обычным
+  # пользователем с sudo, повторный запуск. Результат — в журнале job'а (без отдельной ветки).
+  gateway-ssh:
+    if: inputs.scenario == 'gateway-ssh'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Настоящий sshd на этой машине + ключ
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y openssh-server
+          ssh-keygen -t ed25519 -N '' -q -f "$RUNNER_TEMP/gwkey"
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          cat "$RUNNER_TEMP/gwkey.pub" >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
+          sudo systemctl enable --now ssh
+          sudo systemctl status ssh --no-pager | head -5 || true
+          FPS=""
+          for f in /etc/ssh/ssh_host_*_key.pub; do FPS="$FPS,$(ssh-keygen -lf "$f" | awk '{print $2}')"; done
+          echo "FPS=${FPS#,}" >> "$GITHUB_ENV"
+          echo "известные отпечатки: ${FPS#,}"
+
+      - name: Проверка мастера
+        run: |
+          dotnet run --project Plugins/GatewayPlus.SshTest -c Release -- \
+            --host 127.0.0.1 --port 22 --user "$USER" --key "$RUNNER_TEMP/gwkey" --fps "$FPS" --out "$RUNNER_TEMP/ssh-results"
+
+      - name: Что осталось на «сервере»
+        if: always()
+        run: |
+          echo "--- wg show ---"; sudo wg show || true
+          echo "--- /etc/wireguard ---"; sudo ls -la /etc/wireguard || true
+          echo "--- следы скрипта в /tmp (должно быть пусто) ---"; ls -la /tmp/ghostshell-gateway-* 2>&1 || echo "пусто"
+          echo "--- ip addr show wg0 ---"; ip addr show wg0 || true

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Проверка мастера «Создать свой VPN» против настоящего sshd (на Linux-машине GitHub). Берёт те же файлы, что и плагин: Provisioner.cs, Store.cs и скрипт сервера. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>GatewayPlusApp</RootNamespace>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\GatewayPlus\Provisioner.cs" Link="Provisioner.cs" />
+    <Compile Include="..\GatewayPlus\Store.cs" Link="Store.cs" />
+    <EmbeddedResource Include="..\GatewayPlus\Resources\server-setup.sh" LogicalName="server-setup.sh" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <PackageReference Include="SSH.NET" Version="2024.2.0" />
+  </ItemGroup>
+
+</Project>

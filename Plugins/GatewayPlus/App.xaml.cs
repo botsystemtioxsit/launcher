@@ -29,7 +29,16 @@ public partial class App : Application
         var shot = Arg(e, "--screenshot=");
         if (shot != null)
         {
-            try { Directory.CreateDirectory(shot); new MainWindow().RenderTo(Path.Combine(shot, "gateway-plus-ui.png")); }
+            try
+            {
+                Directory.CreateDirectory(shot);
+                new MainWindow(GwDemo.Account).RenderTo(Path.Combine(shot, "gateway-plus-ui.png"));
+                new MainWindow(GwDemo.NoAccount).RenderTo(Path.Combine(shot, "gateway-plus-ui-noaccount.png"));
+                new MainWindow(GwDemo.Blocked).RenderTo(Path.Combine(shot, "gateway-plus-ui-blocked.png"));
+                new AccountWindow(false).RenderTo(Path.Combine(shot, "gateway-plus-account.png"));
+                new AccountWindow(true).RenderTo(Path.Combine(shot, "gateway-plus-account-key.png"));
+                new WizardWindow().RenderTo(Path.Combine(shot, "gateway-plus-wizard.png"), demo: true);
+            }
             catch (Exception ex) { try { File.WriteAllText(Path.Combine(shot, "gateway-plus-ui-error.txt"), ex.ToString()); } catch { } }
             Shutdown(); return;
         }

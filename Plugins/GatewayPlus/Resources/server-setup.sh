@@ -8,9 +8,11 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
+# на только что созданном сервере apt нередко занят автообновлением — ждём до 5 минут, а не падаем
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -y
-apt-get install -y wireguard iptables curl
+APT="apt-get -o DPkg::Lock::Timeout=300 -y"
+$APT update
+$APT install wireguard iptables curl
 
 umask 077
 mkdir -p /etc/wireguard
