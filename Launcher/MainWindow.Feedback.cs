@@ -81,9 +81,9 @@ public partial class MainWindow
         fbContact = new TextBox { MaxLength = Feedback.MaxContact, Padding = new Thickness(8) };
         st.Children.Add(fbContact);
 
-        fbAccount = new CheckBox { Margin = new Thickness(0, 14, 0, 0), IsChecked = true };
+        fbAccount = new CheckBox { Margin = new Thickness(0, 14, 0, 0), IsChecked = true, Foreground = Res("Text") };
         st.Children.Add(fbAccount);
-        fbSystem = new CheckBox { Content = "Приложить сведения о системе — помогают найти причину", IsChecked = true, Margin = new Thickness(0, 8, 0, 0) };
+        fbSystem = new CheckBox { Content = "Приложить сведения о системе — помогают найти причину", IsChecked = true, Margin = new Thickness(0, 8, 0, 0), Foreground = Res("Text") };
         fbSystem.Click += (_, _) => UpdateFeedbackSystem();
         st.Children.Add(fbSystem);
         fbSysInfo = new TextBlock { Foreground = Res("Muted"), FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(22, 4, 0, 0) };
