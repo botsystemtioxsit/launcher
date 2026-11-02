@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>SkinLoader</AssemblyName>
+    <RootNamespace>SkinLoaderApp</RootNamespace>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Версию поднимать при каждом изменении -->
+    <Version>1.0.0</Version>
+    <Product>Skin Loader</Product>
+    <Company>TIOXSIT</Company>
+    <Authors>TIOXSIT</Authors>
+    <Copyright>TIOXSIT</Copyright>
+    <Description>Skin Loader — скины Windows: собирает настройки Taskbar Plus, Color Plus, Icon Plus, Wallpaper Plus и Cursor Plus в один скин и применяет его одной кнопкой (плагин Ghost Shell Launcher)</Description>
+    <AssemblyTitle>Skin Loader</AssemblyTitle>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+</Project>
