@@ -404,7 +404,7 @@ public partial class MainWindow : Window
         NavPlugins.Foreground = name == "plugins" ? Res("Text") : Res("Muted");
         NavAccount.Foreground = name == "account" ? Res("Text") : Res("Muted");
         if (name == "apps") _ = LoadApps(false);
-        if (name == "plugins") _ = LoadPlugins(false);
+        if (name == "plugins") { _ = LoadPlugins(false); _ = LoadBrowserPlugins(false); }
     }
 
     // ---------- плагины ----------
@@ -413,6 +413,7 @@ public partial class MainWindow : Window
 
     async Task LoadPlugins(bool force)
     {
+        if (App.ScreenshotDir != null) return; // в режиме скриншотов ничего не качаем
         RenderPlugins(); // сразу то, что уже известно
         await Catalog.Refresh(force);
         var list = await Task.WhenAll(Catalog.Plugins.Select(async def =>
@@ -529,6 +530,176 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) { Toast("Не получилось запустить: " + ex.Message); }
     }
+
+    // ---------- плагины для браузера ----------
+    // Вкладка «Для браузера»: лаунчер скачивает расширение (zip из релиза) в папку, человек один раз подключает её в браузере.
+    class BrowserPluginInfo
+    {
+        public required BrowserPluginDef Def;
+        public BrowserInfo? Installed;
+        public BrowserRelease? Latest;
+        public bool Update;
+    }
+
+    List<BrowserPluginInfo> browserInfos = new();
+    string pluginsTab = "pc";
+
+    void SetPluginsTab(string tab)
+    {
+        pluginsTab = tab;
+        var browser = tab == "browser";
+        PluginList.Visibility = browser ? Visibility.Collapsed : Visibility.Visible;
+        BrowserPluginList.Visibility = browser ? Visibility.Visible : Visibility.Collapsed;
+        PluginsTabPc.Style = (Style)FindResource(browser ? "Ghost" : "Primary");
+        PluginsTabBrowser.Style = (Style)FindResource(browser ? "Primary" : "Ghost");
+        PluginsHint.Text = browser
+            ? "Расширения для браузера. Лаунчер скачивает их в отдельную папку; подключить папку в браузере нужно один раз — как, написано в карточке."
+            : "Дополнения качаются отдельно: ставьте только те, что нужны. Каждый плагин можно удалить в любой момент.";
+    }
+
+    async Task LoadBrowserPlugins(bool force)
+    {
+        if (App.ScreenshotDir != null) return; // в режиме скриншотов ничего не качаем
+        RenderBrowserPlugins();
+        await Catalog.Refresh(force);
+        var list = await Task.WhenAll(Catalog.BrowserPlugins.Select(async def =>
+        {
+            var info = new BrowserPluginInfo { Def = def };
+            info.Installed = await Task.Run(() => BrowserInstaller.Find(def));
+            try { info.Latest = await BrowserInstaller.Latest(def, force); } catch { /* нет связи — кнопка просто не включится */ }
+            info.Update = info.Installed != null && info.Latest != null && info.Installed.Sha != info.Latest.Sha;
+            return info;
+        }));
+        browserInfos = list.ToList();
+        RenderBrowserPlugins();
+    }
+
+    void RenderBrowserPlugins()
+    {
+        BrowserPluginList.Children.Clear();
+        if (browserInfos.Count == 0)
+        {
+            BrowserPluginList.Children.Add(new TextBlock { Text = "Загружаю список плагинов…", Foreground = Res("Muted") });
+            return;
+        }
+        foreach (var p in browserInfos) BrowserPluginList.Children.Add(BrowserPluginCard(p));
+    }
+
+    UIElement BrowserPluginCard(BrowserPluginInfo p)
+    {
+        var key = p.Def.Id + ":browser";
+        var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) };
+        var col = new StackPanel();
+        col.Children.Add(new TextBlock { Text = p.Def.Name, FontSize = 17, FontWeight = FontWeights.SemiBold });
+        col.Children.Add(new TextBlock { Text = p.Def.Desc, Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 8) });
+        var badges = new WrapPanel { Orientation = Orientation.Horizontal };
+        badges.Children.Add(Badge("Для браузера", Res("Muted"), null));
+        if (p.Def.Browsers.Length > 0) badges.Children.Add(Badge(p.Def.Browsers, Res("Muted"), null));
+        if (p.Installed != null)
+        {
+            badges.Children.Add(Badge("Скачан " + p.Installed.Version, Res("Green"), null));
+            if (p.Update) badges.Children.Add(Badge("Есть обновление", Res("OnAccent"), Res("Accent")));
+        }
+        else badges.Children.Add(Badge("Не скачан", Res("Muted"), null));
+        col.Children.Add(badges);
+
+        var actions = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 14, 0, 0) };
+        if (busy.TryGetValue(key, out var b))
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            row.Children.Add(new TextBlock { Text = b.Installing ? "Распаковываю…" : $"Скачиваю {b.Percent ?? 0}%", Foreground = Res("Muted"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
+            row.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = b.Percent ?? 0, IsIndeterminate = b.Installing, Width = 160, Height = 6 });
+            actions.Children.Add(row);
+        }
+        else if (p.Installed != null)
+        {
+            var dir = p.Installed.Dir;
+            col.Children.Add(BrowserHelp(p));
+            actions.Children.Add(FirstButton(MakeButton("Открыть Chrome", "Primary", () => OpenBrowserPage("chrome"))));
+            actions.Children.Add(MakeButton("Открыть Edge", null, () => OpenBrowserPage("edge")));
+            actions.Children.Add(MakeButton("Открыть папку", null, () => { try { BrowserInstaller.OpenFolder(p.Def); } catch (Exception ex) { Toast(ex.Message); } return Task.CompletedTask; }));
+            actions.Children.Add(MakeButton("Скопировать путь", null, () => { try { Clipboard.SetText(dir); Toast("Путь скопирован"); } catch { Toast("Не получилось скопировать"); } return Task.CompletedTask; }));
+            if (p.Update) actions.Children.Add(MakeButton("Обновить", null, () => InstallBrowserPlugin(p, "Обновлено")));
+            actions.Children.Add(MakeButton("Удалить", "Danger", () => UninstallBrowserPlugin(p)));
+        }
+        else
+        {
+            var install = FirstButton(MakeButton("Скачать", "Primary", () => InstallBrowserPlugin(p, "Скачано")));
+            install.IsEnabled = p.Latest != null;
+            if (p.Latest == null)
+            {
+                install.ToolTip = "Расширения пока нет в последнем релизе (или нет связи с GitHub). Кнопка включится сама, когда оно появится.";
+                ToolTipService.SetShowOnDisabled(install, true);
+            }
+            actions.Children.Add(install);
+        }
+        col.Children.Add(actions);
+        card.Child = col;
+        return card;
+    }
+
+    static Button FirstButton(Button b) { b.Margin = new Thickness(0, 0, 0, 0); return b; }
+
+    // Короткая инструкция «как подключить» — внутри карточки, пока расширение скачано
+    UIElement BrowserHelp(BrowserPluginInfo p)
+    {
+        var box = new Border { Background = Res("Panel2"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3), Padding = new Thickness(14, 10, 14, 12), Margin = new Thickness(0, 14, 0, 0) };
+        var st = new StackPanel();
+        st.Children.Add(new TextBlock { Text = "Как подключить (один раз)", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 6) });
+        string[] steps =
+        {
+            "1. Нажмите «Открыть Chrome» (или «Открыть Edge») — откроется страница расширений.",
+            "2. Справа вверху включите «Режим разработчика».",
+            "3. Нажмите «Загрузить распакованное расширение» и выберите эту папку:",
+        };
+        foreach (var t in steps) st.Children.Add(new TextBlock { Text = t, Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 3) });
+        st.Children.Add(new TextBlock { Text = p.Installed!.Dir, FontFamily = (FontFamily)FindResource("Mono"), FontSize = 12, Foreground = Res("Text"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(14, 0, 0, 4) });
+        st.Children.Add(new TextBlock { Text = "4. Закрепите значок маски на панели браузера (кнопка с пазлом) — там выбор страны.", Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 6) });
+        st.Children.Add(new TextBlock { Text = "После обновления из лаунчера на странице расширений нажмите круглую стрелку у «" + p.Def.Name + "».", Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap });
+        box.Child = st;
+        return box;
+    }
+
+    Task OpenBrowserPage(string kind)
+    {
+        try { BrowserInstaller.OpenExtensionsPage(kind); }
+        catch (Exception ex) { Toast(ex.Message); }
+        return Task.CompletedTask;
+    }
+
+    async Task InstallBrowserPlugin(BrowserPluginInfo p, string okText)
+    {
+        var key = p.Def.Id + ":browser";
+        if (busy.ContainsKey(key)) return;
+        busy[key] = (false, 0);
+        RenderBrowserPlugins();
+        try
+        {
+            var rel = await BrowserInstaller.Latest(p.Def, true) ?? throw new InvalidOperationException("Расширения пока нет в последнем релизе");
+            var progress = new Progress<int?>(v => { busy[key] = v == null ? (true, null) : (false, v); RenderBrowserPlugins(); });
+            await BrowserInstaller.Install(p.Def, rel, progress);
+            Toast($"{okText}: {p.Def.Name}. Подключите папку в браузере — инструкция в карточке.");
+        }
+        catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
+        finally { busy.Remove(key); await LoadBrowserPlugins(true); }
+    }
+
+    async Task UninstallBrowserPlugin(BrowserPluginInfo p)
+    {
+        var key = p.Def.Id + ":browser";
+        if (busy.ContainsKey(key) || p.Installed == null) return;
+        if (MessageBox.Show(this, $"Удалить файлы «{p.Def.Name}» с этого компьютера?\n\nИз самого браузера расширение лучше убрать отдельно: страница расширений → «Удалить».", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        try
+        {
+            await Task.Run(() => BrowserInstaller.Uninstall(p.Def));
+            Toast($"Удалено: {p.Def.Name}");
+        }
+        catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
+        await LoadBrowserPlugins(true);
+    }
+
+    void PluginsTabPc_Click(object sender, RoutedEventArgs e) => SetPluginsTab("pc");
+    void PluginsTabBrowser_Click(object sender, RoutedEventArgs e) => SetPluginsTab("browser");
 
     void NavApps_Click(object sender, RoutedEventArgs e) => ShowView("apps");
     void NavPlugins_Click(object sender, RoutedEventArgs e) => ShowView("plugins");
@@ -864,6 +1035,17 @@ public partial class MainWindow : Window
             Render();
             ShowView("apps");
             RenderApps();
+        });
+        await Capture(Path.Combine(dir, "launcher-3-plugins-browser.png"), () =>
+        {
+            var def = Catalog.BrowserPlugins[0];
+            browserInfos = new List<BrowserPluginInfo>
+            {
+                new() { Def = def, Installed = new BrowserInfo("1.0.0", Path.Combine(BrowserInstaller.Root, def.Id), "00"), Latest = new BrowserRelease("1.0.0", "", "00") },
+            };
+            ShowView("plugins");
+            SetPluginsTab("browser");
+            RenderBrowserPlugins();
         });
         Application.Current.Shutdown();
     }

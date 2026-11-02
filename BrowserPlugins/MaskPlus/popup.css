@@ -1,0 +1,47 @@
+:root {
+  --bg: #06050D; --panel: #0E0B1C; --line: #251C3F; --text: #E6E6F2; --muted: #8C86A8;
+  --accent: #00F0FF; --accent2: #FF2A9D; --green: #3CFF9C; --warn: #FFC857;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { width: 340px; font: 13px/1.4 "Segoe UI", system-ui, sans-serif; padding: 12px; }
+header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+header img { border-radius: 4px; }
+.brand { flex: 1; display: flex; flex-direction: column; }
+.brand b { font: 700 15px/1.1 Consolas, "Courier New", monospace; letter-spacing: 2px; color: var(--accent); }
+.brand small { color: var(--muted); font-size: 10px; }
+
+/* выключатель */
+.sw { position: relative; display: inline-block; width: 46px; height: 24px; cursor: pointer; }
+.sw input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.track { position: absolute; inset: 0; border: 1px solid var(--line); border-radius: 3px; background: #14102A; transition: .15s; }
+.knob { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 2px; background: var(--muted); transition: .15s; }
+.sw input:checked + .track { border-color: var(--accent); background: #062A30; }
+.sw input:checked + .track .knob { left: 25px; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.sw input:focus-visible + .track { outline: 2px solid var(--accent2); outline-offset: 2px; }
+
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 10px; margin-bottom: 8px; }
+.cap { display: block; color: var(--muted); font: 600 10px/1 Consolas, monospace; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 7px; }
+select { width: 100%; background: #14102A; color: var(--text); border: 1px solid var(--line); border-radius: 3px; padding: 7px 8px; font: inherit; }
+select:focus { outline: 1px solid var(--accent); }
+.shows { margin-top: 8px; color: var(--muted); font-size: 12px; }
+.shows b { color: var(--text); font-weight: 600; }
+
+.chk { display: flex; align-items: center; gap: 8px; padding: 3px 0; cursor: pointer; }
+.chk input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; }
+.warn { margin-top: 6px; color: var(--warn); font-size: 12px; }
+
+.site { font: 12px Consolas, monospace; color: var(--text); word-break: break-all; margin-bottom: 6px; }
+.seen { font: 12px/1.5 Consolas, monospace; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.seen .ok { color: var(--green); }
+.seen .bad { color: var(--accent2); }
+.seen .dim { color: var(--muted); }
+
+button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: 3px; padding: 6px 10px; font: 600 12px "Segoe UI", sans-serif; cursor: pointer; }
+button.ghost:hover { background: #062A30; }
+button.ghost:focus-visible { outline: 2px solid var(--accent2); outline-offset: 2px; }
+.seen + button { margin-top: 8px; }
+
+footer { color: var(--muted); font-size: 11px; line-height: 1.45; }
+footer b { color: var(--warn); font-weight: 600; }
+body.off main > section:not(:first-child), body.off .shows { opacity: .45; }

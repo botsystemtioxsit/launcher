@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mask Plus</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<header>
+  <img src="icons/48.png" alt="" width="34" height="34">
+  <div class="brand"><b>MASK PLUS</b><small>создано нейросетью</small></div>
+  <label class="sw" title="Включить или выключить маскировку">
+    <input type="checkbox" id="enabled"><span class="track"><span class="knob"></span></span>
+  </label>
+</header>
+
+<main id="main">
+  <section>
+    <label class="cap" for="country">Страна, под которую маскируемся</label>
+    <select id="country"></select>
+    <div class="shows" id="shows"></div>
+  </section>
+
+  <section>
+    <div class="cap">Что подменять</div>
+    <label class="chk"><input type="checkbox" id="tz"><span>Время и часовой пояс</span></label>
+    <label class="chk"><input type="checkbox" id="lang"><span>Язык браузера и сайтов</span></label>
+    <label class="chk"><input type="checkbox" id="geo"><span>Местоположение (GPS)</span></label>
+    <label class="chk"><input type="checkbox" id="webrtc"><span>Защита адреса от утечки через WebRTC</span></label>
+    <div class="warn" id="webrtcWarn" hidden>Защиту WebRTC держит другое расширение — здесь она не включится.</div>
+  </section>
+
+  <section>
+    <div class="cap">Этот сайт</div>
+    <div class="site" id="site">—</div>
+    <button id="exclude" class="ghost" hidden></button>
+  </section>
+
+  <section>
+    <div class="cap">Что видит эта вкладка</div>
+    <div class="seen" id="seen">…</div>
+    <button id="reload" class="ghost" hidden>Обновить вкладку</button>
+  </section>
+</main>
+
+<footer>
+  <b>IP-адрес это расширение не меняет.</b> Сайт видит адрес, с которого пришёл запрос; чтобы он был из нужной страны,
+  включите шлюз (Gateway Plus) на сервере в этой стране. После смены страны обновите открытые вкладки.
+</footer>
+<script src="countries.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>

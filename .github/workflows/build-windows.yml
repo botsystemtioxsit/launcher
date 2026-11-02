@@ -7,6 +7,8 @@ on:
       - 'Launcher/**'
       - 'Terminal/**'
       - 'Plugins/**'
+      - 'BrowserPlugins/**'
+      - 'tools/mask-plus/**'
       - '.github/workflows/build-windows.yml'
 
 permissions:
@@ -155,6 +157,19 @@ jobs:
           $h = (Get-FileHash out/GatewayPlus.exe -Algorithm SHA256).Hash.ToLower()
           Set-Content -Path out/GatewayPlus.exe.sha256 -Value "$h  GatewayPlus.exe" -NoNewline
 
+      # Mask Plus — расширение для браузера (Chrome, Edge, Brave…): один zip с контрольной суммой.
+      # Лаунчер скачивает его во вкладке «Плагины → Для браузера». Архив детерминированный: пока файлы те же, сумма та же.
+      - name: Package Mask Plus extension
+        shell: pwsh
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          python tools/mask-plus/generate.py
+          if ($LASTEXITCODE -ne 0) { throw 'generate.py не отработал' }
+          python tools/mask-plus/pack.py out
+          if ($LASTEXITCODE -ne 0) { throw 'pack.py не отработал' }
+          Get-ChildItem out/MaskPlus-extension.zip*
+
       # Честные скриншоты самого лаунчера для Microsoft Store: служебный режим --screenshot открывает
       # настоящие окна (с выдуманными данными, без сети) и сохраняет их в PNG.
       - name: Скриншоты лаунчера
@@ -207,6 +222,7 @@ jobs:
             out/WallpaperPlus.exe*
             out/CursorPlus.exe*
             out/GatewayPlus.exe*
+            out/MaskPlus-extension.zip*
 
       # Из main — выпуск: релиз v<версия из Launcher.csproj>. Версию поднимай в csproj:
       # пока она та же, файлы в релизе просто перезаписываются.
@@ -219,7 +235,7 @@ jobs:
           $v = (Select-String -Path Launcher/Launcher.csproj -Pattern '<Version>(.+)</Version>').Matches[0].Groups[1].Value
           gh release view "v$v" *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 out/CursorPlus.exe out/CursorPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 --clobber
+            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 out/CursorPlus.exe out/CursorPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --clobber
           } else {
-            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 out/CursorPlus.exe out/CursorPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 --title "Лаунчер $v" --notes "BattleLauncher.exe — лаунчер (скачай и запусти). TIOXSITTerminal.exe — Терминал, админ-панель в виде приложения. TaskbarPlus.exe — плагин Taskbar Plus, ColorPlus.exe — плагин Color Plus, IconPlus.exe — плагин Icon Plus, WallpaperPlus.exe — плагин Wallpaper Plus, CursorPlus.exe — плагин Cursor Plus, GatewayPlus.exe — плагин Gateway Plus (ставятся из лаунчера, вкладка «Плагины»)."
+            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 out/CursorPlus.exe out/CursorPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --title "Лаунчер $v" --notes "BattleLauncher.exe — лаунчер (скачай и запусти). TIOXSITTerminal.exe — Терминал, админ-панель в виде приложения. TaskbarPlus.exe — плагин Taskbar Plus, ColorPlus.exe — плагин Color Plus, IconPlus.exe — плагин Icon Plus, WallpaperPlus.exe — плагин Wallpaper Plus, CursorPlus.exe — плагин Cursor Plus, GatewayPlus.exe — плагин Gateway Plus (ставятся из лаунчера, вкладка «Плагины → Для компьютера»). MaskPlus-extension.zip — расширение для браузера Mask Plus (вкладка «Плагины → Для браузера»)."
           }
