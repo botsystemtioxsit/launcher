@@ -475,14 +475,8 @@ public partial class MainWindow : Window
         }
         else
         {
-            var install = MakeButton("Скачать и установить", "Primary", () => InstallPlugin(p, "Установлено"));
-            install.IsEnabled = p.NativeLatest != null;
-            if (p.NativeLatest == null)
-            {
-                install.ToolTip = "Плагина пока нет в последнем релизе (или нет связи с GitHub). Кнопка включится сама, когда он появится.";
-                ToolTipService.SetShowOnDisabled(install, true);
-            }
-            actions.Children.Add(install);
+            // Кнопка всегда включена: если проверка релиза не удалась, нажатие пробует ещё раз и показывает настоящую причину
+            actions.Children.Add(MakeButton("Скачать и установить", "Primary", () => InstallPlugin(p, "Установлено")));
         }
         grid.Children.Add(actions);
         card.Child = grid;
@@ -497,12 +491,12 @@ public partial class MainWindow : Window
         RenderPlugins();
         try
         {
-            var rel = await NativeInstaller.Latest(p.Def, true) ?? throw new InvalidOperationException("Плагина пока нет в последнем релизе");
+            var rel = await NativeInstaller.Latest(p.Def, true) ?? throw new InvalidOperationException("в последнем релизе на GitHub нет файла плагина");
             var progress = new Progress<int?>(v => { busy[key] = v == null ? (true, null) : (false, v); RenderPlugins(); });
             await NativeInstaller.Install(p.Def, rel, progress);
             Toast($"{okText}: {p.Def.Name}");
         }
-        catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
+        catch (Exception ex) { Toast("Не получилось: " + BrowserInstaller.Explain(ex)); }
         finally { busy.Remove(key); await LoadPlugins(true); }
     }
 
@@ -542,6 +536,8 @@ public partial class MainWindow : Window
     }
 
     List<BrowserPluginInfo> browserInfos = new();
+    // Почему не получилось (показываем в карточке, пока человек не попробует снова) — исчезающее сообщение внизу легко пропустить
+    readonly Dictionary<string, string> browserErrors = new();
     string pluginsTab = "pc";
 
     void SetPluginsTab(string tab)
@@ -566,7 +562,13 @@ public partial class MainWindow : Window
         {
             var info = new BrowserPluginInfo { Def = def };
             info.Installed = await Task.Run(() => BrowserInstaller.Find(def));
-            try { info.Latest = await BrowserInstaller.Latest(def, force); } catch { /* нет связи — кнопка просто не включится */ }
+            try
+            {
+                info.Latest = await BrowserInstaller.Latest(def, force);
+                if (info.Latest != null) browserErrors.Remove(def.Id);
+                else browserErrors[def.Id] = "В последнем релизе на GitHub пока нет файла расширения.";
+            }
+            catch (Exception ex) { browserErrors[def.Id] = "Не удалось проверить версию: " + BrowserInstaller.Explain(ex); }
             info.Update = info.Installed != null && info.Latest != null && info.Installed.Sha != info.Latest.Sha;
             return info;
         }));
@@ -624,14 +626,14 @@ public partial class MainWindow : Window
         }
         else
         {
-            var install = FirstButton(MakeButton("Скачать", "Primary", () => InstallBrowserPlugin(p, "Скачано")));
-            install.IsEnabled = p.Latest != null;
-            if (p.Latest == null)
-            {
-                install.ToolTip = "Расширения пока нет в последнем релизе (или нет связи с GitHub). Кнопка включится сама, когда оно появится.";
-                ToolTipService.SetShowOnDisabled(install, true);
-            }
-            actions.Children.Add(install);
+            // Кнопка всегда включена: если проверка релиза не удалась, нажатие просто пробует ещё раз и показывает настоящую причину
+            actions.Children.Add(FirstButton(MakeButton("Скачать", "Primary", () => InstallBrowserPlugin(p, "Скачано"))));
+            actions.Children.Add(MakeButton("Скачать файл вручную", null, () => OpenManualDownload(p.Def)));
+        }
+        if (!busy.ContainsKey(key) && browserErrors.TryGetValue(p.Def.Id, out var why))
+        {
+            col.Children.Add(new TextBlock { Text = why + (p.Installed == null ? " Нажмите «Скачать», чтобы попробовать ещё раз, или «Скачать файл вручную» — тогда распакуйте архив в любую папку и подключите её в браузере." : ""),
+                Foreground = Res("Red"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0) });
         }
         col.Children.Add(actions);
         card.Child = col;
@@ -667,21 +669,41 @@ public partial class MainWindow : Window
         return Task.CompletedTask;
     }
 
+    // Запасной путь: если скачать из самого лаунчера не вышло, архив можно взять браузером
+    Task OpenManualDownload(BrowserPluginDef def)
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(BrowserInstaller.ZipUrl(def)) { UseShellExecute = true }); }
+        catch { Toast("Не удалось открыть браузер"); }
+        return Task.CompletedTask;
+    }
+
     async Task InstallBrowserPlugin(BrowserPluginInfo p, string okText)
     {
         var key = p.Def.Id + ":browser";
         if (busy.ContainsKey(key)) return;
         busy[key] = (false, 0);
+        browserErrors.Remove(p.Def.Id);
         RenderBrowserPlugins();
         try
         {
-            var rel = await BrowserInstaller.Latest(p.Def, true) ?? throw new InvalidOperationException("Расширения пока нет в последнем релизе");
+            var rel = await BrowserInstaller.Latest(p.Def, true) ?? throw new InvalidOperationException("в последнем релизе на GitHub пока нет файла расширения");
             var progress = new Progress<int?>(v => { busy[key] = v == null ? (true, null) : (false, v); RenderBrowserPlugins(); });
             await BrowserInstaller.Install(p.Def, rel, progress);
             Toast($"{okText}: {p.Def.Name}. Подключите папку в браузере — инструкция в карточке.");
         }
-        catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
-        finally { busy.Remove(key); await LoadBrowserPlugins(true); }
+        catch (Exception ex)
+        {
+            var why = BrowserInstaller.Explain(ex);
+            browserErrors[p.Def.Id] = "Не получилось скачать: " + why + ".";
+            Toast("Не получилось скачать: " + why);
+        }
+        finally
+        {
+            busy.Remove(key);
+            var failed = browserErrors.TryGetValue(p.Def.Id, out var keep) ? keep : null;
+            await LoadBrowserPlugins(true);
+            if (failed != null) { browserErrors[p.Def.Id] = failed; RenderBrowserPlugins(); } // перезагрузка списка не должна затирать причину сбоя
+        }
     }
 
     async Task UninstallBrowserPlugin(BrowserPluginInfo p)

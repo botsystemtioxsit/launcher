@@ -48,37 +48,69 @@ static class BrowserInstaller
         catch { return null; }
     }
 
-    // Последний релиз: в нём лежат zip и его контрольная сумма
+    // Адреса файлов релиза. Без API GitHub: у него лимит 60 запросов в час на адрес, при частых проверках он кончается
+    // и кнопка «Скачать» гасла. Прямые адреса релиза (releases/latest/download/…) лимита не имеют.
+    public static string BaseUrl(BrowserPluginDef d) => d.Tag == "latest"
+        ? $"https://github.com/{Catalog.Owner}/{d.Repo}/releases/latest/download/"
+        : $"https://github.com/{Catalog.Owner}/{d.Repo}/releases/download/{d.Tag}/";
+
+    public static string ZipUrl(BrowserPluginDef d) => BaseUrl(d) + d.Asset;
+
+    // Текст по адресу с двумя повторами: короткий сбой сети не должен ронять скачивание
+    static async Task<string> GetTextRetry(string url, CancellationToken ct)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try { return await Net.GetText(url, ct); }
+            catch (HttpRequestException ex) when (attempt < 3 && ex.StatusCode != System.Net.HttpStatusCode.NotFound) { await Task.Delay(700 * attempt, ct); }
+            catch (TaskCanceledException) when (attempt < 3 && !ct.IsCancellationRequested) { await Task.Delay(700 * attempt, ct); }
+        }
+    }
+
+    // Что лежит в релизе: адрес zip и его контрольная сумма (из файла .sha256). null — в релизе нет файла расширения.
+    // Другие ошибки (нет связи и т. п.) не глотаются: вызывающий показывает причину человеку (см. Explain).
     public static async Task<BrowserRelease?> Latest(BrowserPluginDef d, bool force = false, CancellationToken ct = default)
     {
         if (!force && cache.TryGetValue(d.Id, out var c) && DateTime.UtcNow - c.At < CacheFor) return c.Value;
-        var which = d.Tag == "latest" ? "latest" : "tags/" + d.Tag;
+        var url = ZipUrl(d);
+        if (!Net.IsTrustedDownload(url, d.Repo)) return null;
         string text;
-        try { text = await Net.GetText($"https://api.github.com/repos/{Catalog.Owner}/{d.Repo}/releases/{which}", ct); }
+        try { text = await GetTextRetry(url + ".sha256", ct); }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             cache[d.Id] = (DateTime.UtcNow, null);
             return null;
         }
-        using var doc = JsonDocument.Parse(text);
-        var root = doc.RootElement;
-        var tag = (root.GetProperty("tag_name").GetString() ?? "").TrimStart('v');
-        string? zipUrl = null, shaUrl = null;
-        foreach (var a in root.GetProperty("assets").EnumerateArray())
-        {
-            var name = a.GetProperty("name").GetString();
-            var url = a.GetProperty("browser_download_url").GetString();
-            if (name == d.Asset) zipUrl = url;
-            else if (name == d.Asset + ".sha256") shaUrl = url;
-        }
-        BrowserRelease? rel = null;
-        if (zipUrl != null && shaUrl != null && Net.IsTrustedDownload(zipUrl, d.Repo))
-        {
-            var sha = (await Net.GetText(shaUrl, ct)).Trim().Split(' ', '\t')[0].ToLowerInvariant();
-            if (Regex.IsMatch(sha, "^[0-9a-f]{64}$")) rel = new BrowserRelease(tag, zipUrl, sha);
-        }
+        var sha = text.Trim().Split(' ', '\t', '\r', '\n')[0].ToLowerInvariant();
+        if (!Regex.IsMatch(sha, "^[0-9a-f]{64}$")) throw new InvalidDataException("файл с контрольной суммой в релизе повреждён");
+        var rel = new BrowserRelease(d.Tag == "latest" ? "latest" : d.Tag.TrimStart('v'), url, sha);
         cache[d.Id] = (DateTime.UtcNow, rel);
         return rel;
+    }
+
+    // Причина неудачи — простыми словами, чтобы её можно было показать в окне (а не потерять в исчезающем сообщении)
+    public static string Explain(Exception ex)
+    {
+        switch (ex)
+        {
+            case HttpRequestException { StatusCode: System.Net.HttpStatusCode.NotFound }:
+                return "в релизе на GitHub нет файла расширения";
+            case HttpRequestException { StatusCode: System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.TooManyRequests }:
+                return "GitHub временно отказывает в скачивании (слишком много запросов) — подождите несколько минут";
+            case HttpRequestException { StatusCode: { } code } when (int)code >= 500:
+                return "GitHub сейчас недоступен (код " + (int)code + ")";
+            case HttpRequestException h:
+                return "нет связи с GitHub" + (h.InnerException != null ? " (" + h.InnerException.Message + ")" : "");
+            case TaskCanceledException:
+            case OperationCanceledException:
+                return "время ожидания вышло — проверьте интернет";
+            case UnauthorizedAccessException:
+                return "нет права записи в папку расширения: " + ex.Message;
+            case IOException:
+                return "не удалось записать файлы: " + ex.Message;
+            default:
+                return ex.Message;
+        }
     }
 
     public static async Task Install(BrowserPluginDef d, BrowserRelease rel, IProgress<int?> progress, CancellationToken ct = default)
@@ -89,25 +121,15 @@ static class BrowserInstaller
         var tmpDir = Path.Combine(Root, d.Id + ".new-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
-            using (var res = await Net.Http.GetAsync(rel.Url, HttpCompletionOption.ResponseHeadersRead, ct))
+            // скачивание с двумя повторами: короткий сбой сети не должен срывать установку
+            for (var attempt = 1; ; attempt++)
             {
-                res.EnsureSuccessStatusCode();
-                var total = res.Content.Headers.ContentLength ?? 0;
-                using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-                await using var src = await res.Content.ReadAsStreamAsync(ct);
-                await using var dst = File.Create(tmpZip);
-                var buf = new byte[81920];
-                long got = 0; int n;
-                while ((n = await src.ReadAsync(buf, ct)) > 0)
+                try { await Download(rel, tmpZip, progress, ct); break; }
+                catch (Exception ex) when (attempt < 3 && !ct.IsCancellationRequested &&
+                    (ex is HttpRequestException { StatusCode: not System.Net.HttpStatusCode.NotFound } || ex is TaskCanceledException || ex is IOException))
                 {
-                    await dst.WriteAsync(buf.AsMemory(0, n), ct);
-                    hash.AppendData(buf, 0, n);
-                    got += n;
-                    if (got > MaxTotal) throw new InvalidDataException("Архив слишком большой");
-                    if (total > 0) progress.Report((int)Math.Min(99, got * 100 / total));
+                    await Task.Delay(700 * attempt, ct);
                 }
-                if (Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant() != rel.Sha)
-                    throw new InvalidDataException("Контрольная сумма не совпала — файл повреждён");
             }
             progress.Report(null);
             await Task.Run(() =>
@@ -135,6 +157,28 @@ static class BrowserInstaller
             try { File.Delete(tmpZip); } catch { }
             try { if (Directory.Exists(tmpDir)) Directory.Delete(tmpDir, true); } catch { }
         }
+    }
+
+    static async Task Download(BrowserRelease rel, string toFile, IProgress<int?> progress, CancellationToken ct)
+    {
+        using var res = await Net.Http.GetAsync(rel.Url, HttpCompletionOption.ResponseHeadersRead, ct);
+        res.EnsureSuccessStatusCode();
+        var total = res.Content.Headers.ContentLength ?? 0;
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        await using var src = await res.Content.ReadAsStreamAsync(ct);
+        await using var dst = File.Create(toFile);
+        var buf = new byte[81920];
+        long got = 0; int n;
+        while ((n = await src.ReadAsync(buf, ct)) > 0)
+        {
+            await dst.WriteAsync(buf.AsMemory(0, n), ct);
+            hash.AppendData(buf, 0, n);
+            got += n;
+            if (got > MaxTotal) throw new InvalidDataException("Архив слишком большой");
+            if (total > 0) progress.Report((int)Math.Min(99, got * 100 / total));
+        }
+        if (Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant() != rel.Sha)
+            throw new InvalidDataException("Контрольная сумма не совпала — файл повреждён");
     }
 
     // Безопасная распаковка: только разрешённые типы файлов, пути строго внутри папки, лимиты на число и размер файлов
@@ -242,6 +286,23 @@ static class BrowserInstaller
                 Say("  chrome: " + (BrowserExe("chrome") ?? "не найден"));
                 Say("  edge:   " + (BrowserExe("edge") ?? "не найден"));
             }
+
+            // отказоустойчивость: адреса без API, несуществующий файл, читаемые причины, чистая папка после сбоя
+            var bogus = new BrowserPluginDef("selftest-bogus", "Тест", "", "", def.Repo, def.Tag, "NoSuchFile-extension.zip");
+            Check("несуществующий файл в релизе: Latest = null (не исключение)", Latest(bogus, true).GetAwaiter().GetResult() == null);
+            Check("адрес zip — прямой, без API", ZipUrl(def).StartsWith("https://github.com/" + Catalog.Owner + "/" + def.Repo + "/releases/", StringComparison.Ordinal) && !ZipUrl(def).Contains("api.github.com"));
+            string? failWhy = null;
+            try { Install(bogus, new BrowserRelease("x", ZipUrl(bogus), new string('0', 64)), new Progress<int?>(_ => { })).GetAwaiter().GetResult(); }
+            catch (Exception ex) { failWhy = Explain(ex); }
+            Check("скачивание несуществующего файла падает с понятной причиной", failWhy != null && failWhy.Contains("нет файла"), failWhy ?? "нет ошибки");
+            Check("после сбоя нет мусора (папок .new-…) в папке расширений",
+                !Directory.Exists(Root) || Directory.GetDirectories(Root, "*.new-*").Length == 0, string.Join(", ", Directory.Exists(Root) ? Directory.GetDirectories(Root, "*.new-*") : Array.Empty<string>()));
+            Check("причина: 403 → «слишком много запросов»", Explain(new HttpRequestException("x", null, System.Net.HttpStatusCode.Forbidden)).Contains("слишком много"));
+            Check("причина: нет сети → «нет связи с GitHub»", Explain(new HttpRequestException("x", new IOException("сеть"))).StartsWith("нет связи с GitHub", StringComparison.Ordinal));
+            Check("причина: тайм-аут → «время ожидания вышло»", Explain(new TaskCanceledException()).Contains("время ожидания"));
+            // плагины для компьютера берут релиз тоже без API
+            var nat = Catalog.Plugins.Length > 0 ? NativeInstaller.Latest(Catalog.Plugins[0], true).GetAwaiter().GetResult() : null;
+            Check("плагин для компьютера: релиз найден прямым адресом", nat != null && nat.Url.Contains("/releases/") && Regex.IsMatch(nat.Sha, "^[0-9a-f]{64}$"), nat?.Url ?? "null");
 
             // безопасность распаковки
             var tmp = Path.Combine(outDir, "zip-tests");
