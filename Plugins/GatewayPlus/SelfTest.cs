@@ -1,6 +1,10 @@
 using System.IO;
+using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Text;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 namespace GatewayPlusApp;
 
@@ -35,6 +39,37 @@ static class SelfTest
             var script = Store.ServerScript();
             Check("скрипт сервера вшит (" + script.Length + " знаков)", script.StartsWith("#!/usr/bin/env bash") && script.Contains("wg genkey") && !script.Contains('\r'));
             File.WriteAllText(Path.Combine(dir, "server-setup.sh"), script, new UTF8Encoding(false));
+
+            // 3a. аккаунт: ключ, номер, шифрование
+            var raw = Account.NewKey();
+            Check("ключ: 32 знака A-Z2-7", Regex.IsMatch(raw, "^[A-Z2-7]{32}$") && Account.NewKey() != raw);
+            var shown = Account.Format(raw);
+            Check("ключ для показа: GW-XXXX-… (8 групп по 4)", Regex.IsMatch(shown, "^GW(-[A-Z2-7]{4}){8}$"));
+            Check("ключ читается обратно (с тире, пробелами, строчными)", Account.Normalize(shown) == raw && Account.Normalize("  " + shown.ToLowerInvariant().Replace("-", " ") + " ") == raw);
+            Check("мусор вместо ключа отклоняется", Account.Normalize("hello") == null && Account.Normalize(shown + "A") == null && Account.Normalize(null) == null && Account.Normalize(shown.Replace("A", "1")) == null);
+            var id = Account.IdOf(raw);
+            Check("номер аккаунта: 24 знака, стабильный, у других ключей другой", Regex.IsMatch(id, "^[0-9a-f]{24}$") && id == Account.IdOf(raw) && id != Account.IdOf(Account.NewKey()) && !id.Contains(raw.ToLowerInvariant()));
+            var dev = Account.DeviceHash();
+            Check("номер компьютера: 32 знака, стабильный", Regex.IsMatch(dev, "^[0-9a-f]{32}$") && dev == Account.DeviceHash());
+            Check("имя и причина очищаются (управляющие, RTL, длина)", Account.CleanName("  Alex\u202e\n  X  ") == "Alex X" && Account.CleanName(new string('я', 50)).Length == 30 && Account.CleanReason("a\r\nb\u200f") == "a b");
+            var had = Account.Load();
+            Account.Save(new Account.Info { Key = raw, Name = "CI", TermsV = Terms.Version });
+            var back = Account.Load();
+            Check("аккаунт шифруется (DPAPI) и читается обратно", back != null && back.Key == raw && back.Id == id && back.Name == "CI" && !File.ReadAllText(Path.Combine(Store.Dir, "account.dat"), Encoding.Latin1).Contains(raw));
+            Account.Clear();
+            if (had != null) Account.Save(had);
+            Check("правила: версия и текст на месте", Terms.Version >= 1 && Terms.Points.Length >= 5 && Terms.Text.Contains("коммерческ"));
+
+            // 3b. мастер: проверки без подключения
+            Check("мастер: нормальные данные проходят", Provisioner.ValidateTarget(new SshTarget { Host = "203.0.113.5", Port = 22, User = "root", Password = "x" }) == null);
+            Check("мастер: адрес с http:// и пробелами отклоняется", Provisioner.ValidateTarget(new SshTarget { Host = "http://1.2.3.4", Password = "x" }) != null && Provisioner.ValidateTarget(new SshTarget { Host = "a b", Password = "x" }) != null);
+            Check("мастер: плохой порт, имя и пустой вход отклоняются", Provisioner.ValidateTarget(new SshTarget { Host = "1.2.3.4", Port = 70000, Password = "x" }) != null && Provisioner.ValidateTarget(new SshTarget { Host = "1.2.3.4", User = "ro ot; rm", Password = "x" }) != null && Provisioner.ValidateTarget(new SshTarget { Host = "1.2.3.4" }) != null);
+            Check("мастер: отпечаток в виде SHA256:…", Regex.IsMatch(Provisioner.Fingerprint(new byte[] { 1, 2, 3 }), "^SHA256:[A-Za-z0-9+/]{43}$"));
+            var cfgOut = "apt...\n=========== НАЧАЛО КОНФИГА (скопируйте) ===========\n" + good + "=========== КОНЕЦ КОНФИГА ===========\nГотово";
+            Check("мастер: конфиг вынимается из вывода скрипта", Provisioner.ParseConfig(cfgOut) is string pc && Store.Validate(pc) == null && Provisioner.ParseConfig("ничего") == null);
+
+            // 3c. база: подставной сервер на этом компьютере (REST как у Firebase)
+            CloudChecks(Check, log, id, dev);
 
             // 4. каким нас видят
             var ip = Task.Run(() => IpInfo.GetAsync()).GetAwaiter().GetResult();
@@ -74,5 +109,95 @@ static class SelfTest
         }
         catch (Exception ex) { log.AppendLine("ОШИБКА: " + ex); }
         File.WriteAllText(Path.Combine(dir, "report.txt"), log.ToString());
+    }
+    static int FreePort() { var l = new TcpListener(IPAddress.Loopback, 0); l.Start(); var p = ((IPEndPoint)l.LocalEndpoint).Port; l.Stop(); return p; }
+
+    static JsonNode? ReplaceSv(JsonNode? n)
+    {
+        if (n is JsonObject o)
+        {
+            if (o.Count == 1 && o[".sv"]?.GetValue<string>() == "timestamp") return JsonValue.Create(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            foreach (var k in o.Select(x => x.Key).ToList()) o[k] = ReplaceSv(o[k]);
+        }
+        return n;
+    }
+
+    // Подставная «база»: GET/PUT/PATCH по адресам вида /<путь>.json — ровно то, что плагин шлёт настоящей.
+    static void CloudChecks(Action<string, bool> Check, StringBuilder log, string id, string dev)
+    {
+        var db = new Dictionary<string, string>();
+        var requests = new List<string>();
+        var port = FreePort();
+        using var listener = new HttpListener();
+        listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+        listener.Start();
+        var serverLoop = Task.Run(async () =>
+        {
+            while (listener.IsListening)
+            {
+                HttpListenerContext ctx;
+                try { ctx = await listener.GetContextAsync(); } catch { break; }
+                try
+                {
+                    var path = Uri.UnescapeDataString(ctx.Request.Url!.AbsolutePath.Trim('/')); if (path.EndsWith(".json")) path = path[..^5];
+                    var body = new StreamReader(ctx.Request.InputStream).ReadToEnd();
+                    lock (db) requests.Add(ctx.Request.HttpMethod + " " + path);
+                    string resp = "null";
+                    lock (db)
+                    {
+                        switch (ctx.Request.HttpMethod)
+                        {
+                            case "GET": resp = db.TryGetValue(path, out var v) ? v : "null"; break;
+                            case "PUT": db[path] = ReplaceSv(JsonNode.Parse(body))!.ToJsonString(); resp = db[path]; break;
+                            case "PATCH":
+                                var cur = db.TryGetValue(path, out var old) ? JsonNode.Parse(old)!.AsObject() : new JsonObject();
+                                foreach (var kv in ReplaceSv(JsonNode.Parse(body))!.AsObject().ToList()) { cur[kv.Key] = kv.Value?.DeepClone(); }
+                                db[path] = cur.ToJsonString(); resp = db[path]; break;
+                        }
+                    }
+                    var bytes = Encoding.UTF8.GetBytes(resp);
+                    ctx.Response.ContentType = "application/json"; ctx.Response.OutputStream.Write(bytes); ctx.Response.Close();
+                }
+                catch { try { ctx.Response.Abort(); } catch { } }
+            }
+        });
+        Cloud.TestUrl = $"http://127.0.0.1:{port}";
+        try
+        {
+            var r0 = Task.Run(() => Cloud.GetAccountAsync(id)).GetAwaiter().GetResult();
+            Check("база: нового аккаунта ещё нет", r0 == null);
+            Task.Run(() => Cloud.RegisterAsync(id, "CI", dev, "2.0.0", 1)).GetAwaiter().GetResult();
+            var rec = JsonNode.Parse(db["gatewayAccounts/" + id])!.AsObject();
+            Check("база: аккаунт записан (имя, дата создания и «пульс» — числа от сервера, правила, версия, компьютер)", rec["name"]?.GetValue<string>() == "CI" && rec["createdAt"]!.GetValue<long>() > 0 && rec["lastSeen"]!.GetValue<long>() > 0 && rec["termsV"]!.GetValue<int>() == Terms.Version && rec["dev"]?.GetValue<string>() == dev && rec["ver"]?.GetValue<string>() == "2.0.0");
+            Check("база: аккаунт читается", Task.Run(() => Cloud.GetAccountAsync(id)).GetAwaiter().GetResult()?.Name == "CI");
+            var created = rec["createdAt"]!.GetValue<long>();
+            Thread.Sleep(30);
+            Task.Run(() => Cloud.HeartbeatAsync(id, dev, "2.0.1", 3, Terms.Version)).GetAwaiter().GetResult();
+            var rec2 = JsonNode.Parse(db["gatewayAccounts/" + id])!.AsObject();
+            Check("база: «пульс» меняет только lastSeen/версию/серверы, имя и дата создания остаются", rec2["lastSeen"]!.GetValue<long>() >= created && rec2["servers"]!.GetValue<int>() == 3 && rec2["ver"]?.GetValue<string>() == "2.0.1" && rec2["createdAt"]!.GetValue<long>() == created && rec2["name"]?.GetValue<string>() == "CI");
+
+            var ok = Task.Run(() => Cloud.CheckAccessAsync(id, dev)).GetAwaiter().GetResult();
+            Check("доступ: без блокировки — открыт", !ok.Blocked && !ok.Offline);
+            lock (db) db["gatewayBlocks/" + id] = "{\"at\":1,\"reason\":\"продавал доступ\\n<b>x</b>\",\"by\":\"100\"}";
+            var b1 = Task.Run(() => Cloud.CheckAccessAsync(id, dev)).GetAwaiter().GetResult();
+            Check("доступ: блокировка аккаунта видна, причина — одна строка", b1.Blocked && !b1.Offline && b1.Reason == "продавал доступ <b>x</b>");
+            lock (db) db.Remove("gatewayBlocks/" + id);
+            lock (db) db["gatewayBlockedDevices/" + dev] = "{\"at\":1,\"reason\":\"коммерция\",\"by\":\"100\"}";
+            var b2 = Task.Run(() => Cloud.CheckAccessAsync(id, dev)).GetAwaiter().GetResult();
+            Check("доступ: блокировка компьютера видна", b2.Blocked && b2.Reason.Contains("коммерция") && b2.Reason.Contains("компьютер"));
+            var b3 = Task.Run(() => Cloud.CheckAccessAsync(null, dev)).GetAwaiter().GetResult();
+            Check("доступ: без аккаунта (создание нового) блокировка компьютера тоже видна", b3.Blocked);
+            int before; lock (db) before = requests.Count;
+            var bad = Task.Run(() => Cloud.CheckAccessAsync("../users", dev)).GetAwaiter().GetResult();
+            int after; lock (db) after = requests.Count;
+            Check("доступ: плохой номер аккаунта не уходит в запрос", before == after);
+
+            // без связи блокировка не «забывается», а свобода — тоже по последнему ответу
+            listener.Stop(); listener.Close();
+            var off1 = Task.Run(() => Cloud.CheckAccessAsync(id, dev)).GetAwaiter().GetResult();
+            Check("доступ: нет связи после блокировки — остаётся заблокирован (Offline)", off1.Blocked && off1.Offline);
+        }
+        finally { Cloud.TestUrl = null; try { File.Delete(Path.Combine(Store.Dir, "access.json")); } catch { } }
+        log.AppendLine("запросов к подставной базе: " + requests.Count);
     }
 }
