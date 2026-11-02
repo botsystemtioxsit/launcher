@@ -33,7 +33,8 @@ static class SelfTest
             MergeAndCapture();
             LibraryTests(dir);
             Plugins.DataDirOverride = null;
-            if (applyTests) ApplyTests(dir); else Say("(настоящее применение через плагины не запускалось: нет ключа --apply-tests)");
+            // применение — в потоке пула: Applier ждёт задачи с await, а поток окна здесь заблокирован ожиданием результата (иначе взаимная блокировка)
+            if (applyTests) Task.Run(() => ApplyTests(dir)).GetAwaiter().GetResult(); else Say("(настоящее применение через плагины не запускалось: нет ключа --apply-tests)");
         }
         catch (Exception ex) { Say("ОШИБКА: " + ex); bad++; }
         Say(bad == 0 ? "ИТОГО: всё хорошо" : "ИТОГО: проблем " + bad);
@@ -70,6 +71,9 @@ static class SelfTest
         Check("не объект / не JSON отвергается", Throws(() => Skin.Parse("[1,2]")) && Throws(() => Skin.Parse("это не json")));
         Check("скин без допустимых частей отвергается", Throws(() => Skin.Parse("{\"format\":1,\"parts\":{\"run\":{}}}")));
         Check("слишком глубокий JSON отвергается", Throws(() => Skin.Parse("{\"format\":1,\"parts\":" + string.Concat(Enumerable.Repeat("{\"a\":", 20)) + "1" + new string('}', 20) + "}")));
+        var direct = new JsonObject { ["n"] = 5 };
+        var viaFile = JsonNode.Parse("{\"n\":5,\"f\":5.0,\"big\":99999999999,\"s\":\"5\"}") as JsonObject;
+        Check("числа читаются и из очищенной части (int), и из файла (JsonElement)", SkinSchema.Int(direct, "n") == 5 && SkinSchema.Int(viaFile!, "n") == 5 && SkinSchema.Int(viaFile!, "f") == 5 && SkinSchema.Int(viaFile!, "big") == null && SkinSchema.Int(viaFile!, "s") == null);
         var round = Skin.Parse(hostile.ToJson());
         Check("очищенный скин после записи и чтения не меняется", round.ToJson() == hostile.ToJson());
     }

@@ -85,6 +85,9 @@ static class SkinSchema
     public static long? Long(JsonObject o, string k)
     {
         if (o[k] is not JsonValue v) return null;
+        // число в очищенной части лежит как int, а из только что разобранного файла — как JsonElement: TryGetValue<long> для int не срабатывает,
+        // поэтому пробуем все варианты (иначе очищенный скин читался бы «пустым» и применялся нулями)
+        if (v.TryGetValue<int>(out var i)) return i;
         if (v.TryGetValue<long>(out var l)) return l;
         if (v.TryGetValue<double>(out var d) && d == Math.Floor(d) && Math.Abs(d) < 1e15) return (long)d;
         return null;

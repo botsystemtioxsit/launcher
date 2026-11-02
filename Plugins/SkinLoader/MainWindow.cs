@@ -162,7 +162,9 @@ sealed class MainWindow : Window
             row.Children.Add(text);
             rows.Add(row);
         }
-        rows.Add(Btn("Прочитать настройки заново", null, () => { scan = null; Rebuild(); return Task.CompletedTask; }, first: true));
+        var rescan = Btn("Прочитать настройки заново", null, () => { scan = null; Rebuild(); return Task.CompletedTask; }, first: true);
+        rescan.HorizontalAlignment = HorizontalAlignment.Left;
+        rows.Add(rescan);
         page.Children.Add(Card("Что войдёт в скин", rows));
 
         var pv = new List<UIElement> { Note("Картинка помогает узнать скин в списке. Лучше всего — снимок рабочего стола с уже применёнными настройками.", new Thickness(0, 0, 0, 8)) };
@@ -174,7 +176,9 @@ sealed class MainWindow : Window
         if (Shots.Load(preview) is { } bmp) pv.Add(new Border { BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 10, 0, 0), Child = new Image { Source = bmp, Width = 320, Margin = new Thickness(1) } });
         page.Children.Add(Card("Картинка для превью", pv));
 
-        page.Children.Add(Btn("Собрать скин", "Primary", BuildSkin, first: true));
+        var make = Btn("Собрать скин", "Primary", BuildSkin, first: true);
+        make.HorizontalAlignment = HorizontalAlignment.Left;
+        page.Children.Add(make);
     }
 
     static TextBlock Label(string text, double top = 0) => new() { Text = text, Foreground = Res("Muted"), Margin = new Thickness(0, top, 0, 4) };
