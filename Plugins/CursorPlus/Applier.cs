@@ -93,9 +93,15 @@ sealed class CursorApplier
                 }
                 catch (Exception ex) { problems.Add(role.Reg + ": " + ex.Message); }
             }
+            var orig = LoadOriginals();
             using (var k = Registry.CurrentUser.CreateSubKey(Key))
             {
-                foreach (var (name, path) in written) k.SetValue(name, path, RegistryValueKind.ExpandString);
+                foreach (var role in Roles.All)
+                {
+                    // указатель, который в этот раз менять не нужно, возвращаем как был (раньше мы могли его менять)
+                    if (written.TryGetValue(role.Reg, out var path)) k.SetValue(role.Reg, path, RegistryValueKind.ExpandString);
+                    else RestoreValue(k, role.Reg, orig);
+                }
                 k.SetValue("CursorBaseSize", BaseSize(s), RegistryValueKind.DWord);
             }
             using (var a = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Accessibility"))
@@ -114,16 +120,10 @@ sealed class CursorApplier
         {
             if (File.Exists(OriginalsFile))
             {
-                var o = JsonSerializer.Deserialize<Originals>(File.ReadAllText(OriginalsFile)) ?? new Originals();
+                var o = LoadOriginals();
                 using (var k = Registry.CurrentUser.CreateSubKey(Key))
                 {
-                    foreach (var name in Names())
-                    {
-                        if (!o.Values.TryGetValue(name, out var v) || v == null) { k.DeleteValue(name, false); continue; }
-                        o.Kinds.TryGetValue(name, out var kind);
-                        if (kind == "DWord" && int.TryParse(v, out var n)) k.SetValue(name, n, RegistryValueKind.DWord);
-                        else k.SetValue(name, v, kind == "ExpandString" ? RegistryValueKind.ExpandString : RegistryValueKind.String);
-                    }
+                    foreach (var name in Names()) RestoreValue(k, name, o);
                 }
                 try { using var a = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Accessibility"); var b = o.Values.TryGetValue("CursorBaseSize", out var bs) && int.TryParse(bs, out var bn) ? bn : 32; a.SetValue("CursorSize", Math.Clamp((b - 32) / 16 + 1, 1, 15), RegistryValueKind.DWord); } catch { }
                 Native.ReloadCursors();
@@ -133,6 +133,21 @@ sealed class CursorApplier
             return null;
         }
         catch (Exception ex) { return ex.Message; }
+    }
+
+    static Originals LoadOriginals()
+    {
+        try { return JsonSerializer.Deserialize<Originals>(File.ReadAllText(OriginalsFile)) ?? new Originals(); }
+        catch { return new Originals(); }
+    }
+
+    // Вернуть одно значение реестра таким, каким оно было (или убрать, если его не было).
+    static void RestoreValue(RegistryKey k, string name, Originals o)
+    {
+        if (!o.Values.TryGetValue(name, out var v) || v == null) { k.DeleteValue(name, false); return; }
+        o.Kinds.TryGetValue(name, out var kind);
+        if (kind == "DWord" && int.TryParse(v, out var n)) k.SetValue(name, n, RegistryValueKind.DWord);
+        else k.SetValue(name, v, kind == "ExpandString" ? RegistryValueKind.ExpandString : RegistryValueKind.String);
     }
 
     static void CleanOld(string keep)
