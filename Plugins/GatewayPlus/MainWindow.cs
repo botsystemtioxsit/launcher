@@ -244,7 +244,7 @@ sealed class MainWindow : Window
 
     Button Btn(string text, string? style, Action click, bool first = false)
     {
-        var b = new Button { Content = text, Margin = new Thickness(first ? 0 : 10, 0, 0, 8), Padding = new Thickness(18, 9, 18, 9) };
+        var b = new Button { Content = text, Margin = new Thickness(first ? 0 : 10, 0, 0, 8), Padding = new Thickness(18, 9, 18, 9), HorizontalAlignment = HorizontalAlignment.Left };
         if (style != null) b.Style = (Style)FindResource(style);
         b.Click += (_, _) => click();
         return b;
