@@ -69,12 +69,16 @@ static class Plugins
     }
 
     // Просим работающий плагин выйти (он сам вернёт всё, что менял), ждём до waitMs. true — его больше нет.
-    public static bool AskQuit(PluginDef d, int waitMs = 8000)
+    // Плагин, который только что запустили, может ещё не создать «событие выхода», поэтому просьба повторяется раз в 1,5 с.
+    public static bool AskQuit(PluginDef d, int waitMs = 20000)
     {
-        if (!Running(d)) return true;
-        try { using var ev = EventWaitHandle.OpenExisting("GhostShell.Plugin.Quit." + d.Id); ev.Set(); } catch { }
         var until = DateTime.UtcNow.AddMilliseconds(waitMs);
-        while (DateTime.UtcNow < until && Running(d)) Thread.Sleep(150);
+        while (Running(d) && DateTime.UtcNow < until)
+        {
+            try { using var ev = EventWaitHandle.OpenExisting("GhostShell.Plugin.Quit." + d.Id); ev.Set(); } catch { }
+            var step = DateTime.UtcNow.AddMilliseconds(1500);
+            while (DateTime.UtcNow < step && Running(d)) Thread.Sleep(100);
+        }
         return !Running(d);
     }
 
