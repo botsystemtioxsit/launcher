@@ -42,7 +42,7 @@ public class MainWindow : Window
         root.Children.Add(msgText);
 
         var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 20, 0, 0) };
-        Style(onBtn, "#00F0FF", "#001418"); Style(offBtn, "#15112B", "#E6F4FF"); Style(checkBtn, "#15112B", "#E6F4FF");
+        SetStyle(onBtn, "#00F0FF", "#001418"); SetStyle(offBtn, "#15112B", "#E6F4FF"); SetStyle(checkBtn, "#15112B", "#E6F4FF");
         row.Children.Add(onBtn); row.Children.Add(checkBtn);
         root.Children.Add(row);
         offBtn.Margin = new Thickness(0, 10, 0, 0); offBtn.HorizontalAlignment = HorizontalAlignment.Left;
@@ -57,7 +57,7 @@ public class MainWindow : Window
         cardPanel.Children.Add(Label("Откуда берётся DNS", 14, "#00F0FF", true, 0));
         cardPanel.Children.Add(Label("Мы не умеем и не делаем то, что умеет сервис NextDNS (фильтры, блокировка рекламы и угроз, родительский контроль, журнал запросов). Поэтому плагин только подключает ваш компьютер к нему. NextDNS бесплатный (есть бесплатный тариф), регистрация быстрая. Наш совет: заведите профиль на nextdns.io, настройте фильтры там и берите DNS оттуда — а DNS Plus просто включит его на этом компьютере. Мы с NextDNS не связаны.", 12, "#E6F4FF", false, 6));
         var link = new Button { Content = "Открыть nextdns.io", Margin = new Thickness(0, 10, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
-        Style(link, "#15112B", "#00F0FF");
+        SetStyle(link, "#15112B", "#00F0FF");
         link.Click += (_, _) =>
         {
             try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://nextdns.io") { UseShellExecute = true }); }
@@ -85,7 +85,7 @@ public class MainWindow : Window
         FontWeight = bold ? FontWeights.Bold : FontWeights.Normal, Margin = new Thickness(0, top, 0, 0)
     };
 
-    static void Style(Button b, string bg, string fg)
+    static void SetStyle(Button b, string bg, string fg)
     {
         b.Background = B(bg); b.Foreground = B(fg); b.BorderBrush = B("#2D2060");
         b.Padding = new Thickness(18, 9, 18, 9); b.Margin = new Thickness(0, 0, 10, 0); b.Cursor = System.Windows.Input.Cursors.Hand;
