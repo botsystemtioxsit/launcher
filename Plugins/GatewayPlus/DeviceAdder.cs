@@ -14,9 +14,13 @@ static class DeviceAdder
     public static bool ValidName(string s) => NameRe.IsMatch(s ?? "");
 
     public static Task<ProvisionResult> RunAsync(SshTarget t, string deviceName, Func<HostKeyQuestion, bool> confirmKey, Action<string> log, CancellationToken ct = default)
-        => Task.Run(() => Run(t, deviceName, confirmKey, log, ct), ct);
+        => Task.Run(() => Run(t, deviceName, confirmKey, log, ct, false), ct);
 
-    static ProvisionResult Run(SshTarget t, string deviceName, Func<HostKeyQuestion, bool> confirmKey, Action<string> log, CancellationToken ct)
+    // «Ускорить сервер»: проверяет и настраивает уже работающий сервер (tune-server.sh), конфиг не выдаёт.
+    public static Task<ProvisionResult> TuneAsync(SshTarget t, Func<HostKeyQuestion, bool> confirmKey, Action<string> log, CancellationToken ct = default)
+        => Task.Run(() => Run(t, "phone", confirmKey, log, ct, true), ct);
+
+    static ProvisionResult Run(SshTarget t, string deviceName, Func<HostKeyQuestion, bool> confirmKey, Action<string> log, CancellationToken ct, bool tune)
     {
         var result = new ProvisionResult();
         var bad = Provisioner.ValidateTarget(t);
@@ -77,20 +81,20 @@ static class DeviceAdder
                 pre = "sudo -n ";
             }
 
-            var script = Store.AddDeviceScript();
+            var script = tune ? Store.TuneScript() : Store.AddDeviceScript();
             if (script.Length < 100) { result.Error = "Внутренняя ошибка: скрипт не найден в плагине."; return result; }
-            scriptPath = "/tmp/ghostshell-device-" + Convert.ToHexString(RandomNumberGenerator.GetBytes(6)).ToLowerInvariant() + ".sh";
+            scriptPath = "/tmp/ghostshell-" + (tune ? "tune-" : "device-") + Convert.ToHexString(RandomNumberGenerator.GetBytes(6)).ToLowerInvariant() + ".sh";
             var b64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(script));
             if (!Exec($"umask 077; printf '%s' '{b64}' | base64 -d > {scriptPath} && chmod 700 {scriptPath} && echo UPLOADED").Contains("UPLOADED"))
             { result.Error = "Не получилось передать скрипт на сервер."; scriptPath = null; return result; }
-            log("Добавляю устройство «" + deviceName + "» на сервер…");
+            log(tune ? "Проверяю и настраиваю сервер (до минуты)…" : "Добавляю устройство «" + deviceName + "» на сервер…");
 
             var full = new StringBuilder();
             bool inConfig = false;
             int exit;
-            using (var cmd = sshRef.CreateCommand($"{pre}env DEVNAME={deviceName} bash {scriptPath} 2>&1"))
+            using (var cmd = sshRef.CreateCommand(tune ? $"{pre}bash {scriptPath} 2>&1" : $"{pre}env DEVNAME={deviceName} bash {scriptPath} 2>&1"))
             {
-                cmd.CommandTimeout = TimeSpan.FromMinutes(2);
+                cmd.CommandTimeout = TimeSpan.FromMinutes(3);
                 var ar = cmd.BeginExecute();
                 using var reader = new StreamReader(cmd.OutputStream, Encoding.UTF8);
                 string? line;
@@ -109,6 +113,7 @@ static class DeviceAdder
             if (exit == 2) { result.Error = "На этом сервере нет WireGuard, настроенного мастером Gateway Plus. Сначала создайте VPN кнопкой «Создать мой VPN на сервере…»."; return result; }
             if (exit != 0) { result.Error = $"Скрипт на сервере завершился с ошибкой (код {exit}). Последние строки журнала выше."; return result; }
 
+            if (tune) { result.Ok = true; log("Готово."); return result; }
             var conf = Provisioner.ParseConfig(full.ToString());
             if (conf == null) { result.Error = "Скрипт отработал, но конфиг в его выводе не найден."; return result; }
             var badConf = Store.Validate(conf);

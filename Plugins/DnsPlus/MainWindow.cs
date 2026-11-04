@@ -13,7 +13,20 @@ public class MainWindow : Window
     readonly Button offBtn = new() { Content = "Выключить и вернуть как было" };
     readonly Button checkBtn = new() { Content = "Проверить" };
 
-    static SolidColorBrush B(string hex) => (SolidColorBrush)new BrushConverter().ConvertFromString(hex)!;
+    // Цвета берём из общего киберпанк-стиля (Shared/CyberTheme.xaml); неизвестный цвет — как есть
+    static Brush B(string hex) => hex.ToUpperInvariant() switch
+    {
+        "#06050D" => (Brush)Application.Current.FindResource("Bg"),
+        "#0D0B1A" => (Brush)Application.Current.FindResource("Panel"),
+        "#15112B" => (Brush)Application.Current.FindResource("Panel2"),
+        "#2D2060" => (Brush)Application.Current.FindResource("Line"),
+        "#E6F4FF" => (Brush)Application.Current.FindResource("Text"),
+        "#8B86B8" => (Brush)Application.Current.FindResource("Muted"),
+        "#00F0FF" => (Brush)Application.Current.FindResource("Accent"),
+        "#001418" => (Brush)Application.Current.FindResource("OnAccent"),
+        "#2CFF9A" => (Brush)Application.Current.FindResource("Green"),
+        _ => (Brush)new BrushConverter().ConvertFromString(hex)!,
+    };
 
     public MainWindow()
     {

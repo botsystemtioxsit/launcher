@@ -11,10 +11,12 @@
     </Grid.RowDefinitions>
 
     <!-- Плашка «вышла новая версия лаунчера» -->
-    <Border x:Name="UpdateBar" Grid.Row="0" Visibility="Collapsed" Background="{DynamicResource Accent}" Padding="14,7">
+    <Border x:Name="UpdateBar" Grid.Row="0" Visibility="Collapsed" Background="#17130A" BorderBrush="{DynamicResource Yellow}" BorderThickness="0,0,0,1" Padding="14,8">
+      <Border.Effect><DropShadowEffect Color="#FCEE0A" BlurRadius="14" ShadowDepth="0" Opacity="0.25"/></Border.Effect>
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-        <TextBlock x:Name="UpdateText" Foreground="{DynamicResource OnAccent}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-        <Button x:Name="UpdateBtn" Content="Обновить сейчас" Margin="14,0,0,0" Padding="12,4" Click="UpdateBtn_Click"/>
+        <TextBlock Text="▲" Foreground="{DynamicResource Yellow}" FontFamily="{StaticResource Mono}" FontWeight="Bold" Margin="0,0,10,0" VerticalAlignment="Center"/>
+        <TextBlock x:Name="UpdateText" Foreground="{DynamicResource Yellow}" FontFamily="{StaticResource Mono}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+        <Button x:Name="UpdateBtn" Content="Обновить сейчас" Style="{StaticResource Warn}" Margin="16,0,0,0" Padding="14,5" Click="UpdateBtn_Click"/>
       </StackPanel>
     </Border>
 

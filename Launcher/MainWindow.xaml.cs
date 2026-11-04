@@ -457,7 +457,7 @@ public partial class MainWindow : Window
         if (p.Native != null)
         {
             badges.Children.Add(Badge("Установлен " + p.Native.Version, Res("Green"), null));
-            if (p.NativeUpdate) badges.Children.Add(Badge("Есть обновление", Res("OnAccent"), Res("Accent")));
+            if (p.NativeUpdate) badges.Children.Add(Badge("Есть обновление", Res("OnYellow"), Res("Yellow")));
         }
         else badges.Children.Add(Badge("Не установлен", Res("Muted"), null));
         left.Children.Add(badges);
@@ -603,7 +603,7 @@ public partial class MainWindow : Window
         if (p.Installed != null)
         {
             badges.Children.Add(Badge("Скачан " + p.Installed.Version, Res("Green"), null));
-            if (p.Update) badges.Children.Add(Badge("Есть обновление", Res("OnAccent"), Res("Accent")));
+            if (p.Update) badges.Children.Add(Badge("Есть обновление", Res("OnYellow"), Res("Yellow")));
         }
         else badges.Children.Add(Badge("Не скачан", Res("Muted"), null));
         col.Children.Add(badges);
@@ -836,7 +836,7 @@ public partial class MainWindow : Window
                 ? Badge("Установлено" + (a.Installed.Version != null ? " " + a.Installed.Version : "") + " (облегчённая)", Res("Green"), null)
                 : Badge("Не установлено", Res("Muted"), null));
             if (a.Latest != null)
-                badges.Children.Add(a.UpdateAvailable ? Badge("Доступно " + a.Latest, Res("OnAccent"), Res("Accent")) : Badge("Последняя " + a.Latest, Res("Muted"), null));
+                badges.Children.Add(a.UpdateAvailable ? Badge("Доступно " + a.Latest, Res("OnYellow"), Res("Yellow")) : Badge("Последняя " + a.Latest, Res("Muted"), null));
         }
         if (a.Allowed && a.Native != null)
             badges.Children.Add(Badge("Desktop установлен " + a.Native.Version + (a.NativeUpdate ? " · есть обновление" : ""), Res("Green"), null));
@@ -920,11 +920,23 @@ public partial class MainWindow : Window
         return card;
     }
 
-    static Border Badge(string text, Brush fg, Brush? bg) => new()
+    // Плашка со срезанными углами: с заливкой (bg) — заметная неоновая (обновление и т. п.), без заливки — тонкий контур цвета текста.
+    static FrameworkElement Badge(string text, Brush fg, Brush? bg)
     {
-        Background = bg ?? Res("Panel2"), CornerRadius = new CornerRadius(99), Padding = new Thickness(9, 2, 9, 3), Margin = new Thickness(0, 0, 6, 0),
-        Child = new TextBlock { Text = text, FontSize = 12, Foreground = fg },
-    };
+        var filled = bg != null;
+        Brush edge = fg;
+        if (!filled) { edge = fg.Clone(); edge.Opacity = 0.55; }
+        var g = new Grid { Margin = new Thickness(0, 0, 8, 0), SnapsToDevicePixels = true };
+        g.Children.Add(new GhostShellUi.ChamferBorder { Fill = bg ?? Res("Panel2"), Stroke = filled ? bg : edge, Thickness = 1, Cut = 6 });
+        g.Children.Add(new TextBlock
+        {
+            Text = (filled ? "▲ " : "") + text, FontFamily = (FontFamily)Application.Current.FindResource("Mono"), FontSize = 11.5,
+            FontWeight = filled ? FontWeights.Bold : FontWeights.Normal, Foreground = fg, Margin = new Thickness(11, 3, 11, 4),
+        });
+        if (filled && bg is SolidColorBrush sb)
+            g.Effect = new System.Windows.Media.Effects.DropShadowEffect { Color = sb.Color, BlurRadius = 12, ShadowDepth = 0, Opacity = 0.5 };
+        return g;
+    }
 
     Button MakeButton(string text, string? style, Func<Task> click)
     {

@@ -13,23 +13,27 @@
   <DrawingBrush x:Key="Bg" TileMode="Tile" Viewport="0,0,6,6" ViewportUnits="Absolute" Viewbox="0,0,6,6" ViewboxUnits="Absolute">
     <DrawingBrush.Drawing>
       <DrawingGroup>
-        <GeometryDrawing Brush="#06050D"><GeometryDrawing.Geometry><RectangleGeometry Rect="0,0,6,6"/></GeometryDrawing.Geometry></GeometryDrawing>
-        <GeometryDrawing Brush="#0D0A20"><GeometryDrawing.Geometry><RectangleGeometry Rect="0,5,6,1"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#070314"><GeometryDrawing.Geometry><RectangleGeometry Rect="0,0,6,6"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#110A2C"><GeometryDrawing.Geometry><RectangleGeometry Rect="0,5,6,1"/></GeometryDrawing.Geometry></GeometryDrawing>
       </DrawingGroup>
     </DrawingBrush.Drawing>
   </DrawingBrush>
-  <SolidColorBrush x:Key="BgSolid" Color="#06050D"/>
-  <SolidColorBrush x:Key="Panel" Color="#0D0B1A"/>
-  <SolidColorBrush x:Key="Panel2" Color="#15112B"/>
-  <SolidColorBrush x:Key="Line" Color="#2D2060"/>
-  <SolidColorBrush x:Key="Text" Color="#E6F4FF"/>
-  <SolidColorBrush x:Key="Muted" Color="#8B86B8"/>
+  <SolidColorBrush x:Key="BgSolid" Color="#070314"/>
+  <SolidColorBrush x:Key="Panel" Color="#0D0821"/>
+  <SolidColorBrush x:Key="Panel2" Color="#170E36"/>
+  <SolidColorBrush x:Key="Line" Color="#4A22A0"/>
+  <SolidColorBrush x:Key="Text" Color="#EAF8FF"/>
+  <SolidColorBrush x:Key="Muted" Color="#A08FE0"/>
   <SolidColorBrush x:Key="Accent" Color="#00F0FF"/>
   <SolidColorBrush x:Key="AccentSoft" Color="#2200F0FF"/>
   <SolidColorBrush x:Key="OnAccent" Color="#001418"/>
-  <SolidColorBrush x:Key="Red" Color="#FF3366"/>
-  <SolidColorBrush x:Key="Accent2" Color="#FF2A9D"/>
-  <SolidColorBrush x:Key="Green" Color="#2CFF9A"/>
+  <SolidColorBrush x:Key="Red" Color="#FF3B5C"/>
+  <SolidColorBrush x:Key="Accent2" Color="#FF2E97"/>
+  <SolidColorBrush x:Key="Green" Color="#3CFF9A"/>
+  <!-- третий неон — «жёлтый киберпанк» (предупреждения, обновления) и фиолетовый -->
+  <SolidColorBrush x:Key="Yellow" Color="#FCEE0A"/>
+  <SolidColorBrush x:Key="OnYellow" Color="#171400"/>
+  <SolidColorBrush x:Key="Purple" Color="#A259FF"/>
 
   <!-- ===== Кнопки: острые углы, неоновая рамка, «угловые скобки» по диагонали, свечение при наведении ===== -->
   <Style TargetType="Button">
@@ -84,13 +88,24 @@
       <Setter.Value><DropShadowEffect Color="#00F0FF" BlurRadius="16" ShadowDepth="0" Opacity="0.6"/></Setter.Value>
     </Setter>
   </Style>
+  <!-- Жёлтая кнопка: «Обновить сейчас» и другие заметные предупреждающие действия -->
+  <Style x:Key="Warn" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+    <Setter Property="Background" Value="{DynamicResource Yellow}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Yellow}"/>
+    <Setter Property="Foreground" Value="{DynamicResource OnYellow}"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+    <Setter Property="FontFamily" Value="{StaticResource Mono}"/>
+    <Setter Property="Effect">
+      <Setter.Value><DropShadowEffect Color="#FCEE0A" BlurRadius="14" ShadowDepth="0" Opacity="0.55"/></Setter.Value>
+    </Setter>
+  </Style>
   <Style x:Key="Ghost" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
     <Setter Property="Background" Value="Transparent"/>
   </Style>
   <Style x:Key="Danger" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
     <Setter Property="Background" Value="Transparent"/>
     <Setter Property="Foreground" Value="{DynamicResource Red}"/>
-    <Setter Property="BorderBrush" Value="#66FF3366"/>
+    <Setter Property="BorderBrush" Value="#66FF3B5C"/>
   </Style>
 
   <!-- Пункт бокового меню: без рамки, слева неоновая полоса при наведении -->

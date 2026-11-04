@@ -36,8 +36,8 @@ cat > wg0.conf <<CONF
 Address = ${SUBNET}.1/24
 ListenPort = ${PORT}
 PrivateKey = $(cat server.key)
-PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o ${IFACE} -j MASQUERADE
-PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o ${IFACE} -j MASQUERADE
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o ${IFACE} -j MASQUERADE; iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o ${IFACE} -j MASQUERADE; iptables -t mangle -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 
 [Peer]
 PublicKey = $(cat client.pub)
@@ -46,6 +46,10 @@ AllowedIPs = ${SUBNET}.2/32
 CONF
 
 echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-wireguard.conf
+# быстрее на длинных расстояниях и при потерях: очередь fq + алгоритм BBR (если ядро умеет; нет — тихо пропускаем)
+if modprobe tcp_bbr 2>/dev/null && grep -qw bbr /proc/sys/net/ipv4/tcp_available_congestion_control 2>/dev/null; then
+  printf 'net.core.default_qdisc=fq\nnet.ipv4.tcp_congestion_control=bbr\n' > /etc/sysctl.d/99-ghostshell-net.conf
+fi
 sysctl --system > /dev/null
 
 # если на сервере включён файрвол ufw — открываем порт шлюза
@@ -62,6 +66,7 @@ cat <<CLIENT
 [Interface]
 PrivateKey = $(cat client.key)
 Address = ${SUBNET}.2/32
+MTU = 1380
 DNS = 1.1.1.1, 9.9.9.9
 
 [Peer]
