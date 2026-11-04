@@ -123,4 +123,12 @@ static class Store
         using var r = new StreamReader(s, Encoding.UTF8);
         return r.ReadToEnd().Replace("\r\n", "\n");
     }
+
+    public static string TuneScript()
+    {
+        using var s = typeof(Store).Assembly.GetManifestResourceStream("tune-server.sh");
+        if (s == null) return "";
+        using var r = new StreamReader(s, Encoding.UTF8);
+        return r.ReadToEnd().Replace("\r\n", "\n");
+    }
 }

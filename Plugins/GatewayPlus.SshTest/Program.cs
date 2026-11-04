@@ -118,6 +118,18 @@ string clientPriv = "";
     Check("название устройства с лишними знаками отклонено до подключения", !bad2.Ok && bad2.Error.Contains("Название устройства"), bad2.Error);
 }
 
+// 9. «ускорить сервер»: правило размера пакетов появилось в настройках сервера, повторный запуск ничего не дублирует
+{
+    var log = new List<string>();
+    var t = new SshTarget { Host = host, Port = port, User = user, KeyFile = key };
+    var r = DeviceAdder.TuneAsync(t, _ => true, l => { lock (log) log.Add(l); }).GetAwaiter().GetResult();
+    Say("--- журнал «ускорить сервер» ---"); foreach (var l in log) Say("  " + l); Say("--- конец журнала ---");
+    Check("ускорение сервера: успех", r.Ok, r.Error);
+    Check("в журнале есть итог про скорость сервера", log.Any(l => l.Contains("Скорость самого сервера")));
+    var r2 = DeviceAdder.TuneAsync(t, _ => true, _ => { }).GetAwaiter().GetResult();
+    Check("повторный запуск: успех", r2.Ok, r2.Error);
+}
+
 Say(bad == 0 ? "ВСЕ ПРОВЕРКИ ПРОШЛИ" : $"ПРОВАЛЕНО: {bad}");
 File.WriteAllText(Path.Combine(outDir, "report.txt"), report.ToString());
 return bad == 0 ? 0 : 1;

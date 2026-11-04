@@ -52,6 +52,7 @@ cat <<CLIENT
 [Interface]
 PrivateKey = ${KEY}
 Address = ${SUBNET}.${N}/32
+MTU = 1380
 DNS = 1.1.1.1, 9.9.9.9
 
 [Peer]

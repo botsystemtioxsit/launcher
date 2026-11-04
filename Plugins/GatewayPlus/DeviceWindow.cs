@@ -15,7 +15,7 @@ sealed class DeviceWindow : Window
     readonly TextBox nameBox = new() { Text = "phone", Width = 220, HorizontalAlignment = HorizontalAlignment.Left, MaxLength = 20 };
     readonly TextBox logBox = new() { IsReadOnly = true, FontFamily = (System.Windows.Media.FontFamily)Application.Current.FindResource("Mono"), FontSize = 12, Height = 150, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, TextWrapping = TextWrapping.NoWrap, Padding = new Thickness(8) };
     readonly TextBlock msg = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
-    Button go = null!;
+    Button go = null!, tuneBtn = null!;
     CancellationTokenSource? cts;
     bool running;
     string? lastConf;
@@ -23,11 +23,11 @@ sealed class DeviceWindow : Window
     public DeviceWindow(string profile, string conf)
     {
         this.profile = profile; profileConf = conf;
-        Ui.Setup(this, "Для телефона", 680, 800);
+        Ui.Setup(this, "Телефон и скорость", 680, 860);
         var page = new StackPanel { Margin = new Thickness(24, 18, 24, 18) };
         Content = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = page };
 
-        page.Children.Add(Ui.Title("ДЛЯ ТЕЛЕФОНА"));
+        page.Children.Add(Ui.Title("ТЕЛЕФОН И СКОРОСТЬ"));
         page.Children.Add(Ui.Note("Плагин зайдёт на ваш сервер и создаст отдельный ключ для телефона. Тогда телефон и компьютер работают одновременно, как «один аккаунт — несколько устройств» у обычных VPN. Потом вы наведёте камеру телефона на QR-код в приложении WireGuard (Google Play / App Store). Пароль от сервера нигде не сохраняется.", 12.5));
 
         hostBox.Text = Store.EndpointOf(profileConf);
@@ -46,6 +46,11 @@ sealed class DeviceWindow : Window
         page.Children.Add(Ui.Label("Что происходит"));
         page.Children.Add(Ui.Box(logBox));
         page.Children.Add(msg);
+
+        page.Children.Add(Ui.Label("VPN медленный?"));
+        page.Children.Add(Ui.Note("Кнопка зайдёт на сервер по тем же данным (адрес, пользователь, пароль выше), включит подгонку размера пакетов и ускоритель BBR и покажет, насколько быстр сам сервер. Если медленный сам сервер, VPN быстрее него не станет.", 12));
+        tuneBtn = Ui.Btn("Проверить и ускорить сервер", null, Tune, first: true);
+        page.Children.Add(tuneBtn);
 
         page.Children.Add(Ui.Label("Запасной путь"));
         page.Children.Add(Ui.Note("Не хотите вводить пароль от сервера? Можно показать QR-код того же профиля, что у компьютера. Тогда телефон и компьютер включайте по очереди: с одним ключом они выбивают друг друга.", 12));
@@ -66,6 +71,27 @@ sealed class DeviceWindow : Window
         if (q.Changed)
             return Ask($"ВНИМАНИЕ! Отпечаток сервера {q.Host} изменился с прошлого раза.\n\nЭто бывает, если сервер переустановили. Но так же выглядит и подмена сервера по дороге.\n\nНовый отпечаток:\n{q.Fingerprint}\n\nПродолжить, только если вы сами переустанавливали сервер.", "Отпечаток сервера изменился", MessageBoxImage.Warning);
         return Ask($"Первое подключение к серверу {q.Host}.\n\nОтпечаток ({q.Algorithm}):\n{q.Fingerprint}\n\nПродолжить?", "Подтвердите сервер", MessageBoxImage.Question);
+    }
+
+    async void Tune()
+    {
+        if (running) return;
+        msg.Foreground = Ui.Res("Accent2"); msg.Text = "";
+        var t = new SshTarget { Host = hostBox.Text.Trim(), Port = int.TryParse(portBox.Text.Trim(), out var p) ? p : 22, User = userBox.Text.Trim(), Password = passBox.Password };
+        var bad = Provisioner.ValidateTarget(t);
+        if (bad != null) { msg.Text = bad; return; }
+        running = true; go.IsEnabled = false; tuneBtn.IsEnabled = false; logBox.Clear();
+        cts = new CancellationTokenSource();
+        try
+        {
+            var res = await DeviceAdder.TuneAsync(t, ConfirmKey, Log, cts.Token);
+            passBox.Clear(); t.Password = null;
+            if (!res.Ok) { msg.Text = res.Error; return; }
+            msg.Foreground = Ui.Res("Green");
+            msg.Text = "Готово. Итог проверки — в журнале выше («ВЫВОД»). Если вы на телефоне, выключите и снова включите туннель в WireGuard.";
+        }
+        catch (Exception ex) { msg.Text = "Не вышло: " + ex.Message; }
+        finally { running = false; go.IsEnabled = true; tuneBtn.IsEnabled = true; }
     }
 
     async void Go()

@@ -235,7 +235,7 @@ sealed class MainWindow : Window
         }
         buttons.Children.Add(Btn("＋ Добавить конфиг…", null, AddProfile));
         if (profiles.Count > 0 && active.Length > 0 && !connected) buttons.Children.Add(Btn("Удалить выбранный профиль", null, () => { Store.Delete(active); Store.Active = Store.List().FirstOrDefault() ?? ""; BuildPage(); }));
-        if (profiles.Count > 0 && active.Length > 0) buttons.Children.Add(Btn("Для телефона…", null, () => ShowPhoneQr(active)));
+        if (profiles.Count > 0 && active.Length > 0) buttons.Children.Add(Btn("Телефон и скорость…", null, () => ShowPhoneQr(active)));
         gw.Add(buttons);
         gw.Add(Note("Включение и выключение шлюза требуют разрешения администратора Windows — оно спросит каждый раз. Если связь со шлюзом оборвётся, интернет не «утечёт» мимо него: пока шлюз включён, WireGuard закрывает прямой выход."));
         page.Children.Add(Card("Шлюз", gw));
