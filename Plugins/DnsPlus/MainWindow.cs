@@ -48,6 +48,25 @@ public class MainWindow : Window
         offBtn.Margin = new Thickness(0, 10, 0, 0); offBtn.HorizontalAlignment = HorizontalAlignment.Left;
         root.Children.Add(offBtn);
 
+        var card = new Border
+        {
+            Margin = new Thickness(0, 18, 0, 0), Padding = new Thickness(12), CornerRadius = new CornerRadius(3),
+            Background = B("#0D0B1A"), BorderBrush = B("#2D2060"), BorderThickness = new Thickness(1)
+        };
+        var cardPanel = new StackPanel();
+        cardPanel.Children.Add(Label("Откуда берётся DNS", 14, "#00F0FF", true, 0));
+        cardPanel.Children.Add(Label("Мы не умеем и не делаем то, что умеет сервис NextDNS (фильтры, блокировка рекламы и угроз, родительский контроль, журнал запросов). Поэтому плагин только подключает ваш компьютер к нему. NextDNS бесплатный (есть бесплатный тариф), регистрация быстрая. Наш совет: заведите профиль на nextdns.io, настройте фильтры там и берите DNS оттуда — а DNS Plus просто включит его на этом компьютере. Мы с NextDNS не связаны.", 12, "#E6F4FF", false, 6));
+        var link = new Button { Content = "Открыть nextdns.io", Margin = new Thickness(0, 10, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
+        Style(link, "#15112B", "#00F0FF");
+        link.Click += (_, _) =>
+        {
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://nextdns.io") { UseShellExecute = true }); }
+            catch { msgText.Text = "Не удалось открыть браузер. Адрес: https://nextdns.io"; }
+        };
+        cardPanel.Children.Add(link);
+        card.Child = cardPanel;
+        root.Children.Add(card);
+
         root.Children.Add(Label("Как это работает: плагин включает встроенный в Windows 11 «DNS через HTTPS» с вашим ID. Своего DNS-клиента нет, фоном ничего не работает — настройка живёт в самой Windows. «Выключить» возвращает прежние DNS. Один запрос Windows «Разрешить?» на действие. Нужна Windows 11.", 12, "#8B86B8", false, 20));
         Content = new ScrollViewer { Content = root, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
 
