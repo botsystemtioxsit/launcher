@@ -127,7 +127,7 @@ sealed class AccountWindow : Window
                 if (name.Length == 0) name = "Gateway";
                 var info = new Account.Info { Key = raw!, Name = name, TermsV = Terms.Version };
                 Account.Save(info);
-                await Cloud.HeartbeatAsync(id, dev, Ui.Version, servers, Terms.Version);
+                await Cloud.HeartbeatAsync(id, dev, Ui.Version, servers, Terms.Version, name);
                 Result = info;
                 DialogResult = true;
             }
