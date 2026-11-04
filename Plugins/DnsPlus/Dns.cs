@@ -82,7 +82,9 @@ function IsStaticDns($ifIndex, $fam) {
 $id = '__ID__'
 $ad = Get-NetAdapter | Where-Object { $_.Status -eq 'Up' -and $_.HardwareInterface -eq $true }
 if (-not $ad) { Done $false 'Не найдено активное сетевое подключение.' }
+$createdState = $false
 if (-not (Test-Path $state)) {
+  $createdState = $true
   $saved = @()
   foreach ($a in $ad) {
     foreach ($fam in 'IPv4','IPv6') {
@@ -98,9 +100,17 @@ foreach ($ip in $ips) {
   Remove-DnsClientDohServerAddress -ServerAddress $ip -ErrorAction SilentlyContinue
   Add-DnsClientDohServerAddress -ServerAddress $ip -DohTemplate ('https://dns.nextdns.io/' + $id) -AllowFallbackToUdp $false -AutoUpgrade $true
 }
+# Адаптер «Up» бывает и без настроек DNS (виртуальный, без IP-адреса): для него Set-DnsClientServerAddress падает. Такой пропускаем,
+# а ошибкой считаем только случай, когда не вышло ни на одном подключении.
+$done = 0
 foreach ($a in $ad) {
-  Set-DnsClientServerAddress -InterfaceIndex $a.ifIndex -ServerAddresses @('45.90.28.0','45.90.30.0')
+  try { Set-DnsClientServerAddress -InterfaceIndex $a.ifIndex -ServerAddresses @('45.90.28.0','45.90.30.0'); $done++ } catch { continue }
   try { Set-DnsClientServerAddress -InterfaceIndex $a.ifIndex -ServerAddresses @('2a07:a8c0::','2a07:a8c1::') } catch { }
+}
+if ($done -eq 0) {
+  foreach ($ip in $ips) { Remove-DnsClientDohServerAddress -ServerAddress $ip -ErrorAction SilentlyContinue }
+  if ($createdState) { Remove-Item -Force -ErrorAction SilentlyContinue $state }
+  Done $false 'Не удалось задать DNS ни на одном сетевом подключении (нет подключения с настройками DNS).'
 }
 Clear-DnsClientCache
 Done $true 'Готово'

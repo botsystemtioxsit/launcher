@@ -103,10 +103,18 @@ $doh = @(Get-DnsClientDohServerAddress -ErrorAction SilentlyContinue | Where-Obj
             Ok("записано 4 адреса DoH", during.Doh.Length == 4, string.Join(", ", during.Doh.Select(d => d.Ip)));
             Ok("у всех шаблон https://dns.nextdns.io/abc123", during.Doh.Length > 0 && during.Doh.All(d => d.Tpl == "https://dns.nextdns.io/abc123"), string.Join(", ", during.Doh.Select(d => d.Tpl)));
             Ok("откат на обычный UDP запрещён, автоповышение включено", during.Doh.Length > 0 && during.Doh.All(d => !d.Udp && d.Up));
-            foreach (var b in before.Rows.Where(r => r.F == "IPv4"))
+            // у части «активных» адаптеров настроек DNS нет вовсе (виртуальные, без IP) — их плагин пропускает и не должен падать из-за них
+            var withDns = before.Rows.Where(r => r.F == "IPv4" && r.A.Length > 0).ToArray();
+            Ok("есть подключение с настроенным DNS (иначе проверять нечего)", withDns.Length > 0);
+            foreach (var b in withDns)
             {
                 var now = during.Rows.FirstOrDefault(r => r.I == b.I && r.F == "IPv4");
                 Ok($"адаптер {b.Name}: DNS IPv4 = NextDNS", now != null && now.A.SequenceEqual(new[] { "45.90.28.0", "45.90.30.0" }), now == null ? "нет" : string.Join(",", now.A));
+            }
+            foreach (var b in before.Rows.Where(r => r.F == "IPv4" && r.A.Length == 0))
+            {
+                var now = during.Rows.FirstOrDefault(r => r.I == b.I && r.F == "IPv4");
+                Ok($"адаптер {b.Name} без настроек DNS пропущен и не тронут", now != null && now.A.Length == 0);
             }
 
             // повторное включение с другим ID: прежние DNS не должны затереться «NextDNS-ом как прежним»
