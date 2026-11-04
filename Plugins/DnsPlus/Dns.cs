@@ -66,6 +66,16 @@ trap { Done $false ('Ошибка: ' + $_.Exception.Message) }
 if (-not (Get-Command Add-DnsClientDohServerAddress -ErrorAction SilentlyContinue)) { Done $false 'Нужна Windows 11 (в Windows 10 нет встроенного DNS через HTTPS).' }
 $state = '__STATE__'
 $ips = @('45.90.28.0','45.90.30.0','2a07:a8c0::','2a07:a8c1::')
+# DNS прописан вручную (NameServer в реестре не пуст) или выдан автоматически (роутером/DHCP). Get-DnsClientServerAddress показывает
+# и то и другое одинаково, поэтому без этой проверки «вернуть как было» превращало бы автоматический DNS в жёстко прописанный.
+function IsStaticDns($ifIndex, $fam) {
+  try {
+    $g = (Get-NetAdapter -InterfaceIndex $ifIndex -ErrorAction Stop).InterfaceGuid
+    $svc = if ($fam -eq 'IPv6') { 'Tcpip6' } else { 'Tcpip' }
+    $v = (Get-ItemProperty -Path ('HKLM:\SYSTEM\CurrentControlSet\Services\' + $svc + '\Parameters\Interfaces\' + $g) -Name NameServer -ErrorAction Stop).NameServer
+    return -not [string]::IsNullOrEmpty($v)
+  } catch { return $true }   # не смогли определить — безопаснее считать, что прописан вручную, и вернуть те же адреса
+}
 ";
 
     const string EnableBody = @"
@@ -77,7 +87,7 @@ if (-not (Test-Path $state)) {
   foreach ($a in $ad) {
     foreach ($fam in 'IPv4','IPv6') {
       $c = Get-DnsClientServerAddress -InterfaceIndex $a.ifIndex -AddressFamily $fam -ErrorAction SilentlyContinue
-      $saved += @{ i = $a.ifIndex; f = $fam; a = @($c.ServerAddresses) }
+      $saved += @{ i = $a.ifIndex; f = $fam; a = @($c.ServerAddresses); s = [bool](IsStaticDns $a.ifIndex $fam) }
     }
   }
   New-Item -ItemType Directory -Force -Path (Split-Path $state) | Out-Null
@@ -98,13 +108,20 @@ Done $true 'Готово'
 
     const string DisableBody = @"
 if (Test-Path $state) {
-  $saved = Get-Content -Raw $state | ConvertFrom-Json
-  foreach ($s in @($saved)) {
-    try {
-      $addr = @($s.a | Where-Object { $_ })
-      if ($addr.Count -eq 0) { Set-DnsClientServerAddress -InterfaceIndex $s.i -ResetServerAddresses }
-      else { Set-DnsClientServerAddress -InterfaceIndex $s.i -ServerAddresses $addr }
-    } catch { }
+  $saved = @(Get-Content -Raw $state | ConvertFrom-Json)
+  foreach ($idx in @($saved | ForEach-Object { $_.i } | Select-Object -Unique)) {
+    $mine = @($saved | Where-Object { $_.i -eq $idx })
+    # «s» нет в файле, записанном старой версией плагина: тогда ведём себя как раньше (возвращаем те же адреса)
+    $isAuto = { param($e) $e.PSObject.Properties['s'] -and -not $e.s }
+    # сначала сброс на автоматический (он может задеть оба вида адресов), потом вручную прописанные
+    if (@($mine | Where-Object { & $isAuto $_ }).Count -gt 0 -or @($mine | Where-Object { @($_.a | Where-Object { $_ }).Count -eq 0 }).Count -gt 0) {
+      try { Set-DnsClientServerAddress -InterfaceIndex $idx -ResetServerAddresses } catch { }
+    }
+    foreach ($e in $mine) {
+      $addr = @($e.a | Where-Object { $_ })
+      if ($addr.Count -eq 0 -or (& $isAuto $e)) { continue }
+      try { Set-DnsClientServerAddress -InterfaceIndex $idx -ServerAddresses $addr } catch { }
+    }
   }
 }
 # На случай, если файла не было: со всех активных адаптеров снимаем наши адреса
