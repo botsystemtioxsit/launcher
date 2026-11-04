@@ -11,7 +11,7 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <Product>Wallpaper Plus</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
@@ -33,6 +33,12 @@
     <EmbeddedResource Include="Wallpapers\**\*.*" LogicalName="wp/%(RecursiveDir)%(Filename)%(Extension)" />
     <!-- служебные файлы для страниц обоев: gs.js (данные компьютера) и compose.html (фон + слой поверх) -->
     <EmbeddedResource Include="Resources\*.*" LogicalName="res/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <!-- общий киберпанк-стиль (Shared/CyberTheme.xaml), один на все приложения -->
+    <Page Include="..\..\Shared\CyberTheme.xaml" Link="CyberTheme.xaml"/>
   </ItemGroup>
 
 </Project>

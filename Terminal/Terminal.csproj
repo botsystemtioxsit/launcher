@@ -10,7 +10,7 @@
     <AssemblyName>TIOXSITTerminal</AssemblyName>
     <RootNamespace>TioxsitTerminal</RootNamespace>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>0.4.1</Version>
+    <Version>0.4.2</Version>
     <Product>Ghost Shell Terminal</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
@@ -28,6 +28,12 @@
     <Compile Include="..\Launcher\Services\Rtdb.cs" Link="Shared\Rtdb.cs" />
     <Compile Include="..\Launcher\Services\AccountStore.cs" Link="Shared\AccountStore.cs" />
     <Compile Include="..\Launcher\Services\Catalog.cs" Link="Shared\Catalog.cs" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <!-- общий киберпанк-стиль (Shared/CyberTheme.xaml), один на все приложения -->
+    <Page Include="..\Shared\CyberTheme.xaml" Link="CyberTheme.xaml"/>
   </ItemGroup>
 
 </Project>

@@ -11,7 +11,7 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Product>DNS Plus</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
@@ -20,5 +20,11 @@
     <AssemblyTitle>DNS Plus</AssemblyTitle>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
+
+
+  <ItemGroup>
+    <!-- общий киберпанк-стиль (Shared/CyberTheme.xaml), один на все приложения -->
+    <Page Include="..\..\Shared\CyberTheme.xaml" Link="CyberTheme.xaml"/>
+  </ItemGroup>
 
 </Project>
