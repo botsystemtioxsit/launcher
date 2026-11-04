@@ -50,6 +50,20 @@ public partial class App : Application
             if (SelfInstall.OfferInstall()) { Shutdown(); return; }
             SelfInstall.RefreshRegistry();
         }
+
+        // --boot: запуск вместе с Windows. Показываем плашку «Окружение» вместо главного окна и выходим.
+        if (e.Args.Contains(Boot.Arg))
+        {
+            var cfg = Boot.Load();
+            var list = Boot.Resolve(cfg);
+            if (!cfg.Autostart || list.Count == 0) { Shutdown(); return; }
+            StartupUri = null!;
+            base.OnStartup(e);
+            var w = new BootWindow(list);
+            w.Closed += (_, _) => Shutdown();
+            w.Show();
+            return;
+        }
         base.OnStartup(e);
     }
 }

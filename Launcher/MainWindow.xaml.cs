@@ -397,6 +397,8 @@ public partial class MainWindow : Window
         AppsView.Visibility = name == "apps" ? Visibility.Visible : Visibility.Collapsed;
         PluginsView.Visibility = name == "plugins" ? Visibility.Visible : Visibility.Collapsed;
         FeedbackView.Visibility = name == "feedback" ? Visibility.Visible : Visibility.Collapsed;
+        EnvView.Visibility = name == "env" ? Visibility.Visible : Visibility.Collapsed;
+        NavEnv.Foreground = name == "env" ? Res("Text") : Res("Muted");
         NavFeedback.Foreground = name == "feedback" ? Res("Text") : Res("Muted");
         // «Аккаунт»: без входа показываем форму входа, со входом — сведения об аккаунте
         var signedIn = store.Active != null;
@@ -408,6 +410,7 @@ public partial class MainWindow : Window
         if (name == "apps") _ = LoadApps(false);
         if (name == "plugins") { _ = LoadPlugins(false); _ = LoadBrowserPlugins(false); }
         if (name == "feedback") OpenFeedback();
+        if (name == "env") OpenEnv();
     }
 
     // ---------- плагины ----------
@@ -729,6 +732,7 @@ public partial class MainWindow : Window
     void NavApps_Click(object sender, RoutedEventArgs e) => ShowView("apps");
     void NavPlugins_Click(object sender, RoutedEventArgs e) => ShowView("plugins");
     void NavAccount_Click(object sender, RoutedEventArgs e) => ShowView("account");
+    void NavEnv_Click(object sender, RoutedEventArgs e) => ShowView("env");
     void NavFeedback_Click(object sender, RoutedEventArgs e) => ShowView("feedback");
 
     void AddAccount_Click(object sender, RoutedEventArgs e) { store.ActiveId = null; store.Save(); Render(); }
@@ -1085,6 +1089,25 @@ public partial class MainWindow : Window
             SetPluginsTab("browser");
             RenderBrowserPlugins();
         });
+        await Capture(Path.Combine(dir, "launcher-5-env.png"), () =>
+        {
+            ShowView("env");
+        });
+        {   // экран загрузки «Окружение» (демо: никого не запускает)
+            var w = new BootWindow(Catalog.Plugins.Where(p => Boot.BackgroundIds.Contains(p.Id)).Select(p => (p, new NativeInfo("1.0.0", "demo.exe", null))).ToList(), demo: true)
+            { WindowState = WindowState.Normal, Width = 1100, Height = 700, Left = 0, Top = 0, Topmost = false };
+            w.Show();
+            await Task.Delay(4500);
+            var vis = (FrameworkElement)w.Content;
+            var bmp = new RenderTargetBitmap((int)vis.ActualWidth, (int)vis.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+            var dv = new DrawingVisual();
+            using (var dc = dv.RenderOpen()) dc.DrawRectangle(w.Background, null, new Rect(0, 0, vis.ActualWidth, vis.ActualHeight));
+            bmp.Render(dv);
+            bmp.Render(vis);
+            var enc = new PngBitmapEncoder(); enc.Frames.Add(BitmapFrame.Create(bmp));
+            await using (var fs = File.Create(Path.Combine(dir, "launcher-6-boot.png"))) enc.Save(fs);
+            w.Close();
+        }
         await Capture(Path.Combine(dir, "launcher-4-feedback.png"), () =>
         {
             ShowView("feedback");
