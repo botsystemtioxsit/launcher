@@ -48,7 +48,8 @@ $doh = @(Get-DnsClientDohServerAddress -ErrorAction SilentlyContinue | Where-Obj
         var txt = Ps(Inspect).Trim();
         using var d = JsonDocument.Parse(txt);
         static IEnumerable<JsonElement> Items(JsonElement e) => e.ValueKind == JsonValueKind.Array ? e.EnumerateArray() : e.ValueKind == JsonValueKind.Object ? new[] { e } : Array.Empty<JsonElement>();
-        static string[] Strs(JsonElement e) => e.ValueKind == JsonValueKind.String ? new[] { e.GetString() ?? "" } : Items(e).Select(x => x.GetString() ?? "").ToArray();
+        // PowerShell кладёт @($null) в JSON как [null]: пустые значения за адреса не считаем
+        static string[] Strs(JsonElement e) => (e.ValueKind == JsonValueKind.String ? new[] { e.GetString() ?? "" } : Items(e).Select(x => x.ValueKind == JsonValueKind.String ? x.GetString() ?? "" : "").ToArray()).Where(x => x.Length > 0).ToArray();
         var rows = Items(d.RootElement.GetProperty("rows")).Select(r => new Row(
             r.GetProperty("i").GetInt32(), r.GetProperty("name").GetString() ?? "", r.GetProperty("f").GetString() ?? "",
             Strs(r.GetProperty("a")), r.GetProperty("stat").GetBoolean())).ToArray();
