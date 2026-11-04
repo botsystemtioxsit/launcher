@@ -1,0 +1,30 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "gatewayAccounts": {
+      "$id": {
+        ".read": true,
+        ".write": "$id.matches(/^[0-9a-f]{24}$/) && newData.exists()",
+        ".validate": "newData.hasChildren(['name', 'createdAt'])",
+        "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30" },
+        "createdAt": { ".validate": "newData.isNumber() && (!data.exists() || newData.val() === data.val())" },
+        "lastSeen": { ".validate": "newData.isNumber()" },
+        "termsV": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+        "ver": { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "dev": { ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{32}$/)" },
+        "servers": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 50" },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "gatewayBlocks": {
+      "$id": { ".read": true }
+    },
+
+    "gatewayBlockedDevices": {
+      "$dev": { ".read": true }
+    }
+  }
+}

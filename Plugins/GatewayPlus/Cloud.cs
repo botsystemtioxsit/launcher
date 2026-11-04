@@ -8,10 +8,10 @@ namespace GatewayPlusApp;
 
 // Общая база проекта (Firebase Realtime Database, REST, без SDK и без Firebase Auth). Узлы Gateway Plus: gatewayAccounts/<id> (аккаунт),
 // gatewayBlocks/<id> и gatewayBlockedDevices/<dev> (блокировки — их пишет только Worker, плагин читает по точному ключу). Правила базы — в репозитории index.html.
-// Отдельная база для Gateway Plus = заменить DefaultDbUrl и выложить правила в тот проект.
+// С 2.1.0 это ОТДЕЛЬНАЯ база Firebase (проект vpn0dns) со строгими правилами: gateway-db/database.rules.json в этом репозитории.
 static class Cloud
 {
-    public const string DefaultDbUrl = "https://zolotaya-kletka-default-rtdb.firebaseio.com";
+    public const string DefaultDbUrl = "https://vpn0dns-default-rtdb.europe-west1.firebasedatabase.app";
     public static string? TestUrl;   // только для самопроверки (подставная база на этом компьютере)
     static string Base => (TestUrl ?? DefaultDbUrl).TrimEnd('/');
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(10) };
@@ -105,7 +105,7 @@ static class Cloud
     }
 
     // «Пульс»: когда заходили, версия, сколько серверов, какие правила приняты, на каком компьютере.
-    public static async Task HeartbeatAsync(string id, string dev, string ver, int servers, int termsV)
+    public static async Task HeartbeatAsync(string id, string dev, string ver, int servers, int termsV, string? name = null)
     {
         if (!IdRe.IsMatch(id) || !DevRe.IsMatch(dev)) return;
         try
@@ -115,6 +115,15 @@ static class Cloud
                 ["lastSeen"] = Now, ["ver"] = ver, ["dev"] = dev, ["servers"] = Math.Clamp(servers, 0, 50), ["termsV"] = Math.Clamp(termsV, 0, 100),
             });
         }
-        catch { /* пульс не важен: нет связи — в следующий раз */ }
+        catch
+        {
+            // Аккаунт был заведён в прежней (общей) базе, а в новой записи ещё нет: правила не дают дописать поля в несуществующую
+            // запись — заводим её заново под тем же номером и именем (ключ у человека прежний, ничего вводить не нужно).
+            if (name != null && name.Length > 0)
+            {
+                try { if (await GetAsync("gatewayAccounts/" + id) == null) await RegisterAsync(id, name, dev, ver, servers); }
+                catch { /* нет связи — в следующий раз */ }
+            }
+        }
     }
 }

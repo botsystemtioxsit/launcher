@@ -78,7 +78,7 @@ sealed class MainWindow : Window
         lastAccessCheck = DateTime.UtcNow;
         var dev = Account.DeviceHash();
         access = await Cloud.CheckAccessAsync(account?.Id, dev);
-        if (heartbeat && account != null && !access.Blocked) _ = Cloud.HeartbeatAsync(account.Id, dev, Ui.Version, Store.List().Count, account.TermsV);
+        if (heartbeat && account != null && !access.Blocked) _ = Cloud.HeartbeatAsync(account.Id, dev, Ui.Version, Store.List().Count, account.TermsV, account.Name);
         BuildPage();
     }
 
@@ -92,7 +92,7 @@ sealed class MainWindow : Window
             if (w.ShowDialog() != true) { status.Text = "Без согласия с обновлёнными правилами шлюз и мастер недоступны."; return false; }
             account.TermsV = Terms.Version;
             Account.Save(account);
-            _ = Cloud.HeartbeatAsync(account.Id, Account.DeviceHash(), Ui.Version, Store.List().Count, account.TermsV);
+            _ = Cloud.HeartbeatAsync(account.Id, Account.DeviceHash(), Ui.Version, Store.List().Count, account.TermsV, account.Name);
         }
         await CheckAccessAsync(false);
         if (Blocked) { status.Text = "Доступ к Gateway Plus закрыт владельцем проекта."; return false; }
@@ -295,7 +295,7 @@ sealed class MainWindow : Window
         var w = new WizardWindow { Owner = this };
         w.ShowDialog();
         if (w.SavedName != null) status.Text = "Профиль «" + w.SavedName + "» сохранён. Нажмите «Подключить».";
-        if (account != null) _ = Cloud.HeartbeatAsync(account.Id, Account.DeviceHash(), Ui.Version, Store.List().Count, account.TermsV);
+        if (account != null) _ = Cloud.HeartbeatAsync(account.Id, Account.DeviceHash(), Ui.Version, Store.List().Count, account.TermsV, account.Name);
         BuildPage();
     }
 

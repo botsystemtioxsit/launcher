@@ -1,0 +1,45 @@
+name: Deploy Gateway DB rules
+
+# Выкладывает правила отдельной базы Gateway Plus (проект Firebase vpn0dns).
+# Нужен секрет репозитория VPN_FIREBASE_SERVICE_ACCOUNT — JSON-ключ сервисного аккаунта проекта vpn0dns
+# (Firebase → Настройки проекта → Сервисные аккаунты → Создать новый закрытый ключ; роль «Firebase Admin» у такого ключа уже есть).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'gateway-db/**'
+      - '.github/workflows/deploy-gateway-db-rules.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Проверить секрет
+        id: secret
+        env:
+          KEY: ${{ secrets.VPN_FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::warning::Секрет VPN_FIREBASE_SERVICE_ACCOUNT не задан — правила не выложены."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Проверить правила (JSON)
+        if: steps.secret.outputs.present == 'true'
+        run: python3 -c "import json; json.load(open('gateway-db/database.rules.json')); print('JSON ok')"
+
+      - name: Выложить правила
+        if: steps.secret.outputs.present == 'true'
+        working-directory: gateway-db
+        env:
+          KEY: ${{ secrets.VPN_FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$KEY" > "$RUNNER_TEMP/vpn-sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/vpn-sa.json"
+          npx --yes firebase-tools@13 deploy --only database --project vpn0dns --non-interactive
+          rm -f "$RUNNER_TEMP/vpn-sa.json"
