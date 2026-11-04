@@ -32,6 +32,21 @@
   </section>
 
   <section>
+    <div class="cap">Система и браузер</div>
+    <label class="chk"><input type="checkbox" id="ua"><span>Подменять систему и браузер</span></label>
+    <div class="two">
+      <select id="os" aria-label="Операционная система">
+        <option value="win11">Windows 11</option><option value="win10">Windows 10</option><option value="mac">macOS</option><option value="linux">Linux</option>
+      </select>
+      <select id="br" aria-label="Браузер">
+        <option value="chrome">Chrome</option><option value="edge">Edge</option><option value="firefox">Firefox</option><option value="safari">Safari (macOS)</option>
+      </select>
+    </div>
+    <div class="uastr" id="uaStr"></div>
+    <div class="warn" id="uaWarn" hidden>Сайты могут заметить расхождение (шрифты, экран). Если сайт плохо работает — выключите.</div>
+  </section>
+
+  <section>
     <div class="cap">Этот сайт</div>
     <div class="site" id="site">—</div>
     <button id="exclude" class="ghost" hidden></button>
@@ -49,6 +64,7 @@
   включите шлюз (Gateway Plus) на сервере в этой стране. После смены страны обновите открытые вкладки.
 </footer>
 <script src="countries.js"></script>
+<script src="ua.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>

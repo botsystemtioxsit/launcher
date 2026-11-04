@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Mask Plus",
-  "version": "1.0.0",
-  "description": "Маскирует часовой пояс, язык и местоположение браузера под выбранную страну. IP-адрес не меняет. Создано нейросетью. Ghost Shell.",
+  "version": "1.1.0",
+  "description": "Маскирует часовой пояс, язык и местоположение браузера под выбранную страну, по желанию подменяет систему и браузер. IP-адрес не меняет. Создано нейросетью. Ghost Shell.",
   "author": "TIOXSIT",
   "minimum_chrome_version": "120",
   "permissions": ["storage", "scripting", "declarativeNetRequest", "privacy"],

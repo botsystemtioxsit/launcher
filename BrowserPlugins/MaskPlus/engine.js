@@ -1,7 +1,8 @@
 // Mask Plus — движок подмены. Запускается В САМОЙ СТРАНИЦЕ (world MAIN) до её собственных скриптов.
 // Настройки приходят от файлов c/<СТРАНА>.js и f/<флаги>.js через временное свойство __gsmask (движок сразу его удаляет).
 // Что подменяется: часовой пояс (Date, Intl, Temporal), язык (navigator.language(s), язык по умолчанию у Intl и toLocale*),
-// местоположение (navigator.geolocation). IP-адрес этим не меняется — это делает только шлюз.
+// местоположение (navigator.geolocation), система и браузер (navigator.userAgent/platform/vendor/userAgentData; те же значения расширение ставит в
+// заголовки запросов). IP-адрес этим не меняется — это делает только шлюз.
 (function () {
   'use strict';
   var holder = Object.getOwnPropertyDescriptor(globalThis, '__gsmask');
@@ -9,6 +10,16 @@
   delete globalThis.__gsmask;
   var CFG = holder.value, F = CFG.f || {};
   var TZ = CFG.tz, LOC = CFG.locale;
+
+  // «Паспорт» системы и браузера (если включена подмена): строится из настоящего User-Agent и настоящих «брендов» этого браузера
+  var UAI = null;
+  if (CFG.ua && typeof CFG.uaBuild === 'function') {
+    try {
+      var realBrands = null;
+      try { var rb = navigator.userAgentData && navigator.userAgentData.brands; if (rb) realBrands = Array.prototype.map.call(rb, function (x) { return { brand: x.brand, version: x.version }; }); } catch (e) { /* небезопасная страница — brands нет */ }
+      UAI = CFG.uaBuild(CFG.ua.os, CFG.ua.br, { ua: navigator.userAgent, brands: realBrands });
+    } catch (e) { UAI = null; }
+  }
 
   var nativeSrc = new WeakMap();   // подделка → строка «function имя() { [native code] }»
   var done = new WeakSet();        // окна, где подмена уже стоит
@@ -226,6 +237,58 @@
         getter(W.Navigator.prototype, 'languages', langs);
       });
     }
+
+    // --- Система и браузер ---
+    if (UAI) safe(function () {
+      var N = W.Navigator.prototype;
+      function g(proto, name, value) {
+        var fn = Object.getOwnPropertyDescriptor({ get [name]() { return value; } }, name).get;
+        nativeSrc.set(fn, 'function get ' + name + '() { [native code] }');
+        Object.defineProperty(proto, name, { get: fn, set: undefined, configurable: true, enumerable: true });
+      }
+      g(N, 'userAgent', UAI.ua);
+      g(N, 'appVersion', UAI.appVersion);
+      g(N, 'platform', UAI.platform);
+      g(N, 'vendor', UAI.vendor);
+      g(N, 'productSub', UAI.productSub);
+      if (UAI.oscpu) { g(N, 'oscpu', UAI.oscpu); g(N, 'buildID', UAI.buildID); }
+      var UADc = W.NavigatorUAData;
+      if (!UAI.hasUAD) {
+        // Firefox и Safari не умеют userAgentData и не имеют window.chrome — убираем следы Chromium, которые убираются
+        safe(function () { delete N.userAgentData; });
+        safe(function () { delete W.NavigatorUAData; });
+        safe(function () { delete W.chrome; });
+      } else if (UADc) {
+        var P = UADc.prototype, U = UAI.uad, realGhev = P.getHighEntropyValues;
+        // как у родного: каждый раз новый замороженный массив (сами записи не заморожены)
+        var fresh = Object.getOwnPropertyDescriptor({ get brands() { return Object.freeze(U.brands.map(function (b) { return { brand: b.brand, version: b.version }; })); } }, 'brands').get;
+        nativeSrc.set(fresh, 'function get brands() { [native code] }');
+        Object.defineProperty(P, 'brands', { get: fresh, set: undefined, configurable: true, enumerable: true });
+        g(P, 'mobile', false);
+        g(P, 'platform', U.platform);
+        def(P, 'getHighEntropyValues', disguise({
+          getHighEntropyValues(hints) {
+            if (arguments.length < 1) return W.Promise.reject(new W.TypeError("Failed to execute 'getHighEntropyValues' on 'NavigatorUAData': 1 argument required, but only 0 present."));
+            var want = Array.prototype.slice.call(hints || []);
+            return realGhev.call(this, ['fullVersionList', 'uaFullVersion']).then(function (real) {
+              var out = { brands: U.brands.map(function (b) { return { brand: b.brand, version: b.version }; }), mobile: false, platform: U.platform };
+              want.forEach(function (h) {
+                if (h === 'architecture') out.architecture = U.arch;
+                else if (h === 'bitness') out.bitness = U.bitness;
+                else if (h === 'model') out.model = '';
+                else if (h === 'platformVersion') out.platformVersion = U.platformVersion;
+                else if (h === 'uaFullVersion') out.uaFullVersion = real.uaFullVersion;
+                else if (h === 'fullVersionList') out.fullVersionList = UAI.swapFull(real.fullVersionList);
+                else if (h === 'wow64') out.wow64 = false;
+                else if (h === 'formFactors') out.formFactors = U.formFactors.slice();
+              });
+              return out;
+            });
+          }
+        }.getHighEntropyValues, 'getHighEntropyValues', 1));
+        def(P, 'toJSON', disguise({ toJSON() { return { brands: U.brands.map(function (b) { return { brand: b.brand, version: b.version }; }), mobile: false, platform: U.platform }; } }.toJSON, 'toJSON', 0));
+      }
+    });
 
     // --- Intl: язык по умолчанию (если подменяем язык) и часовой пояс по умолчанию у DateTimeFormat (если подменяем время) ---
     if (F.lang || F.tz) safe(function () {

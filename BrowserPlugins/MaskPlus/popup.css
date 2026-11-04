@@ -45,3 +45,6 @@ button.ghost:focus-visible { outline: 2px solid var(--accent2); outline-offset: 
 footer { color: var(--muted); font-size: 11px; line-height: 1.45; }
 footer b { color: var(--warn); font-weight: 600; }
 body.off main > section:not(:first-child), body.off .shows { opacity: .45; }
+
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+.uastr { margin-top: 8px; color: var(--muted); font: 10.5px/1.4 Consolas, monospace; word-break: break-all; }
