@@ -71,12 +71,12 @@ static class Provisioner
         return conf.Length == 0 ? null : conf + "\n";
     }
 
-    static Dictionary<string, string> LoadKnown()
+    internal static Dictionary<string, string> LoadKnown()
     {
         try { return JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(KnownHostsFile)) ?? new(); } catch { return new(); }
     }
 
-    static void RememberHost(string key, string fp)
+    internal static void RememberHost(string key, string fp)
     {
         try
         {

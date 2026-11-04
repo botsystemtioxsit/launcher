@@ -115,4 +115,12 @@ static class Store
         using var r = new StreamReader(s, Encoding.UTF8);
         return r.ReadToEnd().Replace("\r\n", "\n");
     }
+
+    public static string AddDeviceScript()
+    {
+        using var s = typeof(Store).Assembly.GetManifestResourceStream("add-device.sh");
+        if (s == null) return "";
+        using var r = new StreamReader(s, Encoding.UTF8);
+        return r.ReadToEnd().Replace("\r\n", "\n");
+    }
 }

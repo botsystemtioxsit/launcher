@@ -11,7 +11,7 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>2.2.0</Version>
+    <Version>2.3.0</Version>
     <Product>Gateway Plus</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
@@ -26,6 +26,7 @@
     <PackageReference Include="SSH.NET" Version="2024.2.0" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
     <EmbeddedResource Include="Resources\server-setup.sh" LogicalName="server-setup.sh" />
+    <EmbeddedResource Include="Resources\add-device.sh" LogicalName="add-device.sh" />
   </ItemGroup>
 
 </Project>
