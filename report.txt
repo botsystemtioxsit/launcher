@@ -1,0 +1,73 @@
+=== адаптеры и DNS до проверки ===
+
+Name            Status HardwareInterface ifIndex InterfaceGuid
+----            ------ ----------------- ------- -------------
+Ethernet 3      Up                  True      14 {DED5D972-5BAA-49A0-BD0B-B256EACA9C69}
+vEthernet (nat) Up                 False      11 {AEBE2C93-E3E5-41EF-87A1-203BA4C9170D}
+Ethernet 4      Up                  True       9 {20F5C449-CA6B-4D9F-AE44-7C2623DDCC7B}
+
+
+
+InterfaceAlias              AddressFamily ServerAddresses
+--------------              ------------- ---------------
+Ethernet 3                              2 {168.63.129.16}
+Loopback Pseudo-Interface 1            23 {fec0:0:0:ffff::1, fec0:0:0:ffff::2, fec0:0:0:ffff::3}
+vEthernet (nat)                        23 {fec0:0:0:ffff::1, fec0:0:0:ffff::2, fec0:0:0:ffff::3}
+
+
+есть Add-DnsClientDohServerAddress: True
+
+=== самопроверка DnsPlus.exe ===
+selftest: код 0
+DNS Plus 1.0.5.0 · Windows 10.0.26100.0 · 11 или новее: True
+ok      ID: просто 6 знаков
+ok      ID: из ссылки https://dns.nextdns.io/abc123
+ok      ID: из адреса abc123.dns.nextdns.io
+ok      ID: пробелы и заглавные
+ok      ID: 5 знаков отклоняется
+ok      ID: 7 знаков отклоняется
+ok      ID: кавычка и команда отклоняются
+ok      ID: пусто отклоняется
+администратор: True
+до включения: Ethernet 3/IPv4: 168.63.129.16 (автоматически); Ethernet 3/IPv6: — (автоматически); Ethernet 4/IPv4: — (автоматически); Ethernet 4/IPv6: — (автоматически)
+ok      есть хотя бы один активный сетевой адаптер
+ok      до включения наших записей DoH нет
+ok      до включения плагин считает себя выключенным
+ok      включение прошло   [Готово]
+во время: Ethernet 3/IPv4: 45.90.28.0,45.90.30.0 (вручную); Ethernet 3/IPv6: 2a07:a8c0::,2a07:a8c1:: (вручную); Ethernet 4/IPv4: — (автоматически); Ethernet 4/IPv6: — (автоматически)
+ok      плагин считает себя включённым (файл состояния)
+ok      записано 4 адреса DoH   [45.90.30.0, 45.90.28.0, 2a07:a8c0::, 2a07:a8c1::]
+ok      у всех шаблон https://dns.nextdns.io/abc123   [https://dns.nextdns.io/abc123, https://dns.nextdns.io/abc123, https://dns.nextdns.io/abc123, https://dns.nextdns.io/abc123]
+ok      откат на обычный UDP запрещён, автоповышение включено
+ok      есть подключение с настроенным DNS (иначе проверять нечего)
+ok      адаптер Ethernet 3: DNS IPv4 = NextDNS   [45.90.28.0,45.90.30.0]
+ok      адаптер Ethernet 4 без настроек DNS пропущен и не тронут
+ok      повторное включение с другим ID прошло   [Готово]
+ok      шаблон сменился на новый ID   [https://dns.nextdns.io/zzz999, https://dns.nextdns.io/zzz999, https://dns.nextdns.io/zzz999, https://dns.nextdns.io/zzz999]
+ok      выключение прошло   [Готово]
+после: Ethernet 3/IPv4: 168.63.129.16 (автоматически); Ethernet 3/IPv6: — (автоматически); Ethernet 4/IPv4: — (автоматически); Ethernet 4/IPv6: — (автоматически)
+ok      файл состояния убран
+ok      записи DoH убраны
+ok      адаптер Ethernet 3/IPv4: способ задания DNS прежний (автоматически)   [автоматически]
+ok      адаптер Ethernet 3/IPv4: адреса прежние   [168.63.129.16]
+ok      адаптер Ethernet 3/IPv6: способ задания DNS прежний (автоматически)   [автоматически]
+ok      адаптер Ethernet 3/IPv6: адреса прежние
+ok      адаптер Ethernet 4/IPv4: способ задания DNS прежний (автоматически)   [автоматически]
+ok      адаптер Ethernet 4/IPv4: адреса прежние
+ok      адаптер Ethernet 4/IPv6: способ задания DNS прежний (автоматически)   [автоматически]
+ok      адаптер Ethernet 4/IPv6: адреса прежние
+ok      повторное выключение при выключенном ничего не ломает   [Готово]
+ok      и ничего не меняет
+ВСЕ ПРОВЕРКИ ПРОШЛИ
+
+=== DNS после проверки ===
+
+InterfaceAlias              AddressFamily ServerAddresses
+--------------              ------------- ---------------
+Ethernet 3                              2 {168.63.129.16}
+Loopback Pseudo-Interface 1            23 {fec0:0:0:ffff::1, fec0:0:0:ffff::2, fec0:0:0:ffff::3}
+vEthernet (nat)                        23 {fec0:0:0:ffff::1, fec0:0:0:ffff::2, fec0:0:0:ffff::3}
+
+
+остались наши записи DoH: 0
+остался файл состояния: False
