@@ -143,6 +143,20 @@ jobs:
           $h = (Get-FileHash out/CursorPlus.exe -Algorithm SHA256).Hash.ToLower()
           Set-Content -Path out/CursorPlus.exe.sha256 -Value "$h  CursorPlus.exe" -NoNewline
 
+      # DNS Plus — защищённый DNS (NextDNS) для всей Windows: ID + кнопка «Включить»
+      - name: Publish DNS Plus
+        run: >
+          dotnet publish Plugins/DnsPlus/DnsPlus.csproj -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-dnsplus
+
+      - name: Checksum DNS Plus
+        shell: pwsh
+        run: |
+          Copy-Item out-dnsplus/DnsPlus.exe out/DnsPlus.exe
+          $h = (Get-FileHash out/DnsPlus.exe -Algorithm SHA256).Hash.ToLower()
+          Set-Content -Path out/DnsPlus.exe.sha256 -Value "$h  DnsPlus.exe" -NoNewline
+
       # Gateway Plus — шестой плагин: шлюз (WireGuard): сайты видят адрес и страну вашего сервера
       - name: Publish Gateway Plus
         run: >
@@ -235,6 +249,7 @@ jobs:
             out/IconPlus.exe*
             out/WallpaperPlus.exe*
             out/CursorPlus.exe*
+            out/DnsPlus.exe*
             out/GatewayPlus.exe*
             out/SkinLoader.exe*
             out/MaskPlus-extension.zip*
@@ -250,7 +265,7 @@ jobs:
           $v = (Select-String -Path Launcher/Launcher.csproj -Pattern '<Version>(.+)</Version>').Matches[0].Groups[1].Value
           gh release view "v$v" *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 out/CursorPlus.exe out/CursorPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/SkinLoader.exe out/SkinLoader.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --clobber
+            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 out/CursorPlus.exe out/CursorPlus.exe.sha256 out/DnsPlus.exe out/DnsPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/SkinLoader.exe out/SkinLoader.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --clobber
           } else {
-            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 out/CursorPlus.exe out/CursorPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/SkinLoader.exe out/SkinLoader.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --title "Лаунчер $v" --notes "BattleLauncher.exe — лаунчер (скачай и запусти). TIOXSITTerminal.exe — Терминал, админ-панель в виде приложения. TaskbarPlus.exe — плагин Taskbar Plus, ColorPlus.exe — плагин Color Plus, IconPlus.exe — плагин Icon Plus, WallpaperPlus.exe — плагин Wallpaper Plus, CursorPlus.exe — плагин Cursor Plus, GatewayPlus.exe — плагин Gateway Plus, SkinLoader.exe — плагин Skin Loader (ставятся из лаунчера, вкладка «Плагины → Для компьютера»). MaskPlus-extension.zip — расширение для браузера Mask Plus (вкладка «Плагины → Для браузера»)."
+            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 out/CursorPlus.exe out/CursorPlus.exe.sha256 out/DnsPlus.exe out/DnsPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/SkinLoader.exe out/SkinLoader.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --title "Лаунчер $v" --notes "BattleLauncher.exe — лаунчер (скачай и запусти). TIOXSITTerminal.exe — Терминал, админ-панель в виде приложения. TaskbarPlus.exe — плагин Taskbar Plus, ColorPlus.exe — плагин Color Plus, IconPlus.exe — плагин Icon Plus, WallpaperPlus.exe — плагин Wallpaper Plus, CursorPlus.exe — плагин Cursor Plus, DnsPlus.exe — плагин DNS Plus, GatewayPlus.exe — плагин Gateway Plus, SkinLoader.exe — плагин Skin Loader (ставятся из лаунчера, вкладка «Плагины → Для компьютера»). MaskPlus-extension.zip — расширение для браузера Mask Plus (вкладка «Плагины → Для браузера»)."
           }
