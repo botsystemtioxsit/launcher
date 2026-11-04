@@ -203,7 +203,7 @@
     {
       "id": "mask-plus",
       "name": "Mask Plus",
-      "desc": "Подменяет часовой пояс, язык и местоположение в браузере под выбранную страну и закрывает утечку адреса через WebRTC. IP-адрес не меняет — для него шлюз Gateway Plus.",
+      "desc": "Подменяет часовой пояс, язык и местоположение в браузере под выбранную страну, по желанию — систему и браузер (Windows, macOS, Linux; Chrome, Edge, Firefox, Safari), и закрывает утечку адреса через WebRTC. IP-адрес, провайдер и DNS не меняет — для них шлюз Gateway Plus.",
       "browsers": "Chrome · Edge · Brave · Opera · Vivaldi",
       "zip": {
         "repo": "launcher",

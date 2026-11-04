@@ -1,20 +1,27 @@
 // Mask Plus — фоновая часть (service worker). Следит за настройками и приводит браузер в соответствие:
 //   1) подключает на страницы движок подмены (страна + флаги + engine.js) — до скриптов самой страницы;
-//   2) ставит заголовок Accept-Language у всех запросов;
+//   2) ставит заголовок Accept-Language у всех запросов, а при включённой подмене системы и браузера — User-Agent и Client Hints (sec-ch-ua…);
 //   3) включает защиту WebRTC от утечки адресов;
 //   4) рисует на значке код страны.
 // Само окно (popup) только пишет настройки в chrome.storage — отсюда всё подхватывается.
 
-const DEFAULTS = { enabled: true, cc: 'DE', tz: true, lang: true, geo: true, webrtc: true, excluded: [] };
+const DEFAULTS = { enabled: true, cc: 'DE', tz: true, lang: true, geo: true, webrtc: true, ua: false, os: 'win11', br: 'chrome', excluded: [] };
+const OS_LIST = ['win11', 'win10', 'mac', 'linux'];
+const BR_LIST = ['chrome', 'edge', 'firefox', 'safari'];
 const SCRIPT_ID = 'mask-plus';
-const RULE_ID = 1;
+const RULE_ID = 1;      // Accept-Language
+const UA_RULE_ID = 2;   // User-Agent и Client Hints
 const TYPES = ['main_frame', 'sub_frame', 'stylesheet', 'script', 'image', 'font', 'object', 'xmlhttprequest', 'ping', 'csp_report', 'media', 'websocket', 'other'];
 
-importScripts('countries.js');
+importScripts('countries.js', 'ua.js');
 
 async function load() {
   const s = Object.assign({}, DEFAULTS, await chrome.storage.local.get(Object.keys(DEFAULTS)));
   if (!MASK_COUNTRIES.some(c => c.cc === s.cc)) s.cc = DEFAULTS.cc;
+  s.ua = s.ua === true;
+  if (!OS_LIST.includes(s.os)) s.os = DEFAULTS.os;
+  if (!BR_LIST.includes(s.br)) s.br = DEFAULTS.br;
+  if (s.br === 'safari') s.os = 'mac';   // Safari бывает только на macOS
   s.excluded = (Array.isArray(s.excluded) ? s.excluded : []).filter(h => typeof h === 'string' && /^[a-z0-9.-]{1,253}$/.test(h));
   return s;
 }
@@ -30,12 +37,12 @@ function pattern(host) {
 
 async function applyScripts(s, country) {
   try { await chrome.scripting.unregisterContentScripts({ ids: [SCRIPT_ID] }); } catch (e) { /* ещё не было */ }
-  if (!s.enabled || !(s.tz || s.lang || s.geo)) return;
+  if (!s.enabled || !(s.tz || s.lang || s.geo || s.ua)) return;
   const flags = (s.tz ? '1' : '0') + (s.lang ? '1' : '0') + (s.geo ? '1' : '0');
   const script = {
     id: SCRIPT_ID,
     matches: ['<all_urls>'],
-    js: [`c/${country.cc}.js`, `f/${flags}.js`, 'engine.js'],
+    js: [`c/${country.cc}.js`, `f/${flags}.js`].concat(s.ua ? [`u/${s.os}-${s.br}.js`, 'ua.js'] : [], ['engine.js']),
     runAt: 'document_start',
     world: 'MAIN',
     allFrames: true,
@@ -46,19 +53,39 @@ async function applyScripts(s, country) {
   await chrome.scripting.registerContentScripts([script]);
 }
 
+// «Паспорт» настоящего браузера — из него собираются подменённые заголовки (тот же код, что и в движке на странице)
+function realBrowser() {
+  let brands = null;
+  try { const b = navigator.userAgentData && navigator.userAgentData.brands; if (b) brands = b.map(x => ({ brand: x.brand, version: x.version })); } catch (e) { /* нет — возьмём стандартные */ }
+  return { ua: navigator.userAgent, brands };
+}
+
 async function applyHeaders(s, country) {
-  const remove = [RULE_ID];
-  if (!s.enabled || !s.lang) { await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: remove }); return; }
+  const remove = [RULE_ID, UA_RULE_ID];
+  if (!s.enabled || !(s.lang || s.ua)) { await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: remove }); return; }
   const condition = { resourceTypes: TYPES };
   if (s.excluded.length) { condition.excludedRequestDomains = s.excluded; condition.excludedInitiatorDomains = s.excluded; }
-  await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: remove,
-    addRules: [{
+  const addRules = [];
+  if (s.lang) {
+    addRules.push({
       id: RULE_ID, priority: 1,
       action: { type: 'modifyHeaders', requestHeaders: [{ header: 'Accept-Language', operation: 'set', value: acceptLanguage(country.langs) }] },
       condition
-    }]
-  });
+    });
+  }
+  if (s.ua) {
+    const U = MaskUA.build(s.os, s.br, realBrowser());
+    const headers = [{ header: 'User-Agent', operation: 'set', value: U.ua }];
+    // Chrome и Edge шлют краткие подсказки (sec-ch-ua…) — ставим те же значения, что видны странице; Firefox и Safari их не шлют — убираем
+    if (U.hasUAD) {
+      headers.push({ header: 'sec-ch-ua', operation: 'set', value: U.chUa });
+      headers.push({ header: 'sec-ch-ua-mobile', operation: 'set', value: '?0' });
+      headers.push({ header: 'sec-ch-ua-platform', operation: 'set', value: U.chPlatform });
+    }
+    for (const h of U.strip) headers.push({ header: h, operation: 'remove' });
+    addRules.push({ id: UA_RULE_ID, priority: 1, action: { type: 'modifyHeaders', requestHeaders: headers }, condition });
+  }
+  await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: remove, addRules });
 }
 
 async function applyWebrtc(s) {

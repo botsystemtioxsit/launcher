@@ -3,9 +3,10 @@
 
   BrowserPlugins/MaskPlus/c/<CC>.js   — страна (часовой пояс, язык, место), по файлу на страну
   BrowserPlugins/MaskPlus/f/<tlg>.js  — какие подмены включены (t = время, l = язык, g = место): 8 файлов
+  BrowserPlugins/MaskPlus/u/<ОС>-<браузер>.js — какая система и какой браузер подменяются (4 ОС × Chrome/Edge/Firefox + Safari на macOS = 13 файлов)
   BrowserPlugins/MaskPlus/countries.js — список стран для окна расширения
 
-Расширение подключает на страницу три файла подряд: страна → флаги → engine.js. Они выполняются в самой
+Расширение подключает на страницу файлы подряд: страна → флаги → (система и браузер → ua.js) → engine.js. Они выполняются в самой
 странице до её скриптов, поэтому настройки нельзя прочитать из хранилища — они «запечены» в файлы.
 Запуск: python3 tools/mask-plus/generate.py
 """
@@ -43,7 +44,7 @@ except subprocess.CalledProcessError as e:
 def js(o):
     return json.dumps(o, ensure_ascii=False, separators=(',', ':'))
 
-for d in ('c', 'f'):
+for d in ('c', 'f', 'u'):
     p = os.path.join(out, d)
     os.makedirs(p, exist_ok=True)
     for f in os.listdir(p):
@@ -60,9 +61,14 @@ for t, l, g in itertools.product((0, 1), repeat=3):
     with open(os.path.join(out, 'f', name + '.js'), 'w', encoding='utf-8', newline='\n') as f:
         f.write("globalThis.__gsmask.f={tz:%d,lang:%d,geo:%d};\n" % (t, l, g))
 
+UA_COMBOS = [(o, b) for o in ('win11', 'win10', 'mac', 'linux') for b in ('chrome', 'edge', 'firefox')] + [('mac', 'safari')]
+for o, b in UA_COMBOS:
+    with open(os.path.join(out, 'u', '%s-%s.js' % (o, b)), 'w', encoding='utf-8', newline='\n') as f:
+        f.write('globalThis.__gsmask.ua={os:"%s",br:"%s"};\n' % (o, b))
+
 ui = [{k: c[k] for k in ('cc', 'name', 'city', 'tz', 'locale', 'langs')} for c in countries]
 with open(os.path.join(out, 'countries.js'), 'w', encoding='utf-8', newline='\n') as f:
     f.write('// Создано tools/mask-plus/generate.py из countries.json — руками не править.\n')
     f.write('const MASK_COUNTRIES = ' + json.dumps(ui, ensure_ascii=False, indent=1) + ';\n')
 
-print('стран:', len(countries), '· файлов c/:', len(countries), '· f/: 8')
+print('стран:', len(countries), '· файлов c/:', len(countries), '· f/: 8 · u/:', len(UA_COMBOS))
