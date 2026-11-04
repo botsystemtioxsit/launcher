@@ -7,7 +7,8 @@ let okN = 0, badN = 0;
 const check = (name, cond, extra) => { (cond ? okN++ : badN++); console.log((cond ? 'ok   ' : 'ПЛОХО') + ' ' + name + (cond ? '' : '  → ' + extra)); };
 
 const server = http.createServer((req, res) => {
-  if (req.url.startsWith('/echo')) { res.setHeader('content-type', 'application/json'); res.setHeader('access-control-allow-origin', '*'); res.end(JSON.stringify({ al: req.headers['accept-language'] || null })); return; }
+  if (req.url.startsWith('/echo')) { res.setHeader('content-type', 'application/json'); res.setHeader('access-control-allow-origin', '*'); res.end(JSON.stringify({ al: req.headers['accept-language'] || null, ua: req.headers['user-agent'] || null, chua: req.headers['sec-ch-ua'] || null,
+    chplat: req.headers['sec-ch-ua-platform'] || null, chpv: req.headers['sec-ch-ua-platform-version'] || null, charch: req.headers['sec-ch-ua-arch'] || null })); return; }
   res.setHeader('content-type', 'text/html; charset=utf-8');
   res.end('<!doctype html><title>t</title><body>test</body>');
 });
@@ -100,6 +101,91 @@ const tzOf = p => p.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZ
   check('геолокацию можно не подменять', /native code/.test(g2) && (await page.evaluate(() => Math.abs(new Date().getTimezoneOffset()) === 540)), g2);
   await setState(worker, { geo: true });
 
+
+  // --- система и браузер ---
+  const echo = pg => pg.evaluate(async u => (await fetch(u)).json(), base + '/echo');
+  const realUA = await page.evaluate(() => navigator.userAgent);
+  const major = (/Chrome\/(\d+)/.exec(realUA) || [])[1];
+  check('настоящий браузер — Chromium (для проверок ниже)', !!major, realUA);
+  const brandHeader = list => list.map(b => '"' + b.brand + '";v="' + b.version + '"').join(', ');
+
+  await setState(worker, { ua: true, os: 'mac', br: 'safari' });
+  page = await ctx.newPage(); await page.goto(base + '/p');
+  const sf = await page.evaluate(() => ({ ua: navigator.userAgent, app: navigator.appVersion, plat: navigator.platform, vendor: navigator.vendor, ps: navigator.productSub,
+    uad: typeof navigator.userAgentData, chrome: typeof window.chrome, oscpu: typeof navigator.oscpu, cl: typeof NavigatorUAData }));
+  check('Safari/macOS: navigator.userAgent/platform/vendor, нет userAgentData и window.chrome',
+    /^Mozilla\/5\.0 \(Macintosh; Intel Mac OS X 10_15_7\) AppleWebKit\/605\.1\.15 \(KHTML, like Gecko\) Version\/\d+\.\d Safari\/605\.1\.15$/.test(sf.ua) && sf.plat === 'MacIntel'
+    && sf.vendor === 'Apple Computer, Inc.' && sf.ps === '20030107' && sf.uad === 'undefined' && sf.chrome === 'undefined' && sf.oscpu === 'undefined' && sf.cl === 'undefined' && sf.app === sf.ua.slice(8), JSON.stringify(sf));
+  let h = await echo(page);
+  check('Safari/macOS: заголовок User-Agent тот же, подсказки sec-ch-ua убраны', h.ua === sf.ua && h.chua === null && h.chplat === null && h.chpv === null, JSON.stringify(h));
+  await page.goto(base + '/echo');
+  check('Safari/macOS: и при переходе по ссылке', JSON.parse(await page.textContent('body')).ua === sf.ua, await page.textContent('body'));
+
+  await setState(worker, { os: 'win11', br: 'edge' });
+  page = await ctx.newPage(); await page.goto(base + '/p');
+  const ed = await page.evaluate(async () => {
+    const u = navigator.userAgentData;
+    const he = await u.getHighEntropyValues(['platformVersion', 'architecture', 'bitness', 'model', 'uaFullVersion', 'fullVersionList', 'wow64', 'formFactors']);
+    return { ua: navigator.userAgent, app: navigator.appVersion, plat: navigator.platform, vendor: navigator.vendor, brands: u.brands.map(b => ({ brand: b.brand, version: b.version })),
+      mobile: u.mobile, platform: u.platform, he, json: u.toJSON(), fresh: u.brands !== u.brands, frozen: Object.isFrozen(u.brands), itemFrozen: Object.isFrozen(u.brands[0]) };
+  });
+  check('Edge/Windows 11: navigator.userAgent и platform',
+    ed.ua === 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/' + major + '.0.0.0 Safari/537.36 Edg/' + major + '.0.0.0' && ed.plat === 'Win32' && ed.vendor === 'Google Inc.' && ed.app === ed.ua.slice(8), JSON.stringify(ed));
+  check('Edge/Windows 11: userAgentData — бренды (каждый раз новый замороженный массив, как у родного), платформа, mobile',
+    ed.brands.some(b => b.brand === 'Microsoft Edge' && b.version === major) && ed.brands.some(b => b.brand === 'Chromium' && b.version === major) && !ed.brands.some(b => /Google Chrome/.test(b.brand))
+    && ed.platform === 'Windows' && ed.mobile === false && ed.fresh && ed.frozen && !ed.itemFrozen, JSON.stringify({ b: ed.brands, p: ed.platform, m: ed.mobile, fresh: ed.fresh, frozen: ed.frozen, itemFrozen: ed.itemFrozen }));
+  check('Edge/Windows 11: getHighEntropyValues',
+    ed.he.platformVersion === '19.0.0' && ed.he.architecture === 'x86' && ed.he.bitness === '64' && ed.he.model === '' && ed.he.wow64 === false && /^\d+\.\d+\.\d+\.\d+$/.test(ed.he.uaFullVersion)
+    && ed.he.fullVersionList.some(b => b.brand === 'Microsoft Edge' && /^\d+\.\d+\.\d+\.\d+$/.test(b.version)) && !ed.he.fullVersionList.some(b => /Google Chrome/.test(b.brand))
+    && JSON.stringify(ed.he.formFactors) === '["Desktop"]' && ed.he.platform === 'Windows' && ed.he.brands.length === ed.brands.length && JSON.stringify(ed.json.brands) === JSON.stringify(ed.brands), JSON.stringify(ed.he));
+  h = await echo(page);
+  check('Edge/Windows 11: заголовки совпадают со страницей (User-Agent, sec-ch-ua, platform), лишних подсказок нет',
+    h.ua === ed.ua && h.chua === brandHeader(ed.brands) && h.chplat === '"Windows"' && h.chpv === null && h.charch === null, JSON.stringify(h) + ' | ' + brandHeader(ed.brands));
+  const fr2 = await page.evaluate(async () => {
+    const f = document.createElement('iframe'); document.body.appendChild(f);
+    const w = f.contentWindow;
+    const he = await w.navigator.userAgentData.getHighEntropyValues(['platformVersion']);
+    return { ua: w.navigator.userAgent === navigator.userAgent, plat: w.navigator.userAgentData.platform, pv: he.platformVersion, nat: [Object.getOwnPropertyDescriptor(Navigator.prototype, 'userAgent').get.toString(), NavigatorUAData.prototype.getHighEntropyValues.toString(), Object.getOwnPropertyDescriptor(NavigatorUAData.prototype, 'brands').get.toString()].join(' || ') };
+  });
+  check('Edge/Windows 11: iframe получает ту же подмену', fr2.ua && fr2.plat === 'Windows' && fr2.pv === '19.0.0', JSON.stringify(fr2));
+  check('подмена navigator выглядит родной в toString()', (fr2.nat.match(/\[native code\]/g) || []).length === 3 && !/=>|engine|UAI/.test(fr2.nat), fr2.nat);
+  const bad = await page.evaluate(async () => { try { await navigator.userAgentData.getHighEntropyValues(); return 'нет ошибки'; } catch (e) { return e.constructor.name; } });
+  check('getHighEntropyValues() без аргумента отклоняется как родной (TypeError)', bad === 'TypeError', bad);
+
+  await setState(worker, { os: 'win10', br: 'chrome' });
+  page = await ctx.newPage(); await page.goto(base + '/p');
+  const ch = await page.evaluate(async () => ({ ua: navigator.userAgent, brands: navigator.userAgentData.brands.map(b => b.brand), pv: (await navigator.userAgentData.getHighEntropyValues(['platformVersion'])).platformVersion }));
+  check('Chrome/Windows 10: версия 10.0.0, бренд Google Chrome', ch.pv === '10.0.0' && ch.brands.includes('Google Chrome') && !ch.brands.includes('Microsoft Edge') && !/Edg\//.test(ch.ua), JSON.stringify(ch));
+  h = await echo(page);
+  check('Chrome/Windows 10: sec-ch-ua содержит Google Chrome', /"Google Chrome";v="\d+"/.test(h.chua || '') && h.chplat === '"Windows"', JSON.stringify(h));
+
+  await setState(worker, { os: 'linux', br: 'firefox' });
+  page = await ctx.newPage(); await page.goto(base + '/p');
+  const ff = await page.evaluate(() => ({ ua: navigator.userAgent, app: navigator.appVersion, plat: navigator.platform, vendor: navigator.vendor, ps: navigator.productSub,
+    oscpu: navigator.oscpu, build: navigator.buildID, uad: typeof navigator.userAgentData, chrome: typeof window.chrome }));
+  const ffv = (/Firefox\/(\d+)\.0$/.exec(ff.ua) || [])[1];
+  check('Firefox/Linux: navigator.userAgent, appVersion, platform, oscpu',
+    ffv === String(+major + 3) && ff.ua === 'Mozilla/5.0 (X11; Linux x86_64; rv:' + ffv + '.0) Gecko/20100101 Firefox/' + ffv + '.0' && ff.app === '5.0 (X11)' && ff.plat === 'Linux x86_64' && ff.vendor === '' && ff.ps === '20100101'
+    && ff.oscpu === 'Linux x86_64' && ff.build === '20181001000000' && ff.uad === 'undefined' && ff.chrome === 'undefined', JSON.stringify(ff));
+  h = await echo(page);
+  check('Firefox/Linux: заголовок User-Agent, подсказки убраны', h.ua === ff.ua && h.chua === null && h.chplat === null, JSON.stringify(h));
+
+  await setState(worker, { os: 'win11', br: 'chrome', excluded: ['127.0.0.1'] });
+  page = await ctx.newPage(); await page.goto(base + '/p');
+  h = await echo(page);
+  check('исключённый сайт: настоящие User-Agent и navigator', (await page.evaluate(() => navigator.userAgent)) === realUA && h.ua === realUA, JSON.stringify(h));
+  await setState(worker, { excluded: [] });
+  await setState(worker, { ua: false });
+  page = await ctx.newPage(); await page.goto(base + '/p');
+  h = await echo(page);
+  check('подмена системы выключена — настоящие User-Agent, navigator и заголовки', (await page.evaluate(() => navigator.userAgent)) === realUA && h.ua === realUA && h.chua !== null, JSON.stringify(h));
+  const rules0 = await worker.evaluate(async () => (await chrome.declarativeNetRequest.getDynamicRules()).map(r => r.id).join());
+  check('выключено — остаётся только правило языка', rules0 === '1', rules0);
+  await setState(worker, { lang: false });
+  const rules1 = await worker.evaluate(async () => (await chrome.declarativeNetRequest.getDynamicRules()).length);
+  await setState(worker, { lang: true });
+  check('язык и подмена системы выключены — правил нет', rules1 === 0, rules1);
+
   // --- исключённый сайт ---
   await setState(worker, { excluded: ['127.0.0.1'] });
   page = await ctx.newPage(); await page.goto(base + '/p');
@@ -157,6 +243,17 @@ const tzOf = p => p.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZ
       const st2 = await worker.evaluate(() => chrome.storage.local.get('excluded'));
       check('окно: «Не маскировать этот сайт» добавляет в список', JSON.stringify(st2.excluded) === '["127.0.0.1"]', JSON.stringify(st2));
       await pop.click('#exclude'); await sleep(500);
+      await pop.check('#ua'); await sleep(600);
+      await pop.selectOption('#br', 'safari'); await sleep(700);
+      const st3 = await worker.evaluate(() => chrome.storage.local.get(['ua', 'os', 'br']));
+      check('окно: «Подменять систему и браузер» + Safari сразу ставит macOS', st3.ua === true && st3.br === 'safari' && st3.os === 'mac', JSON.stringify(st3));
+      check('окно: показана строка User-Agent выбранного браузера и список ОС заблокирован', /Version\/\d+\.\d Safari\/605\.1\.15/.test(await pop.textContent('#uaStr')) && await pop.isDisabled('#os'), await pop.textContent('#uaStr'));
+      await pop.screenshot({ path: shots + 'popup-ua.png' });
+      await pop.selectOption('#br', 'edge'); await sleep(600);
+      await pop.selectOption('#os', 'linux'); await sleep(600);
+      const st4 = await worker.evaluate(() => chrome.storage.local.get(['os', 'br']));
+      check('окно: выбор ОС и браузера сохраняется', st4.os === 'linux' && st4.br === 'edge', JSON.stringify(st4));
+      await pop.uncheck('#ua'); await sleep(500);
       await pop.selectOption('#country', 'AU'); await sleep(600);
     }
     await pop.screenshot({ path: shots + name + '.png' });

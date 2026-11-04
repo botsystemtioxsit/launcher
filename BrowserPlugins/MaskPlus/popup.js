@@ -1,5 +1,5 @@
 // Окно Mask Plus. Ничего не применяет само — пишет настройки в chrome.storage, фон (background.js) их подхватывает.
-const DEFAULTS = { enabled: true, cc: 'DE', tz: true, lang: true, geo: true, webrtc: true, excluded: [] };
+const DEFAULTS = { enabled: true, cc: 'DE', tz: true, lang: true, geo: true, webrtc: true, ua: false, os: 'win11', br: 'chrome', excluded: [] };
 const $ = id => document.getElementById(id);
 let state = Object.assign({}, DEFAULTS);
 let tab = null;      // активная вкладка
@@ -34,6 +34,35 @@ function renderShows() {
   }
 }
 
+// настоящий браузер (это окно — страница расширения, подмена на неё не ставится) → то, что увидят сайты при выбранных ОС и браузере
+function realBrowser() {
+  let brands = null;
+  try { const b = navigator.userAgentData && navigator.userAgentData.brands; if (b) brands = b.map(x => ({ brand: x.brand, version: x.version })); } catch (e) { /* нет */ }
+  return { ua: navigator.userAgent, brands };
+}
+const wantUA = () => MaskUA.build(state.os, state.br, realBrowser());
+const osOf = ua => /Windows NT/.test(ua) ? 'Windows' : /Macintosh/.test(ua) ? 'macOS' : /Android/.test(ua) ? 'Android' : /Linux|X11/.test(ua) ? 'Linux' : '?';
+function brOf(ua) {
+  let m;
+  if ((m = /Edg\/(\d+)/.exec(ua))) return 'Edge ' + m[1];
+  if ((m = /Firefox\/(\d+)/.exec(ua))) return 'Firefox ' + m[1];
+  if ((m = /Chrome\/(\d+)/.exec(ua))) return 'Chrome ' + m[1];
+  if ((m = /Version\/([\d.]+).*Safari/.exec(ua))) return 'Safari ' + m[1];
+  return '?';
+}
+
+function renderUA() {
+  const off = !state.enabled || !state.ua;
+  $('ua').checked = state.ua;
+  $('ua').disabled = !state.enabled;
+  $('os').value = state.br === 'safari' ? 'mac' : state.os;
+  $('br').value = state.br;
+  $('os').disabled = off || state.br === 'safari';
+  $('br').disabled = off;
+  $('uaWarn').hidden = off;
+  $('uaStr').textContent = state.ua ? wantUA().ua : '';
+}
+
 function renderSite() {
   const btn = $('exclude');
   if (!host) { $('site').textContent = 'здесь маскировка не применяется (служебная страница)'; btn.hidden = true; return; }
@@ -49,6 +78,7 @@ function render() {
   for (const k of ['tz', 'lang', 'geo', 'webrtc']) { $(k).checked = state[k]; $(k).disabled = !state.enabled; }
   $('country').value = state.cc;
   $('country').disabled = !state.enabled;
+  renderUA();
   renderShows();
   renderSite();
 }
@@ -72,7 +102,7 @@ async function checkTab() {
       target: { tabId: tab.id }, world: 'MAIN',
       func: () => {
         const t = new Date(Date.UTC(2024, 6, 1, 12, 0, 0));
-        return { tz: Intl.DateTimeFormat().resolvedOptions().timeZone, lang: navigator.language, langs: navigator.languages.join(', '),
+        return { ua: navigator.userAgent, tz: Intl.DateTimeFormat().resolvedOptions().timeZone, lang: navigator.language, langs: navigator.languages.join(', '),
           offset: new Date().getTimezoneOffset(), noon: t.getHours() };
       }
     });
@@ -85,6 +115,7 @@ async function checkTab() {
   const want = state.enabled && !state.excluded.includes(host);
   const tzOk = r.tz === (want && state.tz ? c.tz : realTz);
   const langOk = r.lang === (want && state.lang ? c.locale : realLang);
+  const uaOk = r.ua === (want && state.ua ? wantUA().ua : navigator.userAgent);
   const line = (label, value, ok) => {
     const d = el('div');
     d.append(label + ': ', el('span', ok ? 'ok' : 'bad', value));
@@ -93,7 +124,9 @@ async function checkTab() {
   const m = Math.round(-r.offset), sign = m >= 0 ? '+' : '−', hh = Math.floor(Math.abs(m) / 60), mm = Math.abs(m) % 60;
   line('Пояс', r.tz + ' (UTC' + sign + hh + (mm ? ':' + String(mm).padStart(2, '0') : '') + ')', tzOk);
   line('Язык', r.lang, langOk);
-  if (!tzOk || !langOk) {
+  line('Система', osOf(r.ua), uaOk);
+  line('Браузер', brOf(r.ua), uaOk);
+  if (!tzOk || !langOk || !uaOk) {
     box.append(el('div', 'dim', 'Вкладка открыта до последней смены настроек.'));
     reload.hidden = false;
   } else if (!want) {
@@ -110,6 +143,9 @@ async function init() {
   }
   state = Object.assign({}, DEFAULTS, await chrome.storage.local.get(Object.keys(DEFAULTS)));
   if (!Array.isArray(state.excluded)) state.excluded = [];
+  if (!['win11', 'win10', 'mac', 'linux'].includes(state.os)) state.os = DEFAULTS.os;
+  if (!['chrome', 'edge', 'firefox', 'safari'].includes(state.br)) state.br = DEFAULTS.br;
+  if (state.br === 'safari') state.os = 'mac';
 
   try {
     [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -128,6 +164,9 @@ async function init() {
   $('enabled').addEventListener('change', e => save({ enabled: e.target.checked }));
   $('country').addEventListener('change', e => save({ cc: e.target.value }));
   for (const k of ['tz', 'lang', 'geo', 'webrtc']) $(k).addEventListener('change', e => save({ [k]: e.target.checked }));
+  $('ua').addEventListener('change', e => save({ ua: e.target.checked }));
+  $('os').addEventListener('change', e => save({ os: e.target.value }));
+  $('br').addEventListener('change', e => save(e.target.value === 'safari' ? { br: 'safari', os: 'mac' } : { br: e.target.value }));
   $('exclude').addEventListener('click', () => {
     const list = state.excluded.includes(host) ? state.excluded.filter(h => h !== host) : state.excluded.concat(host);
     save({ excluded: list });

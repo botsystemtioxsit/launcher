@@ -70,7 +70,7 @@ static class Catalog
     static BrowserPluginDef[] DefaultBrowserPlugins() => new[]
     {
         new BrowserPluginDef("mask-plus", "Mask Plus",
-            "Подменяет часовой пояс, язык и местоположение в браузере под выбранную страну и закрывает утечку адреса через WebRTC. IP-адрес не меняет — для него шлюз Gateway Plus.",
+            "Подменяет часовой пояс, язык и местоположение в браузере под выбранную страну, по желанию — систему и браузер (Windows, macOS, Linux; Chrome, Edge, Firefox, Safari), и закрывает утечку адреса через WebRTC. IP-адрес, провайдер и DNS не меняет — для них шлюз Gateway Plus.",
             "Chrome · Edge · Brave · Opera · Vivaldi", "launcher", "latest", "MaskPlus-extension.zip"),
     };
 

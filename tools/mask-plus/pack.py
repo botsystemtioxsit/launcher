@@ -36,7 +36,7 @@ for base, dirs, names in os.walk(src):
 files.sort()
 
 # нужные файлы должны быть на месте
-need = ['manifest.json', 'background.js', 'engine.js', 'popup.html', 'popup.js', 'popup.css', 'countries.js', 'icons/128.png', 'c/DE.js', 'f/111.js']
+need = ['manifest.json', 'background.js', 'engine.js', 'popup.html', 'popup.js', 'popup.css', 'countries.js', 'icons/128.png', 'c/DE.js', 'f/111.js', 'ua.js', 'u/win11-chrome.js', 'u/mac-safari.js']
 names = {f[0] for f in files}
 missing = [n for n in need if n not in names]
 assert not missing, 'в расширении не хватает файлов: ' + ', '.join(missing) + ' (запустите tools/mask-plus/generate.py)'
