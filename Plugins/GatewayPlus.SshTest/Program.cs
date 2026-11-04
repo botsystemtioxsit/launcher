@@ -91,6 +91,33 @@ string clientPriv = "";
     Check("уже настроенный сервер: спросили про перенастройку, отказ — «Отменено»", replaceAsked == 1 && !r.Ok && r.Error.Contains("Отменено"), r.Error);
 }
 
+// 8. «ещё одно устройство» (телефон): отдельный ключ на том же сервере, первый конфиг остаётся рабочим
+{
+    var log = new List<string>();
+    var t = new SshTarget { Host = host, Port = port, User = user, KeyFile = key };
+    var r = DeviceAdder.RunAsync(t, "phone", _ => true, l => { lock (log) log.Add(l); }).GetAwaiter().GetResult();
+    Say("--- журнал «ещё одно устройство» ---"); foreach (var l in log) Say("  " + l); Say("--- конец журнала ---");
+    Check("второе устройство: успех", r.Ok, r.Error);
+    if (r.Ok)
+    {
+        Check("конфиг второго устройства проходит проверку плагина", Store.Validate(r.Conf) == null);
+        string Field(string conf, string name) => conf.Replace("\r", "").Split('\n').First(l => l.TrimStart().StartsWith(name)).Split('=', 2)[1].Trim();
+        var phonePriv = Field(r.Conf, "PrivateKey");
+        Check("у второго устройства СВОЙ закрытый ключ", phonePriv.Length > 30 && phonePriv != clientPriv);
+        var first = File.Exists(Path.Combine(outDir, "client.conf")) ? File.ReadAllText(Path.Combine(outDir, "client.conf")) : "";
+        if (first.Length > 0)
+        {
+            Check("у второго устройства СВОЙ адрес внутри VPN", Field(r.Conf, "Address") != Field(first, "Address"), Field(r.Conf, "Address") + " / " + Field(first, "Address"));
+            Check("ключ сервера у обоих устройств один и тот же", Field(r.Conf, "PublicKey") == Field(first, "PublicKey"));
+        }
+        var all = string.Join("\n", log);
+        Check("закрытый ключ второго устройства не попал в журнал", !all.Contains(phonePriv) && !all.Contains("PrivateKey"));
+        File.WriteAllText(Path.Combine(outDir, "phone.conf"), r.Conf);
+    }
+    var bad2 = DeviceAdder.RunAsync(t, "bad name;rm -rf /", _ => true, _ => { }).GetAwaiter().GetResult();
+    Check("название устройства с лишними знаками отклонено до подключения", !bad2.Ok && bad2.Error.Contains("Название устройства"), bad2.Error);
+}
+
 Say(bad == 0 ? "ВСЕ ПРОВЕРКИ ПРОШЛИ" : $"ПРОВАЛЕНО: {bad}");
 File.WriteAllText(Path.Combine(outDir, "report.txt"), report.ToString());
 return bad == 0 ? 0 : 1;
