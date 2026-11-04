@@ -83,8 +83,9 @@ class BootWindow : Window
             if (p.R > maxR) Respawn(p, false);
             double sc = 0.35 + p.R / 420;
             p.Sc.ScaleX = p.Sc.ScaleY = sc;
-            p.Rot.Angle = p.Ang * 180 / Math.PI;
-            p.Tr.X = cx + Math.Cos(p.Ang) * p.R; p.Tr.Y = cy + Math.Sin(p.Ang) * p.R;
+            var deg = p.Ang * 180 / Math.PI; if (Math.Cos(p.Ang) < 0) deg -= 180;   // чтобы текст не был вверх ногами
+            p.Rot.Angle = deg;
+            p.Tr.X = cx + Math.Cos(p.Ang) * p.R - (Math.Cos(p.Ang) < 0 ? Math.Cos(p.Ang - Math.PI) * 0 : 0); p.Tr.Y = cy + Math.Sin(p.Ang) * p.R;
             p.T.Opacity = Math.Min(1, p.R / 160) * Math.Min(1, (maxR - p.R) / 200) * 0.85;
         }
     }
