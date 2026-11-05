@@ -40,6 +40,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitOps();
         loginTimer.Tick += (_, _) => LoginTick();
         toastTimer.Tick += (_, _) => { toastTimer.Stop(); ToastBox.Visibility = Visibility.Collapsed; };
         VersionText.Text = "Версия " + SelfUpdate.CurrentVersion;
@@ -479,7 +480,7 @@ public partial class MainWindow : Window
         Grid.SetColumn(actions, 1);
         if (busy.TryGetValue(key, out var b))
         {
-            actions.Children.Add(new TextBlock { Text = b.Installing ? "Работаю…" : $"Скачиваю {b.Percent ?? 0}%", Foreground = Res("Muted"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
+            actions.Children.Add(new TextBlock { Text = BusyText(key, b), Foreground = Res("Muted"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
             actions.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = b.Percent ?? 0, IsIndeterminate = b.Installing });
         }
         else if (p.Native != null)
@@ -501,34 +502,47 @@ public partial class MainWindow : Window
     async Task<bool> InstallPlugin(AppInfo p, string okText)
     {
         var key = p.Def.Id + ":plugin";
-        if (busy.ContainsKey(key)) return false;
-        var ok = false;
-        busy[key] = (false, 0);
-        RenderPlugins();
-        try
+        var ok = await RunOp(key, p.Def.Name, OpKind(okText), RenderPlugins, async (item, ct) =>
         {
-            var rel = await NativeInstaller.Latest(p.Def, true) ?? throw new InvalidOperationException("в последнем релизе на GitHub нет файла плагина");
-            var progress = new Progress<int?>(v => { busy[key] = v == null ? (true, null) : (false, v); RenderPlugins(); });
-            var restarted = await NativeInstaller.Install(p.Def, rel, progress);
-            Toast($"{okText}: {p.Def.Name}" + (restarted ? " — запущен снова" : ""));
-            ok = true;
-        }
-        catch (Exception ex) { Toast("Не получилось: " + BrowserInstaller.Explain(ex)); }
-        finally { busy.Remove(key); await LoadPlugins(true); }
+            try
+            {
+                item.SetPhase("Проверяю релиз…");
+                var rel = await NativeInstaller.Latest(p.Def, true, ct) ?? throw new InvalidOperationException("в последнем релизе на GitHub нет файла плагина");
+                var progress = new Progress<int?>(v => { busy[key] = v == null ? (true, null) : (false, v); item.SetPercent(v); RenderPlugins(); });
+                var restarted = await NativeInstaller.Install(p.Def, rel, progress, ct, PhaseSink(item));
+                if (restarted) item.SetNote("запущен снова");
+                Toast($"{okText}: {p.Def.Name}" + (restarted ? " — запущен снова" : ""));
+                return true;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                var why = BrowserInstaller.Explain(ex);
+                item.Fail(why);
+                Toast("Не получилось: " + why);
+                return false;
+            }
+        });
+        await LoadPlugins(true);
         return ok;
     }
 
     async Task UninstallPlugin(AppInfo p)
     {
         var key = p.Def.Id + ":plugin";
-        if (busy.ContainsKey(key) || p.Native == null) return;
+        if (busy.ContainsKey(key) || ops.IsActive(key) || p.Native == null) return;
         if (MessageBox.Show(this, $"Удалить «{p.Def.Name}» с этого компьютера?\n\nЕсли плагин менял панель задач, он сам вернёт её к обычному виду.", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        try
+        await RunOp(key, p.Def.Name, "Удаление", RenderPlugins, async (item, ct) =>
         {
-            await Task.Run(() => NativeInstaller.Uninstall(p.Def));
-            Toast($"Удалено: {p.Def.Name}");
-        }
-        catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
+            try
+            {
+                var sink = PhaseSink(item);
+                await Task.Run(() => NativeInstaller.Uninstall(p.Def, sink));
+                Toast($"Удалено: {p.Def.Name}");
+                return true;
+            }
+            catch (Exception ex) { item.Fail(ex.Message); Toast("Не получилось: " + ex.Message); return false; }
+        });
         await LoadPlugins(true);
     }
 
@@ -634,7 +648,7 @@ public partial class MainWindow : Window
         if (busy.TryGetValue(key, out var b))
         {
             var row = new StackPanel { Orientation = Orientation.Horizontal };
-            row.Children.Add(new TextBlock { Text = b.Installing ? "Распаковываю…" : $"Скачиваю {b.Percent ?? 0}%", Foreground = Res("Muted"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
+            row.Children.Add(new TextBlock { Text = BusyText(key, b), Foreground = Res("Muted"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
             row.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = b.Percent ?? 0, IsIndeterminate = b.Installing, Width = 160, Height = 6 });
             actions.Children.Add(row);
         }
@@ -705,32 +719,33 @@ public partial class MainWindow : Window
     async Task<bool> InstallBrowserPlugin(BrowserPluginInfo p, string okText)
     {
         var key = p.Def.Id + ":browser";
-        if (busy.ContainsKey(key)) return false;
-        var ok = false;
-        busy[key] = (false, 0);
+        if (ops.IsActive(key) || busy.ContainsKey(key)) return false;
         browserErrors.Remove(p.Def.Id);
-        RenderBrowserPlugins();
-        try
+        var ok = await RunOp(key, p.Def.Name + " (расширение)", OpKind(okText), RenderBrowserPlugins, async (item, ct) =>
         {
-            var rel = await BrowserInstaller.Latest(p.Def, true) ?? throw new InvalidOperationException("в последнем релизе на GitHub пока нет файла расширения");
-            var progress = new Progress<int?>(v => { busy[key] = v == null ? (true, null) : (false, v); RenderBrowserPlugins(); });
-            await BrowserInstaller.Install(p.Def, rel, progress);
-            Toast($"{okText}: {p.Def.Name}. Подключите папку в браузере — инструкция в карточке.");
-            ok = true;
-        }
-        catch (Exception ex)
-        {
-            var why = BrowserInstaller.Explain(ex);
-            browserErrors[p.Def.Id] = "Не получилось скачать: " + why + ".";
-            Toast("Не получилось скачать: " + why);
-        }
-        finally
-        {
-            busy.Remove(key);
-            var failed = browserErrors.TryGetValue(p.Def.Id, out var keep) ? keep : null;
-            await LoadBrowserPlugins(true);
-            if (failed != null) { browserErrors[p.Def.Id] = failed; RenderBrowserPlugins(); } // перезагрузка списка не должна затирать причину сбоя
-        }
+            try
+            {
+                item.SetPhase("Проверяю релиз…");
+                var rel = await BrowserInstaller.Latest(p.Def, true) ?? throw new InvalidOperationException("в последнем релизе на GitHub пока нет файла расширения");
+                var progress = new Progress<int?>(v => { busy[key] = v == null ? (true, null) : (false, v); item.SetPercent(v); RenderBrowserPlugins(); });
+                await BrowserInstaller.Install(p.Def, rel, progress, ct, PhaseSink(item));
+                item.SetNote("подключите папку в браузере");
+                Toast($"{okText}: {p.Def.Name}. Подключите папку в браузере — инструкция в карточке.");
+                return true;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                var why = BrowserInstaller.Explain(ex);
+                browserErrors[p.Def.Id] = "Не получилось скачать: " + why + ".";
+                item.Fail(why);
+                Toast("Не получилось скачать: " + why);
+                return false;
+            }
+        });
+        var failed = browserErrors.TryGetValue(p.Def.Id, out var keep) ? keep : null;
+        await LoadBrowserPlugins(true);
+        if (failed != null) { browserErrors[p.Def.Id] = failed; RenderBrowserPlugins(); } // перезагрузка списка не должна затирать причину сбоя
         return ok;
     }
 
@@ -872,7 +887,7 @@ public partial class MainWindow : Window
         Grid.SetColumn(actions, 1);
         if (busy.TryGetValue(a.Def.Id, out var b))
         {
-            actions.Children.Add(new TextBlock { Text = b.Installing ? "Работаю…" : $"Скачиваю {b.Percent ?? 0}%", Foreground = Res("Muted"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
+            actions.Children.Add(new TextBlock { Text = BusyText(a.Def.Id, b), Foreground = Res("Muted"), Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
             actions.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = b.Percent ?? 0, IsIndeterminate = b.Installing });
         }
         else if (a.Allowed)
@@ -917,7 +932,7 @@ public partial class MainWindow : Window
             }
             else if (busy.TryGetValue(exeKey, out var eb))
             {
-                exeRow.Children.Add(new TextBlock { Text = eb.Installing ? "Работаю…" : $"Скачиваю Desktop {eb.Percent ?? 0}%", Foreground = Res("Muted"), FontSize = 12, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
+                exeRow.Children.Add(new TextBlock { Text = BusyText(exeKey, eb), Foreground = Res("Muted"), FontSize = 12, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
                 exeRow.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = eb.Percent ?? 0, IsIndeterminate = eb.Installing });
             }
             else if (a.Native != null)
@@ -992,21 +1007,23 @@ public partial class MainWindow : Window
     async Task<bool> InstallApp(AppInfo a, string okText)
     {
         var id = a.Def.Id;
-        if (busy.ContainsKey(id)) return false;
-        var ok = false;
-        busy[id] = (false, 0);
-        RenderApps();
-        try
+        var ok = await RunOp(id, a.Def.Name, OpKind(okText), RenderApps, async (item, ct) =>
         {
-            if (!await RequireAllowed(a.Def)) return false;
-            var release = await Releases.Latest(a.Def.Repo, true);
-            var progress = new Progress<int?>(p => { busy[id] = p == null ? (true, null) : (false, p); RenderApps(); });
-            await Installer.Install(a.Def, release, progress);
-            Toast($"{okText}: {a.Def.Name}");
-            ok = true;
-        }
-        catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
-        finally { busy.Remove(id); await LoadApps(true); }
+            try
+            {
+                item.SetPhase("Проверяю доступ…");
+                if (!await RequireAllowed(a.Def)) { item.Fail("нет доступа к этому приложению"); return false; }
+                item.SetPhase("Проверяю релиз…");
+                var release = await Releases.Latest(a.Def.Repo, true, ct);
+                var progress = new Progress<int?>(p => { busy[id] = p == null ? (true, null) : (false, p); item.SetPercent(p); RenderApps(); });
+                await Installer.Install(a.Def, release, progress, ct, PhaseSink(item));
+                Toast($"{okText}: {a.Def.Name}");
+                return true;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex) { item.Fail(ex.Message); Toast("Не получилось: " + ex.Message); return false; }
+        });
+        await LoadApps(true);
         return ok;
     }
 
@@ -1030,35 +1047,42 @@ public partial class MainWindow : Window
     async Task<bool> InstallNative(AppInfo a, string okText)
     {
         var key = a.Def.Id + ":exe";
-        if (busy.ContainsKey(key)) return false;
-        var ok = false;
-        busy[key] = (false, 0);
-        RenderApps();
-        try
+        var ok = await RunOp(key, a.Def.NativeName ?? a.Def.Name, OpKind(okText), RenderApps, async (item, ct) =>
         {
-            if (!await RequireAllowed(a.Def)) return false;
-            var rel = await NativeInstaller.Latest(a.Def, true) ?? throw new InvalidOperationException("EXE-версии пока нет в последнем релизе");
-            var progress = new Progress<int?>(p => { busy[key] = p == null ? (true, null) : (false, p); RenderApps(); });
-            await NativeInstaller.Install(a.Def, rel, progress);
-            Toast($"{okText}: {a.Def.NativeName}");
-            ok = true;
-        }
-        catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
-        finally { busy.Remove(key); await LoadApps(true); }
+            try
+            {
+                item.SetPhase("Проверяю доступ…");
+                if (!await RequireAllowed(a.Def)) { item.Fail("нет доступа к этому приложению"); return false; }
+                item.SetPhase("Проверяю релиз…");
+                var rel = await NativeInstaller.Latest(a.Def, true, ct) ?? throw new InvalidOperationException("EXE-версии пока нет в последнем релизе");
+                var progress = new Progress<int?>(p => { busy[key] = p == null ? (true, null) : (false, p); item.SetPercent(p); RenderApps(); });
+                await NativeInstaller.Install(a.Def, rel, progress, ct, PhaseSink(item));
+                Toast($"{okText}: {a.Def.NativeName}");
+                return true;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex) { item.Fail(ex.Message); Toast("Не получилось: " + ex.Message); return false; }
+        });
+        await LoadApps(true);
         return ok;
     }
 
     async Task UninstallNative(AppInfo a)
     {
         var key = a.Def.Id + ":exe";
-        if (busy.ContainsKey(key) || a.Native == null) return;
+        if (busy.ContainsKey(key) || ops.IsActive(key) || a.Native == null) return;
         if (MessageBox.Show(this, $"Удалить «{a.Def.NativeName}» с этого компьютера?", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        try
+        await RunOp(key, a.Def.NativeName ?? a.Def.Name, "Удаление", RenderApps, async (item, ct) =>
         {
-            await Task.Run(() => NativeInstaller.Uninstall(a.Def));
-            Toast($"Удалено: {a.Def.NativeName}");
-        }
-        catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
+            try
+            {
+                var sink = PhaseSink(item);
+                await Task.Run(() => NativeInstaller.Uninstall(a.Def, sink));
+                Toast($"Удалено: {a.Def.NativeName}");
+                return true;
+            }
+            catch (Exception ex) { item.Fail(ex.Message); Toast("Не получилось: " + ex.Message); return false; }
+        });
         await LoadApps(true);
     }
 
@@ -1161,6 +1185,12 @@ public partial class MainWindow : Window
             fbSentBox.Children.Add(FeedbackSentCard(new FeedbackSent("demo1", "bug", "Панель задач мигает после включения плагина…", now - 7200_000), new FeedbackState("done", "Спасибо! Исправили в версии 1.34.1 — обновите лаунчер.", now - 3600_000, false)));
             fbSentBox.Children.Add(FeedbackSentCard(new FeedbackSent("demo2", "idea", "Добавьте тёмную тему для окна плагина…", now - 86400_000), new FeedbackState("new", null, null, false)));
         });
+        {   // менеджер обновлений: одно готово, одно не вышло, одно останавливается, два ждут
+            ShowView("style");
+            RenderPlugins();
+            await OpsDemo();
+            await Capture(Path.Combine(dir, "launcher-9-ops.png"), () => RenderOps());
+        }
         Application.Current.Shutdown();
     }
 

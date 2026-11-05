@@ -54,15 +54,17 @@ static class Installer
     }
 
     // percent == null — скачано, идёт установка
-    public static async Task Install(AppDef app, Release release, IProgress<int?> progress, CancellationToken ct = default)
+    public static async Task Install(AppDef app, Release release, IProgress<int?> progress, CancellationToken ct = default, Action<string>? phase = null)
     {
         if (!Net.IsTrustedDownload(release.Url, app.Repo)) throw new InvalidOperationException("Недоверенный адрес загрузки");
         var dir = Directory.CreateTempSubdirectory("battle-launcher-").FullName;
         var file = Path.Combine(dir, "setup.exe");
         try
         {
+            phase?.Invoke("Скачиваю…");
             await Download(release.Url, file, release.Sha512, progress, ct);
             progress.Report(null);
+            phase?.Invoke("Устанавливаю (тихо, может занять минуту)…");
             await RunAndWait(file, "/S");
         }
         finally

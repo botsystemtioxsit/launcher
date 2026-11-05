@@ -32,6 +32,7 @@
           <DockPanel>
             <TextBlock x:Name="VersionText" DockPanel.Dock="Bottom" Foreground="{DynamicResource Muted}" FontSize="12" Margin="6,0,0,0"/>
             <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,14">
+              <Button x:Name="OpsToggleBtn" Content="☰ Очередь" Style="{StaticResource Ghost}" Margin="0,0,0,6" Click="OpsToggleBtn_Click" ToolTip="Что сейчас обновляется, что стоит в очереди и чем всё закончилось"/>
               <Button x:Name="BulkUpdateBtn" Content="⟳ Обновить всё" Style="{StaticResource Ghost}" Click="BulkUpdateBtn_Click" ToolTip="Обновить все приложения, плагины и расширения, у которых вышла новая версия"/>
               <Button x:Name="BulkLaunchBtn" Content="▶ Запустить всё" Style="{StaticResource Ghost}" Margin="0,6,0,0" Click="BulkLaunchBtn_Click" ToolTip="Запустить все установленные приложения и плагины, которые сейчас не работают"/>
             </StackPanel>
@@ -54,7 +55,12 @@
           </DockPanel>
         </Border>
 
-        <Grid Grid.Column="1" Margin="30,26">
+        <Grid Grid.Column="1">
+         <Grid.RowDefinitions>
+           <RowDefinition Height="*"/>
+           <RowDefinition Height="Auto"/>
+         </Grid.RowDefinitions>
+        <Grid Grid.Row="0" Margin="30,26">
               <!-- Вход: нужен только для приложений администраторов, живёт во вкладке «Аккаунт» -->
           <ScrollViewer x:Name="LoginView" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
             <Border Width="440" Margin="0,24" VerticalAlignment="Center" HorizontalAlignment="Center" Background="{DynamicResource Panel}"
@@ -166,6 +172,32 @@
               <Button Content="Выйти" Style="{StaticResource Danger}" Margin="10,0,0,0" Click="Logout_Click"/>
             </StackPanel>
           </StackPanel>
+        </Grid>
+
+        <!-- Менеджер обновлений: что в очереди, что идёт сейчас, чем закончилось (содержимое — MainWindow.Ops.cs) -->
+        <Border x:Name="OpsDock" Grid.Row="1" Visibility="Collapsed" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Accent}" BorderThickness="0,1,0,0" Padding="22,12,22,12">
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+              </Grid.ColumnDefinitions>
+              <StackPanel Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Center">
+                <TextBlock x:Name="OpsSummary" FontFamily="{StaticResource Mono}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" TextWrapping="Wrap"/>
+                <TextBlock x:Name="OpsNow" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                <ProgressBar x:Name="OpsProgress" Width="NaN" HorizontalAlignment="Stretch" Height="4" Margin="0,8,0,0" Minimum="0" Maximum="100"/>
+              </StackPanel>
+              <WrapPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" MaxWidth="330">
+                <Button x:Name="OpsExpandBtn" Content="▾ Свернуть" Style="{StaticResource Ghost}" Padding="10,4" FontSize="12" Margin="0,0,0,4" Click="OpsExpandBtn_Click"/>
+                <Button x:Name="OpsCancelBtn" Content="Отменить очередь" Style="{StaticResource Ghost}" Padding="10,4" FontSize="12" Margin="6,0,0,4" Click="OpsCancelBtn_Click"/>
+                <Button x:Name="OpsClearBtn" Content="Закрыть" Style="{StaticResource Ghost}" Padding="10,4" FontSize="12" Margin="6,0,0,4" Click="OpsClearBtn_Click"/>
+              </WrapPanel>
+            </Grid>
+            <ScrollViewer x:Name="OpsListScroll" MaxHeight="230" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto">
+              <StackPanel x:Name="OpsList"/>
+            </ScrollViewer>
+          </StackPanel>
+        </Border>
         </Grid>
       </Grid>
 

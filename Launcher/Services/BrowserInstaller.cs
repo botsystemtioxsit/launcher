@@ -113,7 +113,7 @@ static class BrowserInstaller
         }
     }
 
-    public static async Task Install(BrowserPluginDef d, BrowserRelease rel, IProgress<int?> progress, CancellationToken ct = default)
+    public static async Task Install(BrowserPluginDef d, BrowserRelease rel, IProgress<int?> progress, CancellationToken ct = default, Action<string>? phase = null)
     {
         if (!Net.IsTrustedDownload(rel.Url, d.Repo)) throw new InvalidOperationException("Недоверенный адрес загрузки");
         Directory.CreateDirectory(Root);
@@ -121,6 +121,7 @@ static class BrowserInstaller
         var tmpDir = Path.Combine(Root, d.Id + ".new-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
+            phase?.Invoke("Скачиваю…");
             // скачивание с двумя повторами: короткий сбой сети не должен срывать установку
             for (var attempt = 1; ; attempt++)
             {
@@ -132,6 +133,7 @@ static class BrowserInstaller
                 }
             }
             progress.Report(null);
+            phase?.Invoke("Распаковываю и проверяю…");
             await Task.Run(() =>
             {
                 Directory.CreateDirectory(tmpDir);

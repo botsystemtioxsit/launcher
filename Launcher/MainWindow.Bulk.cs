@@ -23,7 +23,8 @@ public partial class MainWindow
     static bool InScope(string scope, string part) => scope == "all" || scope == part;
     static bool PluginInScope(string scope, AppDef d) => scope == "all" || Catalog.CategoryOf(d) == scope;
 
-    // Обновляет всё, у чего вышла новая версия. По одному, по очереди: каждый плагин сам просит выйти, заменяется и запускается снова.
+    // Обновляет всё, у чего вышла новая версия. Сначала всё ставится в очередь менеджера (видно, что за чем идёт),
+    // потом очередь выполняет по одному: каждый плагин сам просит выйти, заменяется и запускается снова.
     async Task UpdateAllAsync(string scope)
     {
         if (bulkBusy) return;
@@ -32,37 +33,35 @@ public partial class MainWindow
         try
         {
             Toast("Проверяю, что можно обновить…");
-            int need = 0, done = 0;
+            // 1) читаем, что есть нового, — ничего ещё не трогая
+            if (InScope(scope, "apps")) await LoadApps(true);
+            if (InScope(scope, "style") || InScope(scope, "net")) await LoadPlugins(true);
+            if (InScope(scope, "ext")) await LoadBrowserPlugins(true);
+
+            // 2) всё найденное — в очередь одним махом
+            var tasks = new List<Task<bool>>();
             if (InScope(scope, "apps"))
             {
-                await LoadApps(true);
                 foreach (var a in apps.Where(x => x.Allowed).ToList())
                 {
-                    if (a.Installed != null && a.UpdateAvailable) { need++; if (await InstallApp(a, "Обновлено")) done++; }
-                    if (a.Native != null && a.NativeUpdate) { need++; if (await InstallNative(a, "Обновлено")) done++; }
+                    if (a.Installed != null && a.UpdateAvailable) tasks.Add(InstallApp(a, "Обновлено"));
+                    if (a.Native != null && a.NativeUpdate) tasks.Add(InstallNative(a, "Обновлено"));
                 }
             }
             if (InScope(scope, "style") || InScope(scope, "net"))
-            {
-                await LoadPlugins(true);
                 foreach (var p in pluginInfos.Where(x => x.Native != null && x.NativeUpdate && PluginInScope(scope, x.Def)).ToList())
-                {
-                    need++;
-                    if (await InstallPlugin(p, "Обновлено")) done++;
-                }
-            }
+                    tasks.Add(InstallPlugin(p, "Обновлено"));
             if (InScope(scope, "ext"))
-            {
-                await LoadBrowserPlugins(true);
                 foreach (var b in browserInfos.Where(x => x.Update).ToList())
-                {
-                    need++;
-                    if (await InstallBrowserPlugin(b, "Обновлено")) done++;
-                }
-            }
+                    tasks.Add(InstallBrowserPlugin(b, "Обновлено"));
+
+            // 3) ждём, пока очередь всё выполнит
+            var results = await Task.WhenAll(tasks);
+            var need = results.Length;
+            var done = results.Count(r => r);
             Toast(need == 0 ? "Всё уже самое новое"
                 : done == need ? $"Обновлено: {done}"
-                : $"Обновлено {done} из {need}. Что не вышло — причина в карточке.");
+                : $"Обновлено {done} из {need}. Что не вышло — причина в менеджере внизу и в карточке.");
         }
         catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
         finally { bulkBusy = false; SetBulkEnabled(true); }
@@ -98,6 +97,7 @@ public partial class MainWindow
                             if (AnyRunning(found.Exe)) { already++; continue; }
                             Installer.Launch(found.Exe);
                             started++;
+                            OpsNote("Запуск", a.Def.Name, true, "Запущено");
                         }
                         else if (a.Native != null)
                         {
@@ -106,9 +106,10 @@ public partial class MainWindow
                             if (AnyRunning(nat.Exe)) { already++; continue; }
                             NativeInstaller.Launch(nat);
                             started++;
+                            OpsNote("Запуск", a.Def.NativeName ?? a.Def.Name, true, "Запущено");
                         }
                     }
-                    catch { failed++; }
+                    catch (Exception ex) { failed++; OpsNote("Запуск", a.Def.Name, false, ex.Message); }
                 }
             }
             if (InScope(scope, "style") || InScope(scope, "net"))
@@ -121,8 +122,9 @@ public partial class MainWindow
                         if (NativeInstaller.IsRunning(p.Native!.Exe)) { already++; continue; }
                         NativeInstaller.Relaunch(p.Def, p.Native.Exe);
                         started++;
+                        OpsNote("Запуск", p.Def.Name, true, "Запущено");
                     }
-                    catch { failed++; }
+                    catch (Exception ex) { failed++; OpsNote("Запуск", p.Def.Name, false, ex.Message); }
                 }
             }
             Toast(started == 0 && failed == 0
