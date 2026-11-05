@@ -67,6 +67,7 @@ static class SelfTest
             }
         }
         lines.Insert(0, $"ярлыков: {total}, из них с «листком»: {generic}");
+        lines.Insert(1, "значок диска C: по SHGetFileInfo = «" + Native.IconLocation(@"C:\", false) + "»; запасной путь «как рисует Проводник» " + (ShellIcon.Render(@"C:\", 48) != null ? "даёт значок" : "значка не дал"));
         File.WriteAllLines(Path.Combine(outDir, "lnk-diagnose.txt"), lines);
         try { var g = IconData.GenericDocument(); if (g != null) { var enc = new PngBitmapEncoder(); enc.Frames.Add(BitmapFrame.Create(g)); using var fs = File.Create(Path.Combine(outDir, "generic-document.png")); enc.Save(fs); } } catch { }
     }

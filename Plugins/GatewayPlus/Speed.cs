@@ -12,8 +12,12 @@ static class Speed
     public sealed record MtuResult(bool Ok, int PathMtu, string Via, string Note);
     public sealed record SpeedResult(double DownMbps, double UpMbps, int PingMs, string Where);
 
+    // Как пингуем. В самопроверке подменяется «путём» с заданным MTU, чтобы проверить сам поиск без настоящей сети.
+    internal static Func<string, int, CancellationToken, Task<bool>> PingImpl = RealPingDf;
+    static Task<bool> PingDf(string host, int payload, CancellationToken ct) => PingImpl(host, payload, ct);
+
     // true — прошёл без дробления; false — не прошёл (слишком большой или потерялся); PingException/тайм-аут считаем «не прошёл»
-    static async Task<bool> PingDf(string host, int payload, CancellationToken ct)
+    static async Task<bool> RealPingDf(string host, int payload, CancellationToken ct)
     {
         using var ping = new Ping();
         var buf = new byte[payload];
