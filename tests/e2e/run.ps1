@@ -24,7 +24,7 @@ function Run-Taskbar([string]$name, $tp, $link, [bool]$dumpTree = $false) {
     if ($link) { ($link | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-taskbar.json') -Encoding UTF8 }
     else { Remove-Item (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyContinue }
     $p = Start-Process -FilePath 'out-test/TaskbarPlus.exe' -ArgumentList '--background' -PassThru
-    $st = Wait-File $status { param($t) $t -match 'state=ready' -and $t -match 'engine=\d' -and $t -match 'bgfill=[1-9]' } 60
+    $st = Wait-File $status { param($t) $t -match 'state=ready' -and $t -match 'engine=7' -and $t -match 'bgfill=[1-9]' -and $t -match 'applied=1' } 60
     Start-Sleep -Seconds 5
     if ($dumpTree -and (Test-Path $cfg)) {
         # просим движок записать дерево элементов (счётчик dump в файле настроек)
@@ -56,14 +56,10 @@ foreach ($e in 'TaskbarPlus') {
 }
 Get-ChildItem $Out -Filter '*ui*' | ForEach-Object { Say "файл: $($_.Name) ($($_.Length) байт)" }
 
-# ---------- Taskbar Plus: панель (фон панели задаёт файл color-plus-taskbar.json — его пишет плагин цвета, которого сейчас нет; здесь файл кладётся вручную) ----------
-$base = @{ UseXaml = $true; XamlConsentShown = $true; Shape = 'none' }
-Run-Taskbar '10-фон-цвет' $base @{ Active = $true; BgMode = 'solid'; BgColor = '#FF2A9D'; BgOpacity = 100; HideStroke = $true } $true
-Run-Taskbar '11-фон-прозрачный' $base @{ Active = $true; BgMode = 'clear'; BgColor = '#101018'; BgOpacity = 60; HideStroke = $true }
-Run-Taskbar '12-острова-каждый' (@{ UseXaml = $true; XamlConsentShown = $true; Shape = 'islands'; IslandMode = 'each'; IslandStyle = 'float'; Radius = 14; IslandGap = 8 }) @{ Active = $true; BgMode = 'solid'; BgColor = '#1E6BFF'; BgOpacity = 85; HideStroke = $true }
-Run-Taskbar '13-острова-система-фиолетовый-прямой' (@{ UseXaml = $true; XamlConsentShown = $true; Shape = 'islands'; IslandMode = 'each'; IslandStyle = 'float'; Radius = 14; IslandGap = 8; Islands = @{ system = @{ Radius = 0; Color = '#6C4DFF'; Opacity = 90; Mode = 'solid'; Hidden = $false } } }) @{ Active = $true; BgMode = 'solid'; BgColor = '#1E6BFF'; BgOpacity = 70; HideStroke = $true }
-Run-Taskbar '14-расположение-система-слева-значки-справа' (@{ UseXaml = $true; XamlConsentShown = $true; Shape = 'none'; ZoneSystem = 'left'; ZoneApps = 'right'; EdgeMargin = 20 }) $null
-Run-Taskbar '15-вкладка-края' (@{ UseXaml = $true; XamlConsentShown = $true; Shape = 'tab'; Radius = 16; SideMargin = 120; KeepEdges = $true }) @{ Active = $true; BgMode = 'solid'; BgColor = '#101018'; BgOpacity = 90; HideStroke = $true }
+# ---------- Taskbar Plus 3: панель (подробные проверки — в сценарии taskbar; здесь короткий прогон вместе с остальными плагинами) ----------
+Run-Taskbar '10-плавающая' (@{ UseXaml = $true; XamlConsentShown = $true; Shape = 'pill'; Radius = 18; IslandPadding = 10; KeepEdges = $true }) @{ Active = $true; BgMode = 'solid'; BgColor = '#FF2A9D'; BgOpacity = 100; HideStroke = $true } $true
+Run-Taskbar '11-острова-каждый' (@{ UseXaml = $true; XamlConsentShown = $true; Shape = 'islands'; IslandMode = 'each'; IslandStyle = 'float'; Radius = 14; IslandGap = 8 }) @{ Active = $true; BgMode = 'solid'; BgColor = '#1E6BFF'; BgOpacity = 85; HideStroke = $true }
+Run-Taskbar '12-вкладка' (@{ UseXaml = $true; XamlConsentShown = $true; Shape = 'tab'; Radius = 16; IslandPadding = 10; KeepEdges = $true }) @{ Active = $true; BgMode = 'solid'; BgColor = '#101018'; BgOpacity = 90; HideStroke = $true }
 
 # после выхода из плагина панель должна вернуться как была
 Say ""

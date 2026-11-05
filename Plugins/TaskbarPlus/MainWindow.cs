@@ -6,11 +6,11 @@ using System.Windows.Threading;
 
 namespace TaskbarPlusApp;
 
-// Окно Taskbar Plus (2.0): один экран. Сверху живой предпросмотр панели, ниже — форма, подстройка, где что стоит и кнопка «Применить».
+// Окно Taskbar Plus 3: один экран. Сверху живой предпросмотр панели, ниже — форма, подстройка и кнопка «Применить».
 // Пока вы не нажали «Применить», с панелью ничего не происходит — меняется только предпросмотр. Редкие настройки спрятаны в «Ещё настройки».
 sealed class MainWindow : Window
 {
-    readonly Engines engine;
+    readonly TaskbarController engine;
     readonly AppearanceSettings settings;   // применённое
     AppearanceSettings draft;                // выбранное, ещё не применённое
     readonly Preview preview = new();
@@ -33,7 +33,7 @@ sealed class MainWindow : Window
         });
     }
 
-    public MainWindow(Engines engine, AppearanceSettings settings)
+    public MainWindow(TaskbarController engine, AppearanceSettings settings)
     {
         this.engine = engine;
         this.settings = settings;
@@ -119,8 +119,6 @@ sealed class MainWindow : Window
 
     // ---------- сборка окна ----------
     static readonly string[] PresetNames = { "Обычная", "Плавающая", "Острова", "Вкладка", "Вкладки-острова" };
-    static readonly string[] Zones = { AppearanceSettings.ZoneDefault, AppearanceSettings.ZoneLeft, AppearanceSettings.ZoneCenter, AppearanceSettings.ZoneRight };
-    static readonly string[] ZoneNames = { "Как в Windows", "Слева", "По центру", "Справа" };
 
     void Build()
     {
@@ -150,9 +148,9 @@ sealed class MainWindow : Window
             };
             if (draft.Shape is AppearanceSettings.ShapePill or AppearanceSettings.ShapeTab)
             {
-                rows.Add(SliderRow("Отступ по бокам", "Чем больше, тем уже панель — получается небольшая панель по центру", 0, 600, draft.SideMargin, "px", v => { draft.SideMargin = v; preview.Update(draft); }));
-                rows.Add(Row("Часы и трей", "Оставить отдельными островами по краям; иначе при большом отступе они пропадут вместе с часами",
-                    Seg(new[] { "Оставить", "Убрать" }, draft.KeepEdges ? 0 : 1, i => { draft.KeepEdges = i == 0; Build(); })));
+                rows.Add(SliderRow("Поля вокруг значков", "Расстояние от крайних значков до края панели. Панель всегда накрывает все значки.", 0, 40, draft.IslandPadding, "px", v => { draft.IslandPadding = v; preview.Update(draft); }));
+                rows.Add(Row("Часы, трей и виджеты", "Отдельными островами по краям, либо одна общая панель от первого значка до часов",
+                    Seg(new[] { "Отдельно", "Одна панель" }, draft.KeepEdges ? 0 : 1, i => { draft.KeepEdges = i == 0; Build(); })));
             }
             if (draft.Shape == AppearanceSettings.ShapeIslands)
             {
@@ -167,17 +165,14 @@ sealed class MainWindow : Window
             root.Children.Add(Card("Подстройка", rows));
         }
 
-        // где что стоит
-        root.Children.Add(Card("Где что стоит", new UIElement[]
+        root.Children.Add(Card("Где стоят значки", new UIElement[]
         {
-            Row("Значки программ", "«Пуск», поиск и значки запущенных программ", Seg(ZoneNames, Math.Max(0, Array.IndexOf(Zones, draft.ZoneApps)), i => { draft.ZoneApps = Zones[i]; Build(); })),
-            Row("Часы, сеть и трей", "Всегда двигаются одним целым", Seg(ZoneNames, Math.Max(0, Array.IndexOf(Zones, draft.ZoneSystem)), i => { draft.ZoneSystem = Zones[i]; Build(); })),
-            Note("Нажатия идут за значками. Окна Windows (календарь, быстрые настройки, «Пуск») могут открываться на прежнем месте. Цвет панели — в плагине Color Plus."),
+            Note("Слева или по центру значки ставит сама Windows — это переключатель в «Ещё настройки» (Значки на панели). Панель Taskbar Plus повторяет их положение и всегда накрывает все значки. Цвет панели — в плагине Color Plus."),
         }));
 
         // действия
         var reason = XamlEngine.UnavailableReason;
-        if (reason != null) root.Children.Add(Note("Плавные формы и острова работают в Windows 11: " + reason + " Обычный способ формы тоже доступен, но проще."));
+        if (reason != null) root.Children.Add(Note(reason + " На этой Windows формы панели недоступны."));
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0) };
         buttons.Children.Add(Btn("Применить", "Primary", () => { _ = ApplyDraftAsync(); }, first: true));
         buttons.Children.Add(Btn("Вернуть как было", "Danger", () => { _ = ResetAllAsync(); }));
@@ -209,9 +204,9 @@ sealed class MainWindow : Window
         switch (i)
         {
             case 0: s.Shape = AppearanceSettings.ShapeNone; break;
-            case 1: s.Shape = AppearanceSettings.ShapePill; s.Radius = 18; s.SideMargin = 24; s.BottomGap = 8; break;
+            case 1: s.Shape = AppearanceSettings.ShapePill; s.Radius = 18; s.IslandPadding = 10; s.BottomGap = 6; s.KeepEdges = true; break;
             case 2: s.Shape = AppearanceSettings.ShapeIslands; s.IslandMode = "each"; s.IslandStyle = "float"; s.Radius = 14; s.IslandGap = 8; s.BottomGap = 6; break;
-            case 3: s.Shape = AppearanceSettings.ShapeTab; s.Radius = 16; s.SideMargin = 24; break;
+            case 3: s.Shape = AppearanceSettings.ShapeTab; s.Radius = 16; s.IslandPadding = 10; s.KeepEdges = true; break;
             default: s.Shape = AppearanceSettings.ShapeIslands; s.IslandMode = "each"; s.IslandStyle = "tab"; s.Radius = 14; s.IslandGap = 8; break;
         }
     }
@@ -219,23 +214,24 @@ sealed class MainWindow : Window
     // «Применить»: выбранное из предпросмотра становится настоящим
     async Task ApplyDraftAsync()
     {
-        var wantEngine = XamlEngine.UnavailableReason == null && (draft.Shape != AppearanceSettings.ShapeNone || draft.LayoutActive || settings.UseXaml);
+        var wantEngine = XamlEngine.UnavailableReason == null && draft.Shape != AppearanceSettings.ShapeNone;
         if (wantEngine && !settings.XamlConsentShown)
         {
             var ok = MessageBox.Show(this,
-                "Для плавных форм и островов Taskbar Plus подключается к панели задач внутри Проводника Windows (так работают и другие программы для оформления панели).\n\n" +
-                "Если Проводник закроется сразу после подключения два раза подряд, движок сам отключится.\n" +
+                "Taskbar Plus подключается к панели задач внутри Проводника Windows, делает её родной фон прозрачным и измеряет положение значков; плашки рисует сам, отдельным окном под панелью (так работают и другие программы для оформления панели).\n\n" +
+                "Если Проводник закроется сразу после подключения два раза подряд, движок сам отключится. Если плагин закрыть аварийно, панель вернётся как была через 20 секунд.\n" +
                 "Вернуть всё как было можно кнопкой «Вернуть как было».\n\nПродолжить?",
                 "Taskbar Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
             if (!ok) { Say("Не применено: без движка плавные формы недоступны."); return; }
             settings.XamlConsentShown = true;
         }
-        settings.Shape = draft.Shape; settings.Radius = draft.Radius; settings.SideMargin = draft.SideMargin; settings.BottomGap = draft.BottomGap;
+        settings.Shape = draft.Shape; settings.Radius = draft.Radius; settings.BottomGap = draft.BottomGap;
         settings.IslandStyle = draft.IslandStyle; settings.IslandMode = draft.IslandMode; settings.IslandPadding = draft.IslandPadding; settings.IslandGap = draft.IslandGap;
         settings.KeepEdges = draft.KeepEdges;
-        settings.ZoneApps = draft.ZoneApps; settings.ZoneSystem = draft.ZoneSystem;
+        // прежние настройки (отступ по бокам, зоны, стили отдельных островов) в Taskbar Plus 3 не используются: плашка считается от значков
+        settings.SideMargin = 0; settings.ZoneApps = settings.ZoneSystem = settings.ZoneWidgets = AppearanceSettings.ZoneDefault;
         settings.UseXaml = wantEngine;
-        settings.Islands.Clear();   // цвет и вид островов задаёт Color Plus; свои стили отдельных островов в простом окне не настраиваются
+        settings.Islands.Clear();   // цвет задаёт Color Plus
         engine.Update(settings);
         settings.Save();
         Say("Применено. " + (wantEngine ? "Движок подключается к панели — это занимает несколько секунд." : ""));
@@ -288,24 +284,6 @@ sealed class MainWindow : Window
         Add(Btn("Выйти", null, () => { App.Quitting = true; Close(); }, first: true));
         rows.Add(buttons);
         return Card("Ещё настройки", rows);
-    }
-
-    void SetUseXaml(bool on)
-    {
-        if (on && !settings.XamlConsentShown)
-        {
-            var ok = MessageBox.Show(this,
-                "Новый движок подключается к панели задач внутри Проводника Windows (так работают и другие программы для оформления панели).\n\n" +
-                "Если Проводник закроется сразу после подключения два раза подряд, движок сам отключится.\n" +
-                "Вернуть всё как было можно кнопкой «Вернуть как было» или перезапуском панели задач.\n\nВключить?",
-                "Taskbar Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
-            if (!ok) { Build(); return; }
-            settings.XamlConsentShown = true;
-        }
-        settings.UseXaml = on;
-        engine.Update(settings);
-        settings.Save();
-        Build();
     }
 
     async Task UploadReportAsync()

@@ -3,14 +3,12 @@
 #include <ocidl.h>
 #include <xamlom.h>
 
-// Применяет настройки к элементам панели задач (XAML внутри Проводника).
-// OnChange вызывается самой панелью (поток XAML) для каждого элемента, который появился или исчез.
+// «Стилист» движка 7: в потоке XAML панели задач (а) делает родной фон прозрачным, пока он включён, и (б) измеряет, где лежат значки,
+// часы с треем и виджеты, — координаты отдаются плагину файлом taskbar-plus-geometry.txt (плашки рисует плагин в своём окне).
 struct StylerStats
 {
-    int threads = 0, nodes = 0, bgFill = 0, bgStroke = 0, apps = 0, widgets = 0, system = 0, islands = 0, hosts = 0, rects = 0;
-    int coverAppsL = -1, coverAppsR = -1, coverBarL = -1, coverBarR = -1, coverWidth = 0;   // края значков и отступы плашки (px панели)
+    int threads = 0, nodes = 0, bgFill = 0, bgStroke = 0, apps = 0, widgets = 0, system = 0, bars = 0, geoBars = 0, rects = 0, touched = 0;
     std::wstring rectNames;   // имена прямоугольников на панели — для отчёта, если фон не нашёлся
-    bool applied = false;
     bool queueOk = false;
 };
 
