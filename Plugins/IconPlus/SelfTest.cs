@@ -41,6 +41,36 @@ static class SelfTest
         File.WriteAllText(file, sb.ToString());
     }
 
+    // --lnk-test=<папка>: по каждому ярлыку меню «Пуск» (общему и своему) — откуда берётся значок и не получается ли «листок» вместо него.
+    public static void LnkTest(string outDir)
+    {
+        Directory.CreateDirectory(outDir);
+        var engine = new IconEngine();
+        var lines = new List<string>();
+        var dirs = new[]
+        {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs"),
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory),
+            Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+        };
+        int total = 0, generic = 0;
+        foreach (var d in dirs.Where(Directory.Exists))
+        {
+            foreach (var f in Shortcuts.In(d, true))
+            {
+                total++;
+                string line;
+                try { line = engine.DiagnoseLnk(f); } catch (Exception ex) { line = Path.GetFileName(f) + " | ошибка: " + ex.Message; }
+                if (line.Contains("ЛИСТОК")) generic++;
+                lines.Add(line);
+            }
+        }
+        lines.Insert(0, $"ярлыков: {total}, из них с «листком»: {generic}");
+        File.WriteAllLines(Path.Combine(outDir, "lnk-diagnose.txt"), lines);
+        try { var g = IconData.GenericDocument(); if (g != null) { var enc = new PngBitmapEncoder(); enc.Frames.Add(BitmapFrame.Create(g)); using var fs = File.Create(Path.Combine(outDir, "generic-document.png")); enc.Save(fs); } } catch { }
+    }
+
     static Dictionary<string, string> RunProbe(string outDir, string name)
     {
         var file = Path.Combine(outDir, "probe-" + name + ".txt");

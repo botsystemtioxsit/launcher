@@ -75,8 +75,10 @@ sealed class IconEngine
                     var root = d.Name;                                   // «C:\»
                     if (root.Length < 2 || Native.GetDriveType(root) != type) continue;
                     var letter = root[0].ToString().ToUpperInvariant();
+                    // SHGetFileInfo про диск часто молчит (значок диска рисует сам Проводник) — тогда берём значок так, как его рисует Проводник
                     yield return new Sink("drive:" + letter, () => Native.IconLocation(root, false),
-                        p => reg.Set(@"Software\Classes\Applications\Explorer.exe\Drives\" + letter + @"\DefaultIcon", "", p));
+                        p => reg.Set(@"Software\Classes\Applications\Explorer.exe\Drives\" + letter + @"\DefaultIcon", "", p),
+                        () => new[] { "shell:" + root });
                 }
                 break;
             case TargetKind.Clsid:
@@ -276,6 +278,23 @@ sealed class IconEngine
     {
         var c = state.Lnk.FirstOrDefault(x => string.Equals(x.File, file, StringComparison.OrdinalIgnoreCase));
         return c == null ? null : (c.OldPath, c.OldIndex);
+    }
+
+    // Для проверки на раннере: откуда берётся значок ярлыка и что за значок получается по каждому способу.
+    public string DiagnoseLnk(string file)
+    {
+        var sb = new StringBuilder();
+        string p = "", target = "";
+        int i = 0;
+        try { Shortcuts.ReadIcon(file, out p, out i); target = Shortcuts.ReadTarget(file); } catch { }
+        var src = LnkSource(file);
+        sb.Append($"{Path.GetFileName(file)} | значок ярлыка: {p},{i} | цель: {target} | выбран: {src}");
+        foreach (var loc in new[] { src }.Concat(LnkFallbacks(file)).Where(x => x.Length > 0).Distinct())
+        {
+            var img = IconData.Load(loc, 48);
+            sb.Append(" || ").Append(loc).Append(" → ").Append(img == null ? "не загрузился" : IconData.IsBlank(img) ? "пустой" : IconData.IsGenericDocument(img) ? "ЛИСТОК" : "ok");
+        }
+        return sb.ToString();
     }
 
     string LnkSource(string file)
