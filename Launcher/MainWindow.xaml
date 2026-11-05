@@ -185,7 +185,7 @@
               <StackPanel Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Center">
                 <TextBlock x:Name="OpsSummary" FontFamily="{StaticResource Mono}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" TextWrapping="Wrap"/>
                 <TextBlock x:Name="OpsNow" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,3,0,0" TextWrapping="Wrap"/>
-                <ProgressBar x:Name="OpsProgress" Height="4" Margin="0,8,0,0" Minimum="0" Maximum="100"/>
+                <ProgressBar x:Name="OpsProgress" Width="NaN" HorizontalAlignment="Stretch" Height="4" Margin="0,8,0,0" Minimum="0" Maximum="100"/>
               </StackPanel>
               <WrapPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" MaxWidth="330">
                 <Button x:Name="OpsExpandBtn" Content="▾ Свернуть" Style="{StaticResource Ghost}" Padding="10,4" FontSize="12" Margin="0,0,0,4" Click="OpsExpandBtn_Click"/>

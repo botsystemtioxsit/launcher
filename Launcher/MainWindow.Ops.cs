@@ -223,7 +223,7 @@ public partial class MainWindow
                 Foreground = v.State == OpState.Failed ? Res("Red") : v.State == OpState.Running ? Res("Text") : Res("Muted"),
             });
         if (v.State == OpState.Running && v.Percent is int p)
-            text.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = p, Height = 3, Margin = new Thickness(0, 4, 0, 0) });
+            text.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = p, Width = double.NaN, HorizontalAlignment = HorizontalAlignment.Stretch, Height = 3, Margin = new Thickness(0, 4, 0, 0) });
         g.Children.Add(text);
 
         if (v.State == OpState.Queued)
