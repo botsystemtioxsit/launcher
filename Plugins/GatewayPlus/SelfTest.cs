@@ -94,11 +94,11 @@ static class SelfTest
                     var a5 = Speed.ProbePathMtuAsync("203.0.113.5", false, ct0).GetAwaiter().GetResult();   // шлюз включён: запасные адреса не берём
                     Speed.PingImpl = Path(1500, "none");
                     var a6 = Speed.ProbePathMtuAsync("203.0.113.5", true, ct0).GetAwaiter().GetResult();
-                    Check("подбор MTU: путь 1500 → 1500, WireGuard 1420", a1.Ok && a1.PathMtu == 1500 && Speed.RecommendedWgMtu(a1.PathMtu, "203.0.113.5") == 1420, a1.PathMtu.ToString());
-                    Check("подбор MTU: путь 1452 (DS-Lite) → 1452, WireGuard 1392", a2.Ok && a2.PathMtu == 1452 && Speed.RecommendedWgMtu(a2.PathMtu, "203.0.113.5") == 1392, a2.PathMtu.ToString());
-                    Check("подбор MTU: путь 1280 → 1280 (нижняя граница)", a3.Ok && a3.PathMtu == 1280, a3.PathMtu.ToString());
-                    Check("подбор MTU: сервер молчит — берётся 1.1.1.1, когда шлюз выключен", a4.Ok && a4.PathMtu == 1492 && a4.Via.Contains("1.1.1.1"), a4.Via + " " + a4.PathMtu);
-                    Check("подбор MTU: при включённом шлюзе запасные адреса не берутся (мерили бы туннель)", !a5.Ok && a5.Note.Contains("Отключите шлюз"), a5.Note);
+                    Check("подбор MTU: путь 1500 → 1500, WireGuard 1420", a1.Ok && a1.PathMtu == 1500 && Speed.RecommendedWgMtu(a1.PathMtu, "203.0.113.5") == 1420);
+                    Check("подбор MTU: путь 1452 (DS-Lite) → 1452, WireGuard 1392", a2.Ok && a2.PathMtu == 1452 && Speed.RecommendedWgMtu(a2.PathMtu, "203.0.113.5") == 1392);
+                    Check("подбор MTU: путь 1280 → 1280 (нижняя граница)", a3.Ok && a3.PathMtu == 1280);
+                    Check("подбор MTU: сервер молчит — берётся 1.1.1.1, когда шлюз выключен", a4.Ok && a4.PathMtu == 1492 && a4.Via.Contains("1.1.1.1"));
+                    Check("подбор MTU: при включённом шлюзе запасные адреса не берутся (мерили бы туннель)", !a5.Ok && a5.Note.Contains("Отключите шлюз"));
                     Check("подбор MTU: нигде нет ответа — честное сообщение, а не число", !a6.Ok && a6.Note.Length > 10);
                 }
                 finally { Speed.PingImpl = keep; }
