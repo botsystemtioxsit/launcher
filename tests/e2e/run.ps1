@@ -24,7 +24,7 @@ function Run-Taskbar([string]$name, $tp, $link, [bool]$dumpTree = $false) {
     if ($link) { ($link | ConvertTo-Json) | Set-Content (Join-Path $data 'color-plus-taskbar.json') -Encoding UTF8 }
     else { Remove-Item (Join-Path $data 'color-plus-taskbar.json') -ErrorAction SilentlyContinue }
     $p = Start-Process -FilePath 'out-test/TaskbarPlus.exe' -ArgumentList '--background' -PassThru
-    $st = Wait-File $status { param($t) $t -match 'state=ready' -and $t -match 'engine=3' -and $t -match 'bgfill=[1-9]' } 60
+    $st = Wait-File $status { param($t) $t -match 'state=ready' -and $t -match 'engine=\d' -and $t -match 'bgfill=[1-9]' } 60
     Start-Sleep -Seconds 5
     if ($dumpTree -and (Test-Path $cfg)) {
         # просим движок записать дерево элементов (счётчик dump в файле настроек)

@@ -50,6 +50,7 @@ static void WriteStatus(const wchar_t* state, const wchar_t* error)
     put(L"hosts", num(st.hosts));
     put(L"islands", num(st.islands));
     put(L"rects", num(st.rects));
+    put(L"cover", num(st.coverAppsL) + L"," + num(st.coverAppsR) + L"," + num(st.coverBarL) + L"," + num(st.coverBarR) + L"," + num(st.coverWidth));
     put(L"rectnames", st.rectNames);
     put(L"applied", num(st.applied ? 1 : 0));
     put(L"queue", num(st.queueOk ? 1 : 0));

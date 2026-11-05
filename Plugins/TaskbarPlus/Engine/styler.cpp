@@ -72,6 +72,8 @@ namespace
         med::Brush nativeFill{ nullptr };   // родная кисть фона панели (для режима «как в Windows»)
         std::vector<ctl::Border> borders;
         bool seen = false;
+        // Боковые отступы плашки (плавающая панель и «вкладка»): -1 — как в настройках (side); иначе плашка расширена, чтобы накрыть все значки.
+        double barL = -1, barR = -1;
     };
 
     struct Node
@@ -120,6 +122,8 @@ namespace
         std::string rulesSig = "?";
         // счётчики читает поток наблюдателя
         std::atomic<int> nBgFill{ 0 }, nBgStroke{ 0 }, nApps{ 0 }, nWidgets{ 0 }, nSystem{ 0 }, nIslands{ 0 }, nHosts{ 0 };
+        // где стоят значки и плашка (для проверки): левый/правый край значков, левый/правый отступ плашки, ширина панели
+        std::atomic<int> cvAppsL{ -1 }, cvAppsR{ -1 }, cvBarL{ -1 }, cvBarR{ -1 }, cvWidth{ 0 };
     };
 
     std::mutex g_registryLock;
@@ -255,6 +259,26 @@ namespace
     }
 
     IslandStyle EffectiveStyle(const Config& c, int group, const std::string& key);
+    xaml::DependencyObject ParentOf(const xaml::DependencyObject& o);
+
+    // Боковые отступы плашки: из настроек, а если Relayout расширил плашку под значки — расширенные.
+    void BarSides(const xaml::FrameworkElement& fe, const Config& c, double& left, double& right)
+    {
+        left = right = c.side;
+        try
+        {
+            auto parent = ParentOf(fe).try_as<ctl::Panel>();
+            if (!parent) return;
+            for (auto& h : T().hosts)
+                if (h.panel == parent)
+                {
+                    if (h.barL >= 0) left = h.barL;
+                    if (h.barR >= 0) right = h.barR;
+                    return;
+                }
+        }
+        catch (...) {}
+    }
 
     bool NeedsIslands(const Config& c) { return c.enabled && (c.shape == 3 || ((c.shape == 1 || c.shape == 2) && c.keepEdges)); }
 
@@ -291,15 +315,17 @@ namespace
         const int barRadius = (bar && appsSt.radius >= 0) ? appsSt.radius : c.radius;
         xaml::Thickness m = it.origMargin;
         double rx = it.origRx, ry = it.origRy;
+        double sideL = c.side, sideR = c.side;
+        if (bar) BarSides(fe, c, sideL, sideR);
         if (c.shape == 1)
         {
-            m = xaml::Thickness{ (double)c.side, it.origMargin.Top, (double)c.side, (double)c.gap };
+            m = xaml::Thickness{ sideL, it.origMargin.Top, sideR, (double)c.gap };
             rx = ry = barRadius;
         }
         else if (c.shape == 2)
         {
             // нижние углы уходят за край экрана — остаётся «вкладка» со скруглённым верхом
-            m = xaml::Thickness{ (double)c.side, it.origMargin.Top, (double)c.side, -(double)barRadius };
+            m = xaml::Thickness{ sideL, it.origMargin.Top, sideR, -(double)barRadius };
             rx = ry = barRadius;
         }
         fe.Margin(m);
@@ -667,11 +693,30 @@ namespace
         WriteTextAtomic(DataDir() + L"\\taskbar-plus-engine-islands.txt", text);
     }
 
+    // Заново поставить фон и обводку панели этого хозяина (после смены боковых отступов плашки).
+    void ReapplyBars(Host& host, const Config& c)
+    {
+        for (auto& kv : T().items)
+        {
+            auto& it = kv.second;
+            if (it.kind != Kind::BgFill && it.kind != Kind::BgStroke) continue;
+            try
+            {
+                auto fe = it.obj.try_as<xaml::FrameworkElement>();
+                if (!fe) continue;
+                auto parent = ParentOf(fe).try_as<ctl::Panel>();
+                if (parent && parent == host.panel) ApplyBar(it, c);
+            }
+            catch (...) {}
+        }
+    }
+
     void Relayout(const Config& c, bool force)
     {
         const bool wantIslands = NeedsIslands(c);
         const bool wantLayout = c.enabled && c.LayoutActive();
-        if (!wantIslands && !wantLayout)
+        const bool wantCover = c.enabled && (c.shape == 1 || c.shape == 2);   // плашка должна накрывать все значки
+        if (!wantIslands && !wantLayout && !wantCover)
         {
             if (!T().hosts.empty()) RemoveIslands();
             ClearAllShifts();
@@ -771,7 +816,40 @@ namespace
                 catch (...) {}
             }
 
-            if (!wantIslands) continue;
+            // ----- плашка накрывает все значки -----
+            // Отступ по бокам задаёт ширину плашки, а значки Windows раскладывает по-своему (по центру панели): когда их
+            // много, они выходили за плашку. Поэтому плашка при необходимости расширяется до крайних значков (с запасом).
+            {
+                double nl = -1, nr = -1;
+                if (wantCover && present[2] && width > 0)
+                {
+                    const double pad = std::max(8.0, (double)c.islandPad);
+                    const double needL = gb[2].l + dx[2] - pad;
+                    const double needR = width - (gb[2].r + dx[2] + pad);
+                    nl = std::max(0.0, std::min((double)c.side, needL));
+                    nr = std::max(0.0, std::min((double)c.side, needR));
+                }
+                if (std::abs(nl - host.barL) > 0.5 || std::abs(nr - host.barR) > 0.5)
+                {
+                    host.barL = nl;
+                    host.barR = nr;
+                    ReapplyBars(host, c);
+                }
+                if (present[2] && width > 0)
+                {
+                    T().cvAppsL = (int)std::lround(gb[2].l + dx[2]);
+                    T().cvAppsR = (int)std::lround(gb[2].r + dx[2]);
+                    T().cvBarL = (int)std::lround(host.barL >= 0 ? host.barL : (double)c.side);
+                    T().cvBarR = (int)std::lround(host.barR >= 0 ? host.barR : (double)c.side);
+                    T().cvWidth = (int)std::lround(width);
+                }
+            }
+
+            if (!wantIslands)
+            {
+                if (!host.borders.empty()) RemoveBorders(host);
+                continue;
+            }
 
             // ----- острова -----
             std::vector<Spec> specs;
@@ -1204,6 +1282,7 @@ namespace Styler
             {
                 s.bgFill += t->nBgFill; s.bgStroke += t->nBgStroke; s.apps += t->nApps; s.widgets += t->nWidgets; s.system += t->nSystem;
                 s.islands += t->nIslands; s.hosts += t->nHosts;
+                if (t->cvWidth > s.coverWidth) { s.coverWidth = t->cvWidth; s.coverAppsL = t->cvAppsL; s.coverAppsR = t->cvAppsR; s.coverBarL = t->cvBarL; s.coverBarR = t->cvBarR; }
             }
         }
         s.rects = g_nRects;
