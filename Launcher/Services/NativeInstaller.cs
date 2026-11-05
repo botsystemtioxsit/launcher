@@ -82,10 +82,10 @@ static class NativeInstaller
             ev.Set();
         }
         catch { /* события нет — старая версия плагина: ниже попросим закрыть вручную */ }
-        for (var i = 0; i < 40 && IsRunning(exe); i++) Thread.Sleep(100);
+        for (var i = 0; i < 80 && IsRunning(exe); i++) Thread.Sleep(100);
     }
 
-    static bool IsRunning(string exe)
+    internal static bool IsRunning(string exe)
     {
         try
         {
@@ -98,12 +98,25 @@ static class NativeInstaller
         catch { return false; }
     }
 
-    public static async Task Install(AppDef d, NativeRelease rel, IProgress<int?> progress, CancellationToken ct = default)
+    // Запускает плагин после обновления так же, как он работал до него. Плагины с фоновым режимом (панель, обои, курсор, цвет) — тихо, с --background:
+    // они сами применят сохранённое и, если делать нечего, сразу выйдут; плагины только с окном — открываем окно, которое было открыто.
+    public static string[] RelaunchArgs(AppDef d) => Boot.BackgroundIds.Contains(d.Id) ? new[] { "--background" } : Array.Empty<string>();
+
+    public static void Relaunch(AppDef d, string exe)
+    {
+        var psi = new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(exe)! };
+        foreach (var a in RelaunchArgs(d)) psi.ArgumentList.Add(a);
+        Process.Start(psi);
+    }
+
+    // true — плагин работал до обновления и запущен снова (иначе после обновления он оставался бы выключенным, пока человек не запустит его сам)
+    public static async Task<bool> Install(AppDef d, NativeRelease rel, IProgress<int?> progress, CancellationToken ct = default)
     {
         if (d.NativeExe == null) throw new InvalidOperationException("У этого приложения нет EXE-версии");
         if (!Net.IsTrustedDownload(rel.Url, d.NativeRepo)) throw new InvalidOperationException("Недоверенный адрес загрузки");
         var dir = DirFor(d);
         var exe = Path.Combine(dir, d.NativeExe);
+        var wasRunning = d.IsPlugin && IsRunning(exe);
         AskPluginToQuit(d, exe);
         if (IsRunning(exe)) throw new InvalidOperationException($"Закрой «{d.NativeName}» и повтори.");
         var tmp = Path.Combine(Path.GetTempPath(), "battle-launcher-" + Guid.NewGuid().ToString("N") + ".exe");
@@ -157,6 +170,9 @@ static class NativeInstaller
         k.SetValue("NoModify", 1, RegistryValueKind.DWord);
         k.SetValue("NoRepair", 1, RegistryValueKind.DWord);
         k.SetValue("LauncherSha256", rel.Sha);
+        if (!wasRunning) return false;
+        try { Relaunch(d, exe); return true; }
+        catch { return false; }   // не вышло запустить — обновление всё равно удалось; человек запустит из лаунчера
     }
 
     static void MakeShortcut(string path, string target, string description)
@@ -209,5 +225,70 @@ static class NativeInstaller
         if (MessageBox.Show($"Удалить «{d.NativeName}» с этого компьютера?", "Ghost Shell Launcher", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         try { Uninstall(d); }
         catch (Exception ex) { MessageBox.Show(ex.Message, "Ghost Shell Launcher", MessageBoxButton.OK, MessageBoxImage.Warning); }
+    }
+
+    // BattleLauncher.exe --selftest-update=<папка>: служебная проверка «обновление не выключает плагин» на Windows-раннере GitHub.
+    // Берёт настоящий релиз плагина Icon Plus (у него есть окно и выход по событию), ставит, запускает, обновляет поверх работающего и смотрит,
+    // что он запущен снова новым процессом; обновление НЕработающего плагина его не запускает.
+    public static void SelfTestUpdate(string outDir)
+    {
+        Directory.CreateDirectory(outDir);
+        var log = Path.Combine(outDir, "report.txt");
+        void Say(string t) => File.AppendAllText(log, t + Environment.NewLine);
+        var bad = 0;
+        void Check(string name, bool ok, string extra = "") { Say((ok ? "ok     " : "ПЛОХО  ") + name + (ok ? "" : "  → " + extra)); if (!ok) bad++; }
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var def = Catalog.Plugins.FirstOrDefault(p => p.Id == "icon-plus") ?? throw new InvalidOperationException("в каталоге нет icon-plus");
+                var progress = new Progress<int?>(_ => { });
+                var pname = Path.GetFileNameWithoutExtension(def.NativeExe!);
+                static void KillAll(string name) { foreach (var p in Process.GetProcessesByName(name)) { try { p.Kill(true); p.WaitForExit(5000); } catch { } } }
+                int[] Pids(string exe) => Process.GetProcessesByName(pname).Where(p => { try { return string.Equals(p.MainModule?.FileName, exe, StringComparison.OrdinalIgnoreCase); } catch { return false; } }).Select(p => p.Id).ToArray();
+                bool WaitFor(Func<bool> cond, int seconds) { for (var i = 0; i < seconds * 10; i++) { if (cond()) return true; Thread.Sleep(100); } return cond(); }
+
+                try { if (Find(def) != null || Directory.Exists(DirFor(def))) { KillAll(pname); Uninstall(def); } } catch { }
+                var rel = Latest(def, true).GetAwaiter().GetResult();
+                Check("релиз плагина найден", rel != null, "в последнем релизе нет " + def.NativeExe);
+                if (rel == null) return;
+
+                var first = Install(def, rel, progress).GetAwaiter().GetResult();
+                var info = Find(def);
+                Check("первая установка: плагин не работал — запускать нечего (Install вернул false)", !first && info != null, "вернул " + first);
+                if (info == null) return;
+
+                Launch(info);
+                var up = WaitFor(() => Pids(info.Exe).Length > 0, 30);
+                Check("плагин запущен (окно открыто, как после «Запустить»)", up);
+                var before = Pids(info.Exe);
+                Say("  процесс до обновления: " + string.Join(",", before));
+
+                var second = Install(def, rel, progress).GetAwaiter().GetResult();
+                Check("обновление поверх работающего: Install вернул true (запущен снова)", second);
+                var back = WaitFor(() => { var n = Pids(info.Exe); return n.Length > 0 && !n.Intersect(before).Any(); }, 30);
+                Check("после обновления работает НОВЫЙ процесс плагина", back, "до: " + string.Join(",", before) + "; сейчас: " + string.Join(",", Pids(info.Exe)));
+
+                // выходим по просьбе (как перед обновлением) и обновляем уже выключенный плагин
+                AskPluginToQuit(def, info.Exe);
+                Check("плагин вышел по событию выхода", !IsRunning(info.Exe));
+                var third = Install(def, rel, progress).GetAwaiter().GetResult();
+                Thread.Sleep(3000);
+                Check("обновление выключенного плагина его не запускает", !third && Pids(info.Exe).Length == 0, "вернул " + third + "; процессы: " + string.Join(",", Pids(info.Exe)));
+
+                // как запускаются после обновления разные плагины
+                Check("плагины с фоновым режимом возвращаются с --background", Boot.BackgroundIds.All(id => { var d = Catalog.Plugins.FirstOrDefault(p => p.Id == id); return d != null && RelaunchArgs(d).SequenceEqual(new[] { "--background" }); }));
+                Check("плагин только с окном возвращается без аргументов", RelaunchArgs(def).Length == 0);
+
+                KillAll(pname);
+                Uninstall(def);
+                Check("после проверки плагин удалён", Find(def) == null && !Directory.Exists(DirFor(def)));
+            }
+            catch (Exception ex) { Check("самопроверка не упала", false, ex.ToString()); }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        if (!thread.Join(TimeSpan.FromMinutes(4))) { Say("ПЛОХО  самопроверка не завершилась за 4 минуты"); bad++; }
+        Say(bad == 0 ? "ВСЕ ПРОВЕРКИ ПРОШЛИ" : "НЕ ПРОШЛО ПРОВЕРОК: " + bad);
     }
 }

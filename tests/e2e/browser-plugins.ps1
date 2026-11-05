@@ -12,3 +12,12 @@ $p = Start-Process -FilePath $exe -ArgumentList "--selftest-browser=$(Join-Path 
 if (-not $p.WaitForExit(240000)) { $p.Kill(); Say 'selftest-browser: не завершился за 4 минуты' } else { Say "selftest-browser: код $($p.ExitCode)" }
 $rep = Join-Path $outFull 'self/report.txt'
 if (Test-Path $rep) { Get-Content $rep | ForEach-Object { Say $_ } } else { Say 'report.txt не появился' }
+
+# Обновление плагина не должно его выключать: настоящий релиз Icon Plus ставится, запускается, обновляется поверх работающего и запускается снова
+Say ''
+Say '=== обновление работающего плагина ==='
+$upd = Join-Path $outFull 'update'
+$p2 = Start-Process -FilePath $exe -ArgumentList "--selftest-update=$upd" -PassThru
+if (-not $p2.WaitForExit(300000)) { $p2.Kill(); Say 'selftest-update: не завершился за 5 минут' } else { Say "selftest-update: код $($p2.ExitCode)" }
+$rep2 = Join-Path $upd 'report.txt'
+if (Test-Path $rep2) { Get-Content $rep2 | ForEach-Object { Say $_ } } else { Say 'report.txt обновления не появился' }
