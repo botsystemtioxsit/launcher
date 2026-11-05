@@ -5,10 +5,12 @@ package main
 import (
 	"fmt"
 	"os/exec"
+
+	"golang.zx2c4.com/wireguard/tun"
 )
 
 // На Linux адрес, размер пакета и «поднять» делаем командой ip. Маршруты и NAT — дело скриптов установки.
-func configureInterface(name string, fc *FileConfig) error {
+func setupNetwork(dev tun.Device, name string, fc *FileConfig) (func(), error) {
 	run := func(args ...string) error {
 		out, err := exec.Command("ip", args...).CombinedOutput()
 		if err != nil {
@@ -18,8 +20,8 @@ func configureInterface(name string, fc *FileConfig) error {
 	}
 	for _, a := range fc.Address {
 		if err := run("addr", "add", a.String(), "dev", name); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return run("link", "set", "dev", name, "mtu", fmt.Sprint(fc.MTU), "up")
+	return func() {}, run("link", "set", "dev", name, "mtu", fmt.Sprint(fc.MTU), "up")
 }

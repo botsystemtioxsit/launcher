@@ -16,6 +16,7 @@ import (
 //	[Interface]
 //	PrivateKey = ...
 //	Address    = 10.77.0.2/32, fd77::2/128
+//	DNS        = 1.1.1.1, 9.9.9.9     (клиент на Windows; необязательно)
 //	ListenPort = 51821        (у сервера)
 //	MTU        = 1380
 //	FEC        = auto | off | 10+2
@@ -31,6 +32,7 @@ type FileConfig struct {
 	Name    string
 	MTU     int
 	Address []netip.Prefix
+	DNS     []netip.Addr // сервера имён внутри туннеля (Windows ставит их на сетевую карту шлюза)
 }
 
 func parseConfig(path string) (*FileConfig, error) {
@@ -94,6 +96,15 @@ func parseConfig(path string) (*FileConfig, error) {
 						break
 					}
 					fc.Address = append(fc.Address, pf)
+				}
+			case "dns":
+				for _, a := range strings.Split(v, ",") {
+					ad, e := netip.ParseAddr(strings.TrimSpace(a))
+					if e != nil {
+						err = e
+						break
+					}
+					fc.DNS = append(fc.DNS, ad)
 				}
 			case "listenport":
 				fc.Engine.ListenPort, err = strconv.Atoi(v)

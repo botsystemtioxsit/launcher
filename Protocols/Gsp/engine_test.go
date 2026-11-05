@@ -462,3 +462,24 @@ func (e *Engine) peerOnly() *peer {
 	}
 	return nil
 }
+
+func TestEchoDeviceAnswersPing(t *testing.T) {
+	req := mkIP([4]byte{10, 77, 0, 2}, [4]byte{10, 77, 0, 1}, 1, 64)
+	req[9] = 1  // ICMP
+	req[20] = 8 // echo request
+	req[22], req[23] = 0, 0
+	binary.BigEndian.PutUint16(req[22:], inetChecksum(req[20:]))
+	rep := icmpEchoReply(req)
+	if rep == nil || rep[20] != 0 {
+		t.Fatal("нет ответа на ping")
+	}
+	if string(rep[12:16]) != string(req[16:20]) || string(rep[16:20]) != string(req[12:16]) {
+		t.Fatal("адреса не поменялись местами")
+	}
+	if inetChecksum(rep[20:]) != 0 || inetChecksum(rep[:20]) != 0 {
+		t.Fatal("контрольные суммы ответа неверны")
+	}
+	if icmpEchoReply(rep) != nil {
+		t.Fatal("на ответ отвечать не надо")
+	}
+}
