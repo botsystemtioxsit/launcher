@@ -117,15 +117,17 @@ static class NativeInstaller
     }
 
     // true — плагин работал до обновления и запущен снова (иначе после обновления он оставался бы выключенным, пока человек не запустит его сам)
-    public static async Task<bool> Install(AppDef d, NativeRelease rel, IProgress<int?> progress, CancellationToken ct = default)
+    public static async Task<bool> Install(AppDef d, NativeRelease rel, IProgress<int?> progress, CancellationToken ct = default, Action<string>? phase = null)
     {
         if (d.NativeExe == null) throw new InvalidOperationException("У этого приложения нет EXE-версии");
         if (!Net.IsTrustedDownload(rel.Url, d.NativeRepo)) throw new InvalidOperationException("Недоверенный адрес загрузки");
         var dir = DirFor(d);
         var exe = Path.Combine(dir, d.NativeExe);
         var wasRunning = d.IsPlugin && IsRunning(exe);
+        if (wasRunning) phase?.Invoke("Останавливаю плагин…");
         await Task.Run(() => AskPluginToQuit(d, exe));   // не в потоке окна: ожидание может занять секунды
         if (IsRunning(exe)) throw new InvalidOperationException($"Закрой «{d.NativeName}» и повтори.");
+        phase?.Invoke("Скачиваю…");
         var tmp = Path.Combine(Path.GetTempPath(), "battle-launcher-" + Guid.NewGuid().ToString("N") + ".exe");
         try
         {
@@ -149,6 +151,7 @@ static class NativeInstaller
                     throw new InvalidDataException("Контрольная сумма не совпала — файл повреждён");
             }
             progress.Report(null);
+            phase?.Invoke("Заменяю файл…");
             Directory.CreateDirectory(dir);
             File.Move(tmp, exe, true);
         }
@@ -163,6 +166,7 @@ static class NativeInstaller
             try { File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), old + ".lnk")); } catch { }
             try { File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), old + ".lnk")); } catch { }
         }
+        phase?.Invoke("Записываю ярлыки и версию…");
         MakeShortcut(StartLink(d), exe, d.NativeName ?? d.Name);
         if (!d.IsPlugin) MakeShortcut(DesktopLink(d), exe, d.NativeName ?? d.Name); // плагин — только в меню «Пуск»
         var version = FileVersionInfo.GetVersionInfo(exe).ProductVersion ?? "";
@@ -178,6 +182,7 @@ static class NativeInstaller
         k.SetValue("NoRepair", 1, RegistryValueKind.DWord);
         k.SetValue("LauncherSha256", rel.Sha);
         if (!wasRunning) return false;
+        phase?.Invoke("Запускаю снова…");
         try { Relaunch(d, exe); return true; }
         catch { return false; }   // не вышло запустить — обновление всё равно удалось; человек запустит из лаунчера
     }
@@ -197,11 +202,13 @@ static class NativeInstaller
     public static void Launch(NativeInfo n) =>
         Process.Start(new ProcessStartInfo(n.Exe) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(n.Exe)! });
 
-    public static void Uninstall(AppDef d)
+    public static void Uninstall(AppDef d, Action<string>? phase = null)
     {
         var info = Find(d);
+        if (info != null && d.IsPlugin && IsRunning(info.Exe)) phase?.Invoke("Останавливаю плагин…");
         if (info != null) AskPluginToQuit(d, info.Exe);
         if (info != null && IsRunning(info.Exe)) throw new InvalidOperationException($"Закрой «{d.NativeName}» и повтори.");
+        phase?.Invoke("Убираю файлы и ярлыки…");
         try { File.Delete(StartLink(d)); } catch { }
         try { File.Delete(DesktopLink(d)); } catch { }
         try { Registry.CurrentUser.DeleteSubKeyTree(RegKey(d), false); } catch { }

@@ -26,6 +26,10 @@ public partial class App : Application
         var ut = e.Args.FirstOrDefault(a => a.StartsWith("--selftest-update=", StringComparison.Ordinal));
         if (ut != null) { NativeInstaller.SelfTestUpdate(ut["--selftest-update=".Length..]); Shutdown(); return; }
 
+        // --selftest-ops=<папка>: служебная проверка очереди менеджера обновлений (порядок «по одной», отмена, ошибки)
+        var ot = e.Args.FirstOrDefault(a => a.StartsWith("--selftest-ops=", StringComparison.Ordinal));
+        if (ot != null) { Task.Run(() => OpsSelfTest.Run(ot["--selftest-ops=".Length..])).GetAwaiter().GetResult(); var code = Environment.ExitCode; Shutdown(code); return; }
+
         var shot = e.Args.FirstOrDefault(a => a.StartsWith("--screenshot=", StringComparison.Ordinal));
         if (shot != null)
         {

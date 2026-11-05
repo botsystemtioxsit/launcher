@@ -21,3 +21,12 @@ $p2 = Start-Process -FilePath $exe -ArgumentList "--selftest-update=$upd" -PassT
 if (-not $p2.WaitForExit(300000)) { $p2.Kill(); Say 'selftest-update: не завершился за 5 минут' } else { Say "selftest-update: код $($p2.ExitCode)" }
 $rep2 = Join-Path $upd 'report.txt'
 if (Test-Path $rep2) { Get-Content $rep2 | ForEach-Object { Say $_ } } else { Say 'report.txt обновления не появился' }
+
+# Очередь менеджера обновлений: по одной, отмена ожидающих, причины неудач, подписи фаз (без окна и без сети)
+Say ''
+Say '=== очередь менеджера обновлений ==='
+$ops = Join-Path $outFull 'ops'
+$p3 = Start-Process -FilePath $exe -ArgumentList "--selftest-ops=$ops" -PassThru
+if (-not $p3.WaitForExit(120000)) { $p3.Kill(); Say 'selftest-ops: не завершился за 2 минуты' } else { Say "selftest-ops: код $($p3.ExitCode)" }
+$rep3 = Join-Path $ops 'report.txt'
+if (Test-Path $rep3) { Get-Content $rep3 | ForEach-Object { Say $_ } } else { Say 'report.txt очереди не появился' }
