@@ -9,7 +9,7 @@ namespace GatewayPlusApp;
 // «GatewayPlus.exe --helper=<файл задания>». Результат кладёт рядом, в файл .result.
 sealed class Job
 {
-    public string Action { get; set; } = "";   // connect | disconnect | cleanup
+    public string Action { get; set; } = "";   // connect | disconnect | cleanup | gsp-connect | gsp-disconnect
     public string Name { get; set; } = "";
     public string Conf { get; set; } = "";     // для connect: временный файл с конфигом
     public string Result { get; set; } = "";   // куда записать итог
@@ -74,13 +74,18 @@ static class Helper
     {
         try
         {
+            switch (job.Action)
+            {
+                case "gsp-connect": return GspConnect(job);
+                case "gsp-disconnect": return GspDisconnect(job.Name);
+                case "cleanup": return Cleanup(Wg.ExePath());
+            }
             var exe = Wg.ExePath();
             if (exe == null) return new JobResult { Message = "WireGuard не установлен." };
             switch (job.Action)
             {
                 case "connect": return Connect(exe, job);
                 case "disconnect": return Disconnect(exe, job.Name);
-                case "cleanup": return Cleanup(exe);
                 default: return new JobResult { Message = "Неизвестное действие." };
             }
         }
@@ -121,18 +126,87 @@ static class Helper
         return Wg.ServiceExists(name) ? new JobResult { Message = "Служба шлюза не снялась." } : new JobResult { Ok = true, Message = "Шлюз выключен." };
     }
 
-    static JobResult Cleanup(string exe)
+    static JobResult Cleanup(string? exe)
     {
         var any = false;
         if (Directory.Exists(WorkDir))
-            foreach (var f in Directory.GetFiles(WorkDir, "*.conf"))
+        {
+            if (exe != null)
+                foreach (var f in Directory.GetFiles(WorkDir, "*.conf"))
+                {
+                    var n = Path.GetFileNameWithoutExtension(f);
+                    if (n.StartsWith("gsp-", StringComparison.Ordinal)) continue;
+                    if (Store.ValidName(n) && Wg.ServiceExists(n)) { Wg.Run(exe, "/uninstalltunnelservice " + n, 20000); WaitGone(n, 15); any = true; }
+                    try { File.Delete(f); } catch { }
+                }
+            // службы GSP: каждый gsp-<имя>.conf — один включённый шлюз
+            foreach (var f in Directory.GetFiles(WorkDir, "gsp-*.conf"))
             {
-                var n = Path.GetFileNameWithoutExtension(f);
-                if (Store.ValidName(n) && Wg.ServiceExists(n)) { Wg.Run(exe, "/uninstalltunnelservice " + n, 20000); WaitGone(n, 15); any = true; }
+                var n = Path.GetFileNameWithoutExtension(f)["gsp-".Length..];
+                if (Store.ValidName(n) && GspClient.ServiceExists(n)) { StopGspService(n); any = true; }
                 try { File.Delete(f); } catch { }
+                try { File.Delete(GspClient.StatusFile(n)); } catch { }
             }
+            try { if (Directory.Exists(GspClient.ProgDir)) Directory.Delete(GspClient.ProgDir, true); } catch { }
+        }
+        try { if (Directory.Exists(GspClient.StatusDir) && !Directory.EnumerateFileSystemEntries(GspClient.StatusDir).Any()) Directory.Delete(GspClient.StatusDir); } catch { }
         try { if (Directory.Exists(WorkDir) && !Directory.EnumerateFileSystemEntries(WorkDir).Any()) Directory.Delete(WorkDir); } catch { }
         return new JobResult { Ok = true, Message = any ? "Шлюз выключен, следы убраны." : "Убирать было нечего." };
+    }
+
+    // ---------- GSP ----------
+    static void StopGspService(string name)
+    {
+        if (File.Exists(GspClient.ExePath)) Wg.Run(GspClient.ExePath, "remove-service -name " + name, 60000);
+        else Wg.Run("sc.exe", "stop \"" + Gsp.ServiceName(name) + "\"", 15000);
+        for (var i = 0; i < 30 && GspClient.ServiceExists(name); i++)
+        {
+            if (i == 10) Wg.Run("sc.exe", "delete \"" + Gsp.ServiceName(name) + "\"", 15000);
+            Thread.Sleep(500);
+        }
+    }
+
+    static JobResult GspConnect(Job job)
+    {
+        if (!Store.ValidName(job.Name)) return new JobResult { Message = "Плохое имя шлюза." };
+        if (!File.Exists(job.Conf)) return new JobResult { Message = "Файл конфига не найден." };
+        var conf = File.ReadAllText(job.Conf);
+        if (!Gsp.IsGsp(conf)) return new JobResult { Message = "Это не конфиг GSP." };
+        var bad = Gsp.Validate(conf);
+        if (bad != null) return new JobResult { Message = bad };
+        if (!GspClient.Available) return new JobResult { Message = "В этой сборке плагина нет программы GSP. Обновите Gateway Plus из лаунчера." };
+
+        Directory.CreateDirectory(WorkDir);
+        Lock(WorkDir);
+        if (GspClient.ServiceExists(job.Name)) StopGspService(job.Name);   // пока старая служба работает, её gsp.exe занят
+        var err = GspClient.ExtractTo(GspClient.ProgDir);
+        if (err != null) return new JobResult { Message = err };
+
+        var dst = GspClient.ConfFile(job.Name);
+        File.WriteAllText(dst, Gsp.WithName(conf, "GhostShell-" + job.Name));
+        Directory.CreateDirectory(GspClient.StatusDir);
+        // состояние читает обычный пользователь (окно плагина), пишет служба; больше никому ничего не нужно
+        Wg.Run("icacls.exe", "\"" + GspClient.StatusDir + "\" /inheritance:r /grant:r *S-1-5-18:(OI)(CI)F *S-1-5-32-544:(OI)(CI)F *S-1-5-32-545:(OI)(CI)R", 15000);
+        var st = GspClient.StatusFile(job.Name);
+        try { File.Delete(st); } catch { }
+
+        var (code, o) = Wg.Run(GspClient.ExePath, "install-service -c \"" + dst + "\" -name " + job.Name + " -status \"" + st + "\"", 90000);
+        if (code != 0)
+        {
+            var why = Gsp.ParseStatus(File.Exists(st) ? File.ReadAllText(st) : null)?.Error ?? "";
+            try { File.Delete(dst); } catch { }
+            return new JobResult { Message = "Служба GSP не запустилась" + (why.Length > 0 ? ": " + why : o.Length > 0 ? ": " + o : " (код " + code + ")") + "." };
+        }
+        return new JobResult { Ok = true, Message = "Шлюз включён (GSP)." };
+    }
+
+    static JobResult GspDisconnect(string name)
+    {
+        if (!Store.ValidName(name)) return new JobResult { Message = "Плохое имя шлюза." };
+        if (GspClient.ServiceExists(name)) StopGspService(name);
+        try { File.Delete(GspClient.ConfFile(name)); } catch { }
+        try { File.Delete(GspClient.StatusFile(name)); } catch { }
+        return GspClient.ServiceExists(name) ? new JobResult { Message = "Служба шлюза не снялась." } : new JobResult { Ok = true, Message = "Шлюз выключен." };
     }
 
     static void WaitGone(string name, int seconds)

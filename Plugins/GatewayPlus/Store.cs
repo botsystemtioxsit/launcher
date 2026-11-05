@@ -78,6 +78,7 @@ static class Store
     // Команды PreUp/PostUp/… не принимаем вовсе: WireGuard выполняет их от имени системы.
     public static string? Validate(string conf)
     {
+        if (Gsp.IsGsp(conf)) return Gsp.Validate(conf);   // профиль GSP проверяется своими правилами
         if (string.IsNullOrWhiteSpace(conf)) return "Конфиг пустой.";
         if (conf.Length > 20000) return "Конфиг слишком большой.";
         var lines = conf.Replace("\r", "").Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith('#')).ToList();
@@ -155,6 +156,14 @@ static class Store
     public static string ServerScript()
     {
         using var s = typeof(Store).Assembly.GetManifestResourceStream("server-setup.sh");
+        if (s == null) return "";
+        using var r = new StreamReader(s, Encoding.UTF8);
+        return r.ReadToEnd().Replace("\r\n", "\n");
+    }
+
+    public static string GspServerScript()
+    {
+        using var s = typeof(Store).Assembly.GetManifestResourceStream("gsp-server-setup.sh");
         if (s == null) return "";
         using var r = new StreamReader(s, Encoding.UTF8);
         return r.ReadToEnd().Replace("\r\n", "\n");

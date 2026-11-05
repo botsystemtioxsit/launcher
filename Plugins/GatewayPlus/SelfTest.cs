@@ -115,6 +115,9 @@ static class SelfTest
             // 3c. база: подставной сервер на этом компьютере (REST как у Firebase)
             CloudChecks(Check, log, id, dev);
 
+            // 3d. GSP: профили и (если программа вложена в сборку) настоящая служба против ответчика на этом же компьютере
+            GspChecks(Check, log, dir);
+
             // 4. каким нас видят
             var ip = Task.Run(() => IpInfo.GetAsync()).GetAwaiter().GetResult();
             log.AppendLine($"внешний адрес: {(ip.Ok ? ip.Ip + " · " + ip.Country + " · " + ip.City + " · " + ip.Zone : "не проверился: " + ip.Error)}");
@@ -154,6 +157,85 @@ static class SelfTest
         catch (Exception ex) { log.AppendLine("ОШИБКА: " + ex); }
         File.WriteAllText(Path.Combine(dir, "report.txt"), log.ToString());
     }
+    static void GspChecks(Action<string, bool> Check, StringBuilder log, string dir)
+    {
+        var k = new string('A', 43) + "=";
+        var good = $"# GSP\n[Interface]\nPrivateKey = {k}\nAddress = 10.78.0.2/32\nMTU = 1380\nDNS = 1.1.1.1, 9.9.9.9\nFEC = auto\n\n[Peer]\nPublicKey = {k}\nEndpoint = 203.0.113.5:51821\nAllowedIPs = 0.0.0.0/0\nPersistentKeepalive = 25\n";
+        var wg = $"[Interface]\nPrivateKey = {k}\nAddress = 10.0.0.2/32\n\n[Peer]\nPublicKey = {k}\nEndpoint = 192.0.2.1:51820\nAllowedIPs = 0.0.0.0/0\n";
+        Check("GSP: конфиг с «# GSP» узнаётся, WireGuard — нет", Gsp.IsGsp(good) && !Gsp.IsGsp(wg) && Gsp.IsGsp(wg.Replace("[Interface]\n", "[Interface]\nFEC = auto\n")));
+        Check("GSP: нормальный конфиг принимается (и через Store.Validate)", Gsp.Validate(good) == null && Store.Validate(good) == null);
+        Check("GSP: PostUp и неизвестные строки отклоняются", Gsp.Validate(good.Replace("FEC = auto", "PostUp = calc")) != null && Gsp.Validate(good.Replace("FEC = auto", "Table = off")) != null && Gsp.Validate(good + "что-то\n") != null);
+        Check("GSP: плохие значения отклоняются (IPv6-адрес сервера, MTU, FEC, DNS, ключ)", Gsp.Validate(good.Replace("203.0.113.5:51821", "[2001:db8::1]:51821")) != null && Gsp.Validate(good.Replace("MTU = 1380", "MTU = 100")) != null && Gsp.Validate(good.Replace("FEC = auto", "FEC = fast")) != null && Gsp.Validate(good.Replace("1.1.1.1", "не-адрес")) != null && Gsp.Validate(good.Replace(k, "abc")) != null);
+        Check("GSP: нужны Interface, Peer, оба ключа и Endpoint", Gsp.Validate("# GSP\n[Interface]\nPrivateKey = " + k + "\n") != null && Gsp.Validate(good.Replace("Endpoint = 203.0.113.5:51821\n", "")) != null);
+        var named = Gsp.WithName(good, "GhostShell-x");
+        Check("GSP: имя сетевой карты вставляется в [Interface] один раз", Store.InterfaceValue(named, "Name") == "GhostShell-x" && Gsp.WithName(named, "Other") is string n2 && Regex.Matches(n2, "(?m)^Name").Count == 1 && Gsp.Validate(named) == null);
+        var okJson = "{\"version\":\"0.2.0\",\"port\":1,\"peers\":[{\"key\":\"k\",\"connected\":true,\"sessionAgeS\":5,\"lastRecvAgoS\":0,\"txBytes\":10,\"rxBytes\":20,\"recovered\":7,\"lossPct\":3.25,\"fec\":\"8+3\"}]}";
+        var st = Gsp.ParseStatus(okJson);
+        Check("GSP: состояние читается (потери, защита, восстановлено)", st is { Connected: true, Recovered: 7, Fec: "8+3" } && Math.Abs(st.LossPct - 3.25) < 0.001);
+        Check("GSP: подпись состояния понятна", GspClient.Describe(st).Contains("потери сети 3,3%") || GspClient.Describe(st).Contains("потери сети 3.3%") || GspClient.Describe(st).Contains("потери сети 3,2%") || GspClient.Describe(st).Contains("потери сети 3.2%"));
+        Check("GSP: ошибка службы и мусор в состоянии не ломают чтение", Gsp.ParseStatus("{\"error\":\"нет Peer\"}") is { Error: "нет Peer" } && Gsp.ParseStatus("не json") == null && Gsp.ParseStatus(null) == null && GspClient.Describe(null).Length > 5);
+        var gscript = Store.GspServerScript();
+        Check("GSP: скрипт сервера вшит (" + gscript.Length + " знаков)", gscript.StartsWith("#!/usr/bin/env bash") && gscript.Contains("gsp-linux-") && gscript.Contains("sha256sum") && !gscript.Contains('\r'));
+        File.WriteAllText(Path.Combine(dir, "gsp-server-setup.sh"), gscript, new UTF8Encoding(false));
+        Check("GSP: мастер не принимает чужой протокол и странные переменные", Provisioner.ValidateTarget(new SshTarget { Host = "1.2.3.4", Password = "x", Protocol = "ovpn" }) != null && Provisioner.ValidateTarget(new SshTarget { Host = "1.2.3.4", Password = "x", Protocol = "gsp", ScriptEnv = "A=b; rm -rf /" }) != null && Provisioner.ValidateTarget(new SshTarget { Host = "1.2.3.4", Password = "x", Protocol = "gsp", ScriptEnv = "GSP_BIN=/tmp/gsp GSP_PUBIP=10.0.0.1" }) == null);
+
+        log.AppendLine("GSP вложен в сборку: " + GspClient.Available);
+        if (!GspClient.Available) return;
+        var prog = Path.Combine(Path.GetTempPath(), "gp-gsp-selftest");
+        try
+        {
+            try { Directory.Delete(prog, true); } catch { }
+            Check("GSP: программа и wintun.dll извлекаются", GspClient.ExtractTo(prog) == null && File.Exists(Path.Combine(prog, "gsp.exe")) && File.Exists(Path.Combine(prog, "wintun.dll")));
+            var exe = Path.Combine(prog, "gsp.exe");
+            var (cv, ver) = Wg.Run(exe, "version", 10000);
+            Check("GSP: программа запускается (" + ver + ")", cv == 0 && ver.StartsWith("gsp"));
+            var (c1, sk) = Wg.Run(exe, "genkey", 10000); var (c2, sp) = Wg.Run(exe, "pubkey", 10000, sk);
+            var (c3, ck) = Wg.Run(exe, "genkey", 10000); var (c4, cp) = Wg.Run(exe, "pubkey", 10000, ck);
+            Check("GSP: ключи создаются (genkey/pubkey)", c1 == 0 && c2 == 0 && c3 == 0 && c4 == 0 && sk.Length == 44 && sp.Length == 44 && ck.Length == 44 && cp.Length == 44);
+            if (!Helper.IsAdmin()) { log.AppendLine("GSP: запущено не от администратора — проверка службы пропущена."); return; }
+
+            // сервер — ответчик на ping (на этом же компьютере), клиент — настоящая служба Windows
+            var psi = new System.Diagnostics.ProcessStartInfo(exe, $"echo-server -key {sk} -peer {cp} -allowed 10.77.0.2/32 -port 7110") { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true };
+            using var echo = System.Diagnostics.Process.Start(psi)!;
+            try
+            {
+                var first = echo.StandardOutput.ReadLine() ?? "";
+                Check("GSP: ответчик запущен (" + first + ")", first.StartsWith("echo-server port=7110"));
+                var conf = $"# GSP\n[Interface]\nPrivateKey = {ck}\nAddress = 10.77.0.2/32\nMTU = 1380\nFEC = auto\n\n[Peer]\nPublicKey = {sp}\nEndpoint = 127.0.0.1:7110\nAllowedIPs = 10.77.0.1/32\nPersistentKeepalive = 5\n";
+                Check("GSP: настоящий конфиг проходит проверку", Store.Validate(conf) == null);
+                var tmp = Path.Combine(Path.GetTempPath(), "gp-selftest-gsp"); Directory.CreateDirectory(tmp);
+                var file = Path.Combine(tmp, "citest-gsp.conf"); File.WriteAllText(file, conf);
+                var r = Task.Run(() => Helper.RunAsync(new Job { Action = "gsp-connect", Name = "citest-gsp", Conf = file })).GetAwaiter().GetResult();
+                log.AppendLine($"GSP подключение: {(r.Ok ? "ok" : "ПРОВАЛ")} — {r.Message}");
+                Check("GSP: служба работает", r.Ok && GspClient.IsRunning("citest-gsp"));
+                Check("GSP: сетевая карта шлюза появилась", NetworkInterface.GetAllNetworkInterfaces().Any(n => n.Name.Equals("GhostShell-citest-gsp", StringComparison.OrdinalIgnoreCase)));
+                Check("GSP: конфиг и программа лежат в ProgramData", File.Exists(GspClient.ConfFile("citest-gsp")) && File.Exists(GspClient.ExePath));
+                var acl = Wg.Run("icacls.exe", "\"" + Helper.WorkDir + "\"", 10000).Output;
+                Check("GSP: права на папку: обычных пользователей нет (в ней закрытый ключ и программа службы)", !acl.Contains("BUILTIN\\Users", StringComparison.OrdinalIgnoreCase) && !acl.Contains("Everyone", StringComparison.OrdinalIgnoreCase));
+                var ok = false;
+                using (var ping = new Ping())
+                    for (var i = 0; i < 8 && !ok; i++) { try { ok = ping.Send("10.77.0.1", 2000)?.Status == IPStatus.Success; } catch { } if (!ok) Thread.Sleep(500); }
+                Check("GSP: ping 10.77.0.1 идёт через туннель", ok);
+                Thread.Sleep(2500);
+                var s = GspClient.ReadStatus("citest-gsp");
+                log.AppendLine("GSP состояние: " + GspClient.Describe(s));
+                Check("GSP: окно плагина читает состояние службы (соединено)", s is { Connected: true });
+                var d = Task.Run(() => Helper.RunAsync(new Job { Action = "gsp-disconnect", Name = "citest-gsp" })).GetAwaiter().GetResult();
+                log.AppendLine($"GSP отключение: {(d.Ok ? "ok" : "ПРОВАЛ")} — {d.Message}");
+                Check("GSP: служба снята, карта и конфиг убраны", d.Ok && !GspClient.ServiceExists("citest-gsp") && !File.Exists(GspClient.ConfFile("citest-gsp")) && !NetworkInterface.GetAllNetworkInterfaces().Any(n => n.Name.Equals("GhostShell-citest-gsp", StringComparison.OrdinalIgnoreCase)));
+                // «Вернуть как было» убирает и забытые службы GSP
+                var r2 = Task.Run(() => Helper.RunAsync(new Job { Action = "gsp-connect", Name = "citest-gsp2", Conf = file })).GetAwaiter().GetResult();
+                var cl = Task.Run(() => Helper.RunAsync(new Job { Action = "cleanup" })).GetAwaiter().GetResult();
+                log.AppendLine($"GSP уборка: {cl.Message}");
+                Check("GSP: «Вернуть как было» снимает забытую службу и убирает папку", r2.Ok && !GspClient.ServiceExists("citest-gsp2") && !Directory.Exists(GspClient.ProgDir));
+                try { Directory.Delete(tmp, true); } catch { }
+            }
+            finally { try { if (!echo.HasExited) echo.Kill(true); } catch { } }
+        }
+        catch (Exception ex) { log.AppendLine("GSP: ОШИБКА проверки: " + ex); Check("GSP: проверка не упала с исключением", false); }
+        finally { try { Directory.Delete(prog, true); } catch { } }
+    }
+
     static int FreePort() { var l = new TcpListener(IPAddress.Loopback, 0); l.Start(); var p = ((IPEndPoint)l.LocalEndpoint).Port; l.Stop(); return p; }
 
     static JsonNode? ReplaceSv(JsonNode? n)

@@ -7,3 +7,4 @@ Android/.gradle/
 Android/local.properties
 *.apk
 Plugins/TaskbarPlus/Engine/build/
+Plugins/GatewayPlus/Resources/bin/

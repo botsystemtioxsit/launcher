@@ -14,6 +14,8 @@
     <Compile Include="..\GatewayPlus\Provisioner.cs" Link="Provisioner.cs" />
     <Compile Include="..\GatewayPlus\Store.cs" Link="Store.cs" />
     <Compile Include="..\GatewayPlus\DeviceAdder.cs" Link="DeviceAdder.cs" />
+    <Compile Include="..\GatewayPlus\Gsp.cs" Link="Gsp.cs" />
+    <EmbeddedResource Include="..\GatewayPlus\Resources\gsp-server-setup.sh" LogicalName="gsp-server-setup.sh" />
     <EmbeddedResource Include="..\GatewayPlus\Resources\server-setup.sh" LogicalName="server-setup.sh" />
     <EmbeddedResource Include="..\GatewayPlus\Resources\add-device.sh" LogicalName="add-device.sh" />
     <EmbeddedResource Include="..\GatewayPlus\Resources\tune-server.sh" LogicalName="tune-server.sh" />

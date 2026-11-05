@@ -1,6 +1,9 @@
-//go:build !linux
+//go:build !linux && !windows
 
 package main
 
-// На Windows адрес и маршруты ставит служба-обёртка (этап встраивания в Gateway Plus).
-func configureInterface(name string, fc *FileConfig) error { return nil }
+import "golang.zx2c4.com/wireguard/tun"
+
+func setupNetwork(dev tun.Device, name string, fc *FileConfig) (func(), error) {
+	return func() {}, nil
+}

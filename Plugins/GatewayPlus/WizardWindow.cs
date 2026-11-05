@@ -20,6 +20,8 @@ sealed class WizardWindow : Window
     readonly TextBox nameBox = new() { Text = "germany", Width = 220, HorizontalAlignment = HorizontalAlignment.Left, MaxLength = 32 };
     readonly RadioButton rbPass = new() { Content = "Пароль", IsChecked = true, Margin = new Thickness(0, 0, 18, 0) };
     readonly RadioButton rbKey = new() { Content = "Файл ключа SSH" };
+    readonly RadioButton rbWg = new() { Content = "WireGuard — стандарт: быстрый, проверенный годами", IsChecked = true, Margin = new Thickness(0, 0, 0, 4), GroupName = "proto" };
+    readonly RadioButton rbGsp = new() { Content = "GSP — наш протокол: лучше переносит потери связи (мобильная сеть, Wi-Fi, далёкий сервер)", GroupName = "proto" };
     readonly StackPanel passPanel = new(), keyPanel = new() { Visibility = Visibility.Collapsed };
     readonly TextBox logBox = new() { IsReadOnly = true, FontFamily = (FontFamily)Application.Current.FindResource("Mono"), FontSize = 12, TextWrapping = TextWrapping.NoWrap, Height = 180, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(8) };
     readonly TextBlock msg = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
@@ -42,7 +44,7 @@ sealed class WizardWindow : Window
     void Build()
     {
         page.Children.Add(Ui.Title("СОЗДАТЬ СВОЙ VPN"));
-        page.Children.Add(Ui.Note("Мастер сам зайдёт на ваш сервер, поставит на него WireGuard и сохранит готовый профиль — останется нажать «Подключить». Сервер мастер не покупает: арендуйте его сами (самый дешёвый подойдёт, обычно 3–5 € в месяц) в нужной стране — например, в Германии (Hetzner, Netcup, Contabo и подобные). Нужна система Ubuntu 22.04/24.04 или Debian 12. Хостер пришлёт адрес сервера, логин (обычно root) и пароль.", 12.5));
+        page.Children.Add(Ui.Note("Мастер сам зайдёт на ваш сервер, поставит на него WireGuard или наш протокол GSP и сохранит готовый профиль — останется нажать «Подключить». Сервер мастер не покупает: арендуйте его сами (самый дешёвый подойдёт, обычно 3–5 € в месяц) в нужной стране — например, в Германии (Hetzner, Netcup, Contabo и подобные). Нужна система Ubuntu 22.04/24.04 или Debian 12. Хостер пришлёт адрес сервера, логин (обычно root) и пароль.", 12.5));
 
         page.Children.Add(Ui.Label("Адрес сервера (IP, например 203.0.113.5)"));
         page.Children.Add(hostBox);
@@ -72,6 +74,10 @@ sealed class WizardWindow : Window
         rbKey.Checked += (_, _) => { passPanel.Visibility = Visibility.Collapsed; keyPanel.Visibility = Visibility.Visible; };
         page.Children.Add(Ui.Note("Пароль нигде не сохраняется: он нужен только на время установки.", 11.5));
 
+        page.Children.Add(Ui.Label("Протокол"));
+        page.Children.Add(rbWg); page.Children.Add(rbGsp);
+        page.Children.Add(Ui.Note("WireGuard — выбор по умолчанию. GSP — молодой протокол Ghost Shell: когда связь теряет пакеты, он восстанавливает их сам, и скорость падает заметно меньше (на хорошей связи он не быстрее WireGuard). Оба ставятся на ваш сервер по SSH, можно поставить оба — они не мешают друг другу.", 11.5));
+
         page.Children.Add(Ui.Label("Название профиля (латиницей)"));
         page.Children.Add(nameBox);
 
@@ -81,7 +87,7 @@ sealed class WizardWindow : Window
         page.Children.Add(Ui.Label("Что происходит"));
         page.Children.Add(Ui.Box(logBox));
         page.Children.Add(msg);
-        page.Children.Add(Ui.Note("Мастер подключается к серверу по SSH, проверяет систему, передаёт скрипт, запускает его и забирает конфиг. Закрытые ключи создаются на сервере и не выводятся в журнал выше. Если у хостера есть свой файрвол, откройте в нём порт 51820 по протоколу UDP.", 11.5));
+        page.Children.Add(Ui.Note("Мастер подключается к серверу по SSH, проверяет систему, передаёт скрипт, запускает его и забирает конфиг. Закрытые ключи создаются на сервере и не выводятся в журнал выше. Если у хостера есть свой файрвол, откройте в нём порт 51820 (WireGuard) или 51821 (GSP) по протоколу UDP.", 11.5));
     }
 
     void PickKey()
@@ -107,14 +113,14 @@ sealed class WizardWindow : Window
         return Ask($"Первое подключение к серверу {q.Host}.\n\nОтпечаток ({q.Algorithm}):\n{q.Fingerprint}\n\nЕсли хостер показывает отпечаток в панели — сверьте. Если сверить нечем, для нового сервера это нормально: подтвердите, что это ваш сервер.\n\nПродолжить?", "Подтвердите сервер", MessageBoxImage.Question);
     }
 
-    bool ConfirmReplace(string text) => Ask(text, "WireGuard уже настроен", MessageBoxImage.Warning);
+    bool ConfirmReplace(string text) => Ask(text, "Сервер уже настроен", MessageBoxImage.Warning);
 
     async void Go()
     {
         if (done) { DialogResult = true; return; }
         if (running) return;
         msg.Foreground = Ui.Res("Accent2"); msg.Text = "";
-        var t = new SshTarget { Host = hostBox.Text.Trim(), Port = int.TryParse(portBox.Text.Trim(), out var p) ? p : 22, User = userBox.Text.Trim() };
+        var t = new SshTarget { Host = hostBox.Text.Trim(), Port = int.TryParse(portBox.Text.Trim(), out var p) ? p : 22, User = userBox.Text.Trim(), Protocol = rbGsp.IsChecked == true ? "gsp" : "wg" };
         if (rbKey.IsChecked == true) { t.KeyFile = keyFileBox.Text.Trim(); t.KeyPass = keyPassBox.Password; }
         else t.Password = passBox.Password;
         var bad = Provisioner.ValidateTarget(t);
@@ -131,7 +137,7 @@ sealed class WizardWindow : Window
             Store.Active = name;
             SavedName = name;
             msg.Foreground = Ui.Res("Green");
-            msg.Text = $"Готово! Профиль «{name}» сохранён (сервер {res.Endpoint}). Закройте окно и нажмите «Подключить». Если не подключается — в панели хостинга откройте порт 51820 по протоколу UDP.";
+            msg.Text = $"Готово! Профиль «{name}» сохранён (сервер {res.Endpoint}, протокол {(res.Protocol == "gsp" ? "GSP" : "WireGuard")}). Закройте окно и нажмите «Подключить». Если не подключается — в панели хостинга откройте порт {(res.Protocol == "gsp" ? "51821" : "51820")} по протоколу UDP.";
             done = true; go.Content = "Закрыть";
         }
         catch (Exception ex) { msg.Text = "Не вышло: " + ex.Message; }

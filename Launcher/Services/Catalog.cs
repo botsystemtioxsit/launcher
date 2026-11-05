@@ -63,7 +63,7 @@ static class Catalog
             "launcher", "Cursor Plus", null, "CursorPlus.exe", "Cursor Plus", IsPlugin: true),
         new AppDef("dns-plus", "DNS Plus", "Защищённый DNS NextDNS для всей Windows: вставьте свой ID и нажмите «Включить». Сам сервис NextDNS (nextdns.io) бесплатный — профиль и фильтры настраиваются у них. Нужна Windows 11.",
             "launcher", "DNS Plus", null, "DnsPlus.exe", "DNS Plus", IsPlugin: true),
-        new AppDef("gateway-plus", "Gateway Plus", "Личный VPN: мастер сам ставит WireGuard на ваш сервер по SSH, шлюз пускает через него весь интернет компьютера — сайты видят адрес и страну сервера. Нужен бесплатный аккаунт; только личное использование.",
+        new AppDef("gateway-plus", "Gateway Plus", "Личный VPN: мастер сам ставит на ваш сервер по SSH WireGuard или наш протокол GSP (лучше переносит потери связи), шлюз пускает через него весь интернет компьютера — сайты видят адрес и страну сервера. Нужен бесплатный аккаунт; только личное использование.",
             "launcher", "Gateway Plus", null, "GatewayPlus.exe", "Gateway Plus", IsPlugin: true),
         new AppDef("skin-loader", "Skin Loader", "Скины Windows: отметьте, какие плагины входят (панель задач, цвет, значки, обои, курсор), соберите скин и применяйте его одной кнопкой. Скин можно сохранить в файл и отдать другу.",
             "launcher", "Skin Loader", null, "SkinLoader.exe", "Skin Loader", IsPlugin: true),
