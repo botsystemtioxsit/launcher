@@ -439,6 +439,12 @@ sealed class IconEngine
                         continue;
                     }
                     var ico = GeneratedIcon(pick, s);
+                    if (ico == null)
+                    {
+                        failed++; outcomes.Add(new Outcome(t.Title, item, "после перекраски значок стал сплошным пятном — оставлен как был"));
+                        if (sink.Key.StartsWith("lnk:", StringComparison.Ordinal) && !t.NeedsAdmin) RevertLnk(sink.Key[4..]);
+                        continue;
+                    }
                     sink.Write(ico);
                     how[item] = pick.How;
                     done++;
@@ -489,11 +495,13 @@ sealed class IconEngine
         return Path.Combine(Paths.Generated, key + ".ico");
     }
 
-    static string GeneratedIcon(Pick pick, IconSettings s)
+    // null — после перекраски получилось сплошное пятно (плитка без рисунка, глиф того же тона, что и фон): такой значок ставить нельзя, это «серый квадратик».
+    static string? GeneratedIcon(Pick pick, IconSettings s)
     {
         var path = GeneratedPath(pick.Location, s);
         if (File.Exists(path)) return path;
         var imgs = pick.Sizes.Select(img => IconData.FromPixels(Tint.Apply(IconData.Pixels(img), s.Color, s.Style, s.Strength), img.PixelWidth, img.PixelHeight)).ToList();
+        if (IconData.IsBlank(imgs)) return null;
         IconData.WriteIco(path, imgs);
         return path;
     }
@@ -516,6 +524,7 @@ sealed class IconEngine
         var big = pick.Sizes.OrderBy(x => Math.Abs(x.PixelWidth - 48)).First();
         var before = IconData.Resize(big, 48);
         var after = IconData.FromPixels(Tint.Apply(IconData.Pixels(before), s.Color, s.Style, s.Strength), 48, 48);
+        if (IconData.IsBlank(after)) return new PreviewItem(name, before, null, "после перекраски стал бы сплошным пятном — оставим как есть", pick.How);
         return new PreviewItem(name, before, after, "", pick.How);
     }
 

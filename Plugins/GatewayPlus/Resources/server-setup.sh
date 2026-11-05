@@ -12,7 +12,7 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 APT="apt-get -o DPkg::Lock::Timeout=300 -y"
 $APT update
-$APT install wireguard iptables curl
+$APT install wireguard iptables curl ethtool
 
 umask 077
 mkdir -p /etc/wireguard
@@ -20,7 +20,16 @@ cd /etc/wireguard
 
 PORT=51820
 SUBNET=10.66.66
+# внутренняя сеть IPv6 внутри туннеля (ULA: не выходит в интернет сама, наружу идёт через NAT сервера)
+ULA=fd66:6761:7465::
 IFACE="$(ip -4 route show default | awk '{print $5; exit}')"
+# Есть ли у сервера свой IPv6. Если есть — пускаем IPv6 и в туннель: иначе программы сначала пробуют IPv6, упираются в тупик и долго ждут (страницы «тормозят»).
+# Если нет — IPv6 в туннель не добавляем (программы сразу переходят на IPv4).
+HAS6=0
+IFACE6="$(ip -6 route show default 2>/dev/null | awk '{print $5; exit}')"
+if [ -n "$IFACE6" ] && curl -6 -fsS --max-time 6 -o /dev/null https://api6.ipify.org 2>/dev/null; then HAS6=1; fi
+[ "${GS_FORCE_IPV6:-}" = "1" ] && HAS6=1   # только для проверки на тестовой машине
+[ -z "$IFACE6" ] && IFACE6="$IFACE"
 PUBIP="$(curl -4 -fsS --max-time 10 https://api.ipify.org || curl -4 -fsS --max-time 10 https://ifconfig.me || true)"
 if [ -z "$IFACE" ] || [ -z "$PUBIP" ]; then
   echo "Не удалось узнать сетевой интерфейс или внешний адрес сервера." >&2
@@ -36,6 +45,7 @@ cat > wg0.conf <<CONF
 Address = ${SUBNET}.1/24
 ListenPort = ${PORT}
 PrivateKey = $(cat server.key)
+PostUp = ethtool -K ${IFACE} rx-udp-gro-forwarding on rx-gro-list off >/dev/null 2>/dev/null || true
 PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o ${IFACE} -j MASQUERADE; iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o ${IFACE} -j MASQUERADE; iptables -t mangle -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 
@@ -45,7 +55,16 @@ PresharedKey = $(cat client.psk)
 AllowedIPs = ${SUBNET}.2/32
 CONF
 
+# IPv6 внутри туннеля (только если у сервера есть свой IPv6). Каждая строка с «|| true»: сбой IPv6 не должен ронять весь VPN.
+if [ "$HAS6" = "1" ]; then
+  sed -i "s#^Address = .*#Address = ${SUBNET}.1/24, ${ULA}1/64#" wg0.conf
+  sed -i "s#^AllowedIPs = ${SUBNET}.2/32#AllowedIPs = ${SUBNET}.2/32, ${ULA}2/128#" wg0.conf
+  sed -i "/^ListenPort/a PostDown = ip6tables -D FORWARD -i wg0 -j ACCEPT; ip6tables -D FORWARD -o wg0 -j ACCEPT; ip6tables -t nat -D POSTROUTING -o ${IFACE6} -j MASQUERADE; ip6tables -t mangle -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu || true" wg0.conf
+  sed -i "/^ListenPort/a PostUp = ip6tables -A FORWARD -i wg0 -j ACCEPT; ip6tables -A FORWARD -o wg0 -j ACCEPT; ip6tables -t nat -A POSTROUTING -o ${IFACE6} -j MASQUERADE; ip6tables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu || true" wg0.conf
+fi
+
 echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-wireguard.conf
+[ "$HAS6" = "1" ] && echo 'net.ipv6.conf.all.forwarding=1' >> /etc/sysctl.d/99-wireguard.conf
 # быстрее на длинных расстояниях и при потерях: очередь fq + алгоритм BBR (если ядро умеет; нет — тихо пропускаем)
 if modprobe tcp_bbr 2>/dev/null && grep -qw bbr /proc/sys/net/ipv4/tcp_available_congestion_control 2>/dev/null; then
   printf 'net.core.default_qdisc=fq\nnet.ipv4.tcp_congestion_control=bbr\n' > /etc/sysctl.d/99-ghostshell-net.conf
@@ -65,7 +84,7 @@ echo "=========== НАЧАЛО КОНФИГА (скопируйте всё ме�
 cat <<CLIENT
 [Interface]
 PrivateKey = $(cat client.key)
-Address = ${SUBNET}.2/32
+Address = ${SUBNET}.2/32$( [ "$HAS6" = "1" ] && echo ", ${ULA}2/128" )
 MTU = 1380
 DNS = 1.1.1.1, 9.9.9.9
 

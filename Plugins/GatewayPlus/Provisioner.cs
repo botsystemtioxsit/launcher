@@ -38,6 +38,7 @@ sealed class ProvisionResult
     public string Endpoint { get; set; } = "";
     public string Os { get; set; } = "";
     public string Fingerprint { get; set; } = "";
+    public string Ipv6Prefix { get; set; } = "";   // «Проверить и ускорить сервер»: сервер включил IPv6 в туннеле — профиль на компьютере нужно дополнить
 }
 
 static class Provisioner

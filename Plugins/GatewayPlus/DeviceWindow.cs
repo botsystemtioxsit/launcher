@@ -48,7 +48,7 @@ sealed class DeviceWindow : Window
         page.Children.Add(msg);
 
         page.Children.Add(Ui.Label("VPN медленный?"));
-        page.Children.Add(Ui.Note("Кнопка зайдёт на сервер по тем же данным (адрес, пользователь, пароль выше), включит подгонку размера пакетов и ускоритель BBR и покажет, насколько быстр сам сервер. Если медленный сам сервер, VPN быстрее него не станет.", 12));
+        page.Children.Add(Ui.Note("Кнопка зайдёт на сервер по тем же данным (адрес, пользователь, пароль выше), подгонит размер пакетов, включит быструю пересылку UDP (если ядро сервера умеет) и IPv6 внутри туннеля (если у сервера есть свой IPv6), и покажет, насколько быстр сам сервер. Если медленный сам сервер, VPN быстрее него не станет. Размер пакета для вашего компьютера подбирается отдельно — кнопка «Скорость и размер пакета…» в главном окне.", 12));
         tuneBtn = Ui.Btn("Проверить и ускорить сервер", null, Tune, first: true);
         page.Children.Add(tuneBtn);
 
@@ -89,6 +89,17 @@ sealed class DeviceWindow : Window
             if (!res.Ok) { msg.Text = res.Error; return; }
             msg.Foreground = Ui.Res("Green");
             msg.Text = "Готово. Итог проверки — в журнале выше («ВЫВОД»). Если вы на телефоне, выключите и снова включите туннель в WireGuard.";
+            // сервер включил IPv6 в туннеле — профиль на этом компьютере должен получить свой IPv6-адрес, иначе IPv6 так и останется «в тупике»
+            if (res.Ipv6Prefix.Length > 0)
+            {
+                var cur = Store.Load(profile);
+                var upd = cur == null ? null : Store.WithIpv6(cur, res.Ipv6Prefix);
+                if (cur != null && upd != null && upd != cur && Store.Validate(upd) == null)
+                {
+                    Store.Save(profile, upd);
+                    msg.Text += "\nIPv6 в туннеле включён, профиль «" + profile + "» на этом компьютере обновлён. Отключите шлюз и включите снова.";
+                }
+            }
         }
         catch (Exception ex) { msg.Text = "Не вышло: " + ex.Message; }
         finally { running = false; go.IsEnabled = true; tuneBtn.IsEnabled = true; }

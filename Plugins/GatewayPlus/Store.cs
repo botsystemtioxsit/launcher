@@ -94,6 +94,50 @@ static class Store
         return null;
     }
 
+    // Значение строки из раздела [Interface] (например, MTU или Address); пусто, если строки нет.
+    public static string InterfaceValue(string conf, string key)
+    {
+        var inIface = false;
+        foreach (var raw in conf.Replace("\r", "").Split('\n'))
+        {
+            var t = raw.Trim();
+            if (t.StartsWith('[')) { inIface = t.Equals("[Interface]", StringComparison.OrdinalIgnoreCase); continue; }
+            if (inIface && t.StartsWith(key, StringComparison.OrdinalIgnoreCase) && t[key.Length..].TrimStart().StartsWith('='))
+                return t[(t.IndexOf('=') + 1)..].Trim();
+        }
+        return "";
+    }
+
+    // Меняет (или добавляет) строку в разделе [Interface]. Остальное в конфиге остаётся как было.
+    public static string WithInterfaceValue(string conf, string key, string value)
+    {
+        var lines = conf.Replace("\r", "").Split('\n').ToList();
+        var inIface = false; var last = -1; var done = false;
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var t = lines[i].Trim();
+            if (t.StartsWith('[')) { inIface = t.Equals("[Interface]", StringComparison.OrdinalIgnoreCase); if (inIface) last = i; continue; }
+            if (!inIface) continue;
+            if (t.Length > 0) last = i;
+            if (t.StartsWith(key, StringComparison.OrdinalIgnoreCase) && t[key.Length..].TrimStart().StartsWith('=')) { lines[i] = key + " = " + value; done = true; }
+        }
+        if (!done) lines.Insert(last + 1, key + " = " + value);
+        return string.Join("\n", lines);
+    }
+
+    public static int MtuOf(string conf) => int.TryParse(InterfaceValue(conf, "MTU"), out var m) ? m : 0;
+
+    // Дополняет Address адресом IPv6 внутри туннеля (после того как сервер включил IPv6): …/32 с номером N → <префикс>N/128.
+    public static string WithIpv6(string conf, string prefix)
+    {
+        if (!Regex.IsMatch(prefix ?? "", @"^fd[0-9a-f:]{4,40}::$")) return conf;
+        var addr = InterfaceValue(conf, "Address");
+        if (addr.Length == 0 || addr.Contains(prefix, StringComparison.OrdinalIgnoreCase)) return conf;
+        var m = Regex.Match(addr, @"(?:^|,)\s*\d{1,3}\.\d{1,3}\.\d{1,3}\.(\d{1,3})/32");
+        if (!m.Success) return conf;
+        return WithInterfaceValue(conf, "Address", addr + ", " + prefix + m.Groups[1].Value + "/128");
+    }
+
     // Куда ведёт конфиг (для показа в окне): адрес сервера без порта.
     public static string EndpointOf(string conf)
     {

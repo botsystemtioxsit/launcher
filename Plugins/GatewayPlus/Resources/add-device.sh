@@ -30,13 +30,19 @@ PUB="$(printf '%s' "$KEY" | wg pubkey)"
 PSK="$(wg genpsk)"
 SPUB="$(wg pubkey < server.key)"
 
+# если на сервере включён IPv6 в туннеле (его включает «Проверить и ускорить сервер»), новое устройство получает и IPv6-адрес
+ULA=fd66:6761:7465::
+V6=""
+V6CLIENT=""
+if grep -q "${ULA}" wg0.conf; then V6=", ${ULA}${N}/128"; V6CLIENT=", ${ULA}${N}/128"; fi
+
 cat >> wg0.conf <<CONF
 
 [Peer]
 # ghostshell: ${NAME}
 PublicKey = ${PUB}
 PresharedKey = ${PSK}
-AllowedIPs = ${SUBNET}.${N}/32
+AllowedIPs = ${SUBNET}.${N}/32${V6}
 CONF
 
 # новый ключ подхватывается без обрыва уже подключённых устройств
@@ -51,7 +57,7 @@ echo "=========== НАЧАЛО КОНФИГА (скопируйте всё ме�
 cat <<CLIENT
 [Interface]
 PrivateKey = ${KEY}
-Address = ${SUBNET}.${N}/32
+Address = ${SUBNET}.${N}/32${V6CLIENT}
 MTU = 1380
 DNS = 1.1.1.1, 9.9.9.9
 

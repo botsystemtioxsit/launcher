@@ -34,7 +34,70 @@ else
   echo "Алгоритм BBR: ядро сервера его не поддерживает (остаётся $CC)."
 fi
 
-# 3. как работает сервер
+# 3. быстрая пересылка UDP (ядро 6.2+): ускоряет WireGuard на «проходном» сервере; не умеет ядро или карта — тихо пропускаем
+IFACE="$(ip -4 route show default | awk '{print $5; exit}')"
+GRO_CMD="ethtool -K ${IFACE} rx-udp-gro-forwarding on rx-gro-list off"
+if ! command -v ethtool > /dev/null 2>&1; then
+  apt-get -o DPkg::Lock::Timeout=120 -y install ethtool > /dev/null 2>&1 || true
+fi
+if [ -z "$IFACE" ] || ! command -v ethtool > /dev/null 2>&1; then
+  echo "Быстрая пересылка UDP: не получилось (нет ethtool или сетевого интерфейса) — пропускаю."
+elif ! ethtool -k "$IFACE" 2>/dev/null | grep -q 'rx-udp-gro-forwarding'; then
+  echo "Быстрая пересылка UDP: ядро сервера её не умеет (нужно 6.2 и новее) — пропускаю."
+elif $GRO_CMD > /dev/null 2>&1; then
+  if ! grep -q 'rx-udp-gro-forwarding' /etc/wireguard/wg0.conf; then
+    cp -n /etc/wireguard/wg0.conf /etc/wireguard/wg0.conf.bak-ghostshell 2>/dev/null || true
+    sed -i "/^ListenPort/a PostUp = ${GRO_CMD} >/dev/null 2>/dev/null || true" /etc/wireguard/wg0.conf
+  fi
+  echo "Быстрая пересылка UDP: включена."
+else
+  echo "Быстрая пересылка UDP: сетевая карта сервера не разрешила — пропускаю (не страшно)."
+fi
+
+# 4. IPv6 внутри туннеля. Без него у программ с IPv6 (почти все большие сайты) первая попытка уходит в тупик и страницы «тормозят».
+# Включаем только если у сервера есть свой IPv6; иначе ничего не трогаем.
+ULA=fd66:6761:7465::
+if grep -q "${ULA}" /etc/wireguard/wg0.conf; then
+  echo "IPv6 в туннеле: уже включён."
+  echo "GS_IPV6_PREFIX=${ULA}"
+else
+  IFACE6="$(ip -6 route show default 2>/dev/null | awk '{print $5; exit}')"
+  HAS6=0
+  if [ -n "$IFACE6" ] && curl -6 -fsS --max-time 6 -o /dev/null https://api6.ipify.org 2>/dev/null; then HAS6=1; fi
+  [ "${GS_FORCE_IPV6:-}" = "1" ] && HAS6=1   # только для проверки на тестовой машине
+  [ -z "$IFACE6" ] && IFACE6="$IFACE"
+  SADDR="$(awk -F' *= *' '/^Address/{print $2; exit}' /etc/wireguard/wg0.conf)"
+  SUBNET="${SADDR%.*}"
+  if [ "$HAS6" != "1" ]; then
+    echo "IPv6 в туннеле: у сервера нет своего IPv6 — туннель остаётся только на IPv4 (программы сразу переходят на IPv4)."
+  elif [ -z "$SUBNET" ]; then
+    echo "IPv6 в туннеле: не получилось прочитать настройки сервера — пропускаю."
+  else
+    SUBQ="$(printf '%s' "$SUBNET" | sed 's/\./\\./g')"
+    cp /etc/wireguard/wg0.conf /etc/wireguard/wg0.conf.bak-ghostshell-v6
+    sed -i -E "s#^(Address = .*)\$#\1, ${ULA}1/64#" /etc/wireguard/wg0.conf
+    sed -i -E "s#^(AllowedIPs = ${SUBQ}\.([0-9]+)/32)[[:space:]]*\$#\1, ${ULA}\2/128#" /etc/wireguard/wg0.conf
+    sed -i "/^ListenPort/a PostDown = ip6tables -D FORWARD -i wg0 -j ACCEPT; ip6tables -D FORWARD -o wg0 -j ACCEPT; ip6tables -t nat -D POSTROUTING -o ${IFACE6} -j MASQUERADE; ip6tables -t mangle -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu || true" /etc/wireguard/wg0.conf
+    sed -i "/^ListenPort/a PostUp = ip6tables -A FORWARD -i wg0 -j ACCEPT; ip6tables -A FORWARD -o wg0 -j ACCEPT; ip6tables -t nat -A POSTROUTING -o ${IFACE6} -j MASQUERADE; ip6tables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu || true" /etc/wireguard/wg0.conf
+    echo 'net.ipv6.conf.all.forwarding=1' > /etc/sysctl.d/99-ghostshell-ipv6.conf
+    sysctl -w net.ipv6.conf.all.forwarding=1 > /dev/null 2>&1 || true
+    # перезапуск туннеля: на секунду-две подключённые устройства отвалятся и сами вернутся
+    systemctl restart wg-quick@wg0 > /dev/null 2>&1 || true
+    sleep 1
+    if wg show wg0 > /dev/null 2>&1 && ip -6 addr show dev wg0 2>/dev/null | grep -q "${ULA}1"; then
+      echo "IPv6 в туннеле: включён (у сервера есть свой IPv6). Профиль на компьютере плагин обновит сам."
+      echo "GS_IPV6_PREFIX=${ULA}"
+    else
+      # что-то не сложилось — возвращаем как было, чтобы VPN продолжал работать
+      cp /etc/wireguard/wg0.conf.bak-ghostshell-v6 /etc/wireguard/wg0.conf
+      rm -f /etc/sysctl.d/99-ghostshell-ipv6.conf
+      systemctl restart wg-quick@wg0 > /dev/null 2>&1 || true
+      echo "IPv6 в туннеле: включить не получилось — настройки возвращены как были, VPN работает по-прежнему."
+    fi
+  fi
+fi
+
+# 5. как работает сервер
 echo "--- о сервере ---"
 echo "Ядро: $(uname -r); процессоров: $(nproc); виртуализация: $(systemd-detect-virt 2>/dev/null || echo ?)"
 if [ -d /sys/module/wireguard ] || modinfo wireguard > /dev/null 2>&1; then

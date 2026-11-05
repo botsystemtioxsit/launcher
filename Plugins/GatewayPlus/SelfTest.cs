@@ -68,6 +68,23 @@ static class SelfTest
             var cfgOut = "apt...\n=========== НАЧАЛО КОНФИГА (скопируйте) ===========\n" + good + "=========== КОНЕЦ КОНФИГА ===========\nГотово";
             Check("мастер: конфиг вынимается из вывода скрипта", Provisioner.ParseConfig(cfgOut) is string pc && Store.Validate(pc) == null && Provisioner.ParseConfig("ничего") == null);
 
+            // 3b2. размер пакета (MTU) и IPv6 в профиле: чистые функции плюс настоящая проверка пакетов на этом компьютере
+            Check("MTU: строка добавляется в [Interface], а не в [Peer]", Store.WithInterfaceValue(good, "MTU", "1400") is string m1 && Store.MtuOf(m1) == 1400 && Store.Validate(m1) == null && m1.IndexOf("MTU = 1400", StringComparison.Ordinal) < m1.IndexOf("[Peer]", StringComparison.Ordinal));
+            Check("MTU: существующая строка заменяется, а не дублируется", Store.WithInterfaceValue(Store.WithInterfaceValue(good, "MTU", "1380"), "MTU", "1392") is string m2 && Store.MtuOf(m2) == 1392 && Regex.Matches(m2, "(?m)^MTU").Count == 1);
+            Check("MTU: рекомендация не больше 1420 и не меньше 1280", Speed.RecommendedWgMtu(1500, "203.0.113.5") == 1420 && Speed.RecommendedWgMtu(1452, "203.0.113.5") == 1392 && Speed.RecommendedWgMtu(1452, "2001:db8::1") == 1372 && Speed.RecommendedWgMtu(1000, "203.0.113.5") == 1280);
+            var v4conf = "[Interface]\nPrivateKey = AAAA\nAddress = 10.66.66.7/32\nMTU = 1380\n\n[Peer]\nPublicKey = BBBB\nEndpoint = 203.0.113.5:51820\nAllowedIPs = 0.0.0.0/0, ::/0\n";
+            var v6conf = Store.WithIpv6(v4conf, "fd66:6761:7465::");
+            Check("IPv6: адрес дополняется (…7/32 → …::7/128), остальное не меняется", Store.InterfaceValue(v6conf, "Address") == "10.66.66.7/32, fd66:6761:7465::7/128" && Store.MtuOf(v6conf) == 1380 && Store.Validate(v6conf) == null);
+            Check("IPv6: повторно не дублируется, чужой префикс не принимается", Store.WithIpv6(v6conf, "fd66:6761:7465::") == v6conf && Store.WithIpv6(v4conf, "2001:db8::") == v4conf);
+            try
+            {
+                using var mtuCts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+                var mt = Task.Run(() => Speed.ProbePathMtuAsync("1.1.1.1", true, mtuCts.Token)).GetAwaiter().GetResult();
+                log.AppendLine("подбор MTU до 1.1.1.1: " + (mt.Ok ? $"путь {mt.PathMtu} байт → MTU WireGuard {Speed.RecommendedWgMtu(mt.PathMtu, "1.1.1.1")}" : "не вышло: " + mt.Note));
+                Check("подбор MTU: если пинг до 1.1.1.1 проходит, результат разумный (1280…1500)", !mt.Ok || (mt.PathMtu >= 576 && mt.PathMtu <= 1500));
+            }
+            catch (Exception ex) { log.AppendLine("подбор MTU не выполнился: " + ex.Message); }
+
             // 3c. база: подставной сервер на этом компьютере (REST как у Firebase)
             CloudChecks(Check, log, id, dev);
 
