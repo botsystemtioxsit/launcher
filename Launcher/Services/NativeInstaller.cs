@@ -73,16 +73,23 @@ static class NativeInstaller
     }
 
     // Плагин может работать в фоне без окна: вежливо просим его выйти (он сам вернёт всё, что менял) и ждём.
+    // Событие выхода создаёт сам плагин при старте: только что запущенный его ещё не создал, а плагину, занятому возвратом
+    // панели или обоев, нужно время — поэтому просим повторно (как Skin Loader), пока он не закроется, но не дольше 20 секунд.
     static void AskPluginToQuit(AppDef d, string exe)
     {
         if (!d.IsPlugin || !IsRunning(exe)) return;
-        try
+        var until = DateTime.UtcNow.AddSeconds(20);
+        while (IsRunning(exe) && DateTime.UtcNow < until)
         {
-            using var ev = EventWaitHandle.OpenExisting("GhostShell.Plugin.Quit." + d.Id);
-            ev.Set();
+            try
+            {
+                using var ev = EventWaitHandle.OpenExisting("GhostShell.Plugin.Quit." + d.Id);
+                ev.Set();
+            }
+            catch { /* события ещё нет (плагин только запускается) или это старая версия без него — повторим, потом попросим закрыть вручную */ }
+            var step = DateTime.UtcNow.AddMilliseconds(1500);
+            while (DateTime.UtcNow < step && IsRunning(exe)) Thread.Sleep(100);
         }
-        catch { /* события нет — старая версия плагина: ниже попросим закрыть вручную */ }
-        for (var i = 0; i < 80 && IsRunning(exe); i++) Thread.Sleep(100);
     }
 
     internal static bool IsRunning(string exe)
@@ -117,7 +124,7 @@ static class NativeInstaller
         var dir = DirFor(d);
         var exe = Path.Combine(dir, d.NativeExe);
         var wasRunning = d.IsPlugin && IsRunning(exe);
-        AskPluginToQuit(d, exe);
+        await Task.Run(() => AskPluginToQuit(d, exe));   // не в потоке окна: ожидание может занять секунды
         if (IsRunning(exe)) throw new InvalidOperationException($"Закрой «{d.NativeName}» и повтори.");
         var tmp = Path.Combine(Path.GetTempPath(), "battle-launcher-" + Guid.NewGuid().ToString("N") + ".exe");
         try
