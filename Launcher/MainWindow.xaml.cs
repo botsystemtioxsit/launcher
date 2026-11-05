@@ -499,8 +499,8 @@ public partial class MainWindow : Window
         {
             var rel = await NativeInstaller.Latest(p.Def, true) ?? throw new InvalidOperationException("в последнем релизе на GitHub нет файла плагина");
             var progress = new Progress<int?>(v => { busy[key] = v == null ? (true, null) : (false, v); RenderPlugins(); });
-            await NativeInstaller.Install(p.Def, rel, progress);
-            Toast($"{okText}: {p.Def.Name}");
+            var restarted = await NativeInstaller.Install(p.Def, rel, progress);
+            Toast($"{okText}: {p.Def.Name}" + (restarted ? " — запущен снова" : ""));
         }
         catch (Exception ex) { Toast("Не получилось: " + BrowserInstaller.Explain(ex)); }
         finally { busy.Remove(key); await LoadPlugins(true); }

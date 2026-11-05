@@ -22,6 +22,10 @@ public partial class App : Application
         var bt = e.Args.FirstOrDefault(a => a.StartsWith("--selftest-browser=", StringComparison.Ordinal));
         if (bt != null) { Task.Run(() => BrowserInstaller.SelfTest(bt["--selftest-browser=".Length..])).GetAwaiter().GetResult(); Shutdown(); return; }
 
+        // --selftest-update=<папка>: служебная проверка «обновление плагина не выключает его» на настоящем релизе (Windows-раннер GitHub)
+        var ut = e.Args.FirstOrDefault(a => a.StartsWith("--selftest-update=", StringComparison.Ordinal));
+        if (ut != null) { NativeInstaller.SelfTestUpdate(ut["--selftest-update=".Length..]); Shutdown(); return; }
+
         var shot = e.Args.FirstOrDefault(a => a.StartsWith("--screenshot=", StringComparison.Ordinal));
         if (shot != null)
         {

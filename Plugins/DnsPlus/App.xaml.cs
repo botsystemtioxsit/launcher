@@ -21,6 +21,17 @@ public partial class App : Application
             Shutdown(code);
             return;
         }
+        // Лаунчер просит выйти перед обновлением или удалением плагина (имя ждёт лаунчер: "GhostShell.Plugin.Quit." + id плагина):
+        // без этого обновление при открытом окне упиралось в «Закрой DNS Plus и повтори». DNS Plus ничего не держит в фоне — просто закрываемся.
+        quitEvent = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.AutoReset, "GhostShell.Plugin.Quit.dns-plus");
+        var qe = quitEvent;
+        new System.Threading.Thread(() =>
+        {
+            try { qe.WaitOne(); } catch { return; }
+            Dispatcher.BeginInvoke(new Action(() => Shutdown()));
+        }) { IsBackground = true }.Start();
         new MainWindow().Show();
     }
+
+    System.Threading.EventWaitHandle? quitEvent;
 }
