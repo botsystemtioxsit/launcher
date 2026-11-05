@@ -7,7 +7,7 @@ namespace BattleLauncher;
 // Lite — облегчённая версия (окно Electron вокруг страницы, ставится из релизов репозитория приложения);
 // Native — Desktop-версия (настоящая программа .exe, лежит в релизе указанного репозитория).
 record AppDef(string Id, string Name, string Desc, string Repo, string ProductName, string[]? Roles,
-    string? NativeExe = null, string? NativeName = null, string NativeRepo = "launcher", string NativeTag = "latest", string? Site = null, bool IsPlugin = false)
+    string? NativeExe = null, string? NativeName = null, string NativeRepo = "launcher", string NativeTag = "latest", string? Site = null, bool IsPlugin = false, string Category = "")
 {
     // null в Roles — любой аккаунт игры, но не сессия по токену доступа (у неё нет игрока)
     public bool IsAllowed(string role) => Roles == null ? role != "token" : Roles.Contains(role);
@@ -15,7 +15,7 @@ record AppDef(string Id, string Name, string Desc, string Repo, string ProductNa
 
 // Программы, которые лаунчер не ставит сам (Linux, расширения Chrome): только кнопка «Скачать» со ссылкой на файл в релизе.
 // Os — для каких систем запись: лаунчер показывает только подходящие его системе ("windows", "linux", "android").
-record DownloadDef(string Id, string Name, string Desc, string Platform, string Url, string[] Os);
+record DownloadDef(string Id, string Name, string Desc, string Platform, string Url, string[] Os, string Kind = "");
 
 // Расширение для браузера: zip в релизе репозитория. Лаунчер скачивает и распаковывает его в папку,
 // а человек один раз подключает эту папку в браузере («Загрузить распакованное расширение»).
@@ -78,6 +78,13 @@ static class Catalog
 
     // Плагины, убранные из лаунчера (владелец их удалил): если такой остался на компьютере, при запуске лаунчер сам его закрывает и удаляет.
     public static AppDef[] Retired { get; } = Array.Empty<AppDef>();
+
+    // Раздел плагина в лаунчере: «style» — оформление Windows (вкладка «Оформление»), «net» — сеть и защита (вкладка «Сеть и защита»).
+    // Берётся из поля "category" каталога; если его нет — по известному id, остальные считаются оформлением.
+    public static string CategoryOf(AppDef d) => d.Category is "style" or "net" ? d.Category : d.Id is "gateway-plus" or "dns-plus" ? "net" : "style";
+
+    // Расширение для браузера среди «дополнительных файлов» (kind = "extension" или платформа Chrome): живёт во вкладке «Расширения», а не в «Приложениях».
+    public static bool IsExtension(DownloadDef d) => d.Kind == "extension" || d.Platform.Contains("Chrome", StringComparison.OrdinalIgnoreCase);
 
     public static AppDef? ById(string id) => Apps.Concat(Plugins).FirstOrDefault(a => a.Id == id);
 
@@ -159,7 +166,7 @@ static class Catalog
                     ? oa.EnumerateArray().Where(x => x.ValueKind == JsonValueKind.String).Select(x => x.GetString()!).Where(x => Safe.IsMatch(x)).ToArray()
                     : Array.Empty<string>();
                 list.Add(new DownloadDef(id, name[..Math.Min(name.Length, 60)], desc[..Math.Min(desc.Length, 240)], platform[..Math.Min(platform.Length, 40)],
-                    $"https://github.com/{Owner}/{repo}/releases/download/{tag}/{asset}", os));
+                    $"https://github.com/{Owner}/{repo}/releases/download/{tag}/{asset}", os, S("kind") is { } k && Safe.IsMatch(k) ? k : ""));
             }
         }
         catch { /* битый раздел — просто не показываем */ }
@@ -186,7 +193,8 @@ static class Catalog
                 var tag = S(desk, "tag") is { } t && Safe.IsMatch(t) ? t : "latest";
                 name = name[..Math.Min(name.Length, 60)];
                 var desc = S(p, "desc") ?? "";
-                list.Add(new AppDef(id, name, desc[..Math.Min(desc.Length, 240)], repo, name, null, asset, name, repo, tag, null, true));
+                var cat = S(p, "category") is { } c && Safe.IsMatch(c) ? c : "";
+                list.Add(new AppDef(id, name, desc[..Math.Min(desc.Length, 240)], repo, name, null, asset, name, repo, tag, null, true, cat));
             }
         }
         catch { /* битый раздел — остаются прежние плагины */ }

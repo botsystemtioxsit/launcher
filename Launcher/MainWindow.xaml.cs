@@ -96,10 +96,11 @@ public partial class MainWindow : Window
     void Render()
     {
         var me = store.Active;
-        // Вход не обязателен: окно с плагинами открыто всегда, вход живёт во вкладке «Аккаунт».
-        // «Приложения» видны только админам и суперпользователям.
-        NavApps.Visibility = IsStaff(me) ? Visibility.Visible : Visibility.Collapsed;
+        // Вход не обязателен: приложения и плагины открыты всем, вход живёт во вкладке «Аккаунт» и нужен только для приложений с ролью (админ-панель).
         NavAccount.Content = me == null ? "Войти" : "Аккаунт";
+        AppsSub.Text = me == null
+            ? "Приложения доступны без входа. Облегчённая версия — приложение в отдельном окне (Electron). Админ-панель появится после входа администратора (вкладка «Войти»)."
+            : $"Ты вошёл как {me.Display} · {me.RoleName}\nОблегчённая версия — приложение в отдельном окне (Electron). Desktop-версия (EXE) — настоящая программа; кнопка включится сама, как только версия выйдет.";
         if (me == null)
         {
             RenderLogin();
@@ -111,7 +112,6 @@ public partial class MainWindow : Window
             else ShowView(currentView);
             return;
         }
-        AppsSub.Text = $"Ты вошёл как {me.Display} · {me.RoleName}\nОблегчённая версия — приложение в отдельном окне (Electron). Desktop-версия (EXE) — настоящая программа; кнопка включится сама, как только версия выйдет.";
         MeBox.Children.Clear();
         MeBox.Children.Add(Avatar(me, 52));
         var info = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -119,14 +119,14 @@ public partial class MainWindow : Window
         info.Children.Add(new TextBlock { Text = me.RoleName + (me.PlayerId.Length > 0 ? " · " + me.PlayerId : ""), Foreground = Res("Muted") });
         MeBox.Children.Add(info);
         FillAccountList(AllAccounts, removableExceptActive: true);
-        ShowView(firstRender && IsStaff(me) ? "apps" : currentView);
+        ShowView(currentView);
         firstRender = false;
     }
 
     bool firstRender = true;
 
-    // Приложения и всё, что с ними связано, — только для админов и суперпользователей (токен доступа — не админ).
-    static bool IsStaff(Account? a) => a != null && !a.IsToken && a.Role is "admin" or "superadmin";
+    // Роль для проверки доступа к приложению: без входа — «guest» (видны только приложения без ограничения по роли).
+    static string RoleOf(Account? a) => a?.Role ?? "guest";
 
     void RenderLogin()
     {
@@ -245,7 +245,9 @@ public partial class MainWindow : Window
         loginTimer.Stop();
         SetLoginBusy(false);
         Render();
-        ShowView(IsStaff(store.Active) ? "apps" : "account");
+        // после входа: у кого появились приложения «по роли» (админ-панель) — сразу к ним, остальным — сведения об аккаунте
+        var role = RoleOf(store.Active);
+        ShowView(Catalog.Apps.Any(a => a.Roles != null && a.IsAllowed(role)) ? "apps" : "account");
     }
 
     CancellationToken StartLogin()
@@ -388,14 +390,15 @@ public partial class MainWindow : Window
     }
 
     // ---------- навигация ----------
-    string currentView = "plugins";
+    // Разделы: apps (приложения), style (оформление), net (сеть и защита), ext (расширения для браузера), env, feedback, account.
+    string currentView = "apps";
 
     void ShowView(string name)
     {
-        if (name == "apps" && !IsStaff(store.Active)) name = "plugins"; // обычным пользователям приложений нет
         currentView = name;
+        var isPlug = name is "style" or "net" or "ext";
         AppsView.Visibility = name == "apps" ? Visibility.Visible : Visibility.Collapsed;
-        PluginsView.Visibility = name == "plugins" ? Visibility.Visible : Visibility.Collapsed;
+        PluginsView.Visibility = isPlug ? Visibility.Visible : Visibility.Collapsed;
         FeedbackView.Visibility = name == "feedback" ? Visibility.Visible : Visibility.Collapsed;
         EnvView.Visibility = name == "env" ? Visibility.Visible : Visibility.Collapsed;
         NavEnv.Foreground = name == "env" ? Res("Text") : Res("Muted");
@@ -405,10 +408,14 @@ public partial class MainWindow : Window
         LoginView.Visibility = name == "account" && !signedIn ? Visibility.Visible : Visibility.Collapsed;
         AccountView.Visibility = name == "account" && signedIn ? Visibility.Visible : Visibility.Collapsed;
         NavApps.Foreground = name == "apps" ? Res("Text") : Res("Muted");
-        NavPlugins.Foreground = name == "plugins" ? Res("Text") : Res("Muted");
+        NavStyle.Foreground = name == "style" ? Res("Text") : Res("Muted");
+        NavNet.Foreground = name == "net" ? Res("Text") : Res("Muted");
+        NavExt.Foreground = name == "ext" ? Res("Text") : Res("Muted");
         NavAccount.Foreground = name == "account" ? Res("Text") : Res("Muted");
         if (name == "apps") _ = LoadApps(false);
-        if (name == "plugins") { _ = LoadPlugins(false); _ = LoadBrowserPlugins(false); }
+        if (isPlug) SetPluginsView(name);
+        if (name is "style" or "net") _ = LoadPlugins(false);
+        if (name == "ext") _ = LoadBrowserPlugins(false);
         if (name == "feedback") OpenFeedback();
         if (name == "env") OpenEnv();
     }
@@ -442,7 +449,9 @@ public partial class MainWindow : Window
             PluginList.Children.Add(new TextBlock { Text = "Загружаю список плагинов…", Foreground = Res("Muted") });
             return;
         }
-        foreach (var p in pluginInfos) PluginList.Children.Add(PluginCard(p));
+        var mine = pluginInfos.Where(p => Catalog.CategoryOf(p.Def) == pluginsCategory).ToList();
+        if (mine.Count == 0) { PluginList.Children.Add(new TextBlock { Text = "В этом разделе пока нет плагинов.", Foreground = Res("Muted") }); return; }
+        foreach (var p in mine) PluginList.Children.Add(PluginCard(p));
     }
 
     UIElement PluginCard(AppInfo p)
@@ -489,10 +498,11 @@ public partial class MainWindow : Window
         return card;
     }
 
-    async Task InstallPlugin(AppInfo p, string okText)
+    async Task<bool> InstallPlugin(AppInfo p, string okText)
     {
         var key = p.Def.Id + ":plugin";
-        if (busy.ContainsKey(key)) return;
+        if (busy.ContainsKey(key)) return false;
+        var ok = false;
         busy[key] = (false, 0);
         RenderPlugins();
         try
@@ -501,9 +511,11 @@ public partial class MainWindow : Window
             var progress = new Progress<int?>(v => { busy[key] = v == null ? (true, null) : (false, v); RenderPlugins(); });
             var restarted = await NativeInstaller.Install(p.Def, rel, progress);
             Toast($"{okText}: {p.Def.Name}" + (restarted ? " — запущен снова" : ""));
+            ok = true;
         }
         catch (Exception ex) { Toast("Не получилось: " + BrowserInstaller.Explain(ex)); }
         finally { busy.Remove(key); await LoadPlugins(true); }
+        return ok;
     }
 
     async Task UninstallPlugin(AppInfo p)
@@ -544,19 +556,24 @@ public partial class MainWindow : Window
     List<BrowserPluginInfo> browserInfos = new();
     // Почему не получилось (показываем в карточке, пока человек не попробует снова) — исчезающее сообщение внизу легко пропустить
     readonly Dictionary<string, string> browserErrors = new();
-    string pluginsTab = "pc";
+    string pluginsCategory = "style";   // какой раздел плагинов показан: style | net (для вкладки «Расширения» не используется)
 
-    void SetPluginsTab(string tab)
+    // Одно и то же окно служит трём вкладкам: «Оформление» и «Сеть и защита» (плагины для компьютера по разделам) и «Расширения» (для браузера).
+    void SetPluginsView(string view)
     {
-        pluginsTab = tab;
-        var browser = tab == "browser";
+        var browser = view == "ext";
+        if (!browser) pluginsCategory = view;
         PluginList.Visibility = browser ? Visibility.Collapsed : Visibility.Visible;
         BrowserPluginList.Visibility = browser ? Visibility.Visible : Visibility.Collapsed;
-        PluginsTabPc.Style = (Style)FindResource(browser ? "Ghost" : "Primary");
-        PluginsTabBrowser.Style = (Style)FindResource(browser ? "Primary" : "Ghost");
-        PluginsHint.Text = browser
-            ? "Расширения для браузера. Лаунчер скачивает их в отдельную папку; подключить папку в браузере нужно один раз — как, написано в карточке."
-            : "Дополнения качаются отдельно: ставьте только те, что нужны. Каждый плагин можно удалить в любой момент.";
+        PluginsLaunchAllBtn.Visibility = browser ? Visibility.Collapsed : Visibility.Visible;
+        PluginsTitle.Text = view switch { "net" => "Сеть и защита", "ext" => "Расширения для браузера", _ => "Оформление" };
+        PluginsHint.Text = view switch
+        {
+            "net" => "VPN, защищённый DNS и всё, что про сеть. Каждый плагин качается отдельно и удаляется в любой момент.",
+            "ext" => "Расширения для Chrome, Edge и других браузеров. Лаунчер скачивает их в отдельную папку; подключить папку в браузере нужно один раз — как, написано в карточке.",
+            _ => "Панель задач, цвета, значки, обои, курсор и скины Windows. Каждый плагин качается отдельно и удаляется в любой момент.",
+        };
+        if (!browser) RenderPlugins();
     }
 
     async Task LoadBrowserPlugins(bool force)
@@ -591,6 +608,8 @@ public partial class MainWindow : Window
             return;
         }
         foreach (var p in browserInfos) BrowserPluginList.Children.Add(BrowserPluginCard(p));
+        // Расширения, которые лаунчер сам не ставит (zip по ссылке), лежат здесь же, а не среди приложений
+        foreach (var d in Catalog.Downloads.Where(x => x.Os.Contains("windows") && Catalog.IsExtension(x))) BrowserPluginList.Children.Add(DownloadCard(d));
     }
 
     UIElement BrowserPluginCard(BrowserPluginInfo p)
@@ -683,10 +702,11 @@ public partial class MainWindow : Window
         return Task.CompletedTask;
     }
 
-    async Task InstallBrowserPlugin(BrowserPluginInfo p, string okText)
+    async Task<bool> InstallBrowserPlugin(BrowserPluginInfo p, string okText)
     {
         var key = p.Def.Id + ":browser";
-        if (busy.ContainsKey(key)) return;
+        if (busy.ContainsKey(key)) return false;
+        var ok = false;
         busy[key] = (false, 0);
         browserErrors.Remove(p.Def.Id);
         RenderBrowserPlugins();
@@ -696,6 +716,7 @@ public partial class MainWindow : Window
             var progress = new Progress<int?>(v => { busy[key] = v == null ? (true, null) : (false, v); RenderBrowserPlugins(); });
             await BrowserInstaller.Install(p.Def, rel, progress);
             Toast($"{okText}: {p.Def.Name}. Подключите папку в браузере — инструкция в карточке.");
+            ok = true;
         }
         catch (Exception ex)
         {
@@ -710,6 +731,7 @@ public partial class MainWindow : Window
             await LoadBrowserPlugins(true);
             if (failed != null) { browserErrors[p.Def.Id] = failed; RenderBrowserPlugins(); } // перезагрузка списка не должна затирать причину сбоя
         }
+        return ok;
     }
 
     async Task UninstallBrowserPlugin(BrowserPluginInfo p)
@@ -726,11 +748,10 @@ public partial class MainWindow : Window
         await LoadBrowserPlugins(true);
     }
 
-    void PluginsTabPc_Click(object sender, RoutedEventArgs e) => SetPluginsTab("pc");
-    void PluginsTabBrowser_Click(object sender, RoutedEventArgs e) => SetPluginsTab("browser");
-
     void NavApps_Click(object sender, RoutedEventArgs e) => ShowView("apps");
-    void NavPlugins_Click(object sender, RoutedEventArgs e) => ShowView("plugins");
+    void NavStyle_Click(object sender, RoutedEventArgs e) => ShowView("style");
+    void NavNet_Click(object sender, RoutedEventArgs e) => ShowView("net");
+    void NavExt_Click(object sender, RoutedEventArgs e) => ShowView("ext");
     void NavAccount_Click(object sender, RoutedEventArgs e) => ShowView("account");
     void NavEnv_Click(object sender, RoutedEventArgs e) => ShowView("env");
     void NavFeedback_Click(object sender, RoutedEventArgs e) => ShowView("feedback");
@@ -757,12 +778,10 @@ public partial class MainWindow : Window
     async Task LoadApps(bool force)
     {
         if (App.ScreenshotDir != null) return; // в режиме скриншотов список приложений задан вручную
-        var me = store.Active;
-        if (!IsStaff(me)) return;
-        me = me!;
+        var role = RoleOf(store.Active);
         RefreshBtn.IsEnabled = false;
         await Catalog.Refresh(force); // список приложений и их версий читается из catalog.json — без обновления лаунчера
-        var list = await Task.WhenAll(Catalog.Apps.Select(def => Describe(def, me.Role, force)));
+        var list = await Task.WhenAll(Catalog.Apps.Select(def => Describe(def, role, force)));
         apps = list.ToList();
         RefreshBtn.IsEnabled = true;
         RenderApps();
@@ -788,8 +807,9 @@ public partial class MainWindow : Window
     void RenderApps()
     {
         AppList.Children.Clear();
-        foreach (var a in apps) AppList.Children.Add(AppCard(a));
-        var downloads = Catalog.Downloads.Where(d => d.Os.Contains("windows")).ToArray();
+        // приложения, на которые у роли нет доступа (админ-панель без входа администратора), не показываем совсем
+        foreach (var a in apps.Where(x => x.Allowed)) AppList.Children.Add(AppCard(a));
+        var downloads = Catalog.Downloads.Where(d => d.Os.Contains("windows") && !Catalog.IsExtension(d)).ToArray();
         if (downloads.Length > 0)
         {
             AppList.Children.Add(new TextBlock { Text = "ДОПОЛНИТЕЛЬНО", FontFamily = (FontFamily)FindResource("Mono"), FontWeight = FontWeights.Bold, Foreground = Res("Accent2"), Margin = new Thickness(0, 14, 0, 4) });
@@ -953,30 +973,41 @@ public partial class MainWindow : Window
     // Роль проверяем заново прямо перед действием: сохранённая в файле могла устареть.
     async Task<bool> RequireAllowed(AppDef def)
     {
-        await RefreshActiveProfile();
         var me = store.Active;
-        if (me == null) { Render(); Toast("Аккаунт больше недоступен — войди заново."); return false; }
-        if (!IsStaff(me)) { Render(); Toast("Приложения доступны только админам и суперпользователям."); return false; }
-        if (!def.IsAllowed(me.Role)) { Toast("Для этого приложения нет доступа у твоего аккаунта."); await LoadApps(false); return false; }
+        if (me != null)
+        {
+            await RefreshActiveProfile();
+            me = store.Active;
+            if (me == null) { Render(); Toast("Аккаунт больше недоступен — войди заново."); return false; }
+        }
+        if (!def.IsAllowed(RoleOf(me)))
+        {
+            Toast(me == null ? "Для этого приложения нужен вход в аккаунт (вкладка «Войти»)." : "Для этого приложения нет доступа у твоего аккаунта.");
+            await LoadApps(false);
+            return false;
+        }
         return true;
     }
 
-    async Task InstallApp(AppInfo a, string okText)
+    async Task<bool> InstallApp(AppInfo a, string okText)
     {
         var id = a.Def.Id;
-        if (busy.ContainsKey(id)) return;
+        if (busy.ContainsKey(id)) return false;
+        var ok = false;
         busy[id] = (false, 0);
         RenderApps();
         try
         {
-            if (!await RequireAllowed(a.Def)) return;
+            if (!await RequireAllowed(a.Def)) return false;
             var release = await Releases.Latest(a.Def.Repo, true);
             var progress = new Progress<int?>(p => { busy[id] = p == null ? (true, null) : (false, p); RenderApps(); });
             await Installer.Install(a.Def, release, progress);
             Toast($"{okText}: {a.Def.Name}");
+            ok = true;
         }
         catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
         finally { busy.Remove(id); await LoadApps(true); }
+        return ok;
     }
 
     async Task Uninstall(AppInfo a)
@@ -996,22 +1027,25 @@ public partial class MainWindow : Window
     }
 
     // ---------- EXE-версия ----------
-    async Task InstallNative(AppInfo a, string okText)
+    async Task<bool> InstallNative(AppInfo a, string okText)
     {
         var key = a.Def.Id + ":exe";
-        if (busy.ContainsKey(key)) return;
+        if (busy.ContainsKey(key)) return false;
+        var ok = false;
         busy[key] = (false, 0);
         RenderApps();
         try
         {
-            if (!await RequireAllowed(a.Def)) return;
+            if (!await RequireAllowed(a.Def)) return false;
             var rel = await NativeInstaller.Latest(a.Def, true) ?? throw new InvalidOperationException("EXE-версии пока нет в последнем релизе");
             var progress = new Progress<int?>(p => { busy[key] = p == null ? (true, null) : (false, p); RenderApps(); });
             await NativeInstaller.Install(a.Def, rel, progress);
             Toast($"{okText}: {a.Def.NativeName}");
+            ok = true;
         }
         catch (Exception ex) { Toast("Не получилось: " + ex.Message); }
         finally { busy.Remove(key); await LoadApps(true); }
+        return ok;
     }
 
     async Task UninstallNative(AppInfo a)
@@ -1078,6 +1112,16 @@ public partial class MainWindow : Window
             ShowView("apps");
             RenderApps();
         });
+        // разделы плагинов: оформление и сеть (часть «установлена», у одного есть обновление)
+        pluginInfos = Catalog.Plugins.Select((d, i) => new AppInfo
+        {
+            Def = d, Allowed = true,
+            Native = i % 3 == 2 ? null : new NativeInfo("1.0." + i, "demo.exe", "aa"),
+            NativeLatest = new NativeRelease("latest", "", i == 1 ? "bb" : "aa"),
+            NativeUpdate = i == 1,
+        }).ToList();
+        await Capture(Path.Combine(dir, "launcher-7-style.png"), () => { ShowView("style"); RenderPlugins(); });
+        await Capture(Path.Combine(dir, "launcher-8-net.png"), () => { ShowView("net"); RenderPlugins(); });
         await Capture(Path.Combine(dir, "launcher-3-plugins-browser.png"), () =>
         {
             var def = Catalog.BrowserPlugins[0];
@@ -1085,8 +1129,7 @@ public partial class MainWindow : Window
             {
                 new() { Def = def, Installed = new BrowserInfo("1.0.0", Path.Combine(BrowserInstaller.Root, def.Id), "00"), Latest = new BrowserRelease("1.0.0", "", "00") },
             };
-            ShowView("plugins");
-            SetPluginsTab("browser");
+            ShowView("ext");
             RenderBrowserPlugins();
         });
         await Capture(Path.Combine(dir, "launcher-5-env.png"), () =>
@@ -1197,11 +1240,10 @@ public partial class MainWindow : Window
         {
             try
             {
-                var me = store.Active;
-                if (IsStaff(me) && me != null)
+                var role = RoleOf(store.Active);
                 {
                     await Catalog.Refresh();
-                    var list = (await Task.WhenAll(Catalog.Apps.Select(def => Describe(def, me.Role, false)))).ToList();
+                    var list = (await Task.WhenAll(Catalog.Apps.Select(def => Describe(def, role, false)))).ToList();
                     var news = new List<string>();
                     foreach (var a in list.Where(x => x.Allowed))
                     {
