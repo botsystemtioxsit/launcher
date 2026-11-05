@@ -195,7 +195,7 @@ if (gspBin.Length > 0)
         File.WriteAllText(Path.Combine(outDir, "client-gsp.conf"), r.Conf);
         Check("GSP: служба gsp работает, порт 51821/udp слушается", Sh3("systemctl is-active gsp").Trim() == "active" && Sh3("sudo ss -ulnp | grep -c 51821").Trim() == "1");
         Check("GSP: WireGuard рядом остался рабочим", Sh3("sudo wg show wg0 | head -1").Contains("interface"), Sh3("sudo wg show wg0 | head -3"));
-        Check("GSP: следов скрипта в /tmp не осталось", !Sh3("ls /tmp/ghostshell-gateway-* 2>&1").Contains("/tmp/ghostshell-gateway-"));
+        Check("GSP: следов скрипта в /tmp не осталось", Sh3("ls /tmp/ghostshell-gateway-* 2>&1").Contains("No such file"));
     }
     // повторный запуск: мастер спрашивает про перенастройку, отказ ничего не трогает
     var log2 = new List<string>(); int asked2 = 0;

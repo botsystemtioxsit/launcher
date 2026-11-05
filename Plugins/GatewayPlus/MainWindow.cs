@@ -276,11 +276,13 @@ sealed class MainWindow : Window
             wizBtn,
             Note(account == null ? "Для мастера нужен аккаунт Gateway Plus — карточка «Аккаунт» вверху." : "Для личного использования. Продавать доступ к своему серверу или шлюзу нельзя (правила)."),
         }));
+        var manual = new WrapPanel();
+        manual.Children.Add(Btn("Скопировать скрипт для сервера", null, async () => { if (!await EnsureAllowedAsync()) return; try { Clipboard.SetText(Store.ServerScript()); status.Text = "Скрипт скопирован. Вставьте его в консоль сервера."; } catch { status.Text = "Не удалось скопировать."; } }, first: true));
+        manual.Children.Add(Btn("Скопировать скрипт GSP для сервера", null, async () => { if (!await EnsureAllowedAsync()) return; try { Clipboard.SetText(Store.GspServerScript()); status.Text = "Скрипт GSP скопирован. Вставьте его в консоль сервера; порт для хостера — 51821/udp."; } catch { status.Text = "Не удалось скопировать."; } }));
         page.Children.Add(Card("Вручную (если мастер не подходит)", new UIElement[]
         {
-            Note("Если нельзя зайти по SSH или сервер уже настроен: 1) зайдите в консоль сервера как root (sudo -i). 2) Нажмите «Скопировать скрипт» и вставьте его в консоль. 3) В конце он напечатает конфиг между двумя линиями — скопируйте его. 4) Здесь нажмите «Добавить конфиг…» и вставьте. 5) В панели хостинга откройте порт 51820 по протоколу UDP, если он закрыт."),
-            Btn("Скопировать скрипт для сервера", null, async () => { if (!await EnsureAllowedAsync()) return; try { Clipboard.SetText(Store.ServerScript()); status.Text = "Скрипт скопирован. Вставьте его в консоль сервера."; } catch { status.Text = "Не удалось скопировать."; } }, first: true),
-            Btn("Скопировать скрипт GSP для сервера", null, async () => { if (!await EnsureAllowedAsync()) return; try { Clipboard.SetText(Store.GspServerScript()); status.Text = "Скрипт GSP скопирован. Вставьте его в консоль сервера; порт для хостера — 51821/udp."; } catch { status.Text = "Не удалось скопировать."; } }),
+            Note("Если нельзя зайти по SSH или сервер уже настроен: 1) зайдите в консоль сервера как root (sudo -i). 2) Нажмите «Скопировать скрипт» (WireGuard) или «Скопировать скрипт GSP» и вставьте его в консоль. 3) В конце он напечатает конфиг между двумя линиями — скопируйте его. 4) Здесь нажмите «Добавить конфиг…» и вставьте. 5) В панели хостинга откройте порт 51820 (WireGuard) или 51821 (GSP) по протоколу UDP, если он закрыт."),
+            manual,
         }));
 
         // 4. границы
