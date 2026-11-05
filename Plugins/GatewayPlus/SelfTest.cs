@@ -46,7 +46,7 @@ static class SelfTest
             var shown = Account.Format(raw);
             Check("ключ для показа: GW-XXXX-… (8 групп по 4)", Regex.IsMatch(shown, "^GW(-[A-Z2-7]{4}){8}$"));
             Check("ключ читается обратно (с тире, пробелами, строчными)", Account.Normalize(shown) == raw && Account.Normalize("  " + shown.ToLowerInvariant().Replace("-", " ") + " ") == raw);
-            Check("мусор вместо ключа отклоняется", Account.Normalize("hello") == null && Account.Normalize(shown + "A") == null && Account.Normalize(null) == null && Account.Normalize(shown.Replace("A", "1")) == null);
+            Check("мусор вместо ключа отклоняется", Account.Normalize("hello") == null && Account.Normalize(shown + "A") == null && Account.Normalize(null) == null && Account.Normalize(shown[..3] + "1" + shown[4..]) == null);   // «1» в base32 не бывает; подмена первого знака всегда меняет ключ (Replace("A") не менял его, если «A» в случайном ключе не было)
             var id = Account.IdOf(raw);
             Check("номер аккаунта: 24 знака, стабильный, у других ключей другой", Regex.IsMatch(id, "^[0-9a-f]{24}$") && id == Account.IdOf(raw) && id != Account.IdOf(Account.NewKey()) && !id.Contains(raw.ToLowerInvariant()));
             var dev = Account.DeviceHash();
