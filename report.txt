@@ -1,0 +1,25 @@
+=== Среда ===
+Windows: 10.0.26100.0  сеанс: 2
+Экран: {X=0,Y=0,Width=1024,Height=768}
+explorer: 1048  Shell_TrayWnd: 393240
+снимок: results\00-до.png (1024x768)
+
+=== Окна настроек ===
+TaskbarPlus --screenshot: код 0
+файл: taskbar-plus-ui-pill.png (156653 байт)
+файл: taskbar-plus-ui.png (292789 байт)
+
+=== Панель: 10-плавающая ===
+снимок: results\10-плавающая.png (1024x768)
+state=ready | engine=7 | pid=1048 | tick=212203 | module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-f6b17f8afeeb.dll | sessions=1 | threads=1 | nodes=301 | bgfill=1 | stroke=1 | apps=6 | widgets=0 | system=43 | bars=1 | geobars=1 | rects=13 | rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon][RunningIndicator][LeftDropInsertionMarker][RightDropInsertionMarker][ShowDesktopPipe] | applied=1 | alive=1 | queue=1 | tries=13 | error= | 
+
+=== Панель: 11-острова-каждый ===
+снимок: results\11-острова-каждый.png (1024x768)
+state=ready | engine=7 | pid=1048 | tick=223406 | module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-f6b17f8afeeb.dll | sessions=1 | threads=1 | nodes=301 | bgfill=1 | stroke=1 | apps=6 | widgets=0 | system=43 | bars=1 | geobars=1 | rects=13 | rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon][RunningIndicator][LeftDropInsertionMarker][RightDropInsertionMarker][ShowDesktopPipe] | applied=1 | alive=1 | queue=1 | tries=28 | error= | 
+
+=== Панель: 12-вкладка ===
+снимок: results\12-вкладка.png (1024x768)
+state=ready | engine=7 | pid=1048 | tick=231593 | module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-f6b17f8afeeb.dll | sessions=1 | threads=1 | nodes=301 | bgfill=1 | stroke=1 | apps=6 | widgets=0 | system=43 | bars=1 | geobars=1 | rects=13 | rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon][RunningIndicator][LeftDropInsertionMarker][RightDropInsertionMarker][ShowDesktopPipe] | applied=1 | alive=1 | queue=1 | tries=39 | error= | 
+
+снимок: results\19-панель-после-всех-выходов.png (1024x768)
+=== конец ===
