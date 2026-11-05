@@ -1,0 +1,89 @@
+=== самопроверка: расчёт плашек ===
+selftest: код 0
+OK    файл измерений читается
+OK    группы разобраны
+OK    масштаб и вторая панель
+OK    мусор не ломает разбор
+OK    плавающая: накрывает ВСЕ значки — плашек 3
+OK    плавающая: накрывает трей и виджеты отдельно
+OK    плавающая: не шире окна и не выше
+OK    плавающая: накрывает значки по высоте
+OK    плавающая: плашка не уже значков при любом «отступе» (его больше нет)
+OK    одна общая плашка: от виджетов до часов — плашек 1
+OK    вкладка: от верхнего края и уходит за нижний — 0+64,0+64,0+64
+OK    вкладка: накрывает все значки
+OK    острова: по одному на значок + виджеты + трей — плашек 10, значков 8
+OK    острова: каждый значок на своём острове
+OK    острова не налезают друг на друга
+OK    острова-группы: значки одной группой — плашек 3
+OK    виджеты по умолчанию без острова — плашек 2
+OK    скругление ограничено 40% меньшей стороны — R=9.6 W=24 H=41
+OK    масштаб 150%: отступ 10 → 15 px — X=1485.0 W=530.0
+OK    форма «обычная» — плашек нет
+OK    нет измерений — плашек нет
+OK    большой зазор снизу не отрывает плашку от значков — 44,44
+ВСЁ В ПОРЯДКЕ
+
+Экран: {X=0,Y=0,Width=1024,Height=768}
+снимок: results\00-до.png (1024x768)
+
+=== 01-плавающая ===
+снимок: results\01-плавающая.png (1024x768)
+  окна: tb=0,720,1024,768 topmost=1 ov=0,720,1024,768 visible=1 сразу_под_панелью=1 размер_совпадает=1 exstyle=0x80800A8
+  статус: state=ready engine=7 pid=780 tick=231062 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=301 bgfill=1 stroke=1 apps=6 widgets=0 system=43 bars=1 geobars=1 rects=13 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon]
+  измерения: v=1 / pid=780 / tick=231859 / bars=1 / bar|0|1024|48|100 / s|0|797|0|1024|48 / a|0|290|0|735|48 / i|0|647|0|691|48 / i|0|335|0|559|48 / i|0|290|0|335|48 / i|0|559|0|603|48 / i|0|603|0|647|48 / i|0|691|0|735|48 / 
+  OK — окно с плашками видно, лежит сразу под панелью и совпадает с ней по размеру
+снимок: results\01б-пуск-открыт.png (1024x768)
+  окна при открытом «Пуске»: tb=0,720,1024,768 topmost=1 ov=0,720,1024,768 visible=1 сразу_под_панелью=1 размер_совпадает=1 exstyle=0x80800A8
+  после выхода: tb=0,720,1024,768 topmost=1 ov=нет | state=ready engine=7 pid=780 tick=244515 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=301 bgfill=1 stroke=1 apps=6 widgets=0 system=43 bars=0 geobars=0 rects=13 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon]
+
+=== 02-плавающая-одна-плашка ===
+снимок: results\02-плавающая-одна-плашка.png (1024x768)
+  окна: tb=0,720,1024,768 topmost=1 ov=0,720,1024,768 visible=1 сразу_под_панелью=1 размер_совпадает=1 exstyle=0x80800A8
+  статус: state=ready engine=7 pid=780 tick=249140 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=301 bgfill=1 stroke=1 apps=6 widgets=0 system=43 bars=1 geobars=1 rects=13 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon]
+  измерения: v=1 / pid=780 / tick=249921 / bars=1 / bar|0|1024|48|100 / s|0|797|0|1024|48 / a|0|290|0|735|48 / i|0|647|0|691|48 / i|0|335|0|559|48 / i|0|290|0|335|48 / i|0|559|0|603|48 / i|0|603|0|647|48 / i|0|691|0|735|48 / 
+  OK — окно с плашками видно, лежит сразу под панелью и совпадает с ней по размеру
+  после выхода: tb=0,720,1024,768 topmost=1 ov=нет | state=ready engine=7 pid=780 tick=253734 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=301 bgfill=1 stroke=1 apps=6 widgets=0 system=43 bars=0 geobars=0 rects=13 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon]
+
+=== 03-вкладка ===
+снимок: results\03-вкладка.png (1024x768)
+  окна: tb=0,720,1024,768 topmost=1 ov=0,720,1024,768 visible=1 сразу_под_панелью=1 размер_совпадает=1 exstyle=0x80800A8
+  статус: state=ready engine=7 pid=780 tick=257984 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=301 bgfill=1 stroke=1 apps=6 widgets=0 system=43 bars=1 geobars=1 rects=13 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon]
+  измерения: v=1 / pid=780 / tick=258734 / bars=1 / bar|0|1024|48|100 / s|0|797|0|1024|48 / a|0|290|0|735|48 / i|0|647|0|691|48 / i|0|335|0|559|48 / i|0|290|0|335|48 / i|0|559|0|603|48 / i|0|603|0|647|48 / i|0|691|0|735|48 / 
+  OK — окно с плашками видно, лежит сразу под панелью и совпадает с ней по размеру
+  после выхода: tb=0,720,1024,768 topmost=1 ov=нет | state=ready engine=7 pid=780 tick=262531 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=301 bgfill=1 stroke=1 apps=6 widgets=0 system=43 bars=0 geobars=0 rects=13 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon]
+
+=== 04-острова-каждый ===
+снимок: results\04-острова-каждый.png (1024x768)
+  окна: tb=0,720,1024,768 topmost=1 ov=0,720,1024,768 visible=1 сразу_под_панелью=1 размер_совпадает=1 exstyle=0x80800A8
+  статус: state=ready engine=7 pid=780 tick=267156 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=301 bgfill=1 stroke=1 apps=6 widgets=0 system=43 bars=1 geobars=1 rects=13 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon]
+  измерения: v=1 / pid=780 / tick=267906 / bars=1 / bar|0|1024|48|100 / s|0|797|0|1024|48 / a|0|290|0|735|48 / i|0|647|0|691|48 / i|0|335|0|559|48 / i|0|290|0|335|48 / i|0|559|0|603|48 / i|0|603|0|647|48 / i|0|691|0|735|48 / 
+  OK — окно с плашками видно, лежит сразу под панелью и совпадает с ней по размеру
+  после выхода: tb=0,720,1024,768 topmost=1 ov=нет | state=ready engine=7 pid=780 tick=271781 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=301 bgfill=1 stroke=1 apps=6 widgets=0 system=43 bars=0 geobars=0 rects=13 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon]
+
+=== 05-острова-группа-вкладки ===
+снимок: results\05-острова-группа-вкладки.png (1024x768)
+  окна: tb=0,720,1024,768 topmost=1 ov=0,720,1024,768 visible=1 сразу_под_панелью=1 размер_совпадает=1 exstyle=0x80800A8
+  статус: state=ready engine=7 pid=780 tick=276125 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=301 bgfill=1 stroke=1 apps=6 widgets=0 system=43 bars=1 geobars=1 rects=13 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon]
+  измерения: v=1 / pid=780 / tick=276906 / bars=1 / bar|0|1024|48|100 / s|0|797|0|1024|48 / a|0|290|0|735|48 / i|0|647|0|691|48 / i|0|335|0|559|48 / i|0|290|0|335|48 / i|0|559|0|603|48 / i|0|603|0|647|48 / i|0|691|0|735|48 / 
+  OK — окно с плашками видно, лежит сразу под панелью и совпадает с ней по размеру
+  после выхода: tb=0,720,1024,768 topmost=1 ov=нет | state=ready engine=7 pid=780 tick=280750 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=301 bgfill=1 stroke=1 apps=6 widgets=0 system=43 bars=0 geobars=0 rects=13 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon]
+снимок: results\06-после-выходов.png (1024x768)
+
+=== перезапуск Проводника при работающем плагине ===
+  до: tb=0,720,1024,768 topmost=1 ov=0,720,1024,768 visible=1 сразу_под_панелью=1 размер_совпадает=1 exstyle=0x80800A8
+  +3 с: tb=0,720,1024,768 topmost=1 ov=0,720,1024,768 visible=1 сразу_под_панелью=1 размер_совпадает=1 exstyle=0x80800A8 | state=ready engine=7 pid=8508 tick=284703 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=289 bgfill=1 stroke=1 apps=6 widgets=0 system=41 bars=1 geobars=1 rects=11 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon
+  +7 с: tb=0,720,1024,768 topmost=1 ov=0,720,1024,768 visible=1 сразу_под_панелью=1 размер_совпадает=1 exstyle=0x80800A8 | state=ready engine=7 pid=8508 tick=290781 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=289 bgfill=1 stroke=1 apps=6 widgets=0 system=41 bars=1 geobars=1 rects=11 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon
+  +15 с: tb=0,720,1024,768 topmost=1 ov=0,720,1024,768 visible=1 сразу_под_панелью=1 размер_совпадает=1 exstyle=0x80800A8 | state=ready engine=7 pid=8508 tick=305953 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=289 bgfill=1 stroke=1 apps=6 widgets=0 system=41 bars=1 geobars=1 rects=11 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon
+  +25 с: tb=0,720,1024,768 topmost=1 ov=0,720,1024,768 visible=1 сразу_под_панелью=1 размер_совпадает=1 exstyle=0x80800A8 | state=ready engine=7 pid=8508 tick=333312 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=289 bgfill=1 stroke=1 apps=6 widgets=0 system=41 bars=1 geobars=1 rects=11 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon
+снимок: results\07-после-перезапуска-проводника.png (1024x768)
+  итог: tb=0,720,1024,768 topmost=1 ov=0,720,1024,768 visible=1 сразу_под_панелью=1 размер_совпадает=1 exstyle=0x80800A8 | state=ready engine=7 pid=8508 tick=336343 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=289 bgfill=1 stroke=1 apps=6 widgets=0 system=41 bars=1 geobars=1 rects=11 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon
+  OK — плашки вернулись после перезапуска Проводника
+
+=== плагин закрыт аварийно: панель должна вернуться сама ===
+  через 5 с: state=ready engine=7 pid=8508 tick=339375 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=289 bgfill=1 stroke=1 apps=6 widgets=0 system=41 bars=1 geobars=1 rects=11 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon
+снимок: results\08-сразу-после-аварии.png (1024x768)
+  через 30 с: state=ready engine=7 pid=8508 tick=365453 module=C:\Users\runneradmin\AppData\Local\GhostShell\TaskbarPlus\engine\GhostShellTap-6c06ebe9076b.dll sessions=1 threads=1 nodes=289 bgfill=1 stroke=1 apps=6 widgets=0 system=41 bars=0 geobars=0 rects=11 rectnames=[ScreenEdgeStroke][Gripper][BackgroundFill][BackgroundStroke][DefaultIcon
+снимок: results\09-через-30-секунд.png (1024x768)
+  OK — движок сам вернул родной фон панели
+=== конец ===
