@@ -1,0 +1,72 @@
+name: GSP (свой протокол)
+
+# Проверка Protocols/Gsp: тесты, сборка под Linux/Windows и сравнение скорости с WireGuard
+# на настоящей машине GitHub (в ядре Ubuntu есть WireGuard — это третья точка сравнения).
+on:
+  push:
+    paths:
+      - 'Protocols/Gsp/**'
+      - '.github/workflows/gsp.yml'
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Protocols/Gsp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: Protocols/Gsp/go.sum
+      - name: Тесты (с проверкой гонок)
+        run: |
+          go vet ./...
+          go test -race -count=1 -timeout 300s -v ./... 2>&1 | grep -E '^(---|===|ok|FAIL|PASS|\s+engine_test)' | grep -v '=== RUN'
+      - name: Сборка под три платформы
+        run: |
+          mkdir -p ../../out
+          go build -o ../../out/gsp .
+          go build -o ../../out/relay ./tools/relay
+          go build -o ../../out/wireguard-go golang.zx2c4.com/wireguard
+          GOOS=linux GOARCH=arm64 go build -o ../../out/gsp-linux-arm64 .
+          GOOS=windows GOARCH=amd64 go build -o ../../out/gsp-windows-amd64.exe .
+          ls -la ../../out
+      - name: Сравнение с WireGuard
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends wireguard-tools iperf3 iproute2 iputils-ping python3 >/dev/null
+          B=$GITHUB_WORKSPACE/out
+          echo '##### Скорость без потерь'
+          sudo -E bash bench/run.sh $B 0 0 8 cubic
+          echo '##### Потери 1%, задержка 20 мс в каждую сторону'
+          sudo -E bash bench/run.sh $B 1 20 10 cubic
+          echo '##### Потери 3%, задержка 20 мс в каждую сторону'
+          sudo -E bash bench/run.sh $B 3 20 10 cubic
+          echo '##### Потери 8%, задержка 20 мс в каждую сторону'
+          sudo -E bash bench/run.sh $B 8 20 10 cubic
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gsp-binaries
+          path: out/
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Protocols/Gsp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: Protocols/Gsp/go.sum
+      - name: Тесты и сборка на Windows
+        shell: bash
+        run: |
+          go vet ./...
+          go test -count=1 -timeout 300s . 2>&1 | tail -5
+          go build -o gsp.exe .
+          ./gsp.exe version
