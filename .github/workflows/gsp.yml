@@ -70,3 +70,73 @@ jobs:
           go test -count=1 -v -timeout 300s . 2>&1 | grep -E '^(---|ok|FAIL|PASS|\s+\S+_test.go)'
           go build -o gsp.exe .
           ./gsp.exe version
+
+  # Скрипт установки сервера GSP (тот же, что запускает мастер Gateway Plus) на настоящей Ubuntu-машине GitHub:
+  # служба systemd, NAT, порт, готовый конфиг клиента — и клиент в отдельной сетевой «комнате» выходит через сервер в интернет.
+  server-script:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: Protocols/Gsp/go.sum
+      - name: Сборка
+        working-directory: Protocols/Gsp
+        run: |
+          go build -o "$RUNNER_TEMP/gsp" .
+          sha256sum "$RUNNER_TEMP/gsp"
+      - name: Скрипт установки (как его запускает мастер)
+        run: |
+          bash -n Plugins/GatewayPlus/Resources/gsp-server-setup.sh
+          sudo ip link add vgs type veth peer name vgc
+          sudo ip addr add 10.200.0.1/24 dev vgs && sudo ip link set vgs up
+          sudo ip netns add gsc
+          sudo ip link set vgc netns gsc
+          sudo ip netns exec gsc ip addr add 10.200.0.2/24 dev vgc
+          sudo ip netns exec gsc ip link set vgc up
+          sudo ip netns exec gsc ip link set lo up
+          sudo ip netns exec gsc ip route add default via 10.200.0.1
+          sudo env GSP_BIN="$RUNNER_TEMP/gsp" GSP_PUBIP=10.200.0.1 bash Plugins/GatewayPlus/Resources/gsp-server-setup.sh | tee "$RUNNER_TEMP/setup.out"
+          awk '/НАЧАЛО КОНФИГА/{f=1;next}/КОНЕЦ КОНФИГА/{f=0}f' "$RUNNER_TEMP/setup.out" > "$RUNNER_TEMP/client.conf"
+          echo "--- конфиг клиента (ключ скрыт) ---"; sed 's/^PrivateKey = .*/PrivateKey = <скрыт>/' "$RUNNER_TEMP/client.conf"
+          test "$(head -1 "$RUNNER_TEMP/client.conf")" = "# GSP"
+      - name: Что получилось на «сервере»
+        run: |
+          systemctl is-active gsp
+          systemctl is-enabled gsp
+          ip -br addr show gsp0
+          sudo ss -ulnp | grep 51821
+          sudo iptables -t nat -S POSTROUTING | grep 10.78.0.0
+          sudo iptables -S FORWARD | grep gsp0
+          sudo ls -la /etc/gsp; sudo stat -c '%a %n' /etc/gsp/gsp0.conf
+          cat /proc/sys/net/ipv4/ip_forward
+      - name: Клиент в отдельной «комнате» выходит через сервер
+        run: |
+          set -x
+          # Name (имя сетевой карты) в конфиге клиента не задано — вставляем сразу после [Interface]
+          sed 's/^\[Interface\]$/[Interface]\nName = gspc/' "$RUNNER_TEMP/client.conf" > "$RUNNER_TEMP/c.conf"
+          sudo ip netns exec gsc "$RUNNER_TEMP/gsp" run -c "$RUNNER_TEMP/c.conf" -status "$RUNNER_TEMP/st.json" > "$RUNNER_TEMP/client.log" 2>&1 &
+          sleep 3
+          sudo ip netns exec gsc ip route add 0.0.0.0/1 dev gspc
+          sudo ip netns exec gsc ip route add 128.0.0.0/1 dev gspc
+          sudo ip netns exec gsc ping -c 3 -W 3 10.78.0.1
+          HOSTIP="$(curl -4 -sk --max-time 15 https://1.1.1.1/cdn-cgi/trace | grep '^ip=')"
+          NSIP="$(sudo ip netns exec gsc curl -4 -sk --max-time 15 https://1.1.1.1/cdn-cgi/trace | grep '^ip=')"
+          echo "с самого сервера: $HOSTIP; из «комнаты» через GSP: $NSIP"
+          test -n "$NSIP" && test "$HOSTIP" = "$NSIP"
+          cat "$RUNNER_TEMP/st.json"; echo
+          sudo cat /run/gsp/status.json; echo
+      - name: Повторный запуск скрипта ничего не ломает
+        if: always()
+        run: |
+          sudo env GSP_BIN="$RUNNER_TEMP/gsp" GSP_PUBIP=10.200.0.1 bash Plugins/GatewayPlus/Resources/gsp-server-setup.sh > "$RUNNER_TEMP/setup2.out" 2>&1 || (cat "$RUNNER_TEMP/setup2.out"; exit 1)
+          systemctl is-active gsp
+          test "$(sudo iptables -t nat -S POSTROUTING | grep -c 10.78.0.0)" = "1"
+          test "$(sudo iptables -S FORWARD | grep -c gsp0)" = "2"
+      - name: Журнал службы
+        if: always()
+        run: |
+          sudo journalctl -u gsp -n 30 --no-pager || true
+          cat "$RUNNER_TEMP/client.log" 2>/dev/null | tail -10 || true
