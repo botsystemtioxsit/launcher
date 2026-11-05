@@ -66,6 +66,16 @@ public partial class App : Application
         }) { IsBackground = true }.Start();
 
         if (background && !settings.Active) { Quitting = true; Shutdown(); return; } // фоновый запуск без эффектов — делать нечего
+
+        // После обновления плагина в Проводнике ещё висит старая версия движка. В фоновом режиме окна нет — а перезапуск панели нужен,
+        // иначе плашек не будет и непонятно почему: поэтому в этом случае окно показывается само и предлагает перезапустить панель.
+        var restartShown = false;
+        engine.StatusChanged += () => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (restartShown || engine == null || !settings.UseXaml || !engine.Xaml.NeedsRestart) return;
+            restartShown = true;
+            ShowWindow();
+        }));
         if (!background) ShowWindow();
     }
 
