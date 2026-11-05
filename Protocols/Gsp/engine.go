@@ -77,7 +77,7 @@ type Engine struct {
 	myObf   [32]byte
 	dev     Device
 	conn    *net.UDPConn
-	pc      *ipv4.PacketConn
+	pc      batchIO
 	mu      sync.RWMutex
 	peers   map[[32]byte]*peer
 	byAddr  map[netip.AddrPort]*peer
@@ -165,8 +165,10 @@ func (e *Engine) Start() error {
 	_ = conn.SetReadBuffer(4 << 20)
 	_ = conn.SetWriteBuffer(4 << 20)
 	e.conn = conn
-	e.pc = ipv4.NewPacketConn(conn)
-	e.gso.Store(probeGSO(conn))
+	e.pc = newBatchIO(conn)
+	if _, ok := e.pc.(plainIO); !ok {
+		e.gso.Store(probeGSO(conn))
+	}
 	e.wg.Add(3)
 	go func() { defer e.wg.Done(); e.rxLoop() }()
 	go func() { defer e.wg.Done(); e.tunLoop() }()
