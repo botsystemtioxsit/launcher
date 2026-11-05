@@ -59,7 +59,7 @@ public partial class MainWindow
     // Подписи фаз приходят из фонового потока — доставляем их в окно тем же способом, что и проценты, чтобы порядок не путался
     static Action<string> PhaseSink(OpItem item)
     {
-        var p = new Progress<string>(item.SetPhase);
+        IProgress<string> p = new Progress<string>(item.SetPhase);   // Report у Progress<T> закрыт — вызывается через интерфейс
         return p.Report;
     }
 
