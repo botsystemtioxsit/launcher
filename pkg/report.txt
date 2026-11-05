@@ -1,0 +1,130 @@
+сплошная плитка пустая: True (ждём True)
+плитка с рисунком пустая: False (ждём False)
+прозрачная картинка пустая: True (ждём True)
+приложений в установленных пакетах: 112
+  1527c705-839a-4832-9118-54d4Bd6a0c89_cw5n1h2txyewy!Microsoft.Windows.FilePicker | файл: SquareTile44x44.scale-400.png | из пакета: ok | Проводник: ok
+  c5e2524a-ea46-4f67-841f-6a9465d9d515_cw5n1h2txyewy!App | файл: SquareTile44x44.targetsize-256_altform-unplated_devicefamily-colorfulunplated.png | из пакета: ok | Проводник: ok
+  E2A4F912-2574-4A75-9BB0-0D023378592B_cw5n1h2txyewy!Microsoft.Windows.AppResolverUX | файл: SquareTile44x44.scale-100.png | из пакета: ПУСТО (почти прозрачный) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+    ↑ картинка сохранена: blank-1.png
+  F46D4000-FD22-4DB4-AC8E-4E1DDDE828FE_cw5n1h2txyewy!App | файл: Square44x44Logo.scale-200.png | из пакета: ПУСТО (почти прозрачный) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+    ↑ картинка сохранена: blank-2.png
+  Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy!App | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.AccountsControl_cw5n1h2txyewy!App | файл: SmallLogo.Theme-Dark_Scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.AsyncTextService_8wekyb3d8bbwe!App | файл: Square44x44Logo.png | из пакета: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+    ↑ картинка сохранена: blank-3.png
+  Microsoft.BioEnrollment_cw5n1h2txyewy!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.CredDialogHost_cw5n1h2txyewy!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.DesktopAppInstaller_8wekyb3d8bbwe!App | файл: AppPackageAppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Microsoft.DesktopAppInstaller_8wekyb3d8bbwe!PythonRedirector | файл: AppPackageAppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Microsoft.DesktopAppInstaller_8wekyb3d8bbwe!winget | файл: AppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Microsoft.DesktopAppInstaller_8wekyb3d8bbwe!WinGetComServer | файл: AppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Microsoft.ECApp_8wekyb3d8bbwe!App | файл: Square44x44Logo.png | из пакета: ok | Проводник: ok
+  Microsoft.LockApp_cw5n1h2txyewy!WindowsDefaultLockScreen | файл: SmallLogo.scale-100.png | из пакета: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+    ↑ картинка сохранена: blank-4.png
+  Microsoft.MicrosoftEdgeDevToolsClient_8wekyb3d8bbwe!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.SecHealthUI_8wekyb3d8bbwe!SecHealthUI | файл: WindowsSecurityAppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Microsoft.Win32WebViewHost_cw5n1h2txyewy!DPI.PerMonitorAware | файл: solidsquare.png | из пакета: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+    ↑ картинка сохранена: blank-5.png
+  Microsoft.Win32WebViewHost_cw5n1h2txyewy!DPI.SystemAware | файл: solidsquare.png | из пакета: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+    ↑ картинка сохранена: blank-6.png
+  Microsoft.Win32WebViewHost_cw5n1h2txyewy!DPI.Unaware | файл: solidsquare.png | из пакета: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+  Microsoft.Windows.Apprep.ChxApp_cw5n1h2txyewy!App | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.CapturePicker_cw5n1h2txyewy!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.Windows.CloudExperienceHost_cw5n1h2txyewy!App | файл: smalllogo.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.ContentDeliveryManager_cw5n1h2txyewy!App | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.OOBENetworkCaptivePortal_cw5n1h2txyewy!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.Windows.OOBENetworkConnectionFlow_cw5n1h2txyewy!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.Windows.PeopleExperienceHost_cw5n1h2txyewy!App | файл: PeopleLogo.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.PinningConfirmationDialog_cw5n1h2txyewy!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.Windows.ShellExperienceHost_cw5n1h2txyewy!App | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.ShellExperienceHost_cw5n1h2txyewy!FullTrustApp | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy!App | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy!FullTrustApp | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.XGpuEjectDialog_cw5n1h2txyewy!Microsoft.Windows.XGpuEjectDialog | файл: SquareTile44x44.scale-400.png | из пакета: ok | Проводник: ok
+  Microsoft.WindowsTerminal_8wekyb3d8bbwe!App | файл: Square44x44Logo.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.57242383.Tasbar_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.57242383.Tasbar_cw5n1h2txyewy!Global.SystemTray | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.57242383.Tasbar_cw5n1h2txyewy!Global.Taskbar | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59336768.Speion_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59336768.Speion_cw5n1h2txyewy!Global.SpeechSynthesizerExtension | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59337133.Voiess_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59337133.Voiess_cw5n1h2txyewy!Global.VoiceAccessHost | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59337133.Voiess_cw5n1h2txyewy!Global.SpeechRecognizerExtension | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59337133.Voiess_cw5n1h2txyewy!Global.VoiceAccessPlugin | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59337145.Livtop_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59337145.Livtop_cw5n1h2txyewy!Global.LiveCaptionsDesktop | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59379618.InpApp_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59379618.InpApp_cw5n1h2txyewy!InputApp | файл: SquareLogo44x44.scale-400.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59379618.InpApp_cw5n1h2txyewy!Global.TextInputExtensions | файл: SquareLogo44x44.scale-400.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.AccountDialog | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.Accounts | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!ActionRuntime | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.ActionUI | файл: ActionResponse.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.ActionUI.Common | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!CrossDeviceResumeApp | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.DesktopSpotlight | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.DesktopStickerEditor | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!DesktopStickerEditorCentennial | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.DragTray | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.FeatureDiscoverability | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!InputApp | файл: SquareLogo44x44.scale-400.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.TextInputExtensions | файл: SquareLogo44x44.scale-400.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.IrisService | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.PersonaCardManager | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.RulesEngine | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!CortanaUI | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!CortanaUIFullTrustApp | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!FESearchUI | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!SoftLanding | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!VisualAssist | файл: DescribeImage44x44.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!WebExperienceHost | файл: GetStartedAppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.WidgetDataModel | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.WidgetPicker | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.WidgetViewWinUI3 | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.LockCanvas | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.WidgetViewUWP | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!WindowsBackup | файл: AppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.WindowsMigration | файл: нет | из пакета: нет | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.WindowsPeopleExperience | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.wsw | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.AppListBackup | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.BackupBanner | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.CopilotNudges | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.LiveCaptionsDesktop | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!LogonWebHost | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.MicrosoftGraphRecentItemsManager | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!ScreenClipping | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!SettingsModelService | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.SnapLayout | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.SpeechSynthesizerExtension | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.StartMenu | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.FamilyValueProp | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.ValueBanner | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.SystemTray | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.Taskbar | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.TwinSxS | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.VoiceAccessHost | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.SpeechRecognizerExtension | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.VoiceAccessPlugin | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.FileExp_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.FileExp_cw5n1h2txyewy!Global.FileExplorerExtensions | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.OOBE_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.OOBE_cw5n1h2txyewy!OobeHost | файл: Oobesmalllogo.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.OOBE_cw5n1h2txyewy!Global.WindowsOobeAppHost | файл: WOAHSmallLogo.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.OOBE_cw5n1h2txyewy!WindowsOobeAppHost | файл: WOAHSmallLogo.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Photon_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Photon_cw5n1h2txyewy!Global.ExperienceExtensions | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Photon_cw5n1h2txyewy!Global.WsxPackManager | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  Windows.CBSPreview_cw5n1h2txyewy!Microsoft.Windows.CBSPreview | файл: Square44x44Logo.png | из пакета: ok | Проводник: ok
+  windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel | файл: logo.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Windows.PrintDialog_cw5n1h2txyewy!Microsoft.Windows.PrintDialog | файл: Square44x44Logo.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+итог: из пакета хороших 97, пустых 7, нет 8; Проводник: хороших 105, пустых 7
+ярлыки на столе: сделано 47, не вышло 1
+  IconPlusPkg-1527c705-839a-4832-9118-54d4Bd6a0c89: итог ok; откуда: значок из файлов приложения; значок в ярлыке: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\ff347d660cdce4d0.ico; пустой: False; средний цвет R255 G208 B233
+  IconPlusPkg-c5e2524a-ea46-4f67-841f-6a9465d9d515: итог ok; откуда: значок из файлов приложения; значок в ярлыке: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\bc1bc8da8db480df.ico; пустой: False; средний цвет R241 G108 B180
+  IconPlusPkg-E2A4F912-2574-4A75-9BB0-0D023378592B: итог значок пустой (плитка без рисунка) — красить нечего; откуда: -; значок в ярлыке: ; пустой: нет картинки; нет значка
+  после возврата IconPlusPkg-1527c705-839a-4832-9118-54d4Bd6a0c89: значок в ярлыке «» (должен быть не из generated: True)
+  после возврата IconPlusPkg-c5e2524a-ea46-4f67-841f-6a9465d9d515: значок в ярлыке «» (должен быть не из generated: True)
+  после возврата IconPlusPkg-E2A4F912-2574-4A75-9BB0-0D023378592B: значок в ярлыке «» (должен быть не из generated: True)

@@ -1,0 +1,436 @@
+=== значок самой программы ===
+значок из IconPlus.exe извлечён: 32x32
+
+=== окно настроек (снимки без показа) ===
+screenshot : код 0
+  файл: icon-plus-ui-0.png (84452 байт)
+  файл: icon-plus-ui-1.png (34238 байт)
+  файл: icon-plus-ui-3.png (79633 байт)
+
+=== самопроверка: перекраска и возврат ===
+selftest : код 0
+перекраска: сделано 647, не вышло 32, записей запомнено 469
+Icon Plus 1.4.1.0 · Windows 10.0.26100.0 · 2026-11-05 04:57
+Изменено: 647, не получилось: 32
+
+[Жёсткий диск] изменено 2
+
+[Этот компьютер] изменено 1
+
+[Корзина (пустая)] изменено 1
+
+[Сеть] изменено 1
+
+[Текст (txt, log, ini, md)] изменено 5
+
+[Архив (zip, rar, 7z)] изменено 5
+
+[Картинка (png, jpg, gif)] изменено 6
+
+[Музыка (mp3, wav)] изменено 5
+
+[PDF] изменено 1
+
+[Документ (doc, docx, rtf)] изменено 4
+
+[Ярлыки на рабочем столе (и ярлыки-ссылки Steam)] изменено 3, не получилось 1
+  значок пустой (плитка без рисунка) — красить нечего (1): IconPlusTest
+
+[Ярлыки на общем рабочем столе (для всех; спросит разрешение администратора)] изменено 6, не получилось 1
+  значок пустой (плитка без рисунка) — красить нечего (1): IconPlusTestAll
+
+[Все остальные типы файлов (по списку Windows)] изменено 397, не получилось 28
+  значок не читается (28): prog:CATFile, prog:CERFile, prog:CertificateStoreFile, prog:CRLFile, prog:DLNA-PLAYSINGLE, prog:DVD, prog:P7RFile, prog:P7SFile, prog:PFXFile, prog:SPCFile, prog:VisualStudio.coffee.5529bf1c, prog:VisualStudio.dsl.5529bf1c, …
+
+[Папки пользователя: Документы, Загрузки, Рабочий стол…] изменено 6
+
+[Приложения «Пуска» без ярлыков (магазинные и системные: Блокнот, Терминал, Безопасность Windows…)] изменено 43
+
+[Папка (спросит разрешение администратора)] изменено 1
+
+[Ярлыки в меню «Пуск» (общие; спросит разрешение администратора)] изменено 160, не получилось 2
+  ярлык не записывается (нет доступа или файл занят) (2): Windows PowerShell ISE (x86), Windows PowerShell ISE
+
+[Ярлыки с идентификатором программы (AUMID): 13] — имя | идентификатор | откуда значок | результат
+  Firefox | 308046B0AF4A39CB | файл значка | ok
+  Google Chrome | Chrome | файл значка | ok
+  Microsoft Edge | MSEdge | файл значка | ok
+  Unity Hub | com.unity3d.unityhub | файл значка | ok
+  Blend for Visual Studio | Blend.5529bf1c | файл значка | ok
+  Firefox Private Browsing | 308046B0AF4A39CB;PrivateBrowsingAUMID | файл значка | ok
+  Visual Studio Installer | Microsoft.VisualStudio.Installer | файл значка | ok
+  Visual Studio | VisualStudio.5529bf1c | файл значка | ok
+  WSL | Microsoft.WSL | файл значка | ok
+  Remote Desktop Connection | Microsoft.Windows.RemoteDesktop | файл значка | ok
+  Windows Media Player Legacy | Microsoft.Windows.MediaPlayer32 | файл значка | ok
+  Anaconda PowerShell Prompt | anaconda.PowerShell.Miniconda.base | файл значка | ok
+  Anaconda Prompt | anaconda.CmdExe.Miniconda.base | файл значка | ok
+
+превью: previews.png
+--- после перекраски (ожидаем изменения)
+folder    изменилось     было: C:\Windows\system32\imageres.dll,-3   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\bd1b0f1f6ea0a835.ico,0
+drive-C   изменилось     было: C:\Windows\system32\imageres.dll,-36   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\004de90e6847a3d8.ico,0
+thispc    изменилось     было: C:\Windows\System32\imageres.dll,-109   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\646cb6d50778f1a6.ico,0
+recycle   изменилось     было: C:\Windows\System32\imageres.dll,-55   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\fd88afd945ffa5a4.ico,0
+network   изменилось     было: C:\Windows\System32\imageres.dll,-25   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\f5697263874b8b8c.ico,0
+a.txt     изменилось     было: C:\Windows\system32\imageres.dll,-102   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\573e3febf266c5c8.ico
+b.zip     изменилось     было: C:\Windows\system32\zipfldr.dll   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\4b40f5c9be77d6e2.ico
+c.png     изменилось     было: C:\Windows\system32\shell32.dll,-16823   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\b6f7b2404cdfbaa6.ico
+d.mp3     изменилось     было: C:\Windows\system32\wmploc.dll,-732   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\379b122a10d07a2d.ico
+e.pdf     изменилось     было: C:\Program Files (x86)\Microsoft\Edge\Application\156.0.4314.58\msedge.exe,11   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\de8e8db73289c121.ico
+f.docx    НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\shell32.dll,0   стало: C:\Windows\System32\shell32.dll,0
+lnk       изменилось     было: ,0   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\6465038dec485d83.ico,0
+url       НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+url-public НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+lnk-broken изменилось     было: C:\NoSuchFolder\nope.ico,0   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\6465038dec485d83.ico,0
+docs-ini  изменилось     было: %SystemRoot%\system32\imageres.dll,-112   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\264a07a0e326c77a.ico,0
+assoc.ttf изменилось     было: C:\Windows\System32\fontext.dll,-419   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\6bf6b14a990e2821.ico
+assoc.cab изменилось     было: C:\Windows\system32\cabview.dll,0   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\20d7467dd365c2e1.ico
+assoc.reg изменилось     было: C:\Windows\regedit.exe,1   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\379bec64cd736caa.ico
+assoc.msi изменилось     было: C:\Windows\System32\msiexec.exe,0   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\555f47cb48ec5b12.ico
+lnk-public изменилось     было: ,0   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\6465038dec485d83.ico,0
+lnk-startall изменилось     было: ,0   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\6465038dec485d83.ico,0
+вернули: 636 изменений, осталось запомнено 0
+--- после «вернуть как было» (ожидаем как было)
+folder    как было       было: C:\Windows\system32\imageres.dll,-3   стало: C:\Windows\system32\imageres.dll,-3
+drive-C   как было       было: C:\Windows\system32\imageres.dll,-36   стало: C:\Windows\system32\imageres.dll,-36
+thispc    как было       было: C:\Windows\System32\imageres.dll,-109   стало: C:\Windows\System32\imageres.dll,-109
+recycle   как было       было: C:\Windows\System32\imageres.dll,-55   стало: C:\Windows\System32\imageres.dll,-55
+network   как было       было: C:\Windows\System32\imageres.dll,-25   стало: C:\Windows\System32\imageres.dll,-25
+a.txt     как было       было: C:\Windows\system32\imageres.dll,-102   стало: C:\Windows\system32\imageres.dll,-102
+b.zip     как было       было: C:\Windows\system32\zipfldr.dll   стало: C:\Windows\system32\zipfldr.dll
+c.png     как было       было: C:\Windows\system32\shell32.dll,-16823   стало: C:\Windows\system32\shell32.dll,-16823
+d.mp3     как было       было: C:\Windows\system32\wmploc.dll,-732   стало: C:\Windows\system32\wmploc.dll,-732
+e.pdf     как было       было: C:\Program Files (x86)\Microsoft\Edge\Application\156.0.4314.58\msedge.exe,11   стало: C:\Program Files (x86)\Microsoft\Edge\Application\156.0.4314.58\msedge.exe,11
+f.docx    как было       было: C:\Windows\System32\shell32.dll,0   стало: C:\Windows\System32\shell32.dll,0
+lnk       как было       было: ,0   стало: ,0
+url       как было       было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+url-public как было       было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+lnk-broken как было       было: C:\NoSuchFolder\nope.ico,0   стало: C:\NoSuchFolder\nope.ico,0
+docs-ini  как было       было: %SystemRoot%\system32\imageres.dll,-112   стало: %SystemRoot%\system32\imageres.dll,-112
+assoc.ttf как было       было: C:\Windows\System32\fontext.dll,-419   стало: C:\Windows\System32\fontext.dll,-419
+assoc.cab как было       было: C:\Windows\system32\cabview.dll,0   стало: C:\Windows\system32\cabview.dll,0
+assoc.reg как было       было: C:\Windows\regedit.exe,1   стало: C:\Windows\regedit.exe,1
+assoc.msi как было       было: C:\Windows\System32\msiexec.exe,0   стало: C:\Windows\System32\msiexec.exe,0
+lnk-public как было       было: ,0   стало: ,0
+lnk-startall как было       было: ,0   стало: ,0
+ярлык приложения «Пуска»: файл есть: True, AUMID в нём: Microsoft.Windows.Explorer
+
+=== значки магазинных приложений и «пустые» значки ===
+pkg-test : код 0
+сплошная плитка пустая: True (ждём True)
+плитка с рисунком пустая: False (ждём False)
+прозрачная картинка пустая: True (ждём True)
+приложений в установленных пакетах: 112
+  1527c705-839a-4832-9118-54d4Bd6a0c89_cw5n1h2txyewy!Microsoft.Windows.FilePicker | файл: SquareTile44x44.scale-400.png | из пакета: ok | Проводник: ok
+  c5e2524a-ea46-4f67-841f-6a9465d9d515_cw5n1h2txyewy!App | файл: SquareTile44x44.targetsize-256_altform-unplated_devicefamily-colorfulunplated.png | из пакета: ok | Проводник: ok
+  E2A4F912-2574-4A75-9BB0-0D023378592B_cw5n1h2txyewy!Microsoft.Windows.AppResolverUX | файл: SquareTile44x44.scale-100.png | из пакета: ПУСТО (почти прозрачный) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+    ↑ картинка сохранена: blank-1.png
+  F46D4000-FD22-4DB4-AC8E-4E1DDDE828FE_cw5n1h2txyewy!App | файл: Square44x44Logo.scale-200.png | из пакета: ПУСТО (почти прозрачный) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+    ↑ картинка сохранена: blank-2.png
+  Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy!App | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.AccountsControl_cw5n1h2txyewy!App | файл: SmallLogo.Theme-Dark_Scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.AsyncTextService_8wekyb3d8bbwe!App | файл: Square44x44Logo.png | из пакета: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+    ↑ картинка сохранена: blank-3.png
+  Microsoft.BioEnrollment_cw5n1h2txyewy!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.CredDialogHost_cw5n1h2txyewy!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.DesktopAppInstaller_8wekyb3d8bbwe!App | файл: AppPackageAppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Microsoft.DesktopAppInstaller_8wekyb3d8bbwe!PythonRedirector | файл: AppPackageAppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Microsoft.DesktopAppInstaller_8wekyb3d8bbwe!winget | файл: AppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Microsoft.DesktopAppInstaller_8wekyb3d8bbwe!WinGetComServer | файл: AppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Microsoft.ECApp_8wekyb3d8bbwe!App | файл: Square44x44Logo.png | из пакета: ok | Проводник: ok
+  Microsoft.LockApp_cw5n1h2txyewy!WindowsDefaultLockScreen | файл: SmallLogo.scale-100.png | из пакета: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+    ↑ картинка сохранена: blank-4.png
+  Microsoft.MicrosoftEdgeDevToolsClient_8wekyb3d8bbwe!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.SecHealthUI_8wekyb3d8bbwe!SecHealthUI | файл: WindowsSecurityAppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Microsoft.Win32WebViewHost_cw5n1h2txyewy!DPI.PerMonitorAware | файл: solidsquare.png | из пакета: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+    ↑ картинка сохранена: blank-5.png
+  Microsoft.Win32WebViewHost_cw5n1h2txyewy!DPI.SystemAware | файл: solidsquare.png | из пакета: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+    ↑ картинка сохранена: blank-6.png
+  Microsoft.Win32WebViewHost_cw5n1h2txyewy!DPI.Unaware | файл: solidsquare.png | из пакета: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%) | Проводник: ПУСТО (заполнение рамки 1.00, разброс цвета 0.0, рамка 100%)
+  Microsoft.Windows.Apprep.ChxApp_cw5n1h2txyewy!App | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.CapturePicker_cw5n1h2txyewy!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.Windows.CloudExperienceHost_cw5n1h2txyewy!App | файл: smalllogo.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.ContentDeliveryManager_cw5n1h2txyewy!App | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.OOBENetworkCaptivePortal_cw5n1h2txyewy!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.Windows.OOBENetworkConnectionFlow_cw5n1h2txyewy!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.Windows.PeopleExperienceHost_cw5n1h2txyewy!App | файл: PeopleLogo.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.PinningConfirmationDialog_cw5n1h2txyewy!App | файл: нет | из пакета: нет | Проводник: ok
+  Microsoft.Windows.ShellExperienceHost_cw5n1h2txyewy!App | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.ShellExperienceHost_cw5n1h2txyewy!FullTrustApp | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy!App | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy!FullTrustApp | файл: SmallLogo.scale-100.png | из пакета: ok | Проводник: ok
+  Microsoft.Windows.XGpuEjectDialog_cw5n1h2txyewy!Microsoft.Windows.XGpuEjectDialog | файл: SquareTile44x44.scale-400.png | из пакета: ok | Проводник: ok
+  Microsoft.WindowsTerminal_8wekyb3d8bbwe!App | файл: Square44x44Logo.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.57242383.Tasbar_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.57242383.Tasbar_cw5n1h2txyewy!Global.SystemTray | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.57242383.Tasbar_cw5n1h2txyewy!Global.Taskbar | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59336768.Speion_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59336768.Speion_cw5n1h2txyewy!Global.SpeechSynthesizerExtension | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59337133.Voiess_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59337133.Voiess_cw5n1h2txyewy!Global.VoiceAccessHost | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59337133.Voiess_cw5n1h2txyewy!Global.SpeechRecognizerExtension | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59337133.Voiess_cw5n1h2txyewy!Global.VoiceAccessPlugin | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59337145.Livtop_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59337145.Livtop_cw5n1h2txyewy!Global.LiveCaptionsDesktop | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59379618.InpApp_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59379618.InpApp_cw5n1h2txyewy!InputApp | файл: SquareLogo44x44.scale-400.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.59379618.InpApp_cw5n1h2txyewy!Global.TextInputExtensions | файл: SquareLogo44x44.scale-400.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.AccountDialog | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.Accounts | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!ActionRuntime | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.ActionUI | файл: ActionResponse.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.ActionUI.Common | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!CrossDeviceResumeApp | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.DesktopSpotlight | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.DesktopStickerEditor | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!DesktopStickerEditorCentennial | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.DragTray | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.FeatureDiscoverability | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!InputApp | файл: SquareLogo44x44.scale-400.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.TextInputExtensions | файл: SquareLogo44x44.scale-400.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.IrisService | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.PersonaCardManager | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.RulesEngine | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!CortanaUI | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!CortanaUIFullTrustApp | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!FESearchUI | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!SoftLanding | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!VisualAssist | файл: DescribeImage44x44.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!WebExperienceHost | файл: GetStartedAppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.WidgetDataModel | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.WidgetPicker | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.WidgetViewWinUI3 | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.LockCanvas | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.WidgetViewUWP | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!WindowsBackup | файл: AppList.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.WindowsMigration | файл: нет | из пакета: нет | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.WindowsPeopleExperience | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.CBS_cw5n1h2txyewy!Global.wsw | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.AppListBackup | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.BackupBanner | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.CopilotNudges | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.LiveCaptionsDesktop | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!LogonWebHost | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.MicrosoftGraphRecentItemsManager | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!ScreenClipping | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!SettingsModelService | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.SnapLayout | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.SpeechSynthesizerExtension | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.StartMenu | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.FamilyValueProp | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.ValueBanner | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.SystemTray | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.Taskbar | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.TwinSxS | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.VoiceAccessHost | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.SpeechRecognizerExtension | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Core_cw5n1h2txyewy!Global.VoiceAccessPlugin | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.FileExp_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.FileExp_cw5n1h2txyewy!Global.FileExplorerExtensions | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.OOBE_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.OOBE_cw5n1h2txyewy!OobeHost | файл: Oobesmalllogo.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.OOBE_cw5n1h2txyewy!Global.WindowsOobeAppHost | файл: WOAHSmallLogo.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.OOBE_cw5n1h2txyewy!WindowsOobeAppHost | файл: WOAHSmallLogo.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Photon_cw5n1h2txyewy!PackageMetadata | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Photon_cw5n1h2txyewy!Global.ExperienceExtensions | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  MicrosoftWindows.Client.Photon_cw5n1h2txyewy!Global.WsxPackManager | файл: Square44x44Logo.scale-200.png | из пакета: ok | Проводник: ok
+  Windows.CBSPreview_cw5n1h2txyewy!Microsoft.Windows.CBSPreview | файл: Square44x44Logo.png | из пакета: ok | Проводник: ok
+  windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel | файл: logo.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+  Windows.PrintDialog_cw5n1h2txyewy!Microsoft.Windows.PrintDialog | файл: Square44x44Logo.targetsize-256_altform-unplated.png | из пакета: ok | Проводник: ok
+итог: из пакета хороших 97, пустых 7, нет 8; Проводник: хороших 105, пустых 7
+ярлыки на столе: сделано 47, не вышло 1
+  IconPlusPkg-1527c705-839a-4832-9118-54d4Bd6a0c89: итог ok; откуда: значок из файлов приложения; значок в ярлыке: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\ff347d660cdce4d0.ico; пустой: False; средний цвет R255 G208 B233
+  IconPlusPkg-c5e2524a-ea46-4f67-841f-6a9465d9d515: итог ok; откуда: значок из файлов приложения; значок в ярлыке: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\generated\bc1bc8da8db480df.ico; пустой: False; средний цвет R241 G108 B180
+  IconPlusPkg-E2A4F912-2574-4A75-9BB0-0D023378592B: итог значок пустой (плитка без рисунка) — красить нечего; откуда: -; значок в ярлыке: ; пустой: нет картинки; нет значка
+  после возврата IconPlusPkg-1527c705-839a-4832-9118-54d4Bd6a0c89: значок в ярлыке «» (должен быть не из generated: True)
+  после возврата IconPlusPkg-c5e2524a-ea46-4f67-841f-6a9465d9d515: значок в ярлыке «» (должен быть не из generated: True)
+  после возврата IconPlusPkg-E2A4F912-2574-4A75-9BB0-0D023378592B: значок в ярлыке «» (должен быть не из generated: True)
+
+значок папок после самопроверки (должен быть чист): 
+
+=== набор значков: архивы ===
+pack-test zip : код 0
+pack-test 7z : код 0
+--- pack-7z.txt
+набор «TestPack7»: значков 20
+  drive-fixed      ← hard drive.ico
+  drive-optical    ← dvd.ico
+  drive-removable  ← usb drive.ico
+  folder           ← folder.ico
+  ft-archive       ← zip.ico
+  ft-audio         ← music.ico
+  ft-code          ← code.ico
+  ft-doc           ← doc.ico
+  ft-image         ← image.ico
+  ft-pdf           ← pdf.ico
+  ft-sheet         ← xls.ico
+  ft-text          ← txt.ico
+  ft-video         ← video.ico
+  ft-web           ← html.ico
+  network          ← network.ico
+  recycle-empty    ← recycle bin empty.ico
+  recycle-full     ← recycle bin full.ico
+  thispc           ← computer.ico
+  userfiles        ← user.ico
+не подобрано: drive-network, ft-slides, ft-script
+применено: 53, не вышло 0
+--- с набором
+folder    изменилось     было: C:\Windows\system32\imageres.dll,-3   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\folder.ico,0
+drive-C   изменилось     было: C:\Windows\system32\imageres.dll,-36   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\hard drive.ico,0
+thispc    изменилось     было: C:\Windows\System32\imageres.dll,-109   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\computer.ico,0
+recycle   изменилось     было: C:\Windows\System32\imageres.dll,-55   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\recycle bin empty.ico,0
+network   изменилось     было: C:\Windows\System32\imageres.dll,-25   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\network.ico,0
+a.txt     изменилось     было: C:\Windows\system32\imageres.dll,-102   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\txt.ico
+b.zip     изменилось     было: C:\Windows\system32\zipfldr.dll   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\zip.ico
+c.png     изменилось     было: C:\Windows\system32\shell32.dll,-16823   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\image.ico
+d.mp3     изменилось     было: C:\Windows\system32\wmploc.dll,-732   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\music.ico
+e.pdf     изменилось     было: C:\Program Files (x86)\Microsoft\Edge\Application\156.0.4314.58\msedge.exe,11   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack7\pdf.ico
+f.docx    НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\shell32.dll,0   стало: C:\Windows\System32\shell32.dll,0
+lnk       НЕ ИЗМЕНИЛОСЬ  было: ,0   стало: ,0
+url       НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+url-public НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+lnk-broken НЕ ИЗМЕНИЛОСЬ  было: C:\NoSuchFolder\nope.ico,0   стало: C:\NoSuchFolder\nope.ico,0
+docs-ini  НЕ ИЗМЕНИЛОСЬ  было: %SystemRoot%\system32\imageres.dll,-112   стало: %SystemRoot%\system32\imageres.dll,-112
+assoc.ttf НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\fontext.dll,-419   стало: C:\Windows\System32\fontext.dll,-419
+assoc.cab НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\system32\cabview.dll,0   стало: C:\Windows\system32\cabview.dll,0
+assoc.reg НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\regedit.exe,1   стало: C:\Windows\regedit.exe,1
+assoc.msi НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\msiexec.exe,0   стало: C:\Windows\System32\msiexec.exe,0
+lnk-public НЕ ИЗМЕНИЛОСЬ  было: ,0   стало: ,0
+lnk-startall НЕ ИЗМЕНИЛОСЬ  было: ,0   стало: ,0
+--- после возврата
+folder    как было       было: C:\Windows\system32\imageres.dll,-3   стало: C:\Windows\system32\imageres.dll,-3
+drive-C   как было       было: C:\Windows\system32\imageres.dll,-36   стало: C:\Windows\system32\imageres.dll,-36
+thispc    как было       было: C:\Windows\System32\imageres.dll,-109   стало: C:\Windows\System32\imageres.dll,-109
+recycle   как было       было: C:\Windows\System32\imageres.dll,-55   стало: C:\Windows\System32\imageres.dll,-55
+network   как было       было: C:\Windows\System32\imageres.dll,-25   стало: C:\Windows\System32\imageres.dll,-25
+a.txt     как было       было: C:\Windows\system32\imageres.dll,-102   стало: C:\Windows\system32\imageres.dll,-102
+b.zip     как было       было: C:\Windows\system32\zipfldr.dll   стало: C:\Windows\system32\zipfldr.dll
+c.png     как было       было: C:\Windows\system32\shell32.dll,-16823   стало: C:\Windows\system32\shell32.dll,-16823
+d.mp3     как было       было: C:\Windows\system32\wmploc.dll,-732   стало: C:\Windows\system32\wmploc.dll,-732
+e.pdf     как было       было: C:\Program Files (x86)\Microsoft\Edge\Application\156.0.4314.58\msedge.exe,11   стало: C:\Program Files (x86)\Microsoft\Edge\Application\156.0.4314.58\msedge.exe,11
+f.docx    как было       было: C:\Windows\System32\shell32.dll,0   стало: C:\Windows\System32\shell32.dll,0
+lnk       как было       было: ,0   стало: ,0
+url       как было       было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+url-public как было       было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+lnk-broken как было       было: C:\NoSuchFolder\nope.ico,0   стало: C:\NoSuchFolder\nope.ico,0
+docs-ini  как было       было: %SystemRoot%\system32\imageres.dll,-112   стало: %SystemRoot%\system32\imageres.dll,-112
+assoc.ttf как было       было: C:\Windows\System32\fontext.dll,-419   стало: C:\Windows\System32\fontext.dll,-419
+assoc.cab как было       было: C:\Windows\system32\cabview.dll,0   стало: C:\Windows\system32\cabview.dll,0
+assoc.reg как было       было: C:\Windows\regedit.exe,1   стало: C:\Windows\regedit.exe,1
+assoc.msi как было       было: C:\Windows\System32\msiexec.exe,0   стало: C:\Windows\System32\msiexec.exe,0
+lnk-public как было       было: ,0   стало: ,0
+lnk-startall как было       было: ,0   стало: ,0
+--- pack-zip.txt
+набор «TestPack»: значков 20
+  drive-fixed      ← hard drive.ico
+  drive-optical    ← dvd.ico
+  drive-removable  ← usb drive.ico
+  folder           ← folder.ico
+  ft-archive       ← zip.ico
+  ft-audio         ← music.ico
+  ft-code          ← code.ico
+  ft-doc           ← doc.ico
+  ft-image         ← image.ico
+  ft-pdf           ← pdf.ico
+  ft-sheet         ← xls.ico
+  ft-text          ← txt.ico
+  ft-video         ← video.ico
+  ft-web           ← html.ico
+  network          ← network.ico
+  recycle-empty    ← recycle bin empty.ico
+  recycle-full     ← recycle bin full.ico
+  thispc           ← computer.ico
+  userfiles        ← user.ico
+не подобрано: drive-network, ft-slides, ft-script
+применено: 53, не вышло 0
+--- с набором
+folder    изменилось     было: C:\Windows\system32\imageres.dll,-3   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\folder.ico,0
+drive-C   изменилось     было: C:\Windows\system32\imageres.dll,-36   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\hard drive.ico,0
+thispc    изменилось     было: C:\Windows\System32\imageres.dll,-109   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\computer.ico,0
+recycle   изменилось     было: C:\Windows\System32\imageres.dll,-55   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\recycle bin empty.ico,0
+network   изменилось     было: C:\Windows\System32\imageres.dll,-25   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\network.ico,0
+a.txt     изменилось     было: C:\Windows\system32\imageres.dll,-102   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\txt.ico
+b.zip     изменилось     было: C:\Windows\system32\zipfldr.dll   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\zip.ico
+c.png     изменилось     было: C:\Windows\system32\shell32.dll,-16823   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\image.ico
+d.mp3     изменилось     было: C:\Windows\system32\wmploc.dll,-732   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\music.ico
+e.pdf     изменилось     было: C:\Program Files (x86)\Microsoft\Edge\Application\156.0.4314.58\msedge.exe,11   стало: C:\Users\runneradmin\AppData\Roaming\BattleLauncher\icon-plus\packs\TestPack\pdf.ico
+f.docx    НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\shell32.dll,0   стало: C:\Windows\System32\shell32.dll,0
+lnk       НЕ ИЗМЕНИЛОСЬ  было: ,0   стало: ,0
+url       НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+url-public НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+lnk-broken НЕ ИЗМЕНИЛОСЬ  было: C:\NoSuchFolder\nope.ico,0   стало: C:\NoSuchFolder\nope.ico,0
+docs-ini  НЕ ИЗМЕНИЛОСЬ  было: %SystemRoot%\system32\imageres.dll,-112   стало: %SystemRoot%\system32\imageres.dll,-112
+assoc.ttf НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\fontext.dll,-419   стало: C:\Windows\System32\fontext.dll,-419
+assoc.cab НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\system32\cabview.dll,0   стало: C:\Windows\system32\cabview.dll,0
+assoc.reg НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\regedit.exe,1   стало: C:\Windows\regedit.exe,1
+assoc.msi НЕ ИЗМЕНИЛОСЬ  было: C:\Windows\System32\msiexec.exe,0   стало: C:\Windows\System32\msiexec.exe,0
+lnk-public НЕ ИЗМЕНИЛОСЬ  было: ,0   стало: ,0
+lnk-startall НЕ ИЗМЕНИЛОСЬ  было: ,0   стало: ,0
+--- после возврата
+folder    как было       было: C:\Windows\system32\imageres.dll,-3   стало: C:\Windows\system32\imageres.dll,-3
+drive-C   как было       было: C:\Windows\system32\imageres.dll,-36   стало: C:\Windows\system32\imageres.dll,-36
+thispc    как было       было: C:\Windows\System32\imageres.dll,-109   стало: C:\Windows\System32\imageres.dll,-109
+recycle   как было       было: C:\Windows\System32\imageres.dll,-55   стало: C:\Windows\System32\imageres.dll,-55
+network   как было       было: C:\Windows\System32\imageres.dll,-25   стало: C:\Windows\System32\imageres.dll,-25
+a.txt     как было       было: C:\Windows\system32\imageres.dll,-102   стало: C:\Windows\system32\imageres.dll,-102
+b.zip     как было       было: C:\Windows\system32\zipfldr.dll   стало: C:\Windows\system32\zipfldr.dll
+c.png     как было       было: C:\Windows\system32\shell32.dll,-16823   стало: C:\Windows\system32\shell32.dll,-16823
+d.mp3     как было       было: C:\Windows\system32\wmploc.dll,-732   стало: C:\Windows\system32\wmploc.dll,-732
+e.pdf     как было       было: C:\Program Files (x86)\Microsoft\Edge\Application\156.0.4314.58\msedge.exe,11   стало: C:\Program Files (x86)\Microsoft\Edge\Application\156.0.4314.58\msedge.exe,11
+f.docx    как было       было: C:\Windows\System32\shell32.dll,0   стало: C:\Windows\System32\shell32.dll,0
+lnk       как было       было: ,0   стало: ,0
+url       как было       было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+url-public как было       было: C:\Windows\System32\imageres.dll,5   стало: C:\Windows\System32\imageres.dll,5
+lnk-broken как было       было: C:\NoSuchFolder\nope.ico,0   стало: C:\NoSuchFolder\nope.ico,0
+docs-ini  как было       было: %SystemRoot%\system32\imageres.dll,-112   стало: %SystemRoot%\system32\imageres.dll,-112
+assoc.ttf как было       было: C:\Windows\System32\fontext.dll,-419   стало: C:\Windows\System32\fontext.dll,-419
+assoc.cab как было       было: C:\Windows\system32\cabview.dll,0   стало: C:\Windows\system32\cabview.dll,0
+assoc.reg как было       было: C:\Windows\regedit.exe,1   стало: C:\Windows\regedit.exe,1
+assoc.msi как было       было: C:\Windows\System32\msiexec.exe,0   стало: C:\Windows\System32\msiexec.exe,0
+lnk-public как было       было: ,0   стало: ,0
+lnk-startall как было       было: ,0   стало: ,0
+
+=== Проводник: значки до и после перекраски ===
+снимок: results\explorer-1-до.png (1024x768)
+apply-color : код 0
+снимок: results\explorer-2-перекрашено.png (1024x768)
+снимок: results\explorer-2b-после-перезапуска-проводника.png (1024x768)
+restore : код 0
+снимок: results\explorer-3-вернули.png (1024x768)
+
+=== опыт: значок обычной папки без прав администратора? ===
+до : folder=C:\Windows\system32\imageres.dll,-3
+HKCU Shell Icons 3 : folder=C:\Windows\system32\imageres.dll,-3
+снимок: results\folder-HKCUShellIcons.png (1024x768)
+HKLM Shell Icons 3 (нужны права администратора) : folder=C:\Users\RUNNER~1\AppData\Local\Temp\folder-test.ico,0
+снимок: results\folder-HKLMShellIcons.png (1024x768)
+
+=== окно плагина на экране (вкладка «Сайт с иконками») ===
+снимок: results\window-site.png (1024x768)
+снимок: results\window-color.png (1024x768)
+=== конец ===
+
+=== полное обновление значков: Проводник перезапускается сам, кэш чистится ===
+файлов iconcache до: 15
+full-refresh : код 0
+Проводник: было 5496, стало 9724; панель есть: True; заняло 9 с
+файлов iconcache после: 15
+снимок: results\99-после-полного-обновления.png (1024x768)
+
+=== ярлыки меню «Пуск»: откуда берётся значок и нет ли «листка» (--lnk-test) ===
+lnk-test : код 0
+ярлыков: 184, из них с «листком»: 8
+значок диска C: по SHGetFileInfo = «C:\Windows\system32\imageres.dll,-36»; запасной путь «как рисует Проводник» даёт значок
+Azure Arc Setup.lnk | значок ярлыка: %windir%\AzureArcSetup\ArcSetup\AzureArcSetup.exe,0 | цель: C:\Windows\AzureArcSetup\ArcSetup\AzureArcSetup.exe | выбран: C:\Windows\AzureArcSetup\ArcSetup\AzureArcSetup.exe,0 || C:\Windows\AzureArcSetup\ArcSetup\AzureArcSetup.exe,0 → ok || lnktarget:C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Azure Arc Setup.lnk → ok
+Blend for Visual Studio.lnk | значок ярлыка: ,0 | цель: C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\IDE\Blend.exe | выбран: C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\IDE\Blend.exe,0 || C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\IDE\Blend.exe,0 → ok || lnktarget:C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Blend for Visual Studio.lnk → ok
+Calculator.lnk | значок ярлыка: %windir%\system32\win32calc.exe,0 | цель: C:\Windows\system32\win32calc.exe | выбран: C:\Windows\system32\win32calc.exe,0 || C:\Windows\system32\win32calc.exe,0 → ok || lnktarget:C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Calculator.lnk → ok
+Firefox Private Browsing.lnk | значок ярлыка: C:\Program Files\Mozilla Firefox\private_browsing.exe,0 | цель: C:\Program Files\Mozilla Firefox\private_browsing.exe | выбран: C:\Program Files\Mozilla Firefox\private_browsing.exe,0 || C:\Program Files\Mozilla Firefox\private_browsing.exe,0 → ok || lnktarget:C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Firefox Private Browsing.lnk → ok
+Firefox.lnk | значок ярлыка: ,0 | цель: C:\Program Files\Mozilla Firefox\firefox.exe | выбран: C:\Program Files\Mozilla Firefox\firefox.exe,0 || C:\Program Files\Mozilla Firefox\firefox.exe,0 → ok || lnktarget:C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Firefox.lnk → ok
+Google Chrome.lnk | значок ярлыка: C:\Program Files\Google\Chrome\Application\chrome.exe,0 | цель: C:\Program Files\Google\Chrome\Application\chrome.exe | выбран: C:\Program Files\Google\Chrome\Application\chrome.exe,0 || C:\Program Files\Google\Chrome\Application\chrome.exe,0 → ok || lnktarget:C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Google Chrome.lnk → ok
+IconPlusTestAll.lnk | значок ярлыка: ,0 | цель: C:\Windows\System32\notepad.exe | выбран: C:\Windows\System32\notepad.exe,0 || C:\Windows\System32\notepad.exe,0 → ok || lnktarget:C:\ProgramData\Microsoft\Windows\Start Menu\Programs\IconPlusTestAll.lnk → ok
+Microsoft Edge.lnk | значок ярлыка: C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe,0 | цель: C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe | выбран: C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe,0 || C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe,0 → ok || lnktarget:C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Microsoft Edge.lnk → ok
+Microsoft Web Platform Installer.lnk | значок ярлыка: C:\Windows\Installer\{4D38C3A3-B685-4AB5-BD6D-FD88BCED5805}\WebPlatformInstaller.exe,0 | цель: C:\Program Files\Microsoft\Web Platform Installer\WebPlatformInstaller.exe | выбран: C:\Windows\Installer\{4D38C3A3-B685-4AB5-BD6D-FD88BCED5805}\WebPlatformInstaller.exe,0 || C:\Windows\Installer\{4D38C3A3-B685-4AB5-BD6D-FD88BCED5805}\WebPlatformInstaller.exe,0 → ok || lnktarget:C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Microsoft Web Platform Installer.lnk → ok
+Notepad.lnk | значок ярлыка: %windir%\system32\notepad.exe,0 | цель: C:\Windows\system32\notepad.exe | выбран: C:\Windows\system32\notepad.exe,0 || C:\Windows\system32\notepad.exe,0 → ok || lnktarget:C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Notepad.lnk → ok
