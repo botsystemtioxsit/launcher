@@ -160,6 +160,8 @@ sealed class MainWindow : Window
                     ? SliderRow("Поля острова", "Расстояние от значков до края острова", 0, 40, draft.IslandPadding, "px", v => { draft.IslandPadding = v; preview.Update(draft); })
                     : SliderRow("Зазор между островами", "Чем больше, тем дальше острова друг от друга", 0, 40, draft.IslandGap, "px", v => { draft.IslandGap = v; preview.Update(draft); }));
             }
+            rows.Add(Row("Остров под виджетами", "Слева на панели (погода и т. п.). Если там у вас пусто или плашка получается пустой — оставьте «Нет».",
+                Seg(new[] { "Нет", "Да" }, draft.WidgetsIsland ? 1 : 0, i => { draft.WidgetsIsland = i == 1; preview.Update(draft); Build(); })));
             var floating = draft.Shape == AppearanceSettings.ShapePill || (draft.Shape == AppearanceSettings.ShapeIslands && draft.IslandStyle == "float");
             if (floating) rows.Add(SliderRow("Зазор снизу", "Расстояние от панели до нижнего края экрана", 0, 12, draft.BottomGap, "px", v => { draft.BottomGap = v; preview.Update(draft); }));
             root.Children.Add(Card("Подстройка", rows));
@@ -227,7 +229,7 @@ sealed class MainWindow : Window
         }
         settings.Shape = draft.Shape; settings.Radius = draft.Radius; settings.BottomGap = draft.BottomGap;
         settings.IslandStyle = draft.IslandStyle; settings.IslandMode = draft.IslandMode; settings.IslandPadding = draft.IslandPadding; settings.IslandGap = draft.IslandGap;
-        settings.KeepEdges = draft.KeepEdges;
+        settings.KeepEdges = draft.KeepEdges; settings.WidgetsIsland = draft.WidgetsIsland;
         // прежние настройки (отступ по бокам, зоны, стили отдельных островов) в Taskbar Plus 3 не используются: плашка считается от значков
         settings.SideMargin = 0; settings.ZoneApps = settings.ZoneSystem = settings.ZoneWidgets = AppearanceSettings.ZoneDefault;
         settings.UseXaml = wantEngine;

@@ -115,7 +115,7 @@
       "id": "taskbar-plus",
       "category": "style",
       "name": "Taskbar Plus",
-      "desc": "Панель задач Windows по-своему: форма, острова, расположение частей, значки, автоскрытие.",
+      "desc": "Панель задач Windows 11 по-своему: плавающая панель, вкладка или острова под значками; цвет — в Color Plus.",
       "desktop": {
         "repo": "launcher",
         "tag": "latest",

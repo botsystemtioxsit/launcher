@@ -329,6 +329,34 @@ namespace
         WriteTextAtomic(DataDir() + L"\\taskbar-plus-geometry.txt", std::string(head) + body);
     }
 
+    // Видимое содержимое элемента (текст, картинки, значок): рамка по нему точнее, чем по самой кнопке. У кнопки виджетов бывает широкая
+    // пустая область под бегущие строки — остров под ней выглядел бы пустой плашкой.
+    void LeafBounds(const xaml::DependencyObject& o, double sc, Box& acc, int depth, int& budget)
+    {
+        if (depth > 14 || budget-- <= 0) return;
+        auto fe = o.try_as<xaml::FrameworkElement>();
+        if (fe)
+        {
+            if (fe.Visibility() == xaml::Visibility::Collapsed || fe.Opacity() < 0.05) return;
+            bool leaf = false;
+            if (auto tb = fe.try_as<ctl::TextBlock>()) leaf = !tb.Text().empty();
+            else if (auto im = fe.try_as<ctl::Image>()) leaf = (bool)im.Source();
+            else if (fe.Name() == L"Icon") leaf = true;
+            if (leaf)
+            {
+                const double w = fe.ActualWidth(), h = fe.ActualHeight();
+                if (w >= 2 && h >= 2)
+                {
+                    auto r = fe.TransformToVisual(nullptr).TransformBounds(wf::Rect{ 0, 0, (float)w, (float)h });
+                    acc.Grow((int)std::lround(r.X * sc), (int)std::lround(r.Y * sc), (int)std::lround((r.X + r.Width) * sc), (int)std::lround((r.Y + r.Height) * sc));
+                }
+                return;
+            }
+        }
+        const int n = med::VisualTreeHelper::GetChildrenCount(o);
+        for (int i = 0; i < n; ++i) LeafBounds(med::VisualTreeHelper::GetChild(o, i), sc, acc, depth + 1, budget);
+    }
+
     // Размеры и положение каждой группы в пикселях окна панели (координаты относительно корня XAML × масштаб экрана).
     void Measure()
     {
@@ -375,7 +403,13 @@ namespace
                 const int rr = (int)std::lround((r.X + r.Width) * sc), bb = (int)std::lround((r.Y + r.Height) * sc);
                 if (rr <= 0 || l >= bar->second.rootW || rr - l < 2) continue;   // за краем окна (спрятан или ещё не разложен)
                 if (it.kind == Kind::App) { bar->second.apps.Grow(l, t, rr, bb); Box one; one.Grow(l, t, rr, bb); bar->second.icons.push_back(one); }
-                else if (it.kind == Kind::Widgets) bar->second.widgets.Grow(l, t, rr, bb);
+                else if (it.kind == Kind::Widgets)
+                {
+                    Box leaves;
+                    int budget = 600;
+                    LeafBounds(fe, sc, leaves, 0, budget);
+                    if (leaves.ok && leaves.r - leaves.l >= 2) bar->second.widgets.Grow(leaves.l, leaves.t, leaves.r, leaves.b);   // пусто — виджетов «нет»
+                }
                 else
                 {
                     auto& pr = sys[key];

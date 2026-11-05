@@ -23,7 +23,8 @@ static class ShapeBuilder
         // Вертикаль: у «вкладки» плашка идёт от верхнего края и уходит за нижний (скруглён только верх); у плавающих форм
         // остаётся зазор снизу, но не больше, чем позволяют сами значки (они сидят на своих местах и должны оказаться на плашке).
         double contentTop = double.MaxValue, contentBottom = 0;
-        foreach (var b in new[] { g.Apps, g.Widgets, g.System })
+        var widgets = s.WidgetsIsland ? g.Widgets : null;
+        foreach (var b in new[] { g.Apps, widgets, g.System })
             if (b is { } bb) { contentTop = Math.Min(contentTop, bb.T); contentBottom = Math.Max(contentBottom, bb.B); }
         if (contentTop == double.MaxValue) return rects;
         double top, bottom;
@@ -46,7 +47,7 @@ static class ShapeBuilder
         }
 
         var edges = new List<(double L, double R)>();   // виджеты и системная область — отдельными островами (или одной плашкой, если так выбрано)
-        if (g.Widgets is { } w) edges.Add((w.L - pad, w.R + pad));
+        if (widgets is { } w) edges.Add((w.L - pad, w.R + pad));
         if (g.System is { } sy) edges.Add((sy.L - pad, sy.R + pad));
 
         switch (s.Shape)

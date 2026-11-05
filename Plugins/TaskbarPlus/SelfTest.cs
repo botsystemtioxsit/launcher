@@ -46,7 +46,7 @@ static class SelfTest
 
         bool Covers(List<RoundRect> rects, Box b) => rects.Any(r => r.X <= b.L + 0.5 && r.X + r.W >= b.R - 0.5);
 
-        var pill = new AppearanceSettings { Shape = AppearanceSettings.ShapePill, Radius = 18, IslandPadding = 10, BottomGap = 6, KeepEdges = true };
+        var pill = new AppearanceSettings { Shape = AppearanceSettings.ShapePill, Radius = 18, IslandPadding = 10, BottomGap = 6, KeepEdges = true, WidgetsIsland = true };
         var g1 = Owner();
         var r1 = ShapeBuilder.Build(pill, 1920, 48, 1.0, g1);
         check("плавающая: накрывает ВСЕ значки", g1.Icons.All(i => Covers(r1, i)), $"плашек {r1.Count}");
@@ -60,12 +60,12 @@ static class SelfTest
         check("одна общая плашка: от виджетов до часов", r2.Count == 1 && r2[0].X <= 12 && r2[0].X + r2[0].W >= 1913, $"плашек {r2.Count}");
         pill.KeepEdges = true;
 
-        var tab = new AppearanceSettings { Shape = AppearanceSettings.ShapeTab, Radius = 16, IslandPadding = 10 };
+        var tab = new AppearanceSettings { Shape = AppearanceSettings.ShapeTab, Radius = 16, IslandPadding = 10, WidgetsIsland = true };
         var r3 = ShapeBuilder.Build(tab, 1920, 48, 1.0, g1);
         check("вкладка: от верхнего края и уходит за нижний", r3.All(r => r.Y == 0 && r.Y + r.H > 48), string.Join(",", r3.Select(r => $"{r.Y:F0}+{r.H:F0}")));
         check("вкладка: накрывает все значки", g1.Icons.All(i => Covers(r3, i)));
 
-        var isl = new AppearanceSettings { Shape = AppearanceSettings.ShapeIslands, IslandMode = "each", IslandStyle = "float", Radius = 14, IslandGap = 8, BottomGap = 6 };
+        var isl = new AppearanceSettings { Shape = AppearanceSettings.ShapeIslands, IslandMode = "each", IslandStyle = "float", Radius = 14, IslandGap = 8, BottomGap = 6, WidgetsIsland = true };
         var r4 = ShapeBuilder.Build(isl, 1920, 48, 1.0, g1);
         check("острова: по одному на значок + виджеты + трей", r4.Count == g1.Icons.Count + 2, $"плашек {r4.Count}, значков {g1.Icons.Count}");
         check("острова: каждый значок на своём острове", g1.Icons.All(i => r4.Any(r => r.X <= i.L + 4 && r.X + r.W >= i.R - 4)));
@@ -77,6 +77,11 @@ static class SelfTest
         isl.IslandMode = "group"; isl.IslandPadding = 8;
         var r5 = ShapeBuilder.Build(isl, 1920, 48, 1.0, g1);
         check("острова-группы: значки одной группой", r5.Count == 3 && Covers(r5, g1.Apps!.Value), $"плашек {r5.Count}");
+
+        // по умолчанию острова под виджетами нет (на части компьютеров там пусто)
+        var noWidgets = new AppearanceSettings { Shape = AppearanceSettings.ShapePill, Radius = 18, IslandPadding = 10, KeepEdges = true };
+        var rw = ShapeBuilder.Build(noWidgets, 1920, 48, 1.0, g1);
+        check("виджеты по умолчанию без острова", rw.Count == 2 && !rw.Any(r => r.X < 100), $"плашек {rw.Count}");
 
         // скругление не делает из узкого острова круг
         var narrow = new BarGeometry { RootW = 400, RootH = 48, Apps = new Box(100, 4, 120, 44) };
