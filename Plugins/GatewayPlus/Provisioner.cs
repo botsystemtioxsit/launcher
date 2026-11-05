@@ -18,6 +18,8 @@ sealed class SshTarget
     public string? Password { get; set; }
     public string? KeyFile { get; set; }
     public string? KeyPass { get; set; }
+    public string Protocol { get; set; } = "wg";      // "wg" — WireGuard, "gsp" — свой протокол GSP
+    public string? ScriptEnv { get; set; }            // только для проверок: «GSP_BIN=/путь GSP_PUBIP=1.2.3.4» (читается скриптом сервера)
 }
 
 sealed class HostKeyQuestion
@@ -38,6 +40,7 @@ sealed class ProvisionResult
     public string Endpoint { get; set; } = "";
     public string Os { get; set; } = "";
     public string Fingerprint { get; set; } = "";
+    public string Protocol { get; set; } = "wg";
     public string Ipv6Prefix { get; set; } = "";   // «Проверить и ускорить сервер»: сервер включил IPv6 в туннеле — профиль на компьютере нужно дополнить
 }
 
@@ -48,6 +51,7 @@ static class Provisioner
 
     static readonly Regex HostRe = new(@"^[A-Za-z0-9.\-:]{1,253}$");
     static readonly Regex UserRe = new(@"^[a-z_][a-z0-9_.\-]{0,31}$", RegexOptions.IgnoreCase);
+    static readonly Regex EnvRe = new(@"^[A-Z_]{1,30}=[A-Za-z0-9_./:\-]{1,200}( [A-Z_]{1,30}=[A-Za-z0-9_./:\-]{1,200}){0,4}$");
 
     // Что введено верно ли (до любого подключения). null — всё в порядке.
     public static string? ValidateTarget(SshTarget t)
@@ -57,6 +61,8 @@ static class Provisioner
         if (!UserRe.IsMatch(t.User ?? "")) return "Имя пользователя: латиницей, например root.";
         if (string.IsNullOrEmpty(t.Password) && string.IsNullOrEmpty(t.KeyFile)) return "Введите пароль от сервера или выберите файл ключа SSH.";
         if (!string.IsNullOrEmpty(t.KeyFile) && !File.Exists(t.KeyFile)) return "Файл ключа не найден: " + t.KeyFile;
+        if (t.Protocol != "wg" && t.Protocol != "gsp") return "Неизвестный протокол.";
+        if (!string.IsNullOrEmpty(t.ScriptEnv) && !EnvRe.IsMatch(t.ScriptEnv)) return "Недопустимые переменные для скрипта.";
         return null;
     }
 
@@ -104,7 +110,8 @@ static class Provisioner
 
     static ProvisionResult Run(SshTarget t, Func<HostKeyQuestion, bool> confirmKey, Func<string, bool> confirmReplace, Action<string> log, CancellationToken ct)
     {
-        var result = new ProvisionResult();
+        var gsp = t.Protocol == "gsp";
+        var result = new ProvisionResult { Protocol = t.Protocol };
         var bad = ValidateTarget(t);
         if (bad != null) { result.Error = bad; return result; }
         bool refused = false;
@@ -172,25 +179,28 @@ static class Provisioner
             var supported = result.Os is "ubuntu 22.04" or "ubuntu 24.04" or "debian 12";
             log("Система: " + result.Os + (supported ? "." : " — скрипт рассчитан на Ubuntu 22.04/24.04 и Debian 12, но попробую."));
 
-            // уже настроенный WireGuard: перенастройка делает новые ключи, прежние конфиги перестанут работать
-            if (Exec(pre + "test -f /etc/wireguard/wg0.conf && echo EXISTS || echo FRESH").Contains("EXISTS"))
+            // уже настроенный WireGuard / GSP: перенастройка делает новые ключи, прежние конфиги перестанут работать
+            var existing = gsp ? "/etc/gsp/gsp0.conf" : "/etc/wireguard/wg0.conf";
+            var what = gsp ? "GSP" : "WireGuard";
+            if (Exec(pre + "test -f " + existing + " && echo EXISTS || echo FRESH").Contains("EXISTS"))
             {
-                if (!confirmReplace("На этом сервере WireGuard уже настроен. Если продолжить, будут созданы новые ключи, а прежние конфиги (на этом и других устройствах) перестанут работать. Продолжить?"))
-                { result.Error = "Отменено: на сервере уже есть WireGuard, я его не трогал."; return result; }
+                if (!confirmReplace($"На этом сервере {what} уже настроен. Если продолжить, будут созданы новые ключи, а прежние конфиги (на этом и других устройствах) перестанут работать. Продолжить?"))
+                { result.Error = $"Отменено: на сервере уже есть {what}, я его не трогал."; return result; }
             }
 
             // скрипт передаётся одной командой (base64), без SFTP: так работает у любого хостера
-            var script = Store.ServerScript();
+            var script = gsp ? Store.GspServerScript() : Store.ServerScript();
             if (script.Length < 100) { result.Error = "Внутренняя ошибка: скрипт сервера не найден в плагине."; return result; }
             scriptPath = "/tmp/ghostshell-gateway-" + Convert.ToHexString(RandomNumberGenerator.GetBytes(6)).ToLowerInvariant() + ".sh";
             var b64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(script));
             if (!Exec($"umask 077; printf '%s' '{b64}' | base64 -d > {scriptPath} && chmod 700 {scriptPath} && echo UPLOADED").Contains("UPLOADED"))
             { result.Error = "Не получилось передать скрипт на сервер."; scriptPath = null; return result; }
-            log("Ставлю WireGuard на сервер. Это занимает 1–3 минуты…");
+            log(gsp ? "Ставлю сервер GSP: скачиваю программу, проверяю её сумму, настраиваю службу. Это занимает 1–3 минуты…" : "Ставлю WireGuard на сервер. Это занимает 1–3 минуты…");
 
             var full = new StringBuilder();
             bool inConfig = false;
-            using (var cmd = sshRef.CreateCommand($"{pre}bash {scriptPath} 2>&1"))
+            var envPart = string.IsNullOrEmpty(t.ScriptEnv) ? "" : "env " + t.ScriptEnv + " ";
+            using (var cmd = sshRef.CreateCommand($"{pre}{envPart}bash {scriptPath} 2>&1"))
             {
                 cmd.CommandTimeout = TimeSpan.FromMinutes(10);
                 var ar = cmd.BeginExecute();
@@ -212,6 +222,7 @@ static class Provisioner
 
             var conf = ParseConfig(full.ToString());
             if (conf == null) { result.Error = "Скрипт отработал, но конфиг в его выводе не найден."; return result; }
+            if (gsp != Gsp.IsGsp(conf)) { result.Error = "Сервер вернул конфиг не того протокола."; return result; }
             var badConf = Store.Validate(conf);
             if (badConf != null) { result.Error = "Сервер вернул странный конфиг: " + badConf; return result; }
             result.Conf = conf;

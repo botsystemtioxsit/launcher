@@ -30,14 +30,14 @@ jobs:
           dotnet-version: 8.0.x
 
       - uses: actions/setup-go@v5
-        if: env.SCENARIO == 'gsp'
+        if: env.SCENARIO == 'gsp' || env.SCENARIO == 'gateway'
         with:
           go-version: '1.24'
           cache-dependency-path: Protocols/Gsp/go.sum
 
       # Клиент GSP (Go) + wintun.dll: сетевая карта шлюза. wintun.dll — подписанная библиотека WireGuard LLC; скачиваем с wintun.net, сверяем сумму и подпись.
       - name: Build GSP and fetch wintun
-        if: env.SCENARIO == 'gsp'
+        if: env.SCENARIO == 'gsp' || env.SCENARIO == 'gateway'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force out-test | Out-Null
@@ -52,6 +52,10 @@ jobs:
           if ($h -ne '07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51') { throw "сумма wintun не совпала: $h" }
           Expand-Archive $zip -DestinationPath (Join-Path $env:RUNNER_TEMP 'wintun') -Force
           Copy-Item (Join-Path $env:RUNNER_TEMP 'wintun/wintun/bin/amd64/wintun.dll') out-test/wintun.dll
+          # Gateway Plus вкладывает gsp.exe и wintun.dll в себя (см. GatewayPlus.csproj)
+          New-Item -ItemType Directory -Force Plugins/GatewayPlus/Resources/bin | Out-Null
+          Copy-Item out-test/gsp.exe Plugins/GatewayPlus/Resources/bin/gsp.exe
+          Copy-Item out-test/wintun.dll Plugins/GatewayPlus/Resources/bin/wintun.dll
           $sig = Get-AuthenticodeSignature out-test/wintun.dll
           Write-Host "подпись wintun.dll: $($sig.Status) $($sig.SignerCertificate.Subject)"
           if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notmatch 'WireGuard') { throw 'подпись wintun.dll не подтвердилась' }
@@ -196,6 +200,16 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: Protocols/Gsp/go.sum
+
+      - name: Сборка gsp для сервера
+        run: |
+          (cd Protocols/Gsp && go build -o "$RUNNER_TEMP/gsp" .)
+          chmod 755 "$RUNNER_TEMP/gsp"
+
       - name: Настоящий sshd на этой машине + ключ
         run: |
           sudo apt-get update -y
@@ -213,7 +227,7 @@ jobs:
       - name: Проверка мастера
         run: |
           dotnet run --project Plugins/GatewayPlus.SshTest -c Release -- \
-            --host 127.0.0.1 --port 22 --user "$USER" --key "$RUNNER_TEMP/gwkey" --fps "$FPS" --out "$RUNNER_TEMP/ssh-results"
+            --host 127.0.0.1 --port 22 --user "$USER" --key "$RUNNER_TEMP/gwkey" --fps "$FPS" --out "$RUNNER_TEMP/ssh-results" --gsp-bin "$RUNNER_TEMP/gsp"
 
       - name: Что осталось на «сервере»
         if: always()

@@ -9,6 +9,7 @@ on:
       - 'Plugins/**'
       - 'BrowserPlugins/**'
       - 'tools/mask-plus/**'
+      - 'Protocols/Gsp/**'
       - '.github/workflows/build-windows.yml'
 
 permissions:
@@ -157,7 +158,45 @@ jobs:
           $h = (Get-FileHash out/DnsPlus.exe -Algorithm SHA256).Hash.ToLower()
           Set-Content -Path out/DnsPlus.exe.sha256 -Value "$h  DnsPlus.exe" -NoNewline
 
-      # Gateway Plus — шестой плагин: шлюз (WireGuard): сайты видят адрес и страну вашего сервера
+      # GSP — свой протокол Gateway Plus (Protocols/Gsp, Go). Windows-клиент gsp.exe и wintun.dll (сетевая карта, подписана WireGuard LLC) вкладываются в GatewayPlus.exe;
+      # серверные программы gsp-linux-* кладутся в релиз рядом (их скачивает скрипт, который мастер запускает на сервере, и проверяет по .sha256).
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: Protocols/Gsp/go.sum
+
+      - name: Build GSP and fetch wintun
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          New-Item -ItemType Directory -Force Plugins/GatewayPlus/Resources/bin | Out-Null
+          Push-Location Protocols/Gsp
+          go vet ./...
+          if ($LASTEXITCODE -ne 0) { throw 'go vet не прошёл' }
+          go build -trimpath -ldflags '-s -w' -o ../../Plugins/GatewayPlus/Resources/bin/gsp.exe .
+          if ($LASTEXITCODE -ne 0) { throw 'go build (Windows) не удался' }
+          foreach ($arch in 'amd64','arm64') {
+            $env:GOOS = 'linux'; $env:GOARCH = $arch; $env:CGO_ENABLED = '0'
+            go build -trimpath -ldflags '-s -w' -o "../../out/gsp-linux-$arch" .
+            if ($LASTEXITCODE -ne 0) { throw "go build (linux $arch) не удался" }
+          }
+          Remove-Item Env:GOOS, Env:GOARCH, Env:CGO_ENABLED
+          Pop-Location
+          foreach ($arch in 'amd64','arm64') {
+            $h = (Get-FileHash "out/gsp-linux-$arch" -Algorithm SHA256).Hash.ToLower()
+            Set-Content -Path "out/gsp-linux-$arch.sha256" -Value "$h  gsp-linux-$arch" -NoNewline
+          }
+          $zip = Join-Path $env:RUNNER_TEMP 'wintun.zip'
+          Invoke-WebRequest -Uri 'https://www.wintun.net/builds/wintun-0.14.1.zip' -OutFile $zip
+          $h = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          if ($h -ne '07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51') { throw "сумма wintun не совпала: $h" }
+          Expand-Archive $zip -DestinationPath (Join-Path $env:RUNNER_TEMP 'wintun') -Force
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'wintun/wintun/bin/amd64/wintun.dll') Plugins/GatewayPlus/Resources/bin/wintun.dll
+          $sig = Get-AuthenticodeSignature Plugins/GatewayPlus/Resources/bin/wintun.dll
+          if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notmatch 'WireGuard') { throw 'подпись wintun.dll не подтвердилась' }
+          Get-ChildItem Plugins/GatewayPlus/Resources/bin, out/gsp-linux-* | Select-Object Name, Length
+
+      # Gateway Plus — шестой плагин: шлюз (WireGuard или свой протокол GSP): сайты видят адрес и страну вашего сервера
       - name: Publish Gateway Plus
         run: >
           dotnet publish Plugins/GatewayPlus/GatewayPlus.csproj -c Release -r win-x64 --self-contained true
@@ -251,6 +290,7 @@ jobs:
             out/CursorPlus.exe*
             out/DnsPlus.exe*
             out/GatewayPlus.exe*
+            out/gsp-linux-*
             out/SkinLoader.exe*
             out/MaskPlus-extension.zip*
 
@@ -265,7 +305,7 @@ jobs:
           $v = (Select-String -Path Launcher/Launcher.csproj -Pattern '<Version>(.+)</Version>').Matches[0].Groups[1].Value
           gh release view "v$v" *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 out/CursorPlus.exe out/CursorPlus.exe.sha256 out/DnsPlus.exe out/DnsPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/SkinLoader.exe out/SkinLoader.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --clobber
+            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 out/CursorPlus.exe out/CursorPlus.exe.sha256 out/DnsPlus.exe out/DnsPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/gsp-linux-amd64 out/gsp-linux-amd64.sha256 out/gsp-linux-arm64 out/gsp-linux-arm64.sha256 out/SkinLoader.exe out/SkinLoader.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --clobber
           } else {
-            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 out/CursorPlus.exe out/CursorPlus.exe.sha256 out/DnsPlus.exe out/DnsPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/SkinLoader.exe out/SkinLoader.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --title "Лаунчер $v" --notes "BattleLauncher.exe — лаунчер (скачай и запусти). TIOXSITTerminal.exe — Терминал, админ-панель в виде приложения. TaskbarPlus.exe — плагин Taskbar Plus, ColorPlus.exe — плагин Color Plus, IconPlus.exe — плагин Icon Plus, WallpaperPlus.exe — плагин Wallpaper Plus, CursorPlus.exe — плагин Cursor Plus, DnsPlus.exe — плагин DNS Plus, GatewayPlus.exe — плагин Gateway Plus, SkinLoader.exe — плагин Skin Loader (ставятся из лаунчера, вкладка «Плагины → Для компьютера»). MaskPlus-extension.zip — расширение для браузера Mask Plus (вкладка «Плагины → Для браузера»)."
+            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/ColorPlus.exe out/ColorPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/WallpaperPlus.exe out/WallpaperPlus.exe.sha256 out/CursorPlus.exe out/CursorPlus.exe.sha256 out/DnsPlus.exe out/DnsPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/gsp-linux-amd64 out/gsp-linux-amd64.sha256 out/gsp-linux-arm64 out/gsp-linux-arm64.sha256 out/SkinLoader.exe out/SkinLoader.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --title "Лаунчер $v" --notes "BattleLauncher.exe — лаунчер (скачай и запусти). TIOXSITTerminal.exe — Терминал, админ-панель в виде приложения. TaskbarPlus.exe — плагин Taskbar Plus, ColorPlus.exe — плагин Color Plus, IconPlus.exe — плагин Icon Plus, WallpaperPlus.exe — плагин Wallpaper Plus, CursorPlus.exe — плагин Cursor Plus, DnsPlus.exe — плагин DNS Plus, GatewayPlus.exe — плагин Gateway Plus (внутри него Windows-клиент GSP), gsp-linux-amd64 / gsp-linux-arm64 — серверная программа GSP (её скачивает скрипт установки сервера, ставить вручную не нужно), SkinLoader.exe — плагин Skin Loader (ставятся из лаунчера, вкладка «Плагины → Для компьютера»). MaskPlus-extension.zip — расширение для браузера Mask Plus (вкладка «Плагины → Для браузера»)."
           }

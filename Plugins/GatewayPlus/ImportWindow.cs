@@ -26,7 +26,7 @@ sealed class ImportWindow : Window
 
         var page = new StackPanel { Margin = new Thickness(24, 18, 24, 18) };
         page.Children.Add(new TextBlock { Text = "ДОБАВИТЬ КОНФИГ", FontFamily = (FontFamily)Application.Current.FindResource("Mono"), FontSize = 20, FontWeight = FontWeights.Bold, Foreground = Res("Accent") });
-        page.Children.Add(new TextBlock { Text = "Вставьте сюда текст конфига WireGuard (его печатает скрипт сервера или даёт ваш VPN-сервис) или откройте файл .conf. Конфиг хранится в зашифрованном виде и расшифровывается только вашим пользователем Windows.", Foreground = Res("Muted"), FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 12) });
+        page.Children.Add(new TextBlock { Text = "Вставьте сюда текст конфига WireGuard или GSP (его печатает скрипт сервера или даёт ваш VPN-сервис) или откройте файл .conf. Конфиг хранится в зашифрованном виде и расшифровывается только вашим пользователем Windows.", Foreground = Res("Muted"), FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 12) });
         page.Children.Add(new TextBlock { Text = "Название (латиницей, например germany)", Margin = new Thickness(0, 0, 0, 4) });
         page.Children.Add(nameBox);
         page.Children.Add(new TextBlock { Text = "Конфиг", Margin = new Thickness(0, 12, 0, 4) });
@@ -47,7 +47,7 @@ sealed class ImportWindow : Window
 
     void OpenFile()
     {
-        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Конфиг WireGuard|*.conf;*.txt|Все файлы|*.*", Title = "Выберите файл конфига" };
+        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Конфиг WireGuard / GSP|*.conf;*.txt|Все файлы|*.*", Title = "Выберите файл конфига" };
         if (dlg.ShowDialog(this) != true) return;
         try
         {

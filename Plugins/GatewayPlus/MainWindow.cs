@@ -22,12 +22,22 @@ sealed class MainWindow : Window
     Cloud.Access? access;
     DateTime lastAccessCheck = DateTime.MinValue;
     bool keyShown;
+    TextBlock? gspLine;   // строка состояния GSP (потери, защита), обновляется раз в 5 секунд
 
     // Что показывать вместо настоящих данных в служебном режиме --screenshot (чтобы окно можно было снять без сети и аккаунта)
     readonly GwDemo demo;
     bool Blocked => access?.Blocked ?? false;
 
     static Brush Res(string key) => (Brush)Application.Current.FindResource(key);
+
+    // Протокол профиля: у GSP своя служба Windows, у WireGuard — служба самого WireGuard
+    static bool IsGspProfile(string name)
+    {
+        var c = name.Length > 0 ? Store.Load(name) : null;
+        return c != null && Gsp.IsGsp(c);
+    }
+
+    static bool RunningNow(string name) => name.Length > 0 && (IsGspProfile(name) ? GspClient.IsRunning(name) : Wg.IsRunning(name));
 
     public MainWindow(GwDemo demo = GwDemo.None)
     {
@@ -63,8 +73,13 @@ sealed class MainWindow : Window
     {
         if (busy || !IsVisible) return;
         var name = Store.Active;
-        var now = name.Length > 0 && await Task.Run(() => Wg.IsRunning(name));
+        var now = name.Length > 0 && await Task.Run(() => RunningNow(name));
         if (now != connected) await RefreshAsync(true);
+        else if (now && gspLine != null)
+        {
+            var st = await Task.Run(() => GspClient.ReadStatus(name));
+            gspLine.Text = GspClient.Describe(st);
+        }
         // блокировку проверяем раз в 10 минут; если шлюз включён, а доступ закрыли — отключаем (одно окно разрешения Windows)
         if (demo == GwDemo.None && account != null && DateTime.UtcNow - lastAccessCheck > TimeSpan.FromMinutes(10))
         {
@@ -160,7 +175,7 @@ sealed class MainWindow : Window
     async Task RefreshAsync(bool checkIp)
     {
         var name = Store.Active;
-        connected = name.Length > 0 && await Task.Run(() => Wg.IsRunning(name));
+        connected = name.Length > 0 && await Task.Run(() => RunningNow(name));
         if (checkIp) ip = await IpInfo.GetAsync();
         BuildPage();
     }
@@ -194,22 +209,23 @@ sealed class MainWindow : Window
         // 2. шлюз
         var gw = new List<UIElement>();
         var wgPath = Wg.ExePath();
-        if (wgPath == null)
-        {
-            gw.Add(Note("Для работы шлюза нужна программа WireGuard (официальная, wireguard.com, бесплатная). Нажмите — плагин скачает установщик, проверит его подпись и запустит; Windows спросит разрешение."));
-            gw.Add(Btn("Установить WireGuard", "Primary", InstallWg, first: true));
-        }
-        else gw.Add(new TextBlock { Text = "WireGuard установлен.", Foreground = Res("Muted"), FontSize = 12, Margin = new Thickness(0, 0, 0, 10) });
-
         var profiles = Store.List();
         var active = Store.Active;
+        var activeGsp = active.Length > 0 && IsGspProfile(active);
+        gspLine = null;
+        if (wgPath == null && !activeGsp)
+        {
+            gw.Add(Note("Для профилей WireGuard нужна программа WireGuard (официальная, wireguard.com, бесплатная). Нажмите — плагин скачает установщик, проверит его подпись и запустит; Windows спросит разрешение. Для профилей GSP она не нужна."));
+            gw.Add(Btn("Установить WireGuard", "Primary", InstallWg, first: true));
+        }
+        else if (wgPath != null) gw.Add(new TextBlock { Text = "WireGuard установлен.", Foreground = Res("Muted"), FontSize = 12, Margin = new Thickness(0, 0, 0, 10) });
         if (profiles.Count > 0)
         {
             var wrap = new WrapPanel { Margin = new Thickness(0, 6, 0, 10) };
             foreach (var p in profiles)
             {
                 var name = p;
-                var b = new Button { Content = name, Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(0, 0, 8, 8) };
+                var b = new Button { Content = name + (IsGspProfile(name) ? "  ·  GSP" : ""), Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(0, 0, 8, 8) };
                 if (name == active) b.Style = (Style)FindResource("Primary");
                 b.Click += (_, _) => { if (!connected) { Store.Active = name; BuildPage(); } else status.Text = "Сначала отключите шлюз."; };
                 wrap.Children.Add(b);
@@ -223,7 +239,7 @@ sealed class MainWindow : Window
         if (!connected)
         {
             var c = Btn("Подключить", "Primary", Connect, first: true);
-            c.IsEnabled = wgPath != null && profiles.Count > 0 && active.Length > 0 && account != null && !Blocked;
+            c.IsEnabled = (activeGsp ? GspClient.Available : wgPath != null) && profiles.Count > 0 && active.Length > 0 && account != null && !Blocked;
             c.Padding = new Thickness(26, 11, 26, 11); c.FontSize = 16;
             buttons.Children.Add(c);
         }
@@ -235,10 +251,20 @@ sealed class MainWindow : Window
         }
         buttons.Children.Add(Btn("＋ Добавить конфиг…", null, AddProfile));
         if (profiles.Count > 0 && active.Length > 0 && !connected) buttons.Children.Add(Btn("Удалить выбранный профиль", null, () => { Store.Delete(active); Store.Active = Store.List().FirstOrDefault() ?? ""; BuildPage(); }));
-        if (profiles.Count > 0 && active.Length > 0) buttons.Children.Add(Btn("Скорость и размер пакета…", null, () => ShowSpeed(active, connected)));
-        if (profiles.Count > 0 && active.Length > 0) buttons.Children.Add(Btn("Телефон и ускорение сервера…", null, () => ShowPhoneQr(active)));
+        if (profiles.Count > 0 && active.Length > 0 && !activeGsp) buttons.Children.Add(Btn("Скорость и размер пакета…", null, () => ShowSpeed(active, connected)));
+        if (profiles.Count > 0 && active.Length > 0 && !activeGsp) buttons.Children.Add(Btn("Телефон и ускорение сервера…", null, () => ShowPhoneQr(active)));
         gw.Add(buttons);
-        gw.Add(Note("Включение и выключение шлюза требуют разрешения администратора Windows — оно спросит каждый раз. Если связь со шлюзом оборвётся, интернет не «утечёт» мимо него: пока шлюз включён, WireGuard закрывает прямой выход."));
+        if (activeGsp)
+        {
+            if (connected)
+            {
+                gspLine = new TextBlock { Text = GspClient.Describe(GspClient.ReadStatus(active)), Foreground = Res("Green"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 8) };
+                gw.Add(gspLine);
+            }
+            if (!GspClient.Available) gw.Add(Note("В этой сборке плагина нет программы GSP — обновите Gateway Plus из лаунчера."));
+            gw.Add(Note("GSP — наш собственный протокол: на ненадёжной связи (мобильная сеть, Wi-Fi, далёкий сервер) он сам включает защиту от потерь пакетов, и скорость падает меньше, чем у WireGuard. На хорошей связи он не быстрее WireGuard. Протокол молодой: проверен тестами и на стенде, но не годами, как WireGuard. Включение и выключение требуют разрешения администратора Windows. Пока служба шлюза работает, весь интернет идёт через сервер; если служба остановится аварийно, интернет пойдёт напрямую (отдельной защиты от утечки при аварии пока нет — если она критична, берите WireGuard)."));
+        }
+        else gw.Add(Note("Включение и выключение шлюза требуют разрешения администратора Windows — оно спросит каждый раз. Если связь со шлюзом оборвётся, интернет не «утечёт» мимо него: пока шлюз включён, WireGuard закрывает прямой выход."));
         page.Children.Add(Card("Шлюз", gw));
 
         // 3. свой сервер: мастер и ручной путь
@@ -246,7 +272,7 @@ sealed class MainWindow : Window
         wizBtn.IsEnabled = account != null && !Blocked;
         page.Children.Add(Card("Создать свой VPN", new UIElement[]
         {
-            Note("Своя точка выхода — это ваш собственный сервер (VPS) в нужной стране: адрес у него свой и постоянный, трафик видите только вы. Мастер сам зайдёт на сервер по SSH (нужны адрес, логин и пароль от хостера), поставит WireGuard и сохранит готовый профиль. Подойдёт самый дешёвый сервер с Ubuntu 22.04/24.04 или Debian 12 (обычно 3–5 € в месяц; Hetzner, Netcup, Contabo и подобные)."),
+            Note("Своя точка выхода — это ваш собственный сервер (VPS) в нужной стране: адрес у него свой и постоянный, трафик видите только вы. Мастер сам зайдёт на сервер по SSH (нужны адрес, логин и пароль от хостера), поставит WireGuard (стандарт) или наш протокол GSP (лучше переносит потери связи) и сохранит готовый профиль. Подойдёт самый дешёвый сервер с Ubuntu 22.04/24.04 или Debian 12 (обычно 3–5 € в месяц; Hetzner, Netcup, Contabo и подобные)."),
             wizBtn,
             Note(account == null ? "Для мастера нужен аккаунт Gateway Plus — карточка «Аккаунт» вверху." : "Для личного использования. Продавать доступ к своему серверу или шлюзу нельзя (правила)."),
         }));
@@ -254,6 +280,7 @@ sealed class MainWindow : Window
         {
             Note("Если нельзя зайти по SSH или сервер уже настроен: 1) зайдите в консоль сервера как root (sudo -i). 2) Нажмите «Скопировать скрипт» и вставьте его в консоль. 3) В конце он напечатает конфиг между двумя линиями — скопируйте его. 4) Здесь нажмите «Добавить конфиг…» и вставьте. 5) В панели хостинга откройте порт 51820 по протоколу UDP, если он закрыт."),
             Btn("Скопировать скрипт для сервера", null, async () => { if (!await EnsureAllowedAsync()) return; try { Clipboard.SetText(Store.ServerScript()); status.Text = "Скрипт скопирован. Вставьте его в консоль сервера."; } catch { status.Text = "Не удалось скопировать."; } }, first: true),
+            Btn("Скопировать скрипт GSP для сервера", null, async () => { if (!await EnsureAllowedAsync()) return; try { Clipboard.SetText(Store.GspServerScript()); status.Text = "Скрипт GSP скопирован. Вставьте его в консоль сервера; порт для хостера — 51821/udp."; } catch { status.Text = "Не удалось скопировать."; } }),
         }));
 
         // 4. границы
@@ -324,6 +351,7 @@ sealed class MainWindow : Window
         if (conf == null) { status.Text = "Сначала добавьте конфиг."; return; }
         var bad = Store.Validate(conf);
         if (bad != null) { status.Text = bad; return; }
+        var gspProfile = Gsp.IsGsp(conf);
         busy = true;
         status.Text = "Подключаю… Windows спросит разрешение администратора.";
         string? tmpDir = null;
@@ -333,7 +361,7 @@ sealed class MainWindow : Window
             Directory.CreateDirectory(tmpDir);
             var file = Path.Combine(tmpDir, name + ".conf");
             await File.WriteAllTextAsync(file, conf);
-            var r = await Helper.RunAsync(new Job { Action = "connect", Name = name, Conf = file });
+            var r = await Helper.RunAsync(new Job { Action = gspProfile ? "gsp-connect" : "connect", Name = name, Conf = file });
             status.Text = r.Message;
             await Task.Delay(r.Ok ? 2500 : 200);
         }
@@ -353,7 +381,7 @@ sealed class MainWindow : Window
         status.Text = "Отключаю… Windows спросит разрешение администратора.";
         try
         {
-            var r = await Helper.RunAsync(new Job { Action = "disconnect", Name = Store.Active });
+            var r = await Helper.RunAsync(new Job { Action = IsGspProfile(Store.Active) ? "gsp-disconnect" : "disconnect", Name = Store.Active });
             status.Text = r.Message;
         }
         catch (Exception ex) { status.Text = "Не вышло: " + ex.Message; }
@@ -368,7 +396,7 @@ sealed class MainWindow : Window
         status.Text = "Убираю шлюз… Windows спросит разрешение администратора.";
         try
         {
-            var r = Wg.ExePath() == null ? new JobResult { Ok = true, Message = "WireGuard не установлен — убирать нечего." } : await Helper.RunAsync(new Job { Action = "cleanup" });
+            var r = (Wg.ExePath() == null && !Directory.Exists(Helper.WorkDir)) ? new JobResult { Ok = true, Message = "Убирать нечего." } : await Helper.RunAsync(new Job { Action = "cleanup" });
             status.Text = r.Message;
         }
         catch (Exception ex) { status.Text = "Не вышло: " + ex.Message; }

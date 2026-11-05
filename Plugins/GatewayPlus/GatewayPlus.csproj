@@ -11,12 +11,12 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Версию поднимать при каждом изменении -->
-    <Version>2.5.0</Version>
+    <Version>3.0.0</Version>
     <Product>Gateway Plus</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
     <Copyright>TIOXSIT</Copyright>
-    <Description>Gateway Plus — личный VPN: мастер ставит WireGuard на ваш сервер по SSH, а шлюз пускает через него весь интернет компьютера (плагин Ghost Shell Launcher)</Description>
+    <Description>Gateway Plus — личный VPN: мастер ставит WireGuard или свой протокол GSP на ваш сервер по SSH, а шлюз пускает через него весь интернет компьютера (плагин Ghost Shell Launcher)</Description>
     <AssemblyTitle>Gateway Plus</AssemblyTitle>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
@@ -28,6 +28,10 @@
     <EmbeddedResource Include="Resources\server-setup.sh" LogicalName="server-setup.sh" />
     <EmbeddedResource Include="Resources\add-device.sh" LogicalName="add-device.sh" />
     <EmbeddedResource Include="Resources\tune-server.sh" LogicalName="tune-server.sh" />
+    <EmbeddedResource Include="Resources\gsp-server-setup.sh" LogicalName="gsp-server-setup.sh" />
+    <!-- программа GSP и сетевая карта wintun вкладываются в плагин сборкой в CI (Resources\bin\ не хранится в git) -->
+    <EmbeddedResource Include="Resources\bin\gsp.exe" LogicalName="gsp.exe" Condition="Exists('Resources\bin\gsp.exe')" />
+    <EmbeddedResource Include="Resources\bin\wintun.dll" LogicalName="wintun.dll" Condition="Exists('Resources\bin\wintun.dll')" />
   </ItemGroup>
 
 

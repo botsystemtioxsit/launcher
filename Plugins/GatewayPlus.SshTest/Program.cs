@@ -174,6 +174,35 @@ string clientPriv = "";
     else Check("если IPv6 не включился, это был аккуратный откат (в журнале сказано), а не поломка", log.Any(l => l.Contains("не получилось")) && up);
 }
 
+// 11. тот же мастер ставит наш протокол GSP на тот же сервер (WireGuard рядом остаётся рабочим)
+var gspBin = Arg("gsp-bin");
+if (gspBin.Length > 0)
+{
+    string Sh3(string cmd) { var psi = new System.Diagnostics.ProcessStartInfo("bash", "-c \"" + cmd.Replace("\"", "\\\"") + "\"") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false }; using var p = System.Diagnostics.Process.Start(psi)!; var o = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd(); p.WaitForExit(); return o; }
+    var env = $"GSP_BIN={gspBin} GSP_PUBIP=127.0.0.1";
+    var log = new List<string>(); int replaceAsked = 0;
+    var r = Run(new SshTarget { Host = host, Port = port, User = user, KeyFile = key, Protocol = "gsp", ScriptEnv = env }, _ => true, _ => { replaceAsked++; return true; }, log);
+    Say("--- журнал мастера (GSP) ---"); foreach (var l in log) Say("  " + l); Say("--- конец журнала ---");
+    Check("GSP: установка мастером: успех", r.Ok, r.Error);
+    if (r.Ok)
+    {
+        Check("GSP: конфиг — профиль GSP и проходит проверку плагина", Gsp.IsGsp(r.Conf) && Store.Validate(r.Conf) == null && r.Protocol == "gsp");
+        Check("GSP: в конфиге адрес и порт сервера", r.Conf.Contains("Endpoint = 127.0.0.1:51821"), r.Endpoint);
+        Check("GSP: мастер не спрашивал про перенастройку на чистом сервере", replaceAsked == 0);
+        var priv = r.Conf.Replace("\r", "").Split('\n').First(l => l.TrimStart().StartsWith("PrivateKey")).Split('=', 2)[1].Trim();
+        var all = string.Join("\n", log);
+        Check("GSP: закрытый ключ клиента не попал в журнал мастера", priv.Length > 30 && !all.Contains(priv) && !all.Contains("PrivateKey"));
+        File.WriteAllText(Path.Combine(outDir, "client-gsp.conf"), r.Conf);
+        Check("GSP: служба gsp работает, порт 51821/udp слушается", Sh3("systemctl is-active gsp").Trim() == "active" && Sh3("sudo ss -ulnp | grep -c 51821").Trim() == "1");
+        Check("GSP: WireGuard рядом остался рабочим", Sh3("sudo wg show wg0 | head -1").Contains("interface"), Sh3("sudo wg show wg0 | head -3"));
+        Check("GSP: следов скрипта в /tmp не осталось", !Sh3("ls /tmp/ghostshell-gateway-* 2>&1").Contains("/tmp/ghostshell-gateway-"));
+    }
+    // повторный запуск: мастер спрашивает про перенастройку, отказ ничего не трогает
+    var log2 = new List<string>(); int asked2 = 0;
+    var r2 = Run(new SshTarget { Host = host, Port = port, User = user, KeyFile = key, Protocol = "gsp", ScriptEnv = env }, _ => true, m => { asked2++; return false; }, log2);
+    Check("GSP: уже настроенный сервер: спросили, отказ — «Отменено»", asked2 == 1 && !r2.Ok && r2.Error.Contains("Отменено") && Sh3("systemctl is-active gsp").Trim() == "active", r2.Error);
+}
+
 Say(bad == 0 ? "ВСЕ ПРОВЕРКИ ПРОШЛИ" : $"ПРОВАЛЕНО: {bad}");
 File.WriteAllText(Path.Combine(outDir, "report.txt"), report.ToString());
 return bad == 0 ? 0 : 1;
