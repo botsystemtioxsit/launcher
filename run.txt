@@ -1,0 +1,71 @@
+selftest-browser: код 0
+ok     релиз найден (zip и .sha256)
+  релиз latest, сумма fa43909863375ccd34a40bce2adb3192e7506e333d17016f5e88aab601b0f77b
+ok     после установки Find видит расширение с той же суммой
+  версия в manifest.json: 1.1.0, папка C:\Users\runneradmin\AppData\Local\GhostShell\BrowserPlugins\mask-plus
+ok     файл manifest.json
+ok     файл background.js
+ok     файл engine.js
+ok     файл popup.html
+ok     файл popup.js
+ok     файл popup.css
+ok     файл countries.js
+ok     файл c\DE.js
+ok     файл f\111.js
+ok     файл icons\128.png
+ok     файлов не меньше 60 (49 стран + 8 флагов + остальное)
+ok     повторная установка поверх: сумма та же, «обновления» нет
+ok     Chrome/Edge: найдены пути (на раннере оба есть)
+  chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+  edge:   C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
+ok     несуществующий файл в релизе: Latest = null (не исключение)
+ok     адрес zip — прямой, без API
+ok     скачивание несуществующего файла падает с понятной причиной
+ok     после сбоя нет мусора (папок .new-…) в папке расширений
+ok     причина: 403 → «слишком много запросов»
+ok     причина: нет сети → «нет связи с GitHub»
+ok     причина: тайм-аут → «время ожидания вышло»
+ok     плагин для компьютера: релиз найден прямым адресом
+ok     путь «../» в архиве отвергается
+ok     полный путь C:/… в архиве отвергается
+ok     исполняемые файлы из архива не берутся, обычные берутся
+ok     удаление: папки и суммы нет
+ИТОГО: всё хорошо
+
+=== обновление работающего плагина ===
+selftest-update: код 0
+ok     релиз плагина найден
+ok     первая установка: плагин не работал — запускать нечего (Install вернул false)
+ok     плагин запущен (окно открыто, как после «Запустить»)
+  процесс до обновления: 6416
+ПЛОХО  самопроверка не упала  → System.UnauthorizedAccessException: Access to the path is denied.
+   at System.IO.FileSystem.MoveFile(String sourceFullPath, String destFullPath, Boolean overwrite)
+   at BattleLauncher.NativeInstaller.Install(AppDef d, NativeRelease rel, IProgress`1 progress, CancellationToken ct, Action`1 phase)
+   at BattleLauncher.NativeInstaller.<>c__DisplayClass21_0.<SelfTestUpdate>b__2()
+НЕ ПРОШЛО ПРОВЕРОК: 1
+
+=== очередь менеджера обновлений ===
+selftest-ops: код 0
+OK    повторное нажатие не создаёт дубль
+OK    в очереди сразу видно всё
+OK    ожидающую операцию можно отменить
+OK    отменённая завершается как «не удалось»
+OK    идущую операцию отменить нельзя
+OK    пока идёт первая, вторая ждёт — a:Running,b:Queued,c:Cancelled,d:Queued
+OK    у идущей видно, что она делает — Останавливаю плагин…
+OK    первая удалась
+OK    вторая с исключением — не удалась, очередь не встала
+OK    четвёртая (вернула false) — не удалась
+OK    порядок: по одной, как поставили — a,b,d
+OK    одновременно не больше одной — максимум 1
+OK    у упавшей есть причина — Закрой «Плагин Б» и повтори.
+OK    у вернувшей false есть причина — нет доступа
+OK    удавшаяся помечена «Готово — запущен снова» — Готово — запущен снова
+OK    после завершения ключ свободен
+OK    сигналов об изменениях хватает — сигналов: 21
+OK    записанные действия видны
+OK    «Очистить» убирает всё законченное
+OK    «Отменить очередь» отменяет ждущих, но не идущую — отменено 2
+OK    идущая спокойно дорабатывает
+OK    история не растёт без конца — записей 40
+ВСЁ В ПОРЯДКЕ

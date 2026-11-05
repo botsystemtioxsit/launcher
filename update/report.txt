@@ -1,0 +1,9 @@
+ok     релиз плагина найден
+ok     первая установка: плагин не работал — запускать нечего (Install вернул false)
+ok     плагин запущен (окно открыто, как после «Запустить»)
+  процесс до обновления: 6416
+ПЛОХО  самопроверка не упала  → System.UnauthorizedAccessException: Access to the path is denied.
+   at System.IO.FileSystem.MoveFile(String sourceFullPath, String destFullPath, Boolean overwrite)
+   at BattleLauncher.NativeInstaller.Install(AppDef d, NativeRelease rel, IProgress`1 progress, CancellationToken ct, Action`1 phase)
+   at BattleLauncher.NativeInstaller.<>c__DisplayClass21_0.<SelfTestUpdate>b__2()
+НЕ ПРОШЛО ПРОВЕРОК: 1

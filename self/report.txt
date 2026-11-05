@@ -1,0 +1,32 @@
+ok     релиз найден (zip и .sha256)
+  релиз latest, сумма fa43909863375ccd34a40bce2adb3192e7506e333d17016f5e88aab601b0f77b
+ok     после установки Find видит расширение с той же суммой
+  версия в manifest.json: 1.1.0, папка C:\Users\runneradmin\AppData\Local\GhostShell\BrowserPlugins\mask-plus
+ok     файл manifest.json
+ok     файл background.js
+ok     файл engine.js
+ok     файл popup.html
+ok     файл popup.js
+ok     файл popup.css
+ok     файл countries.js
+ok     файл c\DE.js
+ok     файл f\111.js
+ok     файл icons\128.png
+ok     файлов не меньше 60 (49 стран + 8 флагов + остальное)
+ok     повторная установка поверх: сумма та же, «обновления» нет
+ok     Chrome/Edge: найдены пути (на раннере оба есть)
+  chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+  edge:   C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
+ok     несуществующий файл в релизе: Latest = null (не исключение)
+ok     адрес zip — прямой, без API
+ok     скачивание несуществующего файла падает с понятной причиной
+ok     после сбоя нет мусора (папок .new-…) в папке расширений
+ok     причина: 403 → «слишком много запросов»
+ok     причина: нет сети → «нет связи с GitHub»
+ok     причина: тайм-аут → «время ожидания вышло»
+ok     плагин для компьютера: релиз найден прямым адресом
+ok     путь «../» в архиве отвергается
+ok     полный путь C:/… в архиве отвергается
+ok     исполняемые файлы из архива не берутся, обычные берутся
+ok     удаление: папки и суммы нет
+ИТОГО: всё хорошо
