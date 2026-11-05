@@ -32,6 +32,8 @@ public partial class App : Application
         if (pkgTest != null) { SelfTest.PackageTest(pkgTest); Shutdown(); return; }
         var probe = Arg(e, "--probe=");
         if (probe != null) { SelfTest.Probe(probe); Shutdown(); return; }
+        var lnkTest = Arg(e, "--lnk-test=");
+        if (lnkTest != null) { SelfTest.LnkTest(lnkTest); Shutdown(); return; }
         var packTest = Arg(e, "--pack-test=");
         if (packTest != null) { SelfTest.PackTest(packTest, Arg(e, "--out=") ?? "."); Shutdown(); return; }
         if (e.Args.Contains("--full-refresh")) { Native.FullIconRefresh(); Shutdown(); return; }

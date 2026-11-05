@@ -17,10 +17,14 @@ static class DeviceAdder
         => Task.Run(() => Run(t, deviceName, confirmKey, log, ct, false), ct);
 
     // «Ускорить сервер»: проверяет и настраивает уже работающий сервер (tune-server.sh), конфиг не выдаёт.
-    public static Task<ProvisionResult> TuneAsync(SshTarget t, Func<HostKeyQuestion, bool> confirmKey, Action<string> log, CancellationToken ct = default)
-        => Task.Run(() => Run(t, "phone", confirmKey, log, ct, true), ct);
+    // extraEnv — только для проверки на тестовой машине (например GS_FORCE_IPV6=1); из окна не задаётся
+    public static Task<ProvisionResult> TuneAsync(SshTarget t, Func<HostKeyQuestion, bool> confirmKey, Action<string> log, CancellationToken ct = default, string extraEnv = "")
+        => Task.Run(() => Run(t, "phone", confirmKey, log, ct, true, extraEnv), ct);
 
-    static ProvisionResult Run(SshTarget t, string deviceName, Func<HostKeyQuestion, bool> confirmKey, Action<string> log, CancellationToken ct, bool tune)
+    static readonly Regex EnvRe = new(@"^[A-Z][A-Z0-9_]{0,30}=[A-Za-z0-9_]{0,30}$");
+    static readonly Regex Ipv6PrefixRe = new(@"^GS_IPV6_PREFIX=(fd[0-9a-f:]{4,40}::)\s*$", RegexOptions.Multiline);
+
+    static ProvisionResult Run(SshTarget t, string deviceName, Func<HostKeyQuestion, bool> confirmKey, Action<string> log, CancellationToken ct, bool tune, string extraEnv = "")
     {
         var result = new ProvisionResult();
         var bad = Provisioner.ValidateTarget(t);
@@ -92,7 +96,9 @@ static class DeviceAdder
             var full = new StringBuilder();
             bool inConfig = false;
             int exit;
-            using (var cmd = sshRef.CreateCommand(tune ? $"{pre}bash {scriptPath} 2>&1" : $"{pre}env DEVNAME={deviceName} bash {scriptPath} 2>&1"))
+            if (extraEnv.Length > 0 && !EnvRe.IsMatch(extraEnv)) { result.Error = "Внутренняя ошибка: недопустимая переменная окружения."; return result; }
+            var envPart = extraEnv.Length > 0 ? extraEnv + " " : "";
+            using (var cmd = sshRef.CreateCommand(tune ? $"{pre}env {envPart}bash {scriptPath} 2>&1" : $"{pre}env DEVNAME={deviceName} bash {scriptPath} 2>&1"))
             {
                 cmd.CommandTimeout = TimeSpan.FromMinutes(3);
                 var ar = cmd.BeginExecute();
@@ -113,7 +119,12 @@ static class DeviceAdder
             if (exit == 2) { result.Error = "На этом сервере нет WireGuard, настроенного мастером Gateway Plus. Сначала создайте VPN кнопкой «Создать мой VPN на сервере…»."; return result; }
             if (exit != 0) { result.Error = $"Скрипт на сервере завершился с ошибкой (код {exit}). Последние строки журнала выше."; return result; }
 
-            if (tune) { result.Ok = true; log("Готово."); return result; }
+            if (tune)
+            {
+                var m = Ipv6PrefixRe.Match(full.ToString().Replace("\r", ""));
+                if (m.Success) result.Ipv6Prefix = m.Groups[1].Value;
+                result.Ok = true; log("Готово."); return result;
+            }
             var conf = Provisioner.ParseConfig(full.ToString());
             if (conf == null) { result.Error = "Скрипт отработал, но конфиг в его выводе не найден."; return result; }
             var badConf = Store.Validate(conf);

@@ -46,7 +46,7 @@ static class SelfTest
             var shown = Account.Format(raw);
             Check("ключ для показа: GW-XXXX-… (8 групп по 4)", Regex.IsMatch(shown, "^GW(-[A-Z2-7]{4}){8}$"));
             Check("ключ читается обратно (с тире, пробелами, строчными)", Account.Normalize(shown) == raw && Account.Normalize("  " + shown.ToLowerInvariant().Replace("-", " ") + " ") == raw);
-            Check("мусор вместо ключа отклоняется", Account.Normalize("hello") == null && Account.Normalize(shown + "A") == null && Account.Normalize(null) == null && Account.Normalize(shown.Replace("A", "1")) == null);
+            Check("мусор вместо ключа отклоняется", Account.Normalize("hello") == null && Account.Normalize(shown + "A") == null && Account.Normalize(null) == null && Account.Normalize(shown[..3] + "1" + shown[4..]) == null);   // «1» в base32 не бывает; подмена первого знака всегда меняет ключ (Replace("A") не менял его, если «A» в случайном ключе не было)
             var id = Account.IdOf(raw);
             Check("номер аккаунта: 24 знака, стабильный, у других ключей другой", Regex.IsMatch(id, "^[0-9a-f]{24}$") && id == Account.IdOf(raw) && id != Account.IdOf(Account.NewKey()) && !id.Contains(raw.ToLowerInvariant()));
             var dev = Account.DeviceHash();
@@ -67,6 +67,50 @@ static class SelfTest
             Check("мастер: отпечаток в виде SHA256:…", Regex.IsMatch(Provisioner.Fingerprint(new byte[] { 1, 2, 3 }), "^SHA256:[A-Za-z0-9+/]{43}$"));
             var cfgOut = "apt...\n=========== НАЧАЛО КОНФИГА (скопируйте) ===========\n" + good + "=========== КОНЕЦ КОНФИГА ===========\nГотово";
             Check("мастер: конфиг вынимается из вывода скрипта", Provisioner.ParseConfig(cfgOut) is string pc && Store.Validate(pc) == null && Provisioner.ParseConfig("ничего") == null);
+
+            // 3b2. размер пакета (MTU) и IPv6 в профиле: чистые функции плюс настоящая проверка пакетов на этом компьютере
+            Check("MTU: строка добавляется в [Interface], а не в [Peer]", Store.WithInterfaceValue(good, "MTU", "1400") is string m1 && Store.MtuOf(m1) == 1400 && Store.Validate(m1) == null && m1.IndexOf("MTU = 1400", StringComparison.Ordinal) < m1.IndexOf("[Peer]", StringComparison.Ordinal));
+            Check("MTU: существующая строка заменяется, а не дублируется", Store.WithInterfaceValue(Store.WithInterfaceValue(good, "MTU", "1380"), "MTU", "1392") is string m2 && Store.MtuOf(m2) == 1392 && Regex.Matches(m2, "(?m)^MTU").Count == 1);
+            Check("MTU: рекомендация не больше 1420 и не меньше 1280", Speed.RecommendedWgMtu(1500, "203.0.113.5") == 1420 && Speed.RecommendedWgMtu(1452, "203.0.113.5") == 1392 && Speed.RecommendedWgMtu(1452, "2001:db8::1") == 1372 && Speed.RecommendedWgMtu(1000, "203.0.113.5") == 1280);
+            var v4conf = "[Interface]\nPrivateKey = AAAA\nAddress = 10.66.66.7/32\nMTU = 1380\n\n[Peer]\nPublicKey = BBBB\nEndpoint = 203.0.113.5:51820\nAllowedIPs = 0.0.0.0/0, ::/0\n";
+            var v6conf = Store.WithIpv6(v4conf, "fd66:6761:7465::");
+            Check("IPv6: адрес дополняется (…7/32 → …::7/128), остальное не меняется", Store.InterfaceValue(v6conf, "Address") == "10.66.66.7/32, fd66:6761:7465::7/128" && Store.MtuOf(v6conf) == 1380 && Store.Validate(v6conf) == null);
+            Check("IPv6: повторно не дублируется, чужой префикс не принимается", Store.WithIpv6(v6conf, "fd66:6761:7465::") == v6conf && Store.WithIpv6(v4conf, "2001:db8::") == v4conf);
+            // сам поиск размера — на подставных «путях» с известным MTU (настоящая сеть раннера пинги режет)
+            {
+                static Func<string, int, CancellationToken, Task<bool>> Path(int mtu, string answers) => (h, payload, _) => Task.FromResult(h == answers && payload + 28 <= mtu);
+                var keep = Speed.PingImpl;
+                try
+                {
+                    var ct0 = CancellationToken.None;
+                    Speed.PingImpl = Path(1500, "203.0.113.5");
+                    var a1 = Speed.ProbePathMtuAsync("203.0.113.5", true, ct0).GetAwaiter().GetResult();
+                    Speed.PingImpl = Path(1452, "203.0.113.5");
+                    var a2 = Speed.ProbePathMtuAsync("203.0.113.5", true, ct0).GetAwaiter().GetResult();
+                    Speed.PingImpl = Path(1280, "203.0.113.5");
+                    var a3 = Speed.ProbePathMtuAsync("203.0.113.5", true, ct0).GetAwaiter().GetResult();
+                    Speed.PingImpl = Path(1492, "1.1.1.1");   // сервер молчит, отвечает только 1.1.1.1
+                    var a4 = Speed.ProbePathMtuAsync("203.0.113.5", true, ct0).GetAwaiter().GetResult();
+                    var a5 = Speed.ProbePathMtuAsync("203.0.113.5", false, ct0).GetAwaiter().GetResult();   // шлюз включён: запасные адреса не берём
+                    Speed.PingImpl = Path(1500, "none");
+                    var a6 = Speed.ProbePathMtuAsync("203.0.113.5", true, ct0).GetAwaiter().GetResult();
+                    Check("подбор MTU: путь 1500 → 1500, WireGuard 1420", a1.Ok && a1.PathMtu == 1500 && Speed.RecommendedWgMtu(a1.PathMtu, "203.0.113.5") == 1420);
+                    Check("подбор MTU: путь 1452 (DS-Lite) → 1452, WireGuard 1392", a2.Ok && a2.PathMtu == 1452 && Speed.RecommendedWgMtu(a2.PathMtu, "203.0.113.5") == 1392);
+                    Check("подбор MTU: путь 1280 → 1280 (нижняя граница)", a3.Ok && a3.PathMtu == 1280);
+                    Check("подбор MTU: сервер молчит — берётся 1.1.1.1, когда шлюз выключен", a4.Ok && a4.PathMtu == 1492 && a4.Via.Contains("1.1.1.1"));
+                    Check("подбор MTU: при включённом шлюзе запасные адреса не берутся (мерили бы туннель)", !a5.Ok && a5.Note.Contains("Отключите шлюз"));
+                    Check("подбор MTU: нигде нет ответа — честное сообщение, а не число", !a6.Ok && a6.Note.Length > 10);
+                }
+                finally { Speed.PingImpl = keep; }
+            }
+            try
+            {
+                using var mtuCts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+                var mt = Task.Run(() => Speed.ProbePathMtuAsync("1.1.1.1", true, mtuCts.Token)).GetAwaiter().GetResult();
+                log.AppendLine("подбор MTU до 1.1.1.1: " + (mt.Ok ? $"путь {mt.PathMtu} байт → MTU WireGuard {Speed.RecommendedWgMtu(mt.PathMtu, "1.1.1.1")}" : "не вышло: " + mt.Note));
+                Check("подбор MTU: если пинг до 1.1.1.1 проходит, результат разумный (1280…1500)", !mt.Ok || (mt.PathMtu >= 576 && mt.PathMtu <= 1500));
+            }
+            catch (Exception ex) { log.AppendLine("подбор MTU не выполнился: " + ex.Message); }
 
             // 3c. база: подставной сервер на этом компьютере (REST как у Firebase)
             CloudChecks(Check, log, id, dev);

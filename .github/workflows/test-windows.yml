@@ -194,5 +194,5 @@ jobs:
           echo "--- /etc/wireguard ---"; sudo ls -la /etc/wireguard || true
           echo "--- следы скрипта в /tmp (должно быть пусто) ---"; ls -la /tmp/ghostshell-gateway-* 2>&1 || echo "пусто"
           echo "--- ip addr show wg0 ---"; ip addr show wg0 || true
-          echo "--- правило размера пакетов в wg0.conf (должно быть ровно в одной строке PostUp и в одной PostDown) ---"; sudo grep -c TCPMSS /etc/wireguard/wg0.conf || true
+          echo "--- правило размера пакетов IPv4 в wg0.conf (должно быть ровно в одной строке PostUp) ---"; sudo grep -c '^PostUp = iptables .*TCPMSS' /etc/wireguard/wg0.conf || true
           echo "--- ещё запуски: следы скрипта ускорения (должно быть пусто) ---"; ls -la /tmp/ghostshell-tune-* 2>&1 || echo "пусто"

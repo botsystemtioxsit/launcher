@@ -130,6 +130,50 @@ string clientPriv = "";
     Check("повторный запуск: успех", r2.Ok, r2.Error);
 }
 
+// 10. быстрая пересылка UDP и IPv6 в туннеле: в журнале есть строки про оба; повторный запуск ничего не ломает
+{
+    var log = new List<string>();
+    var t = new SshTarget { Host = host, Port = port, User = user, KeyFile = key };
+    var r = DeviceAdder.TuneAsync(t, _ => true, l => { lock (log) log.Add(l); }).GetAwaiter().GetResult();
+    Check("ускорение: в журнале есть строка про быструю пересылку UDP", log.Any(l => l.Contains("Быстрая пересылка UDP")), string.Join(" | ", log));
+    Check("ускорение: в журнале есть строка про IPv6 в туннеле", log.Any(l => l.Contains("IPv6 в туннеле")), string.Join(" | ", log));
+    Check("у сервера без своего IPv6 туннель остаётся как был (префикс не выдаётся)", r.Ok && (r.Ipv6Prefix.Length == 0 || log.Any(l => l.Contains("включён"))), r.Error);
+    string Sh(string c) { var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("bash", new[] { "-c", c }) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false })!; var o = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd(); p.WaitForExit(30000); return o; }
+    Say("--- wg0.conf после ускорения (PostUp/Address) ---"); Say(Sh("sudo grep -E '^(Address|PostUp|PostDown)' /etc/wireguard/wg0.conf | sed 's/PrivateKey.*//'"));
+    Check("правило подгонки пакетов осталось в одном экземпляре (IPv4)", Sh("sudo grep -c '^PostUp = iptables .*TCPMSS' /etc/wireguard/wg0.conf").Trim() == "1");
+}
+
+// 11. принудительный IPv6 (на тестовой машине своего IPv6 нет): сервер либо включает его целиком, либо откатывает всё как было — VPN в любом случае жив
+{
+    var log = new List<string>();
+    var t = new SshTarget { Host = host, Port = port, User = user, KeyFile = key };
+    var r = DeviceAdder.TuneAsync(t, _ => true, l => { lock (log) log.Add(l); }, default, "GS_FORCE_IPV6=1").GetAwaiter().GetResult();
+    Say("--- журнал «ускорить сервер» (IPv6 принудительно) ---"); foreach (var l in log) Say("  " + l); Say("--- конец журнала ---");
+    string Sh2(string c) { var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("bash", new[] { "-c", c }) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false })!; var o = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd(); p.WaitForExit(30000); return o; }
+    Check("принудительный IPv6: скрипт завершился успешно", r.Ok, r.Error);
+    var up = Sh2("sudo wg show wg0 > /dev/null 2>&1 && echo UP || echo DOWN").Contains("UP");
+    Check("после этого туннель на сервере работает (wg show wg0)", up);
+    var v6 = r.Ipv6Prefix.Length > 0;
+    Say("IPv6 включился: " + (v6 ? "да, префикс " + r.Ipv6Prefix : "нет (откат): " + string.Join(" | ", log.Where(l => l.Contains("IPv6")))));
+    if (v6)
+    {
+        Check("адрес IPv6 стоит на wg0", Sh2("ip -6 addr show dev wg0").Contains("fd66:6761:7465::1"));
+        Check("у всех устройств в wg0.conf появился IPv6-адрес", Sh2("sudo grep -c '^AllowedIPs = .*fd66:6761:7465::' /etc/wireguard/wg0.conf").Trim() == "2", Sh2("sudo grep '^AllowedIPs' /etc/wireguard/wg0.conf"));
+        var log2 = new List<string>();
+        var r2 = DeviceAdder.RunAsync(t, "tablet", _ => true, l => { lock (log2) log2.Add(l); }).GetAwaiter().GetResult();
+        Check("новое устройство после включения IPv6 получает и IPv6-адрес", r2.Ok && r2.Conf.Contains("fd66:6761:7465::") && Store.Validate(r2.Conf) == null, r2.Error);
+        var first = File.Exists(Path.Combine(outDir, "client.conf")) ? File.ReadAllText(Path.Combine(outDir, "client.conf")) : "";
+        if (first.Length > 0)
+        {
+            var upd = Store.WithIpv6(first, r.Ipv6Prefix);
+            Check("профиль компьютера дополняется IPv6-адресом, как у сервера", upd != first && Store.InterfaceValue(upd, "Address").Contains("fd66:6761:7465::2/128"), Store.InterfaceValue(upd, "Address"));
+        }
+        var r3 = DeviceAdder.TuneAsync(t, _ => true, _ => { }, default, "GS_FORCE_IPV6=1").GetAwaiter().GetResult();
+        Check("повторное ускорение при включённом IPv6 ничего не ломает и не дублирует", r3.Ok && Sh2("sudo grep -c '^PostUp = ip6tables -A FORWARD' /etc/wireguard/wg0.conf").Trim() == "1");
+    }
+    else Check("если IPv6 не включился, это был аккуратный откат (в журнале сказано), а не поломка", log.Any(l => l.Contains("не получилось")) && up);
+}
+
 Say(bad == 0 ? "ВСЕ ПРОВЕРКИ ПРОШЛИ" : $"ПРОВАЛЕНО: {bad}");
 File.WriteAllText(Path.Combine(outDir, "report.txt"), report.ToString());
 return bad == 0 ? 0 : 1;

@@ -75,8 +75,10 @@ sealed class IconEngine
                     var root = d.Name;                                   // «C:\»
                     if (root.Length < 2 || Native.GetDriveType(root) != type) continue;
                     var letter = root[0].ToString().ToUpperInvariant();
+                    // SHGetFileInfo про диск часто молчит (значок диска рисует сам Проводник) — тогда берём значок так, как его рисует Проводник
                     yield return new Sink("drive:" + letter, () => Native.IconLocation(root, false),
-                        p => reg.Set(@"Software\Classes\Applications\Explorer.exe\Drives\" + letter + @"\DefaultIcon", "", p));
+                        p => reg.Set(@"Software\Classes\Applications\Explorer.exe\Drives\" + letter + @"\DefaultIcon", "", p),
+                        () => new[] { "shell:" + root });
                 }
                 break;
             case TargetKind.Clsid:
@@ -278,6 +280,23 @@ sealed class IconEngine
         return c == null ? null : (c.OldPath, c.OldIndex);
     }
 
+    // Для проверки на раннере: откуда берётся значок ярлыка и что за значок получается по каждому способу.
+    public string DiagnoseLnk(string file)
+    {
+        var sb = new StringBuilder();
+        string p = "", target = "";
+        int i = 0;
+        try { Shortcuts.ReadIcon(file, out p, out i); target = Shortcuts.ReadTarget(file); } catch { }
+        var src = LnkSource(file);
+        sb.Append($"{Path.GetFileName(file)} | значок ярлыка: {p},{i} | цель: {target} | выбран: {src}");
+        foreach (var loc in new[] { src }.Concat(LnkFallbacks(file)).Where(x => x.Length > 0).Distinct())
+        {
+            var img = IconData.Load(loc, 48);
+            sb.Append(" || ").Append(loc).Append(" → ").Append(img == null ? "не загрузился" : IconData.IsBlank(img) ? "пустой" : IconData.IsGenericDocument(img) ? "ЛИСТОК" : "ok");
+        }
+        return sb.ToString();
+    }
+
     string LnkSource(string file)
     {
         var orig = OriginalLnkIcon(file);
@@ -420,6 +439,12 @@ sealed class IconEngine
                         continue;
                     }
                     var ico = GeneratedIcon(pick, s);
+                    if (ico == null)
+                    {
+                        failed++; outcomes.Add(new Outcome(t.Title, item, "после перекраски значок стал сплошным пятном — оставлен как был"));
+                        if (sink.Key.StartsWith("lnk:", StringComparison.Ordinal) && !t.NeedsAdmin) RevertLnk(sink.Key[4..]);
+                        continue;
+                    }
                     sink.Write(ico);
                     how[item] = pick.How;
                     done++;
@@ -470,11 +495,13 @@ sealed class IconEngine
         return Path.Combine(Paths.Generated, key + ".ico");
     }
 
-    static string GeneratedIcon(Pick pick, IconSettings s)
+    // null — после перекраски получилось сплошное пятно (плитка без рисунка, глиф того же тона, что и фон): такой значок ставить нельзя, это «серый квадратик».
+    static string? GeneratedIcon(Pick pick, IconSettings s)
     {
         var path = GeneratedPath(pick.Location, s);
         if (File.Exists(path)) return path;
         var imgs = pick.Sizes.Select(img => IconData.FromPixels(Tint.Apply(IconData.Pixels(img), s.Color, s.Style, s.Strength), img.PixelWidth, img.PixelHeight)).ToList();
+        if (IconData.IsBlank(imgs)) return null;
         IconData.WriteIco(path, imgs);
         return path;
     }
@@ -497,6 +524,7 @@ sealed class IconEngine
         var big = pick.Sizes.OrderBy(x => Math.Abs(x.PixelWidth - 48)).First();
         var before = IconData.Resize(big, 48);
         var after = IconData.FromPixels(Tint.Apply(IconData.Pixels(before), s.Color, s.Style, s.Strength), 48, 48);
+        if (IconData.IsBlank(after)) return new PreviewItem(name, before, null, "после перекраски стал бы сплошным пятном — оставим как есть", pick.How);
         return new PreviewItem(name, before, after, "", pick.How);
     }
 

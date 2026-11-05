@@ -93,6 +93,43 @@ static class IconData
         return (sd < 12 && cover >= 0.9 && box >= total / 5, info);
     }
 
+    // Значок «неизвестного типа файла» (белый листок с загнутым уголком), как его сейчас рисует Проводник. Красить такой значок ярлыку нельзя:
+    // он значит «настоящий значок не нашёлся» (у ярлыков на .msc и т. п.), а не «у этой программы значок — листок».
+    static BitmapSource? genericDoc;
+    public static BitmapSource? GenericDocument()
+    {
+        lock (typeof(IconData))
+        {
+            if (genericDoc != null) return genericDoc;
+            try
+            {
+                var dir = Path.Combine(Path.GetTempPath(), "iconplus-ext");
+                Directory.CreateDirectory(dir);
+                var f = Path.Combine(dir, "sample.gsunknownext");
+                if (!File.Exists(f)) File.WriteAllBytes(f, Array.Empty<byte>());
+                genericDoc = ShellIcon.Render(f, 48);
+            }
+            catch { }
+            return genericDoc;
+        }
+    }
+
+    public static bool IsGenericDocument(BitmapSource img)
+    {
+        var reference = GenericDocument();
+        if (reference == null) return false;
+        var a = Pixels(Resize(img, 48));
+        var b = Pixels(Resize(reference, 48));
+        long diff = 0; var n = 0;
+        for (var i = 0; i + 3 < a.Length && i + 3 < b.Length; i += 4)
+        {
+            if (a[i + 3] < 40 && b[i + 3] < 40) continue;
+            n++;
+            diff += Math.Abs(a[i] - b[i]) + Math.Abs(a[i + 1] - b[i + 1]) + Math.Abs(a[i + 2] - b[i + 2]) + Math.Abs(a[i + 3] - b[i + 3]);
+        }
+        return n > 100 && diff / (4.0 * n) < 10;
+    }
+
     public static bool IsBlank(IReadOnlyList<BitmapSource> sizes)
     {
         // судим по самому большому размеру: на мелких пикселях рисунок может слипнуться

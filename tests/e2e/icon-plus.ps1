@@ -154,3 +154,10 @@ $expPidAfter = (Get-Process explorer -ErrorAction SilentlyContinue | Select-Obje
 Say ("Проводник: было $expPidBefore, стало $expPidAfter; панель есть: " + ([W]::FindWindow('Shell_TrayWnd', $null) -ne [IntPtr]::Zero) + "; заняло " + [int]$sw.Elapsed.TotalSeconds + " с")
 Say ("файлов iconcache после: " + @(Get-ChildItem $cacheDir -Filter 'iconcache_*.db' -ErrorAction SilentlyContinue).Count)
 Say (Shot (Join-Path $Out '99-после-полного-обновления.png'))
+
+Say ""
+Say "=== ярлыки меню «Пуск»: откуда берётся значок и нет ли «листка» (--lnk-test) ==="
+$lnkOut = Join-Path $Out 'lnk'
+New-Item -ItemType Directory -Force $lnkOut | Out-Null
+Run-Exe 'lnk-test' @("--lnk-test=$lnkOut") 240
+if (Test-Path (Join-Path $lnkOut 'lnk-diagnose.txt')) { Get-Content (Join-Path $lnkOut 'lnk-diagnose.txt') -TotalCount 12 | ForEach-Object { Say $_ } }

@@ -31,6 +31,10 @@
         <Border Grid.Column="0" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0" Padding="12,18">
           <DockPanel>
             <TextBlock x:Name="VersionText" DockPanel.Dock="Bottom" Foreground="{DynamicResource Muted}" FontSize="12" Margin="6,0,0,0"/>
+            <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,14">
+              <Button x:Name="BulkUpdateBtn" Content="⟳ Обновить всё" Style="{StaticResource Ghost}" Click="BulkUpdateBtn_Click" ToolTip="Обновить все приложения, плагины и расширения, у которых вышла новая версия"/>
+              <Button x:Name="BulkLaunchBtn" Content="▶ Запустить всё" Style="{StaticResource Ghost}" Margin="0,6,0,0" Click="BulkLaunchBtn_Click" ToolTip="Запустить все установленные приложения и плагины, которые сейчас не работают"/>
+            </StackPanel>
             <StackPanel>
               <StackPanel Orientation="Horizontal" Margin="6,0,0,20">
                 
@@ -40,7 +44,9 @@
                 </StackPanel>
               </StackPanel>
               <Button x:Name="NavApps" Content="Приложения" Style="{StaticResource Nav}" Click="NavApps_Click"/>
-              <Button x:Name="NavPlugins" Content="Плагины" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavPlugins_Click"/>
+              <Button x:Name="NavStyle" Content="Оформление" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavStyle_Click"/>
+              <Button x:Name="NavNet" Content="Сеть и защита" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavNet_Click"/>
+              <Button x:Name="NavExt" Content="Расширения" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavExt_Click"/>
               <Button x:Name="NavEnv" Content="Окружение" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavEnv_Click"/>
               <Button x:Name="NavFeedback" Content="Написать нам" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavFeedback_Click"/>
               <Button x:Name="NavAccount" Content="Аккаунт" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavAccount_Click"/>
@@ -101,7 +107,11 @@
           <!-- Приложения -->
           <DockPanel x:Name="AppsView">
             <DockPanel DockPanel.Dock="Top" Margin="0,0,0,18">
-              <Button x:Name="RefreshBtn" DockPanel.Dock="Right" Content="Проверить обновления" Style="{StaticResource Ghost}" VerticalAlignment="Top" Click="RefreshBtn_Click"/>
+              <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Top" HorizontalAlignment="Right" MaxWidth="470">
+                <Button x:Name="AppsUpdateAllBtn" Content="Обновить все" Style="{StaticResource Primary}" Margin="0,0,0,6" Click="AppsUpdateAll_Click"/>
+                <Button x:Name="AppsLaunchAllBtn" Content="Запустить все" Style="{StaticResource Ghost}" Margin="8,0,0,6" Click="AppsLaunchAll_Click"/>
+                <Button x:Name="RefreshBtn" Content="Проверить обновления" Style="{StaticResource Ghost}" Margin="8,0,0,6" Click="RefreshBtn_Click"/>
+              </WrapPanel>
               <StackPanel>
                 <TextBlock Text="Приложения" FontSize="22" FontWeight="SemiBold"/>
                 <TextBlock x:Name="AppsSub" Foreground="{DynamicResource Muted}" Margin="0,4,16,0" TextWrapping="Wrap"/>
@@ -112,16 +122,18 @@
             </ScrollViewer>
           </DockPanel>
 
-          <!-- Плагины -->
+          <!-- Плагины: «Оформление», «Сеть и защита» и «Расширения» — один и тот же вид, разный список (см. SetPluginsView) -->
           <DockPanel x:Name="PluginsView" Visibility="Collapsed">
-            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,18">
-              <TextBlock Text="Плагины" FontSize="22" FontWeight="SemiBold"/>
-              <TextBlock x:Name="PluginsHint" Text="Дополнения качаются отдельно: ставьте только те, что нужны. Каждый плагин можно удалить в любой момент." Foreground="{DynamicResource Muted}" Margin="0,4,16,0" TextWrapping="Wrap"/>
-              <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                <Button x:Name="PluginsTabPc" Content="Для компьютера" Style="{StaticResource Primary}" Click="PluginsTabPc_Click"/>
-                <Button x:Name="PluginsTabBrowser" Content="Для браузера" Style="{StaticResource Ghost}" Margin="10,0,0,0" Click="PluginsTabBrowser_Click"/>
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,18">
+              <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Top" HorizontalAlignment="Right" MaxWidth="380">
+                <Button x:Name="PluginsUpdateAllBtn" Content="Обновить все" Style="{StaticResource Primary}" Margin="0,0,0,6" Click="PluginsUpdateAll_Click"/>
+                <Button x:Name="PluginsLaunchAllBtn" Content="Запустить все" Style="{StaticResource Ghost}" Margin="8,0,0,6" Click="PluginsLaunchAll_Click"/>
+              </WrapPanel>
+              <StackPanel>
+                <TextBlock x:Name="PluginsTitle" Text="Оформление" FontSize="22" FontWeight="SemiBold"/>
+                <TextBlock x:Name="PluginsHint" Foreground="{DynamicResource Muted}" Margin="0,4,16,0" TextWrapping="Wrap"/>
               </StackPanel>
-            </StackPanel>
+            </DockPanel>
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel>
                 <StackPanel x:Name="PluginList"/>
