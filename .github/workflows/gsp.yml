@@ -67,6 +67,6 @@ jobs:
         shell: bash
         run: |
           go vet ./...
-          go test -count=1 -timeout 300s . 2>&1 | tail -5
+          go test -count=1 -v -timeout 300s . 2>&1 | grep -E '^(---|ok|FAIL|PASS|\s+\S+_test.go)'
           go build -o gsp.exe .
           ./gsp.exe version
