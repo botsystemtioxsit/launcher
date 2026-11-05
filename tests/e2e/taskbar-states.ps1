@@ -38,7 +38,7 @@ Say ("Экран: " + [System.Windows.Forms.SystemInformation]::VirtualScreen)
 Say (Shot (Join-Path $Out '00-до.png'))
 
 $p = Start-Process -FilePath 'out-test/TaskbarPlus.exe' -ArgumentList '--background' -PassThru
-$st = Wait-File $status { param($t) $t -match 'state=ready' -and $t -match 'engine=5' -and $t -match 'bgfill=[1-9]' } 90
+$st = Wait-File $status { param($t) $t -match 'state=ready' -and $t -match 'engine=6' -and $t -match 'bgfill=[1-9]' } 90
 Start-Sleep -Seconds 6
 Mark '01-плагин-работает'
 
@@ -68,3 +68,29 @@ Copy-Item (Join-Path $data 'taskbar-plus-engine.cfg') (Join-Path $Out 'engine.cf
 Quit-Plugin $p 'taskbar-plus'
 Start-Sleep -Seconds 3
 Say ""; Mark '06-после-выхода'
+
+# ----- плашка должна накрывать все значки (снимок владельца: плашка кончалась после Steam, остальные значки висели справа) -----
+# На экране 1024 px отступ 486 оставляет плашке ~50 px — значки (их 5–6 штук) явно шире. Движок обязан расширить плашку.
+function Cover-Check([string]$shape, [int]$side, [string]$tag) {
+    $tp2 = @{ UseXaml = $true; XamlConsentShown = $true; Shape = $shape; Radius = 13; SideMargin = $side; BottomGap = 6; KeepEdges = $true; ZoneSystem = 'right'; ZoneApps = 'default'; ZoneWidgets = 'default'; Islands = @{} }
+    ($tp2 | ConvertTo-Json -Depth 6) | Set-Content (Join-Path $data 'taskbar-plus-settings.json') -Encoding UTF8
+    Remove-Item $status -ErrorAction SilentlyContinue
+    $p2 = Start-Process -FilePath 'out-test/TaskbarPlus.exe' -ArgumentList '--background' -PassThru
+    $t = Wait-File $status { param($t) $t -match 'state=ready' -and $t -match 'engine=6' -and $t -match 'bgfill=[1-9]' -and $t -match 'cover=\d' } 90
+    Start-Sleep -Seconds 5
+    Mark "07-$tag"
+    $txt = Get-Content $status -Raw -ErrorAction SilentlyContinue
+    if ($txt -match 'cover=(-?\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+)') {
+        $aL = [int]$Matches[1]; $aR = [int]$Matches[2]; $bL = [int]$Matches[3]; $bR = [int]$Matches[4]; $w = [int]$Matches[5]
+        $plateL = $bL; $plateR = $w - $bR
+        Say ("  $tag : значки $aL..$aR, плашка $plateL..$plateR, ширина панели $w, отступ в настройках $side")
+        if ($plateL -le $aL -and $plateR -ge $aR) { Say "  $tag : OK — плашка накрывает все значки" } else { Say "  $tag : ОШИБКА — значки выходят за плашку" }
+        if ($side -gt $aL) { if ($plateL -lt $side) { Say "  $tag : OK — плашка расширена" } }
+    } else { Say "  $tag : ОШИБКА — в статусе нет строки cover" }
+    Quit-Plugin $p2 'taskbar-plus'
+    Start-Sleep -Seconds 3
+}
+Say ""; Say "=== плашка накрывает значки ==="
+Cover-Check 'pill' 486 'плашка-pill-486'
+Cover-Check 'tab' 486 'плашка-tab-486'
+Cover-Check 'pill' 20 'плашка-pill-20'
