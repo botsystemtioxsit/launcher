@@ -1,18 +1,6 @@
-# Правила движка Taskbar Plus: «группа|тип элемента|имя элемента».
-# * — любые символы; пусто — любой тип или имя. Первое подходящее правило побеждает.
-# Группы:
-#   bgfill   — фон панели          bgstroke — тонкая обводка панели
-#   app      — «Пуск», поиск и значки программ
-#   widgets  — виджеты (погода и т. п.)
-#   system   — часы, язык, сеть, звук, скрытые значки: всегда один объект
-#   pill     — собственная плашка значка внутри системной области (её гасим, чтобы область была одним блоком)
-# Плагин скачивает этот файл при запуске (raw.githubusercontent.com, ветка main): так названия элементов
-# можно подправить под другую сборку Windows без нового выпуска плагина.
-bgfill|Windows.UI.Xaml.Shapes.Rectangle|BackgroundFill
-bgstroke|Windows.UI.Xaml.Shapes.Rectangle|BackgroundStroke
-app|Taskbar.TaskListButton|
-app|Taskbar.ExperienceToggleButton|
-app|Taskbar.SearchBoxButton|
-widgets|Taskbar.AugmentedEntryPointButton|
-system|SystemTray.*|
-pill|Windows.UI.Xaml.Controls.Border|BackgroundBorder
+# Дополнительные правила движка Taskbar Plus 3: какой элемент панели что значит. Строки «вид|тип|имя», «*» — любые символы, имя можно оставить пустым.
+# Встроенные правила лежат в самом движке (Engine/styler.cpp, BuiltinRules) — эти строки только ДОБАВЛЯЮТСЯ к ним и ничего не отключают.
+# Плагин скачивает этот файл из ветки main при запуске: если в другой сборке Windows элементы панели названы иначе,
+# достаточно добавить сюда строку — без нового выпуска плагина.
+# Виды: bgfill (фон панели), bgstroke (тонкая линия по краю), app (значок приложения), widgets (виджеты), system (часы, сеть, трей), frame (корень панели).
+# Пример:  app|Taskbar.НовыйТипКнопки|

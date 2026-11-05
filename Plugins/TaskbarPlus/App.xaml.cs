@@ -13,7 +13,7 @@ public partial class App : Application
     Mutex? mutex;
     EventWaitHandle? showEvent;
     EventWaitHandle? quitEvent;
-    Engines? engine;
+    TaskbarController? engine;
     AppearanceSettings settings = new();
     MainWindow? window;
     public static bool Quitting { get; set; }
@@ -22,6 +22,9 @@ public partial class App : Application
     {
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        var test = e.Args.FirstOrDefault(a => a.StartsWith("--selftest="));
+        if (test != null) { SelfTest.Run(test["--selftest=".Length..]); var code = Environment.ExitCode; Quitting = true; Shutdown(code); return; }
 
         var shot = e.Args.FirstOrDefault(a => a.StartsWith("--screenshot="));
         if (shot != null) { RenderScreenshots(shot["--screenshot=".Length..]); Quitting = true; Shutdown(); return; }
@@ -39,7 +42,7 @@ public partial class App : Application
 
         var background = e.Args.Contains("--background");
         settings = AppearanceSettings.Load();
-        engine = new Engines();
+        engine = new TaskbarController();
         // Тихо возвращаем всё, что могло остаться от прошлого запуска, и применяем сохранённый вид.
         engine.Update(settings);
 
@@ -63,6 +66,16 @@ public partial class App : Application
         }) { IsBackground = true }.Start();
 
         if (background && !settings.Active) { Quitting = true; Shutdown(); return; } // фоновый запуск без эффектов — делать нечего
+
+        // После обновления плагина в Проводнике ещё висит старая версия движка. В фоновом режиме окна нет — а перезапуск панели нужен,
+        // иначе плашек не будет и непонятно почему: поэтому в этом случае окно показывается само и предлагает перезапустить панель.
+        var restartShown = false;
+        engine.StatusChanged += () => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (restartShown || engine == null || !settings.UseXaml || !engine.Xaml.NeedsRestart) return;
+            restartShown = true;
+            ShowWindow();
+        }));
         if (!background) ShowWindow();
     }
 
@@ -72,14 +85,12 @@ public partial class App : Application
         try
         {
             Directory.CreateDirectory(dir);
-            var s = new AppearanceSettings
-            {
-                UseXaml = true, XamlConsentShown = true, Shape = AppearanceSettings.ShapeIslands, IslandMode = "each",
-                ZoneApps = AppearanceSettings.ZoneRight, ZoneSystem = AppearanceSettings.ZoneLeft,
-            };
-            s.Islands["system"] = new IslandStyle { Radius = 0, Color = "#6C4DFF", Mode = AppearanceSettings.BgSolid, Opacity = 70 };
-            var w = new MainWindow(new Engines(), s);
+            var s = new AppearanceSettings { UseXaml = true, XamlConsentShown = true, Shape = AppearanceSettings.ShapeIslands, IslandMode = "each" };
+            var w = new MainWindow(new TaskbarController(), s);
             w.RenderTo(Path.Combine(dir, "taskbar-plus-ui.png"), "system");
+            s.Shape = AppearanceSettings.ShapePill;
+            var w2 = new MainWindow(new TaskbarController(), s);
+            w2.RenderTo(Path.Combine(dir, "taskbar-plus-ui-pill.png"));
         }
         catch (Exception ex) { File.WriteAllText(Path.Combine(dir, "taskbar-plus-ui-error.txt"), ex.ToString()); }
     }

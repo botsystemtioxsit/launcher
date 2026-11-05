@@ -51,7 +51,7 @@ static class Catalog
 
     static AppDef[] DefaultPlugins() => new[]
     {
-        new AppDef("taskbar-plus", "Taskbar Plus", "Панель задач Windows по-своему: форма, острова, расположение частей, значки, автоскрытие.",
+        new AppDef("taskbar-plus", "Taskbar Plus", "Панель задач Windows 11 по-своему: плавающая панель, вкладка или острова под значками; цвет — в Color Plus.",
             "launcher", "Taskbar Plus", null, "TaskbarPlus.exe", "Taskbar Plus", IsPlugin: true),
         new AppDef("color-plus", "Color Plus", "Один цвет для окон, выделения и панели задач: выберите, посмотрите на предпросмотре и примените.",
             "launcher", "Color Plus", null, "ColorPlus.exe", "Color Plus", IsPlugin: true),

@@ -24,6 +24,7 @@ static std::atomic<bool> g_connected{ false };
 static std::atomic<int> g_connectTries{ 0 };
 static std::atomic<int> g_sessions{ 0 };
 static std::atomic<bool> g_stopWatcher{ false };
+static std::atomic<bool> g_pluginAlive{ false };   // плагин недавно обновлял файл настроек (иначе панель возвращается как была)
 
 // ---------- статус для плагина ----------
 static void WriteStatus(const wchar_t* state, const wchar_t* error)
@@ -47,12 +48,12 @@ static void WriteStatus(const wchar_t* state, const wchar_t* error)
     put(L"apps", num(st.apps));
     put(L"widgets", num(st.widgets));
     put(L"system", num(st.system));
-    put(L"hosts", num(st.hosts));
-    put(L"islands", num(st.islands));
+    put(L"bars", num(st.bars));
+    put(L"geobars", num(st.geoBars));
     put(L"rects", num(st.rects));
-    put(L"cover", num(st.coverAppsL) + L"," + num(st.coverAppsR) + L"," + num(st.coverBarL) + L"," + num(st.coverBarR) + L"," + num(st.coverWidth));
     put(L"rectnames", st.rectNames);
-    put(L"applied", num(st.applied ? 1 : 0));
+    put(L"applied", num(st.touched > 0 ? 1 : 0));   // 1 — родной фон панели сейчас прозрачный (его подменили мы)
+    put(L"alive", num(g_pluginAlive.load() ? 1 : 0));
     put(L"queue", num(st.queueOk ? 1 : 0));
     put(L"tries", num(g_connectTries.load()));
     put(L"error", error ? error : L"");
@@ -261,14 +262,18 @@ static void ConnectToXaml()
     }
 }
 
+static ULONGLONG FileTimeMs(const FILETIME& ft) { ULARGE_INTEGER u; u.LowPart = ft.dwLowDateTime; u.HighPart = ft.dwHighDateTime; return u.QuadPart / 10000ULL; }
+
 static void WatcherLoop()
 {
     CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     FILETIME lastTime{};
     bool haveLast = false;
+    bool lastEffective = false;
     int lastDump = 0;
     ULONGLONG lastStatus = 0;
     StylerStats lastStats;
+    bool lastAlive = false;
 
     while (!g_stopWatcher)
     {
@@ -276,23 +281,39 @@ static void WatcherLoop()
         {
             Config cfg;
             FILETIME t{};
-            if (LoadConfig(cfg, t) && (!haveLast || CompareFileTime(&t, &lastTime) != 0))
+            if (LoadConfig(cfg, t))
             {
-                lastTime = t;
-                haveLast = true;
-                if (cfg.dump != lastDump) { lastDump = cfg.dump; Styler::WriteTree(); }
-                Styler::SetConfig(cfg);
+                // «Выключатель мёртвой руки»: плагин переписывает файл настроек каждые ~3 секунды, пока работает. Если файл не обновляли
+                // дольше 20 секунд (плагин закрыт аварийно или завис), панель сама возвращается как была — без плагина плашек нет,
+                // а прозрачная панель без них выглядела бы сломанной.
+                FILETIME nowFt{};
+                GetSystemTimeAsFileTime(&nowFt);
+                const ULONGLONG age = FileTimeMs(nowFt) > FileTimeMs(t) ? FileTimeMs(nowFt) - FileTimeMs(t) : 0;
+                const bool alive = age < 20000;
+                g_pluginAlive = alive;
+                const bool effective = cfg.enabled && alive;
+                if (!haveLast || CompareFileTime(&t, &lastTime) != 0 || effective != lastEffective)
+                {
+                    lastTime = t;
+                    haveLast = true;
+                    lastEffective = effective;
+                    if (cfg.dump != lastDump) { lastDump = cfg.dump; Styler::WriteTree(); }
+                    cfg.enabled = effective;
+                    Styler::SetConfig(cfg);
+                }
             }
             auto now = GetTickCount64();
             auto stats = Styler::GetStats();
             const bool changed = stats.nodes != lastStats.nodes || stats.bgFill != lastStats.bgFill || stats.apps != lastStats.apps ||
                                  stats.widgets != lastStats.widgets || stats.system != lastStats.system || stats.rects != lastStats.rects ||
-                                 stats.islands != lastStats.islands || stats.applied != lastStats.applied || stats.queueOk != lastStats.queueOk;
+                                 stats.bars != lastStats.bars || stats.geoBars != lastStats.geoBars || stats.touched != lastStats.touched ||
+                                 stats.queueOk != lastStats.queueOk || g_pluginAlive.load() != lastAlive;
             if (changed || now - lastStatus > 3000)
             {
                 WriteStatus(g_connected ? L"ready" : L"connecting", L"");
                 lastStatus = now;
                 lastStats = stats;
+                lastAlive = g_pluginAlive.load();
             }
         }
         catch (...) { Log(L"наблюдатель: неожиданная ошибка"); }

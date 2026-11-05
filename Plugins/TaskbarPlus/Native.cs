@@ -41,6 +41,32 @@ static class Native
 
     public const int RGN_OR = 2;
 
+    // ---------- окно под панелью (плашки) ----------
+    [DllImport("user32.dll", SetLastError = true)] public static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int cmd);
+    [DllImport("user32.dll")] public static extern IntPtr GetWindow(IntPtr h, uint cmd);
+    [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] static extern IntPtr GetWindowLongPtr(IntPtr h, int index);
+    [DllImport("shell32.dll")] static extern int SHQueryUserNotificationState(out int state);
+
+    public const uint SWP_NOSIZE = 0x1, SWP_NOMOVE = 0x2, SWP_NOACTIVATE = 0x10, SWP_SHOWWINDOW = 0x40;
+    public const uint GW_HWNDNEXT = 2;
+    public const int SW_HIDE = 0, SW_SHOWNOACTIVATE = 4;
+
+    // Панель лежит выше обычных окон (топмост). Когда на экране полноэкранное окно, Windows опускает панель — тогда и плашки не нужны.
+    public static bool IsTopmost(IntPtr h)
+    {
+        try { return ((long)GetWindowLongPtr(h, -20 /* GWL_EXSTYLE */) & 0x8 /* WS_EX_TOPMOST */) != 0; }
+        catch { return true; }
+    }
+
+    // Полноэкранная игра, видео или показ презентации (SHQueryUserNotificationState: 2 занят, 3 полноэкранное Direct3D, 4 презентация).
+    public static bool FullscreenActive()
+    {
+        try { return SHQueryUserNotificationState(out var st) == 0 && st is 2 or 3 or 4; }
+        catch { return false; }
+    }
+
     public static double Scale(IntPtr hwnd)
     {
         try { var dpi = GetDpiForWindow(hwnd); return dpi == 0 ? 1.0 : dpi / 96.0; }

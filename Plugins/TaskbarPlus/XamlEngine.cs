@@ -8,14 +8,15 @@ using System.Text.Json;
 
 namespace TaskbarPlusApp;
 
-// Новый движок для Windows 11: маленькая DLL (папка Engine, C++) подключается к панели задач внутри Проводника
-// через публичный интерфейс XAML Diagnostics и меняет настоящие элементы панели — отсюда гладкие края, прозрачность, размытие.
-// Здесь, в плагине, — только «хозяин»: достаёт DLL, подключает её к Проводнику, пишет ей настройки и читает её статус.
-// Если Проводник падает сразу после подключения (два раза подряд), движок сам отключается, остаётся обычный способ.
+// Движок для Windows 11: маленькая DLL (папка Engine, C++) подключается к панели задач внутри Проводника через публичный интерфейс
+// XAML Diagnostics. С версии 7 она делает только две вещи: делает родной фон панели прозрачным (пока плагин работает) и измеряет,
+// где лежат значки, часы с треем и виджеты. Плашки и острова рисует сам плагин в своём окне под панелью (см. OverlayManager).
+// Здесь, в плагине, — только «хозяин» DLL: достаёт её, подключает к Проводнику, пишет ей настройки и читает её статус.
+// Если Проводник падает сразу после подключения (два раза подряд), движок сам отключается.
 sealed class XamlEngine : IDisposable
 {
     const string ResourceName = "GhostShellTap.dll";
-    const string EngineVersion = "6";   // должна совпадать с GS_ENGINE_VERSION в Engine/common.h
+    const string EngineVersion = "7";   // должна совпадать с GS_ENGINE_VERSION в Engine/common.h
 
     static readonly string DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BattleLauncher");
     static readonly string CfgPath = Path.Combine(DataDir, "taskbar-plus-engine.cfg");
@@ -23,7 +24,6 @@ sealed class XamlEngine : IDisposable
     static readonly string LogPath = Path.Combine(DataDir, "taskbar-plus-engine.log");
     static readonly string TreePath = Path.Combine(DataDir, "taskbar-plus-xaml-tree.txt");
     static readonly string HealthPath = Path.Combine(DataDir, "taskbar-plus-engine-health.json");
-    static readonly string IslandsPath = Path.Combine(DataDir, "taskbar-plus-engine-islands.txt");
     static readonly string RulesPath = Path.Combine(DataDir, "taskbar-plus-engine-rules.txt");
     const string RulesUrl = "https://raw.githubusercontent.com/botsystemtioxsit/launcher/main/Plugins/TaskbarPlus/engine-rules.txt";
     const string ReportUrl = "https://zolotaya-kletka-default-rtdb.firebaseio.com/pluginReports/taskbar-plus/";
@@ -50,6 +50,14 @@ sealed class XamlEngine : IDisposable
     long expectedRestartUntil;
     bool crashCounted;
     bool autoReported;
+    long lastCfgWrite;
+    volatile bool barTransparent;
+    volatile int geoBars;
+
+    // Подробности от окна с плашками для отчёта (подставляет TaskbarController)
+    public Func<string>? DebugText { get; set; }
+    // true — родной фон панели сейчас прозрачный (его подменил движок): только тогда плашки видны, и их можно показывать
+    public bool BarTransparent => barTransparent;
 
     string[] rules = LoadCachedRules();
 
@@ -59,8 +67,8 @@ sealed class XamlEngine : IDisposable
     public static bool OsSupported => Environment.OSVersion.Version.Build >= 22000 && RuntimeInformation.OSArchitecture == Architecture.X64 && Environment.Is64BitProcess;
     public static bool DllIncluded => Assembly.GetExecutingAssembly().GetManifestResourceInfo(ResourceName) != null;
     public static string? UnavailableReason =>
-        !OsSupported ? "Новый движок работает только в Windows 11 (64-бит). Здесь действует обычный способ."
-        : !DllIncluded ? "В этой сборке плагина нет файла движка. Действует обычный способ."
+        !OsSupported ? "Taskbar Plus 3 работает только в Windows 11 (64-бит)."
+        : !DllIncluded ? "В этой сборке плагина нет файла движка."
         : null;
 
     public bool Ready { get { lock (gate) return ready; } }
@@ -125,12 +133,13 @@ sealed class XamlEngine : IDisposable
         {
             var wasRunning = loop != null;
             Stop();
+            barTransparent = false;
             if (wasRunning || File.Exists(CfgPath)) WriteCfg(false);
             SetState(s.UseXaml ? (UnavailableReason ?? BlockedText) : "", false);
         }
     }
 
-    const string BlockedText = "Новый движок отключён: Проводник два раза подряд закрывался сразу после подключения. Действует обычный способ. Нажмите «Попробовать снова» или сохраните отчёт и отправьте его.";
+    const string BlockedText = "Движок отключён: Проводник два раза подряд закрывался сразу после подключения. Нажмите «Попробовать снова» или сохраните отчёт и отправьте его.";
 
     void Start()
     {
@@ -174,9 +183,9 @@ sealed class XamlEngine : IDisposable
         lastPid = pid;
         if (Blocked) { SetState(BlockedText, false); return; }
 
-        if (ColorPlusLink.Refresh()) WriteCfg(true);   // Color Plus поменял фон панели
-
         var now = Environment.TickCount64;
+        // Раз в ~3 секунды переписываем файл настроек: движок считает его «пульсом» плагина и без него (через 20 с) сам возвращает панель.
+        if (ColorPlusLink.Refresh() || now - lastCfgWrite > 3000) WriteCfg(true);
         var st = ReadStatus();
         if (st != null && st.GetValueOrDefault("pid") == pid.ToString())
         {
@@ -186,10 +195,14 @@ sealed class XamlEngine : IDisposable
             int.TryParse(st.GetValueOrDefault("bgfill"), out var bg);
             int.TryParse(st.GetValueOrDefault("apps"), out var apps);
             int.TryParse(st.GetValueOrDefault("nodes"), out var nodes);
+            int.TryParse(st.GetValueOrDefault("geobars"), out var gbars);
+            geoBars = gbars;
+            var wantTransparent = settings.Shape != AppearanceSettings.ShapeNone;
             // Старая версия движка остаётся в Проводнике до его перезапуска; новая рядом с ней не запускается.
             if (state == "duplicate" || (state == "ready" && st.GetValueOrDefault("engine") != EngineVersion))
             {
                 lock (gate) needsRestart = true;
+                barTransparent = false;
                 SetState("Обновился движок. Чтобы подключить новую версию, нужно перезапустить панель задач (кнопка внизу окна).", false);
                 return;
             }
@@ -198,9 +211,12 @@ sealed class XamlEngine : IDisposable
             {
                 if (connectedSince == 0) connectedSince = now;
                 Unhook();
+                barTransparent = bg > 0 && st.GetValueOrDefault("applied") == "1" && st.GetValueOrDefault("alive") == "1" && wantTransparent;
                 if (bg > 0)
                 {
-                    SetState($"Новый движок работает. Элементов панели: {nodes}, значков: {apps}.", true);
+                    SetState(gbars > 0 ? $"Движок работает. Значков на панели: {apps}." :
+                             wantTransparent && now - connectedSince > 10_000 ? $"Движок подключился, но не нашёл значки панели (элементов {nodes}). Отчёт уйдёт разработчику сам." :
+                             $"Движок работает. Элементов панели: {nodes}.", true);
                     if (now - connectedSince > 90_000 && health.Crashes != 0) { health.Crashes = 0; SaveHealth(); }
                     // Один раз за запуск, когда панель уже обжилась, отчёт уходит разработчику сам (владелец не нажимает кнопки ради отчётов).
                     if (!autoReported && now - connectedSince > 45_000)
@@ -223,9 +239,10 @@ sealed class XamlEngine : IDisposable
                     SetState("Подключился, ищу элементы панели…", false);
                 return;
             }
+            barTransparent = false;
             if (state == "error")
             {
-                SetState("Движок: " + (st.GetValueOrDefault("error") ?? "ошибка") + ". Действует обычный способ.", false);
+                SetState("Движок: " + (st.GetValueOrDefault("error") ?? "ошибка") + ".", false);
                 if (attempts >= 3) return;
             }
             else if (state == "connecting" && fresh && now - injectAt < 60_000)
@@ -236,6 +253,7 @@ sealed class XamlEngine : IDisposable
         }
 
         // движка в этом Проводнике нет (или он не отвечает) — подключаем
+        barTransparent = false;
         if (injectedPid == pid && attempts >= 3 && now - injectAt < 120_000) return;
         if (injectedPid != pid) attempts = 0;
         Inject(hwnd, pid);
@@ -327,7 +345,7 @@ sealed class XamlEngine : IDisposable
     // Встроенные правила лежат в самом движке. Файл engine-rules.txt в репозитории позволяет подправить названия элементов
     // для другой сборки Windows без нового выпуска плагина: плагин скачивает его при запуске и кладёт в настройки движка.
     static string[] ParseRules(string text) => text.Split('\n').Select(l => l.Trim())
-        .Where(l => l.Length > 0 && !l.StartsWith('#') && l.Split('|').Length >= 3 && l.Split('|')[0] is "bgfill" or "bgstroke" or "app" or "widgets" or "system" or "pill").Take(100).ToArray();
+        .Where(l => l.Length > 0 && !l.StartsWith('#') && l.Split('|').Length >= 3 && l.Split('|')[0] is "bgfill" or "bgstroke" or "app" or "widgets" or "system" or "frame").Take(100).ToArray();
 
     static string[] LoadCachedRules()
     {
@@ -350,37 +368,6 @@ sealed class XamlEngine : IDisposable
         catch { /* нет сети — остаются прежние правила */ }
     }
 
-    // Список островов, который движок записывает после каждого пересчёта: системная область, виджеты и значки по именам.
-    public record IslandInfo(string Kind, string Key, string Name);
-
-    public static List<IslandInfo> ReadIslands()
-    {
-        var list = new List<IslandInfo>();
-        try
-        {
-            foreach (var line in SafeRead(IslandsPath).Split('\n'))
-            {
-                var f = line.Trim().Split('|');
-                if (f.Length < 3) continue;
-                if (f[0] == "widgets") list.Add(new IslandInfo("widgets", "widgets", ""));
-                else if (f[0] == "system") list.Add(new IslandInfo("system", "system", ""));
-                else if (f[0] == "app" && f[1].StartsWith("app.")) list.Add(new IslandInfo("app", f[1], FromHex(f[2])));
-            }
-        }
-        catch { }
-        return list;
-    }
-
-    static string FromHex(string hex)
-    {
-        try
-        {
-            if (hex.Length == 0 || hex.Length % 2 != 0 || hex.Length > 400) return "";
-            return Encoding.UTF8.GetString(Convert.FromHexString(hex));
-        }
-        catch { return ""; }
-    }
-
     // ---------- файлы обмена с DLL ----------
     static Dictionary<string, string>? ReadStatus()
     {
@@ -400,53 +387,16 @@ sealed class XamlEngine : IDisposable
         catch { return null; }
     }
 
-    static int ZoneNum(string z) => z switch { AppearanceSettings.ZoneLeft => 1, AppearanceSettings.ZoneCenter => 2, AppearanceSettings.ZoneRight => 3, _ => 0 };
-
-    static int Mode(string bg) => bg switch { AppearanceSettings.BgSolid => 1, AppearanceSettings.BgClear => 2, AppearanceSettings.BgAcrylic => 3, _ => 0 };
-
     void WriteCfg(bool enabled)
     {
         AppearanceSettings s;
         lock (gate) s = settings;
         var sb = new StringBuilder();
         void Put(string k, object v) => sb.Append(k).Append('=').Append(v).Append('\n');
-        Put("enabled", enabled ? 1 : 0);
-        // фон панели задаёт плагин Color Plus (см. ColorPlusLink); без него — родной фон Windows
-        var bg = ColorPlusLink.Current;
-        Put("bgMode", bg.Active ? Mode(bg.Mode) : 0);
-        Put("color", bg.Color.TrimStart('#'));
-        Put("opacity", bg.Opacity);
-        Put("shape", s.Shape switch { AppearanceSettings.ShapePill => 1, AppearanceSettings.ShapeTab => 2, AppearanceSettings.ShapeIslands => 3, _ => 0 });
-        Put("radius", s.Radius);
-        Put("side", s.SideMargin);
-        Put("gap", s.BottomGap);
+        // enabled — родной фон панели прозрачный; включаем, только если выбрана форма (иначе панель остаётся как в Windows)
+        Put("enabled", enabled && s.Shape != AppearanceSettings.ShapeNone ? 1 : 0);
         Put("hideStroke", s.ShowStroke ? 0 : 1);   // тонкая линия по краю панели скрыта, если её не попросили вернуть
-        Put("keepEdges", s.KeepEdges ? 1 : 0);
-        Put("unifySystem", 1);
-        Put("islandMode", s.IslandMode == "group" ? 1 : 0);
-        Put("islandStyle", s.IslandStyle == "tab" ? 1 : 0);
-        Put("islandPad", s.IslandPadding);
-        Put("islandGap", s.IslandGap);
         Put("dump", dumpCounter);
-        Put("zone.widgets", ZoneNum(s.ZoneWidgets));
-        Put("zone.system", ZoneNum(s.ZoneSystem));
-        Put("zone.apps", ZoneNum(s.ZoneApps));
-        Put("order", string.Join(",", s.LayoutOrder));
-        Put("edgeMargin", s.EdgeMargin);
-        foreach (var kv in s.Islands)
-        {
-            var st = kv.Value;
-            // радиус;цвет;прозрачность;режим;скрыт — пустое поле значит «как у всех»
-            var f = new[]
-            {
-                st.Radius >= 0 ? st.Radius.ToString() : "",
-                st.Color != null ? st.Color.TrimStart('#') : "",
-                st.Opacity >= 0 ? st.Opacity.ToString() : "",
-                st.Mode == null ? "" : Mode(st.Mode).ToString(),
-                st.Hidden ? "1" : "0",
-            };
-            Put("sty." + kv.Key, string.Join(";", f));
-        }
         string[] rs;
         lock (gate) rs = rules;
         for (var i = 0; i < rs.Length; i++) Put("rule." + i, rs[i]);
@@ -456,6 +406,7 @@ sealed class XamlEngine : IDisposable
             var tmp = CfgPath + ".tmp";
             File.WriteAllText(tmp, sb.ToString());
             File.Move(tmp, CfgPath, true);
+            lastCfgWrite = Environment.TickCount64;
         }
         catch { /* движок продолжит со старыми настройками */ }
     }
@@ -471,7 +422,7 @@ sealed class XamlEngine : IDisposable
         await Task.Delay(1500); // движок читает файл настроек примерно раз в 0,3 с
 
         var sb = new StringBuilder();
-        sb.AppendLine("Taskbar Plus — отчёт");
+        sb.AppendLine("Taskbar Plus 3 — отчёт");
         sb.AppendLine("Время: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
         sb.AppendLine("Плагин: " + (Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "?"));
         sb.AppendLine("Windows: " + Environment.OSVersion.Version + " " + RuntimeInformation.OSArchitecture);
@@ -482,6 +433,10 @@ sealed class XamlEngine : IDisposable
         sb.AppendLine();
         sb.AppendLine("--- статус движка ---");
         sb.AppendLine(SafeRead(StatusPath));
+        sb.AppendLine("--- измерения значков (файл движка) ---");
+        sb.AppendLine(SafeRead(GeometryFile.DefaultPath));
+        sb.AppendLine("--- окно с плашками ---");
+        try { sb.AppendLine(DebugText?.Invoke() ?? "(нет)"); } catch (Exception ex) { sb.AppendLine("(ошибка: " + ex.Message + ")"); }
         sb.AppendLine("--- здоровье ---");
         sb.AppendLine(SafeRead(HealthPath));
         sb.AppendLine("--- журнал движка (последние строки) ---");
