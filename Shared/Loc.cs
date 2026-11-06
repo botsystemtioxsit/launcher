@@ -61,7 +61,7 @@ public static class Loc
         // перевод каждого элемента сразу при загрузке, чтобы не мелькал русский
         EventManager.RegisterClassHandler(typeof(FrameworkElement), FrameworkElement.LoadedEvent, new RoutedEventHandler((s, _) =>
         {
-            if (Lang != "ru" && s is DependencyObject d) FixOne(d);
+            if (Lang != "ru" && s is DependencyObject d) { try { FixOne(d); } catch { } }
         }));
         timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(400) };
         timer.Tick += (_, _) => Tick();
@@ -303,7 +303,7 @@ public static class Loc
     public static void ApplyTree(DependencyObject root)
     {
         if (!started) return;
-        Walk(root, new HashSet<object>(ReferenceEqualityComparer.Instance));
+        try { Walk(root, new HashSet<object>(ReferenceEqualityComparer.Instance)); } catch (Exception ex) { audit.Add("ОШИБКА перевода: " + ex.GetType().Name + " " + ex.Message); }
         if (Lang != "ru") foreach (var s in Remaining(root)) audit.Add(root.GetType().Name + " | " + s);
     }
 
@@ -368,7 +368,8 @@ public static class Loc
 
     static void FixInlines(InlineCollection col)
     {
-        foreach (var il in col)
+        // сначала копия списка: смена Run.Text меняет сам TextBlock, а менять коллекцию во время обхода нельзя
+        foreach (var il in new List<Inline>(col))
         {
             if (il is Run r) Fix(r, "text", r.Text, v => r.Text = v);
             else if (il is Span sp) FixInlines(sp.Inlines);
@@ -379,13 +380,20 @@ public static class Loc
     {
         if (!seen.Add(d)) return;
         FixOne(d);
-        if (d is ItemsControl ic && ic is not TreeView) { foreach (var it in ic.Items) if (it is DependencyObject di) Walk(di, seen); }
+        if (d is ItemsControl ic && ic is not TreeView)
+        {
+            var items = new List<object>();
+            foreach (var it in ic.Items) items.Add(it);
+            foreach (var it in items) if (it is DependencyObject di) Walk(di, seen);
+        }
         if (d is Visual or System.Windows.Media.Media3D.Visual3D)
         {
             var n = VisualTreeHelper.GetChildrenCount(d);
             for (var i = 0; i < n; i++) Walk(VisualTreeHelper.GetChild(d, i), seen);
         }
-        foreach (var ch in LogicalTreeHelper.GetChildren(d)) if (ch is DependencyObject cd) Walk(cd, seen);
+        var kids = new List<DependencyObject>();   // дети — копией: перевод Run меняет TextBlock, а он перечисляет их же
+        foreach (var ch in LogicalTreeHelper.GetChildren(d)) if (ch is DependencyObject cd) kids.Add(cd);
+        foreach (var cd in kids) Walk(cd, seen);
     }
 
     static void Fix(object owner, string slot, string current, Action<string> set)
