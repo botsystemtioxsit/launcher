@@ -235,6 +235,21 @@ sealed class MainWindow : Window
         }
         else gw.Add(Note("Профилей пока нет. Добавьте конфиг: от своего сервера (см. ниже) или от VPN-сервиса, который даёт файл WireGuard."));
 
+        // какой протокол выбран и работает ли он сейчас
+        if (active.Length > 0)
+        {
+            var proto = activeGsp ? "GSP" : "WireGuard";
+            gw.Add(new TextBlock
+            {
+                Text = connected ? $"Сейчас работает: {proto} · профиль «{active}»" : $"Выбран профиль «{active}» ({proto}) — шлюз выключен",
+                Foreground = connected ? Res("Green") : Res("Muted"), FontWeight = connected ? FontWeights.SemiBold : FontWeights.Normal,
+                FontSize = 14, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 8),
+            });
+        }
+        // как получить профиль GSP, пока его нет
+        if (profiles.Count > 0 && !profiles.Any(IsGspProfile))
+            gw.Add(Note("Протокол выбирается профилем: «· GSP» на кнопке — наш протокол (лучше переносит потери связи), остальные профили — WireGuard. Чтобы появился профиль GSP, создайте его мастером ниже («Создать мой VPN на сервере…», в окне мастера выберите «GSP»); WireGuard на сервере при этом не трогается. Переключать профиль можно, пока шлюз выключен."));
+
         var buttons = new WrapPanel { Margin = new Thickness(0, 4, 0, 4) };
         if (!connected)
         {
