@@ -1,0 +1,143 @@
+# Plugins/TaskbarPlus: русский ⇒ English ⇒ Deutsch (см. Shared/Loc.cs). Не править ключи — они совпадают с русскими строками в коде.
+Где стоят значки: слева, как в Windows 10, или по центру. Справа Windows не умеет — это пока не сделано. ⇒ Where the icons stand: on the left, like in Windows 10, or in the center. Windows cannot do the right — that is not done yet. ⇒ Wo die Symbole stehen: links wie in Windows 10 oder in der Mitte. Rechts kann Windows nicht – das ist noch nicht umgesetzt.
+Слева ⇒ Left ⇒ Links
+По центру ⇒ Center ⇒ Mitte
+Поиск ⇒ Search ⇒ Suche
+Что показывать вместо строки поиска ⇒ What to show instead of the search bar ⇒ Was anstelle der Suchleiste angezeigt wird
+Скрыть ⇒ Hide ⇒ Ausblenden
+Значок ⇒ Icon ⇒ Symbol
+Строка ⇒ Bar ⇒ Leiste
+Представление задач ⇒ Task view ⇒ Aufgabenansicht
+Кнопка обзора всех открытых окон ⇒ The button for an overview of all open windows ⇒ Die Schaltfläche für die Übersicht aller geöffneten Fenster
+Показать ⇒ Show ⇒ Anzeigen
+Виджеты ⇒ Widgets ⇒ Widgets
+Кнопка с погодой и новостями слева на панели. Новые сборки Windows 11 защищают её от программ — тогда её можно скрыть только вручную. ⇒ The button with weather and news on the left of the taskbar. New Windows 11 builds protect it from programs — then it can only be hidden manually. ⇒ Die Schaltfläche mit Wetter und Nachrichten links in der Taskleiste. Neue Windows-11-Builds schützen sie vor Programmen – dann lässt sie sich nur manuell ausblenden.
+Чат ⇒ Chat ⇒ Chat
+Кнопка «Чат» (Teams); в новых сборках Windows 11 её уже нет ⇒ The "Chat" button (Teams); new Windows 11 builds no longer have it ⇒ Die Schaltfläche „Chat“ (Teams); in neuen Windows-11-Builds gibt es sie nicht mehr
+Размер панели ⇒ Taskbar size ⇒ Taskleistengröße
+Высота панели и значков. Появляется после перезапуска панели; в самых новых сборках Windows 11 может не работать. ⇒ The height of the taskbar and icons. Appears after the taskbar restarts; may not work in the newest Windows 11 builds. ⇒ Höhe der Taskleiste und der Symbole. Wirkt nach einem Neustart der Taskleiste; in den neuesten Windows-11-Builds funktioniert es eventuell nicht.
+Малая ⇒ Small ⇒ Klein
+Средняя ⇒ Medium ⇒ Mittel
+Большая ⇒ Large ⇒ Groß
+Размер значков ⇒ Icon size ⇒ Symbolgröße
+Мелкие значки на панели ⇒ Small icons on the taskbar ⇒ Kleine Symbole in der Taskleiste
+Обычные ⇒ Normal ⇒ Normal
+Мелкие ⇒ Small ⇒ Klein
+Группировка кнопок ⇒ Button grouping ⇒ Gruppierung der Schaltflächen
+Когда объединять окна одной программы в одну кнопку ⇒ When to merge windows of one program into one button ⇒ Wann Fenster eines Programms zu einer Schaltfläche zusammengefasst werden
+Всегда ⇒ Always ⇒ Immer
+При нехватке места ⇒ When space is short ⇒ Wenn der Platz knapp ist
+Никогда ⇒ Never ⇒ Nie
+Секунды в часах ⇒ Seconds in the clock ⇒ Sekunden in der Uhr
+Показывать секунды в часах на панели ⇒ Show seconds in the taskbar clock ⇒ Sekunden in der Taskleistenuhr anzeigen
+Анимации панели ⇒ Taskbar animations ⇒ Taskleisten-Animationen
+Движение панели, когда она появляется и прячется. Нужны ещё анимации самой Windows (ниже). ⇒ The movement of the taskbar when it appears and hides. Windows' own animations are also needed (below). ⇒ Die Bewegung der Taskleiste beim Ein- und Ausblenden. Auch die Windows-eigenen Animationen werden benötigt (unten).
+Включены ⇒ On ⇒ An
+Выключены ⇒ Off ⇒ Aus
+Недопустимое значение ⇒ Invalid value ⇒ Ungültiger Wert
+Windows защищает этот параметр и не даёт его менять программам ⇒ Windows protects this setting and does not let programs change it ⇒ Windows schützt diese Einstellung und lässt Programme sie nicht ändern
+Windows не даёт менять этот параметр на вашей версии ⇒ Windows does not let this setting be changed on your version ⇒ Windows lässt diese Einstellung in deiner Version nicht ändern
+Taskbar Plus 3 работает только в Windows 11 (64-бит). ⇒ Taskbar Plus 3 works only in Windows 11 (64-bit). ⇒ Taskbar Plus 3 funktioniert nur unter Windows 11 (64 Bit).
+В этой сборке плагина нет файла движка. ⇒ This plugin build has no engine file. ⇒ Diesem Plugin-Build fehlt die Engine-Datei.
+Движок отключён: Проводник два раза подряд закрывался сразу после подключения. Нажмите «Попробовать снова» или сохраните отчёт и отправьте его. ⇒ The engine is disabled: Explorer closed twice in a row right after connecting. Press "Try again" or save the report and send it. ⇒ Die Engine ist deaktiviert: Der Explorer wurde zweimal hintereinander direkt nach dem Verbinden beendet. Klicke auf „Erneut versuchen“ oder speichere den Bericht und sende ihn ein.
+Подключаюсь к панели задач… ⇒ Connecting to the taskbar… ⇒ Verbinde mit der Taskleiste…
+Движок: ошибка —  ⇒ Engine: error —  ⇒ Engine: Fehler – 
+Панель задач не найдена (Проводник перезапускается?) ⇒ The taskbar was not found (Explorer restarting?) ⇒ Die Taskleiste wurde nicht gefunden (Explorer startet neu?)
+Обновился движок. Чтобы подключить новую версию, нужно перезапустить панель задач (кнопка внизу окна). ⇒ The engine was updated. To connect the new version, the taskbar must be restarted (the button at the bottom of the window). ⇒ Die Engine wurde aktualisiert. Um die neue Version zu verbinden, muss die Taskleiste neu gestartet werden (Schaltfläche unten im Fenster).
+Движок работает. Значков на панели: {}. ⇒ The engine is working. Icons on the taskbar: {0}. ⇒ Die Engine arbeitet. Symbole in der Taskleiste: {0}.
+Движок подключился, но не нашёл значки панели (элементов {}). Отчёт уйдёт разработчику сам. ⇒ The engine connected but did not find the taskbar icons (elements {0}). A report will go to the developer by itself. ⇒ Die Engine hat sich verbunden, aber die Symbole der Taskleiste nicht gefunden (Elemente {0}). Ein Bericht geht von selbst an den Entwickler.
+Движок работает. Элементов панели: {}. ⇒ The engine is working. Taskbar elements: {0}. ⇒ Die Engine arbeitet. Elemente der Taskleiste: {0}.
+Движок подключился (окон XAML: {}, элементов {}, значков {}, системная область {}, виджеты {}), но фон панели не нашёл.  ⇒ The engine connected (XAML windows: {0}, elements {1}, icons {2}, system area {3}, widgets {4}), but did not find the taskbar background.  ⇒ Die Engine hat sich verbunden (XAML-Fenster: {0}, Elemente {1}, Symbole {2}, Systembereich {3}, Widgets {4}), aber den Hintergrund der Taskleiste nicht gefunden. 
+Панель остаётся как в Windows; отчёт уйдёт разработчику сам. ⇒ The taskbar stays as in Windows; a report will go to the developer by itself. ⇒ Die Taskleiste bleibt wie in Windows; ein Bericht geht von selbst an den Entwickler.
+Подключился, ищу элементы панели… ⇒ Connected, looking for taskbar elements… ⇒ Verbunden, suche Elemente der Taskleiste…
+Движок:  ⇒ Engine:  ⇒ Engine: 
+ошибка ⇒ error ⇒ Fehler
+Проводник перезапустился, подключаюсь заново… ⇒ Explorer restarted, connecting again… ⇒ Der Explorer wurde neu gestartet, verbinde erneut…
+Не удалось достать файл движка ⇒ Could not extract the engine file ⇒ Engine-Datei konnte nicht entpackt werden
+Не удалось загрузить файл движка (ошибка  ⇒ Could not load the engine file (error  ⇒ Engine-Datei konnte nicht geladen werden (Fehler 
+В файле движка нет нужной точки входа ⇒ The engine file has no required entry point ⇒ Der Engine-Datei fehlt der erforderliche Einstiegspunkt
+Не удалось подключиться к панели задач (ошибка  ⇒ Could not connect to the taskbar (error  ⇒ Verbindung zur Taskleiste nicht möglich (Fehler 
+Taskbar Plus продолжает работать в фоне — иначе форма панели пропала бы.\n\n ⇒ Taskbar Plus keeps working in the background — otherwise the taskbar shape would disappear.\n\n ⇒ Taskbar Plus läuft im Hintergrund weiter – sonst würde die Form der Taskleiste verschwinden.\n\n
+Чтобы открыть окно снова, запустите Taskbar Plus из лаунчера или из меню «Пуск».  ⇒ To open the window again, start Taskbar Plus from the launcher or from the Start menu.  ⇒ Um das Fenster wieder zu öffnen, starte Taskbar Plus über den Launcher oder das Startmenü. 
+Чтобы совсем выйти и вернуть панель как была, нажмите «Выйти» в «Ещё настройки». ⇒ To exit completely and return the taskbar as it was, press "Exit" in "More settings". ⇒ Um ganz zu beenden und die Taskleiste wie vorher wiederherzustellen, klicke unter „Weitere Einstellungen“ auf „Beenden“.
+Движок панели задач обновился. Чтобы заработала новая версия, панель нужно перезапустить. ⇒ The taskbar engine was updated. For the new version to work, the taskbar must be restarted. ⇒ Die Taskleisten-Engine wurde aktualisiert. Damit die neue Version funktioniert, muss die Taskleiste neu gestartet werden.
+Обычная ⇒ Regular ⇒ Normal
+Плавающая ⇒ Floating ⇒ Schwebend
+Острова ⇒ Islands ⇒ Inseln
+Вкладка ⇒ Tab ⇒ Tab
+Вкладки-острова ⇒ Tab islands ⇒ Tab-Inseln
+Выберите форму панели — внизу сразу видно, как будет. Понравилось — нажмите «Применить». Пока не нажали, с панелью ничего не происходит. ⇒ Choose the shape of the taskbar — the bottom shows right away how it will look. Like it — press "Apply". Until you press it, nothing happens to the taskbar. ⇒ Wähle die Form der Taskleiste – unten siehst du sofort, wie sie aussieht. Gefällt sie dir, klicke auf „Anwenden“. Bis dahin passiert mit der Taskleiste nichts.
+Форма панели ⇒ Taskbar shape ⇒ Form der Taskleiste
+Обычная — как в Windows. Плавающая — отдельная скруглённая панель. Острова — значки на отдельных плитках. Вкладка — скруглён только верх, низ прижат к краю. ⇒ Regular — as in Windows. Floating — a separate rounded bar. Islands — icons on separate tiles. Tab — only the top is rounded, the bottom is pressed to the edge. ⇒ Normal – wie in Windows. Schwebend – eine eigene abgerundete Leiste. Inseln – Symbole auf einzelnen Kacheln. Tab – nur oben abgerundet, unten am Rand anliegend.
+Скругление ⇒ Roundness ⇒ Rundung
+Насколько круглые углы ⇒ How round the corners are ⇒ Wie rund die Ecken sind
+Поля вокруг значков ⇒ Padding around the icons ⇒ Abstand um die Symbole
+Расстояние от крайних значков до края панели. Панель всегда накрывает все значки. ⇒ The distance from the outermost icons to the edge of the bar. The bar always covers all icons. ⇒ Der Abstand von den äußersten Symbolen zum Rand der Leiste. Die Leiste deckt immer alle Symbole ab.
+Часы, трей и виджеты ⇒ Clock, tray and widgets ⇒ Uhr, Tray und Widgets
+Отдельными островами по краям, либо одна общая панель от первого значка до часов ⇒ As separate islands at the edges, or one shared bar from the first icon to the clock ⇒ Als einzelne Inseln an den Rändern oder als eine gemeinsame Leiste vom ersten Symbol bis zur Uhr
+Отдельно ⇒ Separately ⇒ Getrennt
+Одна панель ⇒ One bar ⇒ Eine Leiste
+Что окружать ⇒ What to surround ⇒ Was umrahmt wird
+Каждый значок — свой остров, или один остров на группу ⇒ Each icon gets its own island, or one island per group ⇒ Jedes Symbol bekommt eine eigene Insel, oder eine Insel pro Gruppe
+Каждый значок ⇒ Each icon ⇒ Jedes Symbol
+Группу ⇒ A group ⇒ Eine Gruppe
+Поля острова ⇒ Island padding ⇒ Inselabstand
+Расстояние от значков до края острова ⇒ The distance from the icons to the edge of the island ⇒ Der Abstand von den Symbolen zum Rand der Insel
+Зазор между островами ⇒ Gap between islands ⇒ Abstand zwischen Inseln
+Чем больше, тем дальше острова друг от друга ⇒ The larger, the further the islands are from each other ⇒ Je größer, desto weiter liegen die Inseln auseinander
+Остров под виджетами ⇒ Island under the widgets ⇒ Insel unter den Widgets
+Слева на панели (погода и т. п.). Если там у вас пусто или плашка получается пустой — оставьте «Нет». ⇒ On the left of the taskbar (weather and so on). If it is empty there or the plate turns out empty — leave "No". ⇒ Links in der Taskleiste (Wetter usw.). Ist dort nichts oder die Platte bleibt leer, lass „Nein“ stehen.
+Зазор снизу ⇒ Gap at the bottom ⇒ Abstand unten
+Расстояние от панели до нижнего края экрана ⇒ The distance from the taskbar to the bottom edge of the screen ⇒ Der Abstand von der Taskleiste zum unteren Bildschirmrand
+Подстройка ⇒ Fine-tuning ⇒ Feineinstellung
+Где стоят значки ⇒ Where the icons stand ⇒ Wo die Symbole stehen
+Слева или по центру значки ставит сама Windows — это переключатель в «Ещё настройки» (Значки на панели). Панель Taskbar Plus повторяет их положение и всегда накрывает все значки. Цвет панели — в плагине Color Plus. ⇒ Windows itself places the icons on the left or in the center — that is the switch in "More settings" (Icons on the taskbar). The Taskbar Plus bar repeats their position and always covers all the icons. The color of the bar is in the Color Plus plugin. ⇒ Ob die Symbole links oder in der Mitte stehen, bestimmt Windows selbst – das ist der Schalter unter „Weitere Einstellungen“ (Symbole in der Taskleiste). Die Leiste von Taskbar Plus folgt ihrer Position und deckt immer alle Symbole ab. Die Farbe der Leiste stellst du im Plugin Color Plus ein.
+ На этой Windows формы панели недоступны. ⇒  Taskbar shapes are not available on this Windows. ⇒  Taskleistenformen sind unter diesem Windows nicht verfügbar.
+Ничего не применено — панель как в Windows. ⇒ Nothing is applied — the taskbar is as in Windows. ⇒ Nichts angewendet – die Taskleiste ist wie in Windows.
+Ещё настройки ▾ ⇒ More settings ▾ ⇒ Weitere Einstellungen ▾
+Ещё настройки ▸ ⇒ More settings ▸ ⇒ Weitere Einstellungen ▸
+Taskbar Plus подключается к панели задач внутри Проводника Windows, делает её родной фон прозрачным и измеряет положение значков; плашки рисует сам, отдельным окном под панелью (так работают и другие программы для оформления панели).\n\n ⇒ Taskbar Plus connects to the taskbar inside Windows Explorer, makes its native background transparent and measures the position of the icons; it draws the plates itself, in a separate window under the taskbar (other taskbar-styling programs work this way too).\n\n ⇒ Taskbar Plus verbindet sich mit der Taskleiste im Windows-Explorer, macht ihren nativen Hintergrund transparent und misst die Position der Symbole; die Platten zeichnet es selbst in einem eigenen Fenster unter der Taskleiste (so arbeiten auch andere Programme zur Gestaltung der Taskleiste).\n\n
+Если Проводник закроется сразу после подключения два раза подряд, движок сам отключится. Если плагин закрыть аварийно, панель вернётся как была через 20 секунд.\n ⇒ If Explorer closes right after connecting twice in a row, the engine turns itself off. If the plugin is closed abnormally, the taskbar returns as it was after 20 seconds.\n ⇒ Wird der Explorer zweimal hintereinander direkt nach dem Verbinden beendet, schaltet sich die Engine selbst ab. Wird das Plugin abnormal beendet, ist die Taskleiste nach 20 Sekunden wieder wie vorher.\n
+Вернуть всё как было можно кнопкой «Вернуть как было».\n\nПродолжить? ⇒ You can return everything as it was with the "Restore as it was" button.\n\nContinue? ⇒ Mit der Schaltfläche „Wie vorher wiederherstellen“ kannst du alles zurücksetzen.\n\nFortfahren?
+Не применено: без движка плавные формы недоступны. ⇒ Not applied: without the engine, smooth shapes are not available. ⇒ Nicht angewendet: Ohne die Engine sind glatte Formen nicht verfügbar.
+Движок подключается к панели — это занимает несколько секунд. ⇒ The engine is connecting to the taskbar — this takes a few seconds. ⇒ Die Engine verbindet sich mit der Taskleiste – das dauert ein paar Sekunden.
+Применено ⇒ Applied ⇒ Angewendet
+Применено. ⇒ Applied. ⇒ Angewendet.
+Эти настройки применяются сразу, без кнопки «Применить». ⇒ These settings are applied immediately, without the "Apply" button. ⇒ Diese Einstellungen werden sofort angewendet, ohne die Schaltfläche „Anwenden“.
+Автоскрытие панели ⇒ Auto-hide the taskbar ⇒ Taskleiste automatisch ausblenden
+Панель прячется, пока курсор не у края экрана ⇒ The taskbar hides until the cursor is at the screen edge ⇒ Die Taskleiste verschwindet, bis der Mauszeiger am Bildschirmrand ist
+Тонкая линия по краю панели ⇒ The thin line along the taskbar edge ⇒ Die dünne Linie am Rand der Taskleiste
+Светлая линия сверху панели. По умолчанию она убрана. ⇒ A light line on top of the taskbar. It is removed by default. ⇒ Eine helle Linie oben an der Taskleiste. Standardmäßig ist sie entfernt.
+Убрана ⇒ Removed ⇒ Entfernt
+Показывать ⇒ Show ⇒ Anzeigen
+Линия по краю панели показывается. ⇒ The line along the taskbar edge is shown. ⇒ Die Linie am Rand der Taskleiste wird angezeigt.
+Линия по краю панели убрана. ⇒ The line along the taskbar edge is removed. ⇒ Die Linie am Rand der Taskleiste ist entfernt.
+Анимации Windows ⇒ Windows animations ⇒ Windows-Animationen
+Выключены — из-за этого панель при автоскрытии появляется без движения. ⇒ Off — because of this the taskbar appears without movement when auto-hiding. ⇒ Aus – deshalb erscheint die Taskleiste beim automatischen Ausblenden ohne Bewegung.
+Включить анимации Windows ⇒ Turn on Windows animations ⇒ Windows-Animationen einschalten
+Анимации Windows включены ⇒ Windows animations are on ⇒ Windows-Animationen sind an
+Не получилось включить; откройте Параметры → Специальные возможности → Визуальные эффекты ⇒ Could not turn them on; open Settings → Accessibility → Visual effects ⇒ Einschalten fehlgeschlagen; öffne Einstellungen → Barrierefreiheit → Visuelle Effekte
+Форма будет применяться после входа в систему, окно открываться не будет ⇒ The shape will be applied after signing in to the system, the window will not open ⇒ Die Form wird nach der Anmeldung am System angewendet, das Fenster öffnet sich nicht
+Перезапустить панель задач ⇒ Restart the taskbar ⇒ Taskleiste neu starten
+Сохранить отчёт на рабочий стол ⇒ Save the report to the desktop ⇒ Bericht auf dem Desktop speichern
+Попробовать снова ⇒ Try again ⇒ Erneut versuchen
+Ещё настройки ⇒ More settings ⇒ Weitere Einstellungen
+Отчёт уйдёт разработчику: в общую базу проекта и в репозиторий на GitHub.\n\n ⇒ The report goes to the developer: to the project's shared database and to a GitHub repository.\n\n ⇒ Der Bericht geht an den Entwickler: in die gemeinsame Datenbank des Projekts und in ein GitHub-Repository.\n\n
+В нём версия Windows, настройки плагина, статус движка и названия элементов панели задач. Ничего личного, имя пользователя вычищается.\n\nОтправить? ⇒ It contains the Windows version, the plugin settings, the engine status and the names of taskbar elements. Nothing personal, the user name is scrubbed.\n\nSend? ⇒ Er enthält die Windows-Version, die Plugin-Einstellungen, den Engine-Status und die Namen der Taskleistenelemente. Nichts Persönliches, der Benutzername wird entfernt.\n\nSenden?
+Отчёт отправлен. Спасибо! Напишите разработчику, что отправили. ⇒ The report was sent. Thank you! Tell the developer that you sent it. ⇒ Der Bericht wurde gesendet. Danke! Sag dem Entwickler Bescheid, dass du ihn gesendet hast.
+Не получилось отправить отчёт:  ⇒ Could not send the report:  ⇒ Der Bericht konnte nicht gesendet werden: 
+. Можно сохранить его файлом на рабочий стол. ⇒ . You can save it as a file on the desktop. ⇒ . Du kannst ihn als Datei auf dem Desktop speichern.
+Собираю отчёт… ⇒ Collecting the report… ⇒ Sammle den Bericht…
+Отчёт сохранён:  ⇒ The report is saved:  ⇒ Bericht gespeichert: 
+Не получилось сохранить отчёт:  ⇒ Could not save the report:  ⇒ Der Bericht konnte nicht gespeichert werden: 
+\n\nОткрыть настройки панели задач Windows, чтобы поменять это вручную? ⇒ \n\nOpen the Windows taskbar settings to change this manually? ⇒ \n\nDie Windows-Taskleisteneinstellungen öffnen, um das manuell zu ändern?
+Чтобы « ⇒ For " ⇒ Damit sich „
+» изменилось, нужно перезапустить панель задач. ⇒ " to change, the taskbar must be restarted. ⇒ “ ändert, muss die Taskleiste neu gestartet werden.
+Панель задач и окна Проводника закроются на пару секунд и откроются снова. Перезапустить сейчас? ⇒ The taskbar and Explorer windows will close for a couple of seconds and open again. Restart now? ⇒ Taskleiste und Explorer-Fenster schließen sich für ein paar Sekunden und öffnen sich wieder. Jetzt neu starten?
+Перезапускаю панель задач… ⇒ Restarting the taskbar… ⇒ Starte die Taskleiste neu…
+Панель задач перезапущена ⇒ The taskbar was restarted ⇒ Die Taskleiste wurde neu gestartet
+Автоскрытие включено ⇒ Auto-hide is on ⇒ Automatisches Ausblenden ist an
+Автоскрытие выключено ⇒ Auto-hide is off ⇒ Automatisches Ausblenden ist aus
+Параметры Windows вы не меняли; форма снята ⇒ You did not change the Windows settings; the shape is removed ⇒ Du hast keine Windows-Einstellungen geändert; die Form ist entfernt
+Возвращено параметров: {}; форма снята ⇒ Settings restored: {0}; the shape is removed ⇒ Wiederhergestellte Einstellungen: {0}; die Form ist entfernt
+Панель ещё не стала прозрачной — плашки появятся, когда движок её подготовит. ⇒ The taskbar has not become transparent yet — the plates will appear when the engine prepares it. ⇒ Die Taskleiste ist noch nicht transparent – die Platten erscheinen, sobald die Engine sie vorbereitet hat.

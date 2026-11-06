@@ -1,0 +1,121 @@
+# Plugins/SkinLoader: русский ⇒ English ⇒ Deutsch (см. Shared/Loc.cs). Не править ключи — они совпадают с русскими строками в коде.
+Файла нет ⇒ No file ⇒ Keine Datei
+Файл больше 2 МБ — это не скин ⇒ The file is larger than 2 MB — this is not a skin ⇒ Die Datei ist größer als 2 MB – das ist kein Skin
+В файле слишком много вложений — это не скин ⇒ The file has too many attachments — this is not a skin ⇒ Die Datei hat zu viele Anhänge – das ist kein Skin
+skin.json слишком большой ⇒ skin.json is too large ⇒ skin.json ist zu groß
+Превью слишком большое — пропущено ⇒ The preview is too large — skipped ⇒ Die Vorschau ist zu groß – übersprungen
+Превью не читается — пропущено ⇒ The preview cannot be read — skipped ⇒ Die Vorschau lässt sich nicht lesen – übersprungen
+Лишний файл «{}» проигнорирован ⇒ The extra file "{0}" was ignored ⇒ Die zusätzliche Datei „{0}“ wurde ignoriert
+В файле нет skin.json — это не скин ⇒ The file has no skin.json — this is not a skin ⇒ Die Datei enthält keine skin.json – das ist kein Skin
+Мой скин ⇒ My skin ⇒ Mein Skin
+Розовый неон: курсор с кометой, острова на панели, обои «Нео-сетка». ⇒ Pink neon: a cursor with a comet, islands on the taskbar, the "Neo grid" wallpaper. ⇒ Pinkes Neon: Mauszeiger mit Komet, Inseln in der Taskleiste, Hintergrund „Neo-Gitter“.
+Тихий зелёный ⇒ Quiet green ⇒ Ruhiges Grün
+Только цвет и значки — без обоев и курсора. ⇒ Only color and icons — no wallpaper and no cursor. ⇒ Nur Farbe und Symbole – ohne Hintergrund und Mauszeiger.
+Скин — это настройки ваших плагинов (панель задач, цвет, значки, обои, курсор) в одном файле: собрали один раз — применяете одной кнопкой, а ещё можно отдать другу. ⇒ A skin is the settings of your plugins (taskbar, color, icons, wallpapers, cursor) in one file: build it once — and apply it with one button, or give it to a friend. ⇒ Ein Skin sind die Einstellungen deiner Plugins (Taskleiste, Farbe, Symbole, Hintergründe, Mauszeiger) in einer Datei: einmal erstellen – und mit einer Schaltfläche anwenden oder an einen Freund weitergeben.
+Собрать скин ⇒ Build a skin ⇒ Skin erstellen
+Мои скины ⇒ My skins ⇒ Meine Skins
+Как назвать скин ⇒ What to call the skin ⇒ Name des Skins
+Автор ⇒ Author ⇒ Autor
+Описание (необязательно) ⇒ Description (optional) ⇒ Beschreibung (optional)
+Отметьте, что должно войти в скин. Берутся настройки, которые сейчас выбраны в каждом плагине. ⇒ Tick what should go into the skin. The settings currently chosen in each plugin are taken. ⇒ Wähle, was in den Skin soll. Es werden die Einstellungen übernommen, die in jedem Plugin gerade gewählt sind.
+используется ⇒ in use ⇒ in Benutzung
+не применялось ⇒ not applied ⇒ nicht angewendet
+плагин не установлен ⇒ the plugin is not installed ⇒ das Plugin ist nicht installiert
+Прочитать настройки заново ⇒ Re-read the settings ⇒ Einstellungen neu einlesen
+Что войдёт в скин ⇒ What goes into the skin ⇒ Was in den Skin kommt
+Картинка помогает узнать скин в списке. Лучше всего — снимок рабочего стола с уже применёнными настройками. ⇒ A picture helps to recognize the skin in the list. The best is a screenshot of the desktop with the settings already applied. ⇒ Ein Bild hilft, den Skin in der Liste wiederzuerkennen. Am besten ist ein Screenshot des Desktops mit bereits angewendeten Einstellungen.
+Выбрать файл… ⇒ Choose a file… ⇒ Datei auswählen …
+Картинка для превью ⇒ A picture for the preview ⇒ Bild für die Vorschau
+форма панели: острова ⇒ taskbar shape: islands ⇒ Taskleistenform: Inseln
+цвет #FF2A9D, окна и выделение, острова панели ⇒ color #FF2A9D, windows and selection, taskbar islands ⇒ Farbe #FF2A9D, Fenster und Auswahl, Inseln der Taskleiste
+все значки цвета #00F0FF ⇒ all icons in color #00F0FF ⇒ alle Symbole in der Farbe #00F0FF
+настроек пока нет — откройте плагин и выберите ⇒ no settings yet — open the plugin and choose ⇒ noch keine Einstellungen – öffne das Plugin und wähle
+курсор «neon» #FF2A9D, шлейф «comet» ⇒ cursor "neon" #FF2A9D, trail "comet" ⇒ Mauszeiger „neon“ #FF2A9D, Spur „comet“
+Отметьте хотя бы одну часть. ⇒ Tick at least one part. ⇒ Wähle mindestens einen Teil aus.
+Скин «{}» собран и лежит в «Моих скинах». ⇒ The skin "{0}" is built and is in "My skins". ⇒ Der Skin „{0}“ wurde erstellt und liegt in „Meine Skins“.
+ Замечания:  ⇒  Notes:  ⇒  Hinweise: 
+Открыть файл скина… ⇒ Open a skin file… ⇒ Skin-Datei öffnen …
+Сейчас применён скин «{}». ⇒ The skin "{0}" is applied now. ⇒ Der Skin „{0}“ ist jetzt angewendet.
+Скинов пока нет. Соберите свой на странице «Собрать скин» или откройте файл .ghostskin. ⇒ There are no skins yet. Build your own on the "Build a skin" page or open a .ghostskin file. ⇒ Noch keine Skins vorhanden. Erstelle einen eigenen auf der Seite „Skin erstellen“ oder öffne eine .ghostskin-Datei.
+без картинки ⇒ no picture ⇒ kein Bild
+автор:  ⇒ author:  ⇒ Autor: 
+Сохранить файл… ⇒ Save a file… ⇒ Datei speichern …
+Настроить кодом ⇒ Customize with code ⇒ Mit Code anpassen
+Ни одного из нужных плагинов нет на этом компьютере — установите их в лаунчере (вкладка «Плагины»). ⇒ None of the needed plugins is on this computer — install them in the launcher (the "Plugins" tab). ⇒ Keines der benötigten Plugins ist auf diesem Computer – installiere sie im Launcher (Tab „Plugins“).
+Форма панели: Taskbar Plus подключит свой движок к Проводнику — так же, как в самом плагине. ⇒ Taskbar shape: Taskbar Plus will connect its engine to Explorer — the same as in the plugin itself. ⇒ Taskleistenform: Taskbar Plus verbindet seine Engine mit dem Explorer – genau wie im Plugin selbst.
+Значки: Проводник может перезапуститься, Windows может спросить разрешение для значков «для всех». ⇒ Icons: Explorer may restart, Windows may ask for permission for the "for everyone" icons. ⇒ Symbole: Der Explorer kann neu starten, Windows kann für die Symbole „für alle“ nach einer Erlaubnis fragen.
+Применить скин «{}»?\n\n{} ⇒ Apply the skin "{0}"?\n\n{1} ⇒ Skin „{0}“ anwenden?\n\n{1}
+\n\nВернуть всё как было можно кнопкой «Вернуть как было». ⇒ \n\nYou can return everything as it was with the "Restore as it was" button. ⇒ \n\nMit der Schaltfläche „Wie vorher wiederherstellen“ kannst du alles zurücksetzen.
+Применить скин ⇒ Apply the skin ⇒ Skin anwenden
+Применяю:  ⇒ Applying:  ⇒ Wende an: 
+Готово.  ⇒ Done.  ⇒ Fertig. 
+Применено не всё.  ⇒ Not everything was applied.  ⇒ Nicht alles wurde angewendet. 
+ок ⇒ ok ⇒ ok
+Вернуть всё как было?\n\nКаждый плагин вернёт то, что менял: курсор, цвета окон, значки, обои и вид панели задач. ⇒ Restore everything as it was?\n\nEach plugin will restore what it changed: the cursor, window colors, icons, wallpapers and the look of the taskbar. ⇒ Alles wie vorher wiederherstellen?\n\nJedes Plugin stellt wieder her, was es geändert hat: Mauszeiger, Fensterfarben, Symbole, Hintergründe und das Aussehen der Taskleiste.
+Возвращаю:  ⇒ Restoring:  ⇒ Stelle wieder her: 
+Нечего возвращать — нужные плагины не установлены. ⇒ Nothing to restore — the needed plugins are not installed. ⇒ Nichts wiederherzustellen – die benötigten Plugins sind nicht installiert.
+Файл скина ⇒ A skin file ⇒ Skin-Datei
+Скин (*.ghostskin;*.json)|*.ghostskin;*.json ⇒ Skin (*.ghostskin;*.json)|*.ghostskin;*.json ⇒ Skin (*.ghostskin;*.json)|*.ghostskin;*.json
+Скин «{}» добавлен. ⇒ The skin "{0}" was added. ⇒ Der Skin „{0}“ wurde hinzugefügt.
+Сохранить скин ⇒ Save the skin ⇒ Skin speichern
+Скин (*.ghostskin)|*.ghostskin ⇒ Skin (*.ghostskin)|*.ghostskin ⇒ Skin (*.ghostskin)|*.ghostskin
+Файл скина сохранён:  ⇒ The skin file is saved:  ⇒ Skin-Datei gespeichert: 
+Удалить скин «{}» из библиотеки?\n\nУже применённые настройки это не отменяет. ⇒ Delete the skin "{0}" from the library?\n\nThis does not undo the settings already applied. ⇒ Skin „{0}“ aus der Bibliothek löschen?\n\nBereits angewendete Einstellungen werden dadurch nicht rückgängig gemacht.
+Картинка не сжимается до нужного размера ⇒ The picture cannot be compressed to the needed size ⇒ Das Bild lässt sich nicht auf die nötige Größe komprimieren
+Картинка слишком большая ⇒ The picture is too large ⇒ Das Bild ist zu groß
+Недопустимый размер картинки ⇒ Invalid picture size ⇒ Ungültige Bildgröße
+ — не установлен {} ⇒  — {0} is not installed ⇒  – {0} ist nicht installiert
+{} не установлен ⇒ {0} is not installed ⇒ {0} ist nicht installiert
+панель — как в Windows ⇒ taskbar — as in Windows ⇒ Taskleiste – wie in Windows
+форма панели применена (движок подключится за несколько секунд) ⇒ the taskbar shape is applied (the engine will connect in a few seconds) ⇒ Taskleistenform angewendet (die Engine verbindet sich in ein paar Sekunden)
+не удалось запустить Taskbar Plus ⇒ could not start Taskbar Plus ⇒ Taskbar Plus konnte nicht gestartet werden
+цвет применён ⇒ the color is applied ⇒ Farbe angewendet
+Color Plus не подтвердил применение за 40 секунд ⇒ Color Plus did not confirm the application within 40 seconds ⇒ Color Plus hat die Anwendung nicht innerhalb von 40 Sekunden bestätigt
+не удалось запустить Icon Plus ⇒ could not start Icon Plus ⇒ Icon Plus konnte nicht gestartet werden
+значки перекрашены (Проводник мог перезапуститься) ⇒ the icons are recolored (Explorer may have restarted) ⇒ Symbole umgefärbt (der Explorer wurde eventuell neu gestartet)
+Icon Plus ещё работает — подождите, значки обновятся сами ⇒ Icon Plus is still working — wait, the icons will update by themselves ⇒ Icon Plus arbeitet noch – warte, die Symbole aktualisieren sich von selbst
+обои включены ⇒ the wallpaper is on ⇒ Hintergrund eingeschaltet
+Wallpaper Plus не подтвердил включение за 20 секунд ⇒ Wallpaper Plus did not confirm turning on within 20 seconds ⇒ Wallpaper Plus hat das Einschalten nicht innerhalb von 20 Sekunden bestätigt
+курсор применён ⇒ the cursor is applied ⇒ Mauszeiger angewendet
+Cursor Plus не подтвердил применение за 30 секунд ⇒ Cursor Plus did not confirm the application within 30 seconds ⇒ Cursor Plus hat die Anwendung nicht innerhalb von 30 Sekunden bestätigt
+неизвестная часть ⇒ unknown part ⇒ unbekannter Teil
+курсор возвращён ⇒ the cursor is restored ⇒ Mauszeiger wiederhergestellt
+Cursor Plus не закончил за минуту ⇒ Cursor Plus did not finish within a minute ⇒ Cursor Plus wurde nicht innerhalb einer Minute fertig
+цвета возвращены ⇒ the colors are restored ⇒ Farben wiederhergestellt
+Color Plus не закончил за 90 секунд ⇒ Color Plus did not finish within 90 seconds ⇒ Color Plus wurde nicht innerhalb von 90 Sekunden fertig
+значки возвращены ⇒ the icons are restored ⇒ Symbole wiederhergestellt
+Icon Plus ещё работает ⇒ Icon Plus is still working ⇒ Icon Plus arbeitet noch
+обои выключены, рабочий стол как был ⇒ the wallpaper is off, the desktop is as it was ⇒ Hintergrund ausgeschaltet, der Desktop ist wie vorher
+Wallpaper Plus не закрылся ⇒ Wallpaper Plus did not close ⇒ Wallpaper Plus wurde nicht beendet
+панель — как в Windows (если что-то осталось, нажмите «Вернуть как было» в самом Taskbar Plus) ⇒ the taskbar — as in Windows (if something remains, press "Restore as it was" in Taskbar Plus itself) ⇒ Taskleiste – wie in Windows (bleibt etwas übrig, klicke in Taskbar Plus selbst auf „Wie vorher wiederherstellen“)
+Taskbar Plus не закрылся ⇒ Taskbar Plus did not close ⇒ Taskbar Plus wurde nicht beendet
+Файл скина слишком большой ⇒ The skin file is too large ⇒ Die Skin-Datei ist zu groß
+Это не скин ⇒ This is not a skin ⇒ Das ist kein Skin
+Файл повреждён: это не скин ⇒ The file is damaged: this is not a skin ⇒ Die Datei ist beschädigt: Das ist kein Skin
+В файле нет номера формата скина ⇒ The file has no skin format number ⇒ In der Datei fehlt die Formatnummer des Skins
+Скин сделан в более новой версии Skin Loader — обновите плагин ⇒ The skin was made in a newer version of Skin Loader — update the plugin ⇒ Der Skin wurde in einer neueren Version von Skin Loader erstellt – aktualisiere das Plugin
+Скин без названия ⇒ A skin without a name ⇒ Skin ohne Namen
+В скине нет настроек ⇒ The skin has no settings ⇒ Der Skin enthält keine Einstellungen
+Неизвестная часть «{}» пропущена ⇒ The unknown part "{0}" was skipped ⇒ Der unbekannte Teil „{0}“ wurde übersprungen
+В скине нет ни одной допустимой части ⇒ The skin has no valid parts ⇒ Der Skin enthält keinen gültigen Teil
+Цвет окон ⇒ Window color ⇒ Fensterfarbe
+Курсор ⇒ Cursor ⇒ Mauszeiger
+Часть «{}» повреждена и пропущена ⇒ The part "{0}" is damaged and was skipped ⇒ Der Teil „{0}“ ist beschädigt und wurde übersprungen
+Обои: нужны встроенные или каталожные — часть пропущена ⇒ Wallpaper: built-in or catalog ones are needed — the part was skipped ⇒ Hintergrund: Es werden eingebaute oder Katalog-Hintergründe benötigt – der Teil wurde übersprungen
+Курсор: свой нарисованный курсор в скин не входит — взят «classic» ⇒ Cursor: your own drawn cursor is not included in the skin — "classic" was taken ⇒ Mauszeiger: Ein selbst gezeichneter Mauszeiger gehört nicht zum Skin – „classic“ wurde verwendet
+цвет {} ⇒ color {0} ⇒ Farbe {0}
+, окна и выделение ⇒ , windows and selection ⇒ , Fenster und Auswahl
+, острова панели ⇒ , taskbar islands ⇒ , Inseln der Taskleiste
+все значки цвета {} ⇒ all icons in color {0} ⇒ alle Symbole in der Farbe {0}
+ (сдвиг оттенка) ⇒  (hue shift) ⇒  (Farbtonverschiebung)
+обои «{}» ⇒ wallpaper "{0}" ⇒ Hintergrund „{0}“
+курсор «{}» {} ⇒ cursor "{0}" {1} ⇒ Mauszeiger „{0}“ {1}
+, шлейф «{}» ⇒ , trail "{0}" ⇒ , Spur „{0}“
+, эффект клика ⇒ , click effect ⇒ , Klickeffekt
+обычная ⇒ regular ⇒ normal
+плавающая ⇒ floating ⇒ schwebend
+«вкладка» ⇒ "tab" ⇒ „Tab“
+острова ⇒ islands ⇒ Inseln
+форма панели:  ⇒ taskbar shape:  ⇒ Taskleistenform: 
+{}: нет настроек — пропущено ⇒ {0}: no settings — skipped ⇒ {0}: keine Einstellungen – übersprungen
+Нечего собирать: отметьте хотя бы одну часть, у которой есть настройки. ⇒ Nothing to build: tick at least one part that has settings. ⇒ Nichts zu erstellen: Wähle mindestens einen Teil mit Einstellungen aus.

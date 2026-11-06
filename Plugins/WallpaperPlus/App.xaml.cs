@@ -25,6 +25,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        Loc.Start(e.Args);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         // служебный режим для проверки в CI: окно настроек в PNG, без показа и без обоев
@@ -34,6 +35,7 @@ public partial class App : Application
             Paths.Ensure(); Library.EnsureBuiltins();
             try { Directory.CreateDirectory(shot); new MainWindow(new Controller(), WpSettings.Load()).RenderTo(shot); }
             catch (Exception ex) { File.WriteAllText(Path.Combine(shot, "wallpaper-plus-ui-error.txt"), ex.ToString()); }
+            Loc.WriteAudit(shot);
             Quitting = true; Shutdown(); return;
         }
 

@@ -297,7 +297,7 @@ sealed class MainWindow : Window
             extra.Add("Форма панели: Taskbar Plus подключит свой движок к Проводнику — так же, как в самом плагине.");
         if (can.Contains("icons")) extra.Add("Значки: Проводник может перезапуститься, Windows может спросить разрешение для значков «для всех».");
         var text = $"Применить скин «{skin.Name}»?\n\n{lines}" + (extra.Count > 0 ? "\n\n" + string.Join("\n", extra) : "") + "\n\nВернуть всё как было можно кнопкой «Вернуть как было».";
-        if (MessageBox.Show(this, text, "Применить скин", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (Loc.Box(this, text, "Применить скин", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         busy = true; SetStatus("Применяю…", true);
         try
         {
@@ -311,7 +311,7 @@ sealed class MainWindow : Window
 
     async Task RevertAll()
     {
-        if (MessageBox.Show(this, "Вернуть всё как было?\n\nКаждый плагин вернёт то, что менял: курсор, цвета окон, значки, обои и вид панели задач.", "Вернуть как было", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (Loc.Box(this, "Вернуть всё как было?\n\nКаждый плагин вернёт то, что менял: курсор, цвета окон, значки, обои и вид панели задач.", "Вернуть как было", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         busy = true; SetStatus("Возвращаю…", true);
         try
         {
@@ -352,7 +352,7 @@ sealed class MainWindow : Window
 
     Task DeleteSkin(Skin skin)
     {
-        if (MessageBox.Show(this, $"Удалить скин «{skin.Name}» из библиотеки?\n\nУже применённые настройки это не отменяет.", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return Task.CompletedTask;
+        if (Loc.Box(this, $"Удалить скин «{skin.Name}» из библиотеки?\n\nУже применённые настройки это не отменяет.", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return Task.CompletedTask;
         Library.Delete(skin.Id);
         Rebuild();
         return Task.CompletedTask;
@@ -367,6 +367,7 @@ sealed class MainWindow : Window
         System.Windows.Documents.TextElement.SetForeground(page, Foreground);
         System.Windows.Documents.TextElement.SetFontFamily(page, FontFamily);
         System.Windows.Documents.TextElement.SetFontSize(page, FontSize);
+        Loc.ApplyTree(page);   // служебный снимок: окно не показано, переводим вручную
         page.Measure(new Size(940, double.PositiveInfinity));
         var w = 940; var h = Math.Max(200, (int)Math.Ceiling(page.DesiredSize.Height));
         page.Arrange(new Rect(0, 0, w, h));

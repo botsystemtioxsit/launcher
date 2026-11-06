@@ -68,6 +68,7 @@ sealed class MainWindow : Window
         System.Windows.Documents.TextElement.SetForeground(content, Foreground);
         System.Windows.Documents.TextElement.SetFontFamily(content, FontFamily);
         System.Windows.Documents.TextElement.SetFontSize(content, FontSize);
+        Loc.ApplyTree(content);   // служебный снимок: окно не показано, переводим вручную
         content.Measure(new Size(900, double.PositiveInfinity));
         var w = 900;
         var h = (int)Math.Ceiling(content.DesiredSize.Height);
@@ -96,7 +97,7 @@ sealed class MainWindow : Window
             {
                 settings.BackgroundHintShown = true;
                 settings.Save();
-                MessageBox.Show("Taskbar Plus продолжает работать в фоне — иначе форма панели пропала бы.\n\n" +
+                Loc.Box("Taskbar Plus продолжает работать в фоне — иначе форма панели пропала бы.\n\n" +
                                 "Чтобы открыть окно снова, запустите Taskbar Plus из лаунчера или из меню «Пуск». " +
                                 "Чтобы совсем выйти и вернуть панель как была, нажмите «Выйти» в «Ещё настройки».",
                                 "Taskbar Plus", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -219,7 +220,7 @@ sealed class MainWindow : Window
         var wantEngine = XamlEngine.UnavailableReason == null && draft.Shape != AppearanceSettings.ShapeNone;
         if (wantEngine && !settings.XamlConsentShown)
         {
-            var ok = MessageBox.Show(this,
+            var ok = Loc.Box(this,
                 "Taskbar Plus подключается к панели задач внутри Проводника Windows, делает её родной фон прозрачным и измеряет положение значков; плашки рисует сам, отдельным окном под панелью (так работают и другие программы для оформления панели).\n\n" +
                 "Если Проводник закроется сразу после подключения два раза подряд, движок сам отключится. Если плагин закрыть аварийно, панель вернётся как была через 20 секунд.\n" +
                 "Вернуть всё как было можно кнопкой «Вернуть как было».\n\nПродолжить?",
@@ -238,7 +239,7 @@ sealed class MainWindow : Window
         settings.Save();
         Say("Применено. " + (wantEngine ? "Движок подключается к панели — это занимает несколько секунд." : ""));
         await Task.Delay(1500);
-        if (statusLine.Text.StartsWith("Применено")) Say(engine.Status.Length > 0 ? "Применено. " + engine.Status : "Применено.");
+        if (lastSaid.StartsWith("Применено")) Say(engine.Status.Length > 0 ? "Применено. " + engine.Status : "Применено.");
     }
 
     UIElement MoreCard()
@@ -290,7 +291,7 @@ sealed class MainWindow : Window
 
     async Task UploadReportAsync()
     {
-        var ok = MessageBox.Show(this,
+        var ok = Loc.Box(this,
             "Отчёт уйдёт разработчику: в общую базу проекта и в репозиторий на GitHub.\n\n" +
             "В нём версия Windows, настройки плагина, статус движка и названия элементов панели задач. Ничего личного, имя пользователя вычищается.\n\nОтправить?",
             "Taskbar Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
@@ -318,7 +319,7 @@ sealed class MainWindow : Window
         if (err != null)
         {
             Say(err);
-            if (MessageBox.Show(this, err + "\n\nОткрыть настройки панели задач Windows, чтобы поменять это вручную?", "Taskbar Plus",
+            if (Loc.Box(this, err + "\n\nОткрыть настройки панели задач Windows, чтобы поменять это вручную?", "Taskbar Plus",
                     MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
                 OpenWindowsSettings();
             Build();
@@ -333,7 +334,7 @@ sealed class MainWindow : Window
     async Task<bool> ConfirmRestartAsync(string? why)
     {
         var text = (why == null ? "" : why + "\n\n") + "Панель задач и окна Проводника закроются на пару секунд и откроются снова. Перезапустить сейчас?";
-        if (MessageBox.Show(this, text, "Taskbar Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return false;
+        if (Loc.Box(this, text, "Taskbar Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return false;
         Say("Перезапускаю панель задач…");
         engine.Xaml.NoteExplorerRestart();
         var err = await Task.Run(RegistrySettings.RestartExplorer);
@@ -372,7 +373,8 @@ sealed class MainWindow : Window
         catch { /* нет такого раздела — ничего страшного */ }
     }
 
-    void Say(string text) => statusLine.Text = text;
+    string lastSaid = "";   // что сказали последним (по нему, а не по тексту на экране, — надпись переводится)
+    void Say(string text) { lastSaid = text; statusLine.Text = text; }
 
     // ---------- кирпичики интерфейса ----------
     Border Card(string title, IEnumerable<UIElement> rows)

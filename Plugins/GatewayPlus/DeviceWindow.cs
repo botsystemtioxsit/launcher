@@ -58,13 +58,13 @@ sealed class DeviceWindow : Window
         Closing += (_, e) =>
         {
             if (!running) return;
-            if (MessageBox.Show(this, "Идёт добавление устройства. Прервать?", "Для телефона", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) { e.Cancel = true; return; }
+            if (Loc.Box(this, "Идёт добавление устройства. Прервать?", "Для телефона", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) { e.Cancel = true; return; }
             cts?.Cancel();
         };
     }
 
-    void Log(string line) => Dispatcher.BeginInvoke(new Action(() => { logBox.AppendText(line + "\n"); logBox.ScrollToEnd(); }));
-    bool Ask(string text, string title, MessageBoxImage icon) => Dispatcher.Invoke(() => MessageBox.Show(this, text, title, MessageBoxButton.YesNo, icon) == MessageBoxResult.Yes);
+    void Log(string line) => Dispatcher.BeginInvoke(new Action(() => { logBox.AppendText(Loc.T(line) + "\n"); logBox.ScrollToEnd(); }));
+    bool Ask(string text, string title, MessageBoxImage icon) => Dispatcher.Invoke(() => Loc.Box(this, text, title, MessageBoxButton.YesNo, icon) == MessageBoxResult.Yes);
 
     bool ConfirmKey(HostKeyQuestion q)
     {

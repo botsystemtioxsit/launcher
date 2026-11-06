@@ -1,0 +1,102 @@
+# Общие слова всех приложений: русский ⇒ English ⇒ Deutsch (см. Shared/Loc.cs). Не править ключи — они совпадают с русскими строками в коде.
+Не получилось:  ⇒ Failed:  ⇒ Fehlgeschlagen: 
+Войти ⇒ Sign in ⇒ Anmelden
+Удалить ⇒ Delete ⇒ Löschen
+Установлено ⇒ Installed ⇒ Installiert
+Удаление ⇒ Delete ⇒ Löschen
+Убрать ⇒ Remove ⇒ Entfernen
+Выйти ⇒ Sign out ⇒ Abmelden
+Закрыть ⇒ Close ⇒ Schließen
+Снять экран ⇒ Take a screenshot ⇒ Screenshot aufnehmen
+Картинки (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp ⇒ Images (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp ⇒ Bilder (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp
+Готово ⇒ Done ⇒ Erledigt
+Не удалось снять экран ⇒ Could not take a screenshot ⇒ Screenshot konnte nicht aufgenommen werden
+Выберите плагины, которые должны включаться сами при старте компьютера. Лаунчер запустится вместе с Windows, покажет плашку «Нажмите подтвердить», затем экран загрузки — и всё включится без вашей помощи. Окна плагинов при этом не открываются. ⇒ Choose the plugins that should start by themselves when the computer starts. The launcher will start together with Windows, show a "Press confirm" card, then a loading screen — and everything turns on without your help. Plugin windows are not opened. ⇒ Wähle die Plugins, die beim Start des Computers von selbst starten sollen. Der Launcher startet mit Windows, zeigt eine Karte „Bestätigen drücken“, dann einen Ladebildschirm – und alles schaltet sich ohne dein Zutun ein. Plugin-Fenster werden dabei nicht geöffnet.
+Подписать сообщение моим аккаунтом ({}) — так вам смогут ответить ⇒ Sign the message with my account ({0}) — so you can be answered ⇒ Nachricht mit meinem Konto unterschreiben ({0}) – damit man dir antworten kann
+После обновления из лаунчера на странице расширений нажмите круглую стрелку у «{}». ⇒ After updating from the launcher, press the round arrow next to "{0}" on the extensions page. ⇒ Klicke nach einem Update über den Launcher auf der Erweiterungsseite auf den runden Pfeil bei „{0}“.
+Удалить «{}»?\n\nУдалить вместе с ним и сохранённые аккаунты (вход придётся пройти заново)?\n\nДа — удалить всё, Нет — оставить аккаунты. ⇒ Delete "{0}"?\n\nAlso delete the saved accounts with it (you will have to sign in again)?\n\nYes — delete everything, No — keep the accounts. ⇒ „{0}“ löschen?\n\nAuch die gespeicherten Konten löschen (du musst dich dann erneut anmelden)?\n\nJa – alles löschen, Nein – Konten behalten.
+Выбрать… ⇒ Choose… ⇒ Auswählen…
+Не вышло:  ⇒ Failed:  ⇒ Fehlgeschlagen: 
+Сохранить изменения ⇒ Save changes ⇒ Änderungen speichern
+Не сохранилось:  ⇒ Not saved:  ⇒ Nicht gespeichert: 
+Проверяю… ⇒ Checking… ⇒ Prüfe…
+Если пакеты больше, чем пролезает через ваше подключение, они дробятся, и интернет тормозит. Так бывает у многих провайдеров (DS-Lite, PPPoE, мобильный интернет). Плагин проверит, какой размер проходит целиком, и подберёт значение для профиля «{}». Сейчас в профиле: {} ⇒ If packets are larger than what fits through your connection, they get fragmented and the internet slows down. This happens with many providers (DS-Lite, PPPoE, mobile internet). The plugin will check what size passes whole and pick a value for the profile "{0}". Currently in the profile: {1} ⇒ Sind Pakete größer, als durch deine Verbindung passt, werden sie zerstückelt und das Internet wird langsam. Das kommt bei vielen Anbietern vor (DS-Lite, PPPoE, Mobilfunk). Das Plugin prüft, welche Größe vollständig durchkommt, und wählt einen Wert für das Profil „{0}“. Aktuell im Profil: {1}
+Добавляю устройство «{}» на сервер… ⇒ Adding the device "{0}" to the server… ⇒ Füge das Gerät „{0}“ zum Server hinzu…
+Профиль «{}» · протокол {} · сервер {} ⇒ Profile "{0}" · protocol {1} · server {2} ⇒ Profil „{0}“ · Protokoll {1} · Server {2}
+Этот профиль уже работает по {}. ⇒ This profile already works over {0}. ⇒ Dieses Profil läuft bereits über {0}.
+На этом сервере уже есть профиль «{}» по {}. ⇒ This server already has the profile "{0}" over {1}. ⇒ Auf diesem Server gibt es bereits das Profil „{0}“ über {1}.
+Адрес сервера в профиле не найден — поставить {} мастером нельзя. ⇒ The server address was not found in the profile — {0} cannot be installed with the wizard. ⇒ Die Serveradresse wurde im Profil nicht gefunden – {0} lässt sich nicht per Assistent installieren.
+На сервере {} {} ещё не поставлен. Мастер зайдёт по SSH и поставит его, адрес подставится сам. ⇒ On server {0}, {1} is not installed yet. The wizard will log in over SSH and install it; the address is filled in by itself. ⇒ Auf dem Server {0} ist {1} noch nicht installiert. Der Assistent meldet sich per SSH an und installiert es; die Adresse wird automatisch eingetragen.
+Использовать «{}» ⇒ Use "{0}" ⇒ „{0}“ verwenden
+Доступ открыт · правила приняты (версия {}) ⇒ Access open · rules accepted (version {0}) ⇒ Zugang offen · Regeln akzeptiert (Version {0})
+{} · протокол {} ⇒ {0} · protocol {1} ⇒ {0} · Protokoll {1}
+Не удалось скопировать. ⇒ Could not copy. ⇒ Kopieren fehlgeschlagen.
+Вернуть как было ⇒ Restore as it was ⇒ Wie vorher wiederherstellen
+Сохранить ⇒ Save ⇒ Speichern
+Отмена ⇒ Cancel ⇒ Abbrechen
+Не получилось открыть:  ⇒ Could not open:  ⇒ Öffnen nicht möglich: 
+Не удалось запустить помощника. ⇒ Could not start the helper. ⇒ Der Helfer konnte nicht gestartet werden.
+Профиль «{}» сохранён. ⇒ Profile "{0}" saved. ⇒ Profil „{0}“ gespeichert.
+Профиль «{}» удалён. ⇒ Profile "{0}" deleted. ⇒ Profil „{0}“ gelöscht.
+Профиль «{}» сохранён. Нажмите «Подключить». ⇒ Profile "{0}" saved. Press "Connect". ⇒ Profil „{0}“ gespeichert. Klicke auf „Verbinden“.
+Выбран профиль «{}» ({}). Нажмите «Подключить». ⇒ Profile "{0}" selected ({1}). Press "Connect". ⇒ Profil „{0}“ ausgewählt ({1}). Klicke auf „Verbinden“.
+Адрес сервера (подставлен из профиля «{}») ⇒ Server address (filled in from the profile "{0}") ⇒ Serveradresse (aus dem Profil „{0}“ übernommen)
+Для телефона — «{}» для телефона ⇒ For the phone — "{0}" for the phone ⇒ Für das Telefon – „{0}“ für das Telefon
+Ключ аккаунта Gateway Plus ({}) ⇒ Gateway Plus account key ({0}) ⇒ Gateway-Plus-Kontoschlüssel ({0})
+Служба шлюза не запустилась (код {}) ⇒ The gateway service did not start (code {0}) ⇒ Der Gateway-Dienst wurde nicht gestartet (Code {0})
+Служба GSP не запустилась (код {}) ⇒ The GSP service did not start (code {0}) ⇒ Der GSP-Dienst wurde nicht gestartet (Code {0})
+\nIPv6 в туннеле включён, профиль «{}» на этом компьютере обновлён. Отключите шлюз и включите снова. ⇒ \nIPv6 in the tunnel is on, the profile "{0}" on this computer has been updated. Turn the gateway off and on again. ⇒ \nIPv6 im Tunnel ist aktiviert, das Profil „{0}“ auf diesem Computer wurde aktualisiert. Schalte das Gateway aus und wieder ein.
+Этот компьютер ⇒ This PC ⇒ Dieser PC
+Добавить папку… ⇒ Add a folder… ⇒ Ordner hinzufügen …
+Настроить ⇒ Configure ⇒ Konfigurieren
+Рабочий стол ⇒ Desktop ⇒ Desktop
+Документы ⇒ Documents ⇒ Dokumente
+Музыка ⇒ Music ⇒ Musik
+Загрузки ⇒ Downloads ⇒ Downloads
+Применено:  ⇒ Applied:  ⇒ Angewendet: 
+Нет ⇒ No ⇒ Nein
+Да ⇒ Yes ⇒ Ja
+Отправить отчёт разработчику ⇒ Send the report to the developer ⇒ Bericht an den Entwickler senden
+Отправляю отчёт… ⇒ Sending the report… ⇒ Sende den Bericht…
+1. Так будет выглядеть ⇒ 1. This is how it will look ⇒ 1. So wird es aussehen
+Ярлык «{}» ⇒ Shortcut "{0}" ⇒ Verknüpfung „{0}“
+← Назад ⇒ ← Back ⇒ ← Zurück
+Вперёд → ⇒ Forward → ⇒ Weiter →
+Открыть в обычном браузере ⇒ Open in a regular browser ⇒ Im normalen Browser öffnen
+Сайт открыт. ⇒ The website is open. ⇒ Die Webseite ist geöffnet.
+Встроенный браузер не запустился (нужен «Microsoft Edge WebView2 Runtime» — он есть в Windows 11):  ⇒ The built-in browser did not start (it needs "Microsoft Edge WebView2 Runtime" — it is in Windows 11):  ⇒ Der eingebaute Browser wurde nicht gestartet (er benötigt die „Microsoft Edge WebView2 Runtime“ – sie ist in Windows 11 enthalten): 
+Скачиваю:  ⇒ Downloading:  ⇒ Lade herunter: 
+ из  ⇒  of  ⇒  von 
+ МБ ⇒  MB ⇒  MB
+Скачивание прервано:  ⇒ The download was interrupted:  ⇒ Der Download wurde abgebrochen: 
+Обои ⇒ Wallpaper ⇒ Hintergrund
+Включить ⇒ Turn on ⇒ Einschalten
+Выкл ⇒ Off ⇒ Aus
+Вкл ⇒ On ⇒ An
+Скачан файл «{}» — это не набор значков (установщик или тема). Плагин его не запускает. Файл лежит здесь: {} ⇒ The downloaded file "{0}" is not an icon pack (an installer or a theme). The plugin does not run it. The file is here: {1} ⇒ Die heruntergeladene Datei „{0}“ ist kein Symbolpaket (ein Installationsprogramm oder Theme). Das Plugin führt sie nicht aus. Die Datei liegt hier: {1}
+Запускать вместе с Windows ⇒ Start with Windows ⇒ Mit Windows starten
+Автозапуск включён ⇒ Autostart is on ⇒ Autostart ist an
+Автозапуск выключен ⇒ Autostart is off ⇒ Autostart ist aus
+Название ⇒ Name ⇒ Name
+Значки ⇒ Icons ⇒ Symbole
+Применить ⇒ Apply ⇒ Anwenden
+Применено.  ⇒ Applied.  ⇒ Angewendet. 
+Применяю… ⇒ Applying… ⇒ Wende an…
+Возвращаю… ⇒ Restoring… ⇒ Stelle wieder her…
+Вернулось не всё:  ⇒ Not everything came back:  ⇒ Nicht alles wurde wiederhergestellt: 
+Панель задач ⇒ Taskbar ⇒ Taskleiste
+Скин «{}» собран и лежит в «Моих скинах». ⇒ The skin "{0}" is built and is in "My skins". ⇒ Der Skin „{0}“ wurde erstellt und liegt in „Meine Skins“.
+Неон ⇒ Neon ⇒ Neon
+Свой цвет ⇒ Own color ⇒ Eigene Farbe
+Применилось не всё:  ⇒ Not everything was applied:  ⇒ Nicht alles wurde angewendet: 
+Нужна Windows 11 (в Windows 10 нет встроенного DNS через HTTPS). ⇒ Windows 11 is required (Windows 10 has no built-in DNS over HTTPS). ⇒ Windows 11 ist erforderlich (Windows 10 hat kein eingebautes DNS über HTTPS).
+Не найдено активное сетевое подключение. ⇒ No active network connection was found. ⇒ Es wurde keine aktive Netzwerkverbindung gefunden.
+Не удалось задать DNS ни на одном сетевом подключении (нет подключения с настройками DNS). ⇒ Could not set DNS on any network connection (no connection with DNS settings). ⇒ DNS konnte auf keiner Netzwerkverbindung gesetzt werden (keine Verbindung mit DNS-Einstellungen).
+Ошибка: {} ⇒ Error: {0} ⇒ Fehler: {0}
+Русский ⇒ Русский ⇒ Русский
+English ⇒ English ⇒ English
+Косынка ⇒ Solitaire ⇒ Solitär
+Пасьянс «Косынка» для Linux (пакет .deb: Debian, Ubuntu, Linux Mint). ⇒ The "Klondike" solitaire for Linux (a .deb package: Debian, Ubuntu, Linux Mint). ⇒ Das Patience-Spiel „Klondike“ für Linux (.deb-Paket: Debian, Ubuntu, Linux Mint).
+Экран Android-телефона на ноутбуке с Linux по USB, с управлением мышью и клавиатурой. Распаковать и запустить install.sh. ⇒ Your Android phone's screen on a Linux laptop over USB, with mouse and keyboard control. Unpack and run install.sh. ⇒ Der Bildschirm deines Android-Telefons auf einem Linux-Laptop per USB, mit Maus- und Tastatursteuerung. Entpacken und install.sh ausführen.
+Расширение для Chrome и Chromebook: выгружает неактивные вкладки, когда мало памяти. ⇒ An extension for Chrome and Chromebook: unloads inactive tabs when memory is low. ⇒ Eine Erweiterung für Chrome und Chromebook: entlädt inaktive Tabs, wenn der Speicher knapp wird.
+Защищённый DNS NextDNS для всей Windows: вставьте свой ID и нажмите «Включить». Включает бесплатный сервис NextDNS (nextdns.io) — мы его не заменяем, а подключаем; профиль и фильтры настраиваются у них. Нужна Windows 11. ⇒ Protected NextDNS DNS for the whole of Windows: paste your ID and press "Turn on". It connects the free NextDNS service (nextdns.io) — we do not replace it, we connect to it; the profile and filters are set up on their side. Windows 11 is required. ⇒ Geschütztes NextDNS-DNS für ganz Windows: ID einfügen und „Einschalten“ drücken. Es bindet den kostenlosen Dienst NextDNS (nextdns.io) ein – wir ersetzen ihn nicht, sondern schließen uns an; Profil und Filter richtest du dort ein. Windows 11 erforderlich.

@@ -258,6 +258,7 @@ sealed partial class MainWindow : Window
             System.Windows.Documents.TextElement.SetForeground(content, Foreground);
             System.Windows.Documents.TextElement.SetFontFamily(content, FontFamily);
             System.Windows.Documents.TextElement.SetFontSize(content, FontSize);
+            Loc.ApplyTree(content);   // служебный снимок: окно не показано, переводим вручную
             content.Measure(new Size(980, double.PositiveInfinity));
             var w = 980;
             var h = Math.Max(200, (int)Math.Ceiling(content.DesiredSize.Height));

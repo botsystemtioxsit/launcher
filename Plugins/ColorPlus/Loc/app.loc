@@ -1,0 +1,44 @@
+# Plugins/ColorPlus: русский ⇒ English ⇒ Deutsch (см. Shared/Loc.cs). Не править ключи — они совпадают с русскими строками в коде.
+панель:  ⇒ taskbar:  ⇒ Taskleiste: 
+Taskbar Plus работает: его острова получат цвет. ⇒ Taskbar Plus is running: its islands will get the color. ⇒ Taskbar Plus läuft: Seine Inseln erhalten die Farbe.
+Taskbar Plus сейчас не запущен — панель Windows не меняется. Цвет появится на островах, когда вы запустите Taskbar Plus (там включён «Новый движок»). ⇒ Taskbar Plus is not running now — the Windows taskbar is not changed. The color will appear on the islands when you start Taskbar Plus (the "New engine" is on there). ⇒ Taskbar Plus läuft gerade nicht – die Windows-Taskleiste wird nicht verändert. Die Farbe erscheint auf den Inseln, sobald du Taskbar Plus startest (dort ist die „Neue Engine“ eingeschaltet).
+Приложение ⇒ Application ⇒ Anwendung
+Обычное окно: заголовок и выделение ⇒ A regular window: title and selection ⇒ Normales Fenster: Titel und Auswahl
+29,6 ГБ свободно из 149 ГБ ⇒ 29.6 GB free of 149 GB ⇒ 29,6 GB frei von 149 GB
+219 ГБ свободно из 219 ГБ ⇒ 219 GB free of 219 GB ⇒ 219 GB frei von 219 GB
+Проводник ⇒ Explorer ⇒ Explorer
+Океан ⇒ Ocean ⇒ Ozean
+Бирюза ⇒ Turquoise ⇒ Türkis
+Лес ⇒ Forest ⇒ Wald
+Закат ⇒ Sunset ⇒ Sonnenuntergang
+Лаванда ⇒ Lavender ⇒ Lavendel
+Огонь ⇒ Fire ⇒ Feuer
+Золото ⇒ Gold ⇒ Gold
+Графит ⇒ Graphite ⇒ Graphit
+Выберите цвет — внизу сразу видно, как будет. Понравилось — нажмите «Применить». Пока не нажали, в Windows ничего не меняется. ⇒ Choose a color — the bottom shows right away how it will look. Like it — press "Apply". Until you press it, nothing changes in Windows. ⇒ Wähle eine Farbe – unten siehst du sofort, wie sie aussieht. Gefällt sie dir, klicke auf „Anwenden“. Bis dahin ändert sich in Windows nichts.
+Готовые темы ⇒ Ready-made themes ⇒ Fertige Themen
+Цвет в виде #RRGGBB ⇒ A color as #RRGGBB ⇒ Farbe als #RRGGBB
+Можно вписать любой ⇒ You can enter any ⇒ Du kannst beliebige eingeben
+Оттенок ⇒ Hue ⇒ Farbton
+Яркость ⇒ Brightness ⇒ Helligkeit
+Что покрасить ⇒ What to color ⇒ Was gefärbt wird
+Окна и выделение ⇒ Windows and selection ⇒ Fenster und Auswahl
+Заголовки и рамки окон, подсветка выделенного, акцентный цвет Windows. Меню «Пуск» и панель задач этим цветом не красятся. Заголовки красит сам Color Plus: после «Применить» он остаётся в фоне и запускается вместе с Windows. ⇒ Window titles and borders, the highlight of the selected item, the Windows accent color. The Start menu and the taskbar are not colored with it. Color Plus itself colors the titles: after "Apply" it stays in the background and starts with Windows. ⇒ Fenstertitel und Rahmen, Hervorhebung des Ausgewählten, die Windows-Akzentfarbe. Startmenü und Taskleiste werden damit nicht gefärbt. Die Titel färbt Color Plus selbst: Nach „Anwenden“ bleibt es im Hintergrund und startet mit Windows.
+Цвет получают острова нашей панели (нужен запущенный Taskbar Plus). Обычная панель Windows цветом не заливается. ⇒ The islands of our taskbar get the color (Taskbar Plus must be running). The regular Windows taskbar is not filled with color. ⇒ Die Inseln unserer Taskleiste erhalten die Farbe (Taskbar Plus muss laufen). Die normale Windows-Taskleiste wird nicht mit Farbe gefüllt.
+Сейчас применено:  ⇒ Applied now:  ⇒ Jetzt angewendet: 
+. Можно выбрать другой цвет и нажать «Применить» ещё раз. ⇒ . You can choose another color and press "Apply" again. ⇒ . Du kannst eine andere Farbe wählen und erneut auf „Anwenden“ klicken.
+Ничего не применено — Windows как обычно. ⇒ Nothing is applied — Windows is as usual. ⇒ Nichts angewendet – Windows ist wie gewohnt.
+Что нужно знать: цвет получают обычные окна Windows 11 (Проводник, Блокнот и подобные); окна, которые рисуют свои заголовки сами (Chrome, Steam, современные приложения из магазина), остаются как есть. Игры и окна, рисуемые видеокартой, Color Plus не трогает никогда. «Вернуть как было» останавливает его и возвращает всё. ⇒ Good to know: the color is applied to ordinary Windows 11 windows (Explorer, Notepad and similar); windows that draw their own titles (Chrome, Steam, modern Store apps) stay as they are. Color Plus never touches games and windows drawn by the graphics card. "Restore as it was" stops it and restores everything. ⇒ Gut zu wissen: Die Farbe wird auf normale Windows-11-Fenster angewendet (Explorer, Editor und ähnliche); Fenster, die ihre Titel selbst zeichnen (Chrome, Steam, moderne Store-Apps), bleiben, wie sie sind. Spiele und von der Grafikkarte gezeichnete Fenster fasst Color Plus nie an. „Wie vorher wiederherstellen“ beendet es und stellt alles wieder her.
+. Острова панели получили цвет. ⇒ . The taskbar islands got the color. ⇒ . Die Inseln der Taskleiste haben die Farbe erhalten.
+. Панель:  ⇒ . Taskbar:  ⇒ . Taskleiste: 
+Всё возвращено, как было до Color Plus. ⇒ Everything is restored as it was before Color Plus. ⇒ Alles ist wiederhergestellt, wie es vor Color Plus war.
+Taskbar Plus не установлен — поставьте его на вкладке «Плагины» лаунчера: без него нашу панель не перекрасить. ⇒ Taskbar Plus is not installed — install it in the launcher's "Plugins" tab: without it our taskbar cannot be recolored. ⇒ Taskbar Plus ist nicht installiert – installiere es im Tab „Plugins“ des Launchers: Ohne es lässt sich unsere Taskleiste nicht umfärben.
+Taskbar Plus не запущен. При «Применить» Color Plus сам запустит его и включит «Новый движок». ⇒ Taskbar Plus is not running. On "Apply" Color Plus will start it itself and turn on the "New engine". ⇒ Taskbar Plus läuft nicht. Bei „Anwenden“ startet Color Plus es selbst und schaltet die „Neue Engine“ ein.
+Taskbar Plus запущен, но «Новый движок» в нём выключен — поэтому панель серая. При «Применить» Color Plus включит его сам (Taskbar Plus перезапустится на несколько секунд). ⇒ Taskbar Plus is running, but the "New engine" is off in it — so the taskbar is gray. On "Apply" Color Plus will turn it on itself (Taskbar Plus will restart for a few seconds). ⇒ Taskbar Plus läuft, aber die „Neue Engine“ ist dort ausgeschaltet – deshalb ist die Taskleiste grau. Bei „Anwenden“ schaltet Color Plus sie selbst ein (Taskbar Plus startet für ein paar Sekunden neu).
+Новый движок Taskbar Plus подключается к панели — это занимает до минуты. ⇒ The new Taskbar Plus engine is connecting to the taskbar — this takes up to a minute. ⇒ Die neue Taskbar-Plus-Engine verbindet sich mit der Taskleiste – das dauert bis zu einer Minute.
+Новый движок Taskbar Plus работает только в Windows 11. ⇒ The new Taskbar Plus engine works only in Windows 11. ⇒ Die neue Taskbar-Plus-Engine funktioniert nur unter Windows 11.
+Включаю «Новый движок» в Taskbar Plus… ⇒ Turning on the "New engine" in Taskbar Plus… ⇒ Schalte die „Neue Engine“ in Taskbar Plus ein …
+Taskbar Plus не закрылся — закройте его и нажмите «Применить» ещё раз. ⇒ Taskbar Plus did not close — close it and press "Apply" again. ⇒ Taskbar Plus wurde nicht beendet – schließe es und klicke erneut auf „Anwenden“.
+Жду, пока движок Taskbar Plus подключится к панели… ( ⇒ Waiting for the Taskbar Plus engine to connect to the taskbar… ( ⇒ Warte, bis sich die Taskbar-Plus-Engine mit der Taskleiste verbindet … (
+ с) ⇒  s) ⇒  s)
+Движок Taskbar Plus не подключился за 90 секунд. Откройте Taskbar Plus и посмотрите его состояние. ⇒ The Taskbar Plus engine did not connect within 90 seconds. Open Taskbar Plus and look at its status. ⇒ Die Taskbar-Plus-Engine hat sich nicht innerhalb von 90 Sekunden verbunden. Öffne Taskbar Plus und sieh dir seinen Status an.

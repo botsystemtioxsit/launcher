@@ -1,0 +1,331 @@
+# Launcher: русский ⇒ English ⇒ Deutsch (см. Shared/Loc.cs). Не править ключи — они совпадают с русскими строками в коде.
+Проверяю, что можно обновить… ⇒ Checking what can be updated… ⇒ Prüfe, was aktualisiert werden kann…
+Обновлено ⇒ Updated ⇒ Aktualisiert
+Всё уже самое новое ⇒ Everything is already up to date ⇒ Alles ist bereits aktuell
+Обновлено: {} ⇒ Updated: {0} ⇒ Aktualisiert: {0}
+Обновлено {} из {}. Что не вышло — причина в менеджере внизу и в карточке. ⇒ Updated {0} of {1}. What failed is explained in the manager below and on the card. ⇒ {0} von {1} aktualisiert. Was nicht geklappt hat, steht im Manager unten und auf der Karte.
+Запуск ⇒ Launch ⇒ Start
+Запущено ⇒ Launched ⇒ Gestartet
+Всё установленное уже запущено ⇒ Everything installed is already running ⇒ Alles Installierte läuft bereits
+Нечего запускать: пока ничего не установлено ⇒ Nothing to launch: nothing is installed yet ⇒ Nichts zu starten: noch nichts installiert
+Запущено: {} ⇒ Launched: {0} ⇒ Gestartet: {0}
+ · уже работали: {} ⇒  · already running: {0} ⇒  · liefen bereits: {0}
+ · не вышло: {} ⇒  · failed: {0} ⇒  · fehlgeschlagen: {0}
+Версия  ⇒ Version  ⇒ Version 
+Токен доступа отозван или истёк. ⇒ The access token was revoked or has expired. ⇒ Das Zugriffstoken wurde widerrufen oder ist abgelaufen.
+Аккаунт заблокирован. ⇒ The account is blocked. ⇒ Das Konto ist gesperrt.
+Владелец отозвал доступ этому устройству — войди заново. ⇒ The owner revoked access for this device — sign in again. ⇒ Der Inhaber hat diesem Gerät den Zugriff entzogen – melde dich erneut an.
+Аккаунт ⇒ Account ⇒ Konto
+Приложения доступны без входа. Облегчённая версия — приложение в отдельном окне (Electron). Админ-панель появится после входа администратора (вкладка «Войти»). ⇒ Apps are available without signing in. The light version is the app in a separate window (Electron). The admin panel appears after an administrator signs in (the "Sign in" tab). ⇒ Apps sind ohne Anmeldung verfügbar. Die Leicht-Version ist die App in einem eigenen Fenster (Electron). Das Admin-Panel erscheint, nachdem sich ein Administrator angemeldet hat (Tab „Anmelden“).
+Ты вошёл как {} · {}\nОблегчённая версия — приложение в отдельном окне (Electron). Desktop-версия (EXE) — настоящая программа; кнопка включится сама, как только версия выйдет. ⇒ You are signed in as {0} · {1}\nThe light version is the app in a separate window (Electron). The Desktop version (EXE) is a real program; its button turns on by itself once it is released. ⇒ Du bist angemeldet als {0} · {1}\nDie Leicht-Version ist die App in einem eigenen Fenster (Electron). Die Desktop-Version (EXE) ist ein richtiges Programm; ihre Schaltfläche wird von selbst aktiv, sobald sie erscheint.
+Убрать из списка ⇒ Remove from list ⇒ Aus der Liste entfernen
+Отправляю запрос… ⇒ Sending request… ⇒ Sende Anfrage…
+Ждём подтверждения · осталось {}:{} ⇒ Waiting for confirmation · {0}:{1} left ⇒ Warte auf Bestätigung · noch {0}:{1}
+Впиши email целиком. ⇒ Enter the full email address. ⇒ Gib die vollständige E-Mail-Adresse ein.
+Эта почта не привязана ни к одному аккаунту. Привяжи её в игре: Настройки → Аккаунт. ⇒ This email is not linked to any account. Link it in the game: Settings → Account. ⇒ Diese E-Mail ist mit keinem Konto verknüpft. Verknüpfe sie im Spiel: Einstellungen → Konto.
+⏳ Заявка отправлена. Открой в Telegram бота TerminalBot и нажми «Разрешить» в его сообщении (можно и в игре: Сообщество → Запросы, или в админ-панели: Аккаунт). Ждём 5 минут. ⇒ ⏳ Request sent. Open the TerminalBot in Telegram and tap "Allow" in its message (you can also do it in the game: Community → Requests, or in the admin panel: Account). Waiting 5 minutes. ⇒ ⏳ Anfrage gesendet. Öffne in Telegram den TerminalBot und tippe in seiner Nachricht auf „Erlauben“ (geht auch im Spiel: Community → Anfragen, oder im Admin-Panel: Konto). Wir warten 5 Minuten.
+Вход отклонён на другом устройстве. ⇒ Sign-in was declined on the other device. ⇒ Die Anmeldung wurde auf dem anderen Gerät abgelehnt.
+Время ожидания истекло, попробуй ещё раз. ⇒ The wait timed out, try again. ⇒ Zeitüberschreitung, versuche es noch einmal.
+Не удалось отправить заявку:  ⇒ Could not send the request:  ⇒ Anfrage konnte nicht gesendet werden: 
+Впиши токен целиком. ⇒ Enter the full token. ⇒ Gib das vollständige Token ein.
+Токен не найден или уже отозван Супердоступом. ⇒ Token not found or already revoked by the Superadmin. ⇒ Token nicht gefunden oder vom Superadmin bereits widerrufen.
+Срок действия токена истёк — попроси у Супердоступа новый. ⇒ The token has expired — ask the Superadmin for a new one. ⇒ Das Token ist abgelaufen – bitte den Superadmin um ein neues.
+Не удалось проверить токен:  ⇒ Could not check the token:  ⇒ Token konnte nicht geprüft werden: 
+Открой в Telegram бота TerminalBot и отправь ему этот код сообщением — вход произойдёт сам. Код живёт 5 минут. ⇒ In Telegram, open the TerminalBot and send it this code as a message — sign-in will happen by itself. The code lives for 5 minutes. ⇒ Öffne in Telegram den TerminalBot und sende ihm diesen Code als Nachricht – die Anmeldung erfolgt von selbst. Der Code gilt 5 Minuten.
+Отклонено. ⇒ Declined. ⇒ Abgelehnt.
+Код пропал — попробуй ещё раз. ⇒ The code disappeared — try again. ⇒ Der Code ist verschwunden – versuche es noch einmal.
+Не удалось создать код:  ⇒ Could not create the code:  ⇒ Code konnte nicht erstellt werden: 
+Загружаю список плагинов… ⇒ Loading the plugin list… ⇒ Lade die Plugin-Liste…
+В этом разделе пока нет плагинов. ⇒ There are no plugins in this section yet. ⇒ In diesem Bereich gibt es noch keine Plugins.
+Плагин ⇒ Plugin ⇒ Plugin
+Установлен  ⇒ Installed  ⇒ Installiert 
+Есть обновление ⇒ Update available ⇒ Update verfügbar
+Не установлен ⇒ Not installed ⇒ Nicht installiert
+Открыть ⇒ Open ⇒ Öffnen
+Обновить ⇒ Update ⇒ Aktualisieren
+Скачать и установить ⇒ Download and install ⇒ Herunterladen und installieren
+Проверяю релиз… ⇒ Checking the release… ⇒ Prüfe die Version…
+в последнем релизе на GitHub нет файла плагина ⇒ the latest release on GitHub has no plugin file ⇒ im neuesten Release auf GitHub gibt es keine Plugin-Datei
+запущен снова ⇒ launched again ⇒ erneut gestartet
+ — запущен снова ⇒  — launched again ⇒  – erneut gestartet
+Удалить «{}» с этого компьютера?\n\nЕсли плагин менял панель задач, он сам вернёт её к обычному виду. ⇒ Delete "{0}" from this computer?\n\nIf the plugin changed the taskbar, it will restore it to normal itself. ⇒ „{0}“ von diesem Computer löschen?\n\nHat das Plugin die Taskleiste verändert, stellt es sie selbst wieder her.
+Удалено: {} ⇒ Deleted: {0} ⇒ Gelöscht: {0}
+Плагин не установлен ⇒ The plugin is not installed ⇒ Das Plugin ist nicht installiert
+Не получилось запустить:  ⇒ Could not launch:  ⇒ Start nicht möglich: 
+Сеть и защита ⇒ Network & protection ⇒ Netzwerk & Schutz
+Расширения для браузера ⇒ Browser extensions ⇒ Browser-Erweiterungen
+Оформление ⇒ Appearance ⇒ Darstellung
+VPN, защищённый DNS и всё, что про сеть. Каждый плагин качается отдельно и удаляется в любой момент. ⇒ VPN, protected DNS and everything about the network. Each plugin is downloaded separately and can be removed at any time. ⇒ VPN, geschütztes DNS und alles rund ums Netzwerk. Jedes Plugin wird einzeln heruntergeladen und lässt sich jederzeit entfernen.
+Расширения для Chrome, Edge и других браузеров. Лаунчер скачивает их в отдельную папку; подключить папку в браузере нужно один раз — как, написано в карточке. ⇒ Extensions for Chrome, Edge and other browsers. The launcher downloads them into a separate folder; you only need to connect that folder in the browser once — the card explains how. ⇒ Erweiterungen für Chrome, Edge und andere Browser. Der Launcher lädt sie in einen eigenen Ordner; diesen Ordner musst du nur einmal im Browser einbinden – wie, steht auf der Karte.
+Панель задач, цвета, значки, обои, курсор и скины Windows. Каждый плагин качается отдельно и удаляется в любой момент. ⇒ Taskbar, colors, icons, wallpapers, cursor and Windows skins. Each plugin is downloaded separately and can be removed at any time. ⇒ Taskleiste, Farben, Symbole, Hintergründe, Mauszeiger und Windows-Skins. Jedes Plugin wird einzeln heruntergeladen und lässt sich jederzeit entfernen.
+В последнем релизе на GitHub пока нет файла расширения. ⇒ The latest release on GitHub has no extension file yet. ⇒ Im neuesten Release auf GitHub gibt es noch keine Erweiterungsdatei.
+Не удалось проверить версию:  ⇒ Could not check the version:  ⇒ Version konnte nicht geprüft werden: 
+Для браузера ⇒ For the browser ⇒ Für den Browser
+Скачан  ⇒ Downloaded  ⇒ Heruntergeladen 
+Не скачан ⇒ Not downloaded ⇒ Nicht heruntergeladen
+Открыть Chrome ⇒ Open Chrome ⇒ Chrome öffnen
+Открыть Edge ⇒ Open Edge ⇒ Edge öffnen
+Открыть папку ⇒ Open folder ⇒ Ordner öffnen
+Скопировать путь ⇒ Copy path ⇒ Pfad kopieren
+Путь скопирован ⇒ Path copied ⇒ Pfad kopiert
+Не получилось скопировать ⇒ Could not copy ⇒ Kopieren fehlgeschlagen
+Скачать ⇒ Download ⇒ Herunterladen
+Скачано ⇒ Downloaded ⇒ Heruntergeladen
+Скачать файл вручную ⇒ Download the file manually ⇒ Datei manuell herunterladen
+ Нажмите «Скачать», чтобы попробовать ещё раз, или «Скачать файл вручную» — тогда распакуйте архив в любую папку и подключите её в браузере. ⇒  Press "Download" to try again, or "Download the file manually" — then unpack the archive into any folder and connect it in the browser. ⇒  Klicke auf „Herunterladen“, um es noch einmal zu versuchen, oder auf „Datei manuell herunterladen“ – entpacke dann das Archiv in einen beliebigen Ordner und binde ihn im Browser ein.
+Как подключить (один раз) ⇒ How to connect (once) ⇒ So wird es eingebunden (einmalig)
+1. Нажмите «Открыть Chrome» (или «Открыть Edge») — откроется страница расширений. ⇒ 1. Press "Open Chrome" (or "Open Edge") — the extensions page will open. ⇒ 1. Klicke auf „Chrome öffnen“ (oder „Edge öffnen“) – die Erweiterungsseite öffnet sich.
+2. Справа вверху включите «Режим разработчика». ⇒ 2. At the top right, turn on "Developer mode". ⇒ 2. Aktiviere oben rechts den „Entwicklermodus“.
+3. Нажмите «Загрузить распакованное расширение» и выберите эту папку: ⇒ 3. Press "Load unpacked" and choose this folder: ⇒ 3. Klicke auf „Entpackte Erweiterung laden“ und wähle diesen Ordner:
+4. Закрепите значок маски на панели браузера (кнопка с пазлом) — там выбор страны. ⇒ 4. Pin the mask icon to the browser toolbar (the puzzle button) — the country choice is there. ⇒ 4. Hefte das Masken-Symbol an die Symbolleiste des Browsers an (Puzzle-Schaltfläche) – dort wählst du das Land.
+После обновления из лаунчера на странице расширений нажмите круглую стрелку у « ⇒ After updating from the launcher, press the round arrow next to " ⇒ Klicke nach einem Update über den Launcher auf der Erweiterungsseite auf den runden Pfeil bei „
+Не удалось открыть браузер ⇒ Could not open the browser ⇒ Browser konnte nicht geöffnet werden
+ (расширение) ⇒  (extension) ⇒  (Erweiterung)
+в последнем релизе на GitHub пока нет файла расширения ⇒ the latest release on GitHub has no extension file yet ⇒ im neuesten Release auf GitHub gibt es noch keine Erweiterungsdatei
+подключите папку в браузере ⇒ connect the folder in the browser ⇒ binde den Ordner im Browser ein
+{}: {}. Подключите папку в браузере — инструкция в карточке. ⇒ {0}: {1}. Connect the folder in the browser — the instructions are on the card. ⇒ {0}: {1}. Binde den Ordner im Browser ein – die Anleitung steht auf der Karte.
+Не получилось скачать:  ⇒ Could not download:  ⇒ Download fehlgeschlagen: 
+Удалить файлы «{}» с этого компьютера?\n\nИз самого браузера расширение лучше убрать отдельно: страница расширений → «Удалить». ⇒ Delete the files of "{0}" from this computer?\n\nIt is better to remove the extension from the browser itself separately: extensions page → "Remove". ⇒ Dateien von „{0}“ von diesem Computer löschen?\n\nDie Erweiterung entfernst du am besten separat im Browser selbst: Erweiterungsseite → „Entfernen“.
+Не удалось узнать последнюю версию (нет связи с GitHub?) ⇒ Could not find out the latest version (no connection to GitHub?) ⇒ Neueste Version konnte nicht ermittelt werden (keine Verbindung zu GitHub?)
+ДОПОЛНИТЕЛЬНО ⇒ MORE ⇒ WEITERES
+Эти программы лаунчер сам не ставит — он даёт файл для скачивания. ⇒ The launcher does not install these programs itself — it provides a file to download. ⇒ Diese Programme installiert der Launcher nicht selbst – er stellt eine Datei zum Herunterladen bereit.
+Нет доступа для твоей роли ⇒ No access for your role ⇒ Kein Zugriff für deine Rolle
+ (облегчённая) ⇒  (light) ⇒  (leicht)
+Не установлено ⇒ Not installed ⇒ Nicht installiert
+Доступно  ⇒ Available  ⇒ Verfügbar 
+Последняя  ⇒ Latest  ⇒ Neueste 
+Desktop установлен  ⇒ Desktop installed  ⇒ Desktop installiert 
+ · есть обновление ⇒  · update available ⇒  · Update verfügbar
+Запустить ⇒ Launch ⇒ Starten
+Скачать облегчённую версию ⇒ Download the light version ⇒ Leicht-Version herunterladen
+🔒 Скачать Desktop-версию (EXE) ⇒ 🔒 Download the Desktop version (EXE) ⇒ 🔒 Desktop-Version (EXE) herunterladen
+Desktop-версии этого приложения нет в каталоге. ⇒ This app has no Desktop version in the catalog. ⇒ Für diese App gibt es keine Desktop-Version im Katalog.
+Запустить Desktop ⇒ Launch Desktop ⇒ Desktop starten
+Обновить Desktop ⇒ Update Desktop ⇒ Desktop aktualisieren
+Удалить Desktop ⇒ Delete Desktop ⇒ Desktop löschen
+Скачать Desktop-версию (EXE) ⇒ Download the Desktop version (EXE) ⇒ Desktop-Version (EXE) herunterladen
+Desktop-версия ещё не вышла (или нет связи с GitHub). Кнопка включится сама, когда она появится — обновлять лаунчер не нужно. ⇒ The Desktop version is not out yet (or no connection to GitHub). The button turns on by itself when it appears — no need to update the launcher. ⇒ Die Desktop-Version ist noch nicht erschienen (oder keine Verbindung zu GitHub). Die Schaltfläche wird von selbst aktiv, sobald sie da ist – der Launcher muss nicht aktualisiert werden.
+Аккаунт больше недоступен — войди заново. ⇒ The account is no longer available — sign in again. ⇒ Das Konto ist nicht mehr verfügbar – melde dich erneut an.
+Для этого приложения нужен вход в аккаунт (вкладка «Войти»). ⇒ This app requires signing in to an account (the "Sign in" tab). ⇒ Für diese App ist eine Kontoanmeldung nötig (Tab „Anmelden“).
+Для этого приложения нет доступа у твоего аккаунта. ⇒ Your account has no access to this app. ⇒ Dein Konto hat keinen Zugriff auf diese App.
+Проверяю доступ… ⇒ Checking access… ⇒ Prüfe Zugriff…
+нет доступа к этому приложению ⇒ no access to this app ⇒ kein Zugriff auf diese App
+Удалить «{}» с этого компьютера? ⇒ Delete "{0}" from this computer? ⇒ „{0}“ von diesem Computer löschen?
+EXE-версии пока нет в последнем релизе ⇒ The EXE version is not in the latest release yet ⇒ Die EXE-Version ist noch nicht im neuesten Release
+EXE-версия не установлена ⇒ The EXE version is not installed ⇒ Die EXE-Version ist nicht installiert
+Приложение не установлено ⇒ The app is not installed ⇒ Die App ist nicht installiert
+Вышел лаунчер {} ⇒ Launcher {0} is out ⇒ Launcher {0} ist erschienen
+Появилась Desktop-версия: {} ⇒ A Desktop version has appeared: {0} ⇒ Eine Desktop-Version ist erschienen: {0}
+Новое:  ⇒ New:  ⇒ Neu: 
+. Открой «Приложения» и обнови. ⇒ . Open "Apps" and update. ⇒ . Öffne „Apps“ und aktualisiere.
+Скачиваю лаунчер {}… {}% ⇒ Downloading launcher {0}… {1}% ⇒ Lade Launcher {0} herunter… {1} %
+Не удалось обновить лаунчер:  ⇒ Could not update the launcher:  ⇒ Launcher konnte nicht aktualisiert werden: 
+В очереди… ⇒ Queued… ⇒ In der Warteschlange…
+Работаю… ⇒ Working… ⇒ Arbeite…
+Скачиваю {}% ⇒ Downloading {0}% ⇒ Lade herunter {0} %
+Обновление ⇒ Update ⇒ Aktualisierung
+Установка ⇒ Installation ⇒ Installation
+Из очереди убрано: {}. То, что уже идёт, доработает. ⇒ Removed from the queue: {0}. Whatever is already running will finish. ⇒ Aus der Warteschlange entfernt: {0}. Was schon läuft, wird noch beendet.
+В очереди ничего нет ⇒ The queue is empty ⇒ Die Warteschlange ist leer
+ и ещё {} ⇒  and {0} more ⇒  und {0} weitere
+☰ Очередь · {} ⇒ ☰ Queue · {0} ⇒ ☰ Warteschlange · {0}
+☰ Очередь ⇒ ☰ Queue ⇒ ☰ Warteschlange
+⟳ Идёт работа · готово {} из {} ⇒ ⟳ Working · {0} of {1} done ⇒ ⟳ In Arbeit · {0} von {1} erledigt
+Сейчас: {} — {} ⇒ Now: {0} — {1} ⇒ Jetzt: {0} – {1}
+\nДальше: {} ⇒ \nNext: {0} ⇒ \nAls Nächstes: {0}
+Ждут своей очереди: {} ⇒ Waiting their turn: {0} ⇒ Warten auf ihre Reihe: {0}
+Очередь пуста ⇒ The queue is empty ⇒ Die Warteschlange ist leer
+Здесь будут обновления, установки и запуски: что ждёт, что идёт сейчас и чем закончилось. ⇒ Updates, installs and launches will appear here: what is waiting, what is running now and how it ended. ⇒ Hier erscheinen Updates, Installationen und Starts: was wartet, was gerade läuft und wie es ausgegangen ist.
+✓ Всё готово ⇒ ✓ All done ⇒ ✓ Alles erledigt
+Закончено ⇒ Finished ⇒ Abgeschlossen
+ · готово: {} ⇒  · done: {0} ⇒  · erledigt: {0}
+ · отменено: {} ⇒  · cancelled: {0} ⇒  · abgebrochen: {0}
+Что не вышло — причина в списке ниже. Можно нажать «Обновить» на карточке ещё раз. ⇒ What failed is explained in the list below. You can press "Update" on the card again. ⇒ Was nicht geklappt hat, steht in der Liste unten. Du kannst auf der Karte erneut „Aktualisieren“ drücken.
+▾ Свернуть ⇒ ▾ Collapse ⇒ ▾ Einklappen
+▴ Подробнее ⇒ ▴ Details ⇒ ▴ Details
+В ОЧЕРЕДИ ⇒ QUEUED ⇒ WARTET
+В РАБОТЕ ⇒ RUNNING ⇒ LÄUFT
+ГОТОВО ⇒ DONE ⇒ FERTIG
+НЕ ВЫШЛО ⇒ FAILED ⇒ FEHLGESCHLAGEN
+ОТМЕНЕНО ⇒ CANCELLED ⇒ ABGEBROCHEN
+не получилось ⇒ failed ⇒ fehlgeschlagen
+Останавливаю плагин… ⇒ Stopping the plugin… ⇒ Plugin wird beendet…
+нет связи с GitHub — проверьте интернет ⇒ no connection to GitHub — check the internet ⇒ keine Verbindung zu GitHub – prüfe die Internetverbindung
+Mask Plus (расширение) ⇒ Mask Plus (extension) ⇒ Mask Plus (Erweiterung)
+Обновить сейчас ⇒ Update now ⇒ Jetzt aktualisieren
+Что сейчас обновляется, что стоит в очереди и чем всё закончилось ⇒ What is updating now, what is queued and how everything ended ⇒ Was gerade aktualisiert wird, was in der Warteschlange steht und wie alles ausgegangen ist
+⟳ Обновить всё ⇒ ⟳ Update all ⇒ ⟳ Alles aktualisieren
+Обновить все приложения, плагины и расширения, у которых вышла новая версия ⇒ Update all apps, plugins and extensions that have a new version ⇒ Alle Apps, Plugins und Erweiterungen mit neuer Version aktualisieren
+▶ Запустить всё ⇒ ▶ Launch all ⇒ ▶ Alles starten
+Запустить все установленные приложения и плагины, которые сейчас не работают ⇒ Launch all installed apps and plugins that are not running now ⇒ Alle installierten Apps und Plugins starten, die gerade nicht laufen
+создано нейросетью ⇒ made by AI ⇒ von einer KI erstellt
+Приложения ⇒ Apps ⇒ Apps
+Расширения ⇒ Extensions ⇒ Erweiterungen
+Окружение ⇒ Environment ⇒ Umgebung
+Написать нам ⇒ Contact us ⇒ Schreib uns
+LAUNCHER · создано нейросетью ⇒ LAUNCHER · made by AI ⇒ LAUNCHER · von einer KI erstellt
+Вход нужен только администраторам: он открывает вкладку «Приложения». Плагины работают и без входа. ⇒ Signing in is only needed for administrators: it opens the "Apps" tab. Plugins work without signing in. ⇒ Die Anmeldung brauchen nur Administratoren: sie öffnet den Tab „Apps“. Plugins funktionieren auch ohne Anmeldung.
+Отменить ⇒ Cancel ⇒ Abbrechen
+По почте ⇒ By email ⇒ Per E-Mail
+Почта должна быть привязана в игре (Настройки → Аккаунт). Заявку подтвердишь сам, без пароля. ⇒ The email must be linked in the game (Settings → Account). You confirm the request yourself, no password. ⇒ Die E-Mail muss im Spiel verknüpft sein (Einstellungen → Konto). Die Anfrage bestätigst du selbst, ohne Passwort.
+Запросить вход ⇒ Request sign-in ⇒ Anmeldung anfordern
+— или — ⇒ — or — ⇒ — oder —
+По токену доступа ⇒ By access token ⇒ Per Zugriffstoken
+Токен выдаёт Супердоступ. Входит сразу, без заявки и без аккаунта; открывает только админ-панель. ⇒ The token is issued by the Superadmin. It signs in immediately, with no request and no account; it opens the admin panel only. ⇒ Das Token stellt der Superadmin aus. Es meldet sofort an, ohne Anfrage und ohne Konto; es öffnet nur das Admin-Panel.
+Войти по токену ⇒ Sign in with token ⇒ Mit Token anmelden
+По коду устройства (через бота) ⇒ By device code (via the bot) ⇒ Per Gerätecode (über den Bot)
+Без почты. Нажми кнопку — появится код. Открой в Telegram бота TerminalBot и отправь ему этот код обычным сообщением — лаунчер сразу войдёт в твой аккаунт. Устройство можно отозвать в админ-панели («Аккаунт»). ⇒ No email. Press the button — a code will appear. In Telegram, open the TerminalBot and send it this code as a normal message — the launcher signs in to your account right away. The device can be revoked in the admin panel ("Account"). ⇒ Ohne E-Mail. Drücke die Schaltfläche – ein Code erscheint. Öffne in Telegram den TerminalBot und sende ihm diesen Code als normale Nachricht – der Launcher meldet sich sofort in deinem Konto an. Das Gerät lässt sich im Admin-Panel widerrufen („Konto“).
+Подключить по коду ⇒ Connect by code ⇒ Per Code verbinden
+Обновить все ⇒ Update all ⇒ Alle aktualisieren
+Запустить все ⇒ Launch all ⇒ Alle starten
+Проверить обновления ⇒ Check for updates ⇒ Nach Updates suchen
+Можно держать несколько аккаунтов и переключаться между ними. ⇒ You can keep several accounts and switch between them. ⇒ Du kannst mehrere Konten behalten und zwischen ihnen wechseln.
+Все аккаунты ⇒ All accounts ⇒ Alle Konten
++ Добавить аккаунт ⇒ + Add account ⇒ + Konto hinzufügen
+Отменить очередь ⇒ Cancel the queue ⇒ Warteschlange abbrechen
+Выберите плагины, которые должны включаться сами при старте компьютера. Лаунчер запустится вместе с Windows, покажет плашку «Нажмите подтвердить»,  ⇒ Choose the plugins that should start by themselves when the computer starts. The launcher will start together with Windows, show a "Press confirm" card,  ⇒ Wähle die Plugins, die beim Start des Computers von selbst starten sollen. Der Launcher startet mit Windows, zeigt eine Karte „Bestätigen drücken“, 
+затем экран загрузки — и всё включится без вашей помощи. Окна плагинов при этом не открываются. ⇒ then a loading screen — and everything turns on without your help. Plugin windows are not opened. ⇒ dann einen Ladebildschirm – und alles schaltet sich ohne dein Zutun ein. Plugin-Fenster werden dabei nicht geöffnet.
+Запускать лаунчер вместе с Windows и предлагать включить окружение ⇒ Start the launcher with Windows and offer to turn the environment on ⇒ Launcher mit Windows starten und anbieten, die Umgebung einzuschalten
+Что включать ⇒ What to turn on ⇒ Was eingeschaltet werden soll
+ — не установлен (поставьте во вкладке «Плагины») ⇒  — not installed (install it in the "Plugins" tab) ⇒  – nicht installiert (installiere es im Tab „Plugins“)
+Здесь только плагины, которые умеют работать в фоне. Остальные (DNS Plus, Gateway Plus, Icon Plus, Skin Loader) запускаются из своего окна. ⇒ Only plugins that can work in the background are listed here. The others (DNS Plus, Gateway Plus, Icon Plus, Skin Loader) start from their own window. ⇒ Hier stehen nur Plugins, die im Hintergrund laufen können. Die übrigen (DNS Plus, Gateway Plus, Icon Plus, Skin Loader) starten aus ihrem eigenen Fenster.
+Показать, как это выглядит ⇒ Show what it looks like ⇒ So sieht es aus
+Отметьте хотя бы один установленный плагин ⇒ Select at least one installed plugin ⇒ Wähle mindestens ein installiertes Plugin aus
+Сохранено ⇒ Saved ⇒ Gespeichert
+Не удалось сохранить:  ⇒ Could not save:  ⇒ Speichern nicht möglich: 
+Ghost Shell · Окружение ⇒ Ghost Shell · Environment ⇒ Ghost Shell · Umgebung
+GHOST SHELL · ОКРУЖЕНИЕ ⇒ GHOST SHELL · ENVIRONMENT ⇒ GHOST SHELL · UMGEBUNG
+Нажмите «Подтвердить», чтобы включить окружение ⇒ Press "Confirm" to turn on the environment ⇒ Drücke „Bestätigen“, um die Umgebung einzuschalten
+Будет запущено модулей: {} ⇒ Modules to be started: {0} ⇒ Zu startende Module: {0}
+Подтвердить ⇒ Confirm ⇒ Bestätigen
+Не сейчас ⇒ Not now ⇒ Jetzt nicht
+ЗАГРУЗКА ОКРУЖЕНИЯ ⇒ LOADING THE ENVIRONMENT ⇒ UMGEBUNG WIRD GELADEN
+▸ МОДУЛЬ {} ⇒ ▸ MODULE {0} ⇒ ▸ MODUL {0}
+данные подгружаются ⇒ loading data ⇒ Daten werden geladen
+✓ готово ⇒ ✓ ready ⇒ ✓ bereit
+✗ не вышло ⇒ ✗ failed ⇒ ✗ fehlgeschlagen
+Выбранных модулей нет ⇒ No modules selected ⇒ Keine Module ausgewählt
+ОКРУЖЕНИЕ ВКЛЮЧЕНО ⇒ ENVIRONMENT IS ON ⇒ UMGEBUNG IST EINGESCHALTET
+Нашли ошибку или хотите что-то предложить? Напишите — сообщение придёт напрямую владельцу проекта, а ответ появится здесь же, внизу. ⇒ Found a bug or want to suggest something? Write to us — the message goes straight to the project owner, and the reply will appear here, below. ⇒ Fehler gefunden oder einen Vorschlag? Schreib uns – die Nachricht geht direkt an den Projektinhaber, und die Antwort erscheint hier unten.
+О чём сообщение ⇒ What the message is about ⇒ Worum es geht
+Ошибка ⇒ Bug ⇒ Fehler
+Предложение ⇒ Suggestion ⇒ Vorschlag
+Другое ⇒ Other ⇒ Sonstiges
+Скриншоты (до 3) ⇒ Screenshots (up to 3) ⇒ Screenshots (bis zu 3)
+Добавить файл… ⇒ Add a file… ⇒ Datei hinzufügen…
+«Снять экран»: окно лаунчера на секунду свернётся, снимок появится ниже. ⇒ "Take a screenshot": the launcher window will minimize for a second, and the picture will appear below. ⇒ „Screenshot aufnehmen“: Das Launcher-Fenster wird kurz minimiert, das Bild erscheint unten.
+Как с вами связаться (необязательно) ⇒ How to reach you (optional) ⇒ Wie wir dich erreichen (optional)
+Приложить сведения о системе — помогают найти причину ⇒ Attach system information — it helps find the cause ⇒ Systeminformationen anhängen – sie helfen, die Ursache zu finden
+Отправить ⇒ Send ⇒ Senden
+ВАШИ СООБЩЕНИЯ ⇒ YOUR MESSAGES ⇒ DEINE NACHRICHTEN
+Что случилось? Опишите: что делали, что ожидали и что получилось. ⇒ What happened? Describe what you did, what you expected and what you got. ⇒ Was ist passiert? Beschreibe, was du getan hast, was du erwartet hast und was herauskam.
+Что предлагаете добавить или изменить? ⇒ What would you like added or changed? ⇒ Was soll hinzugefügt oder geändert werden?
+Ваше сообщение ⇒ Your message ⇒ Deine Nachricht
+Подписать сообщение моим аккаунтом ( ⇒ Sign the message with my account ( ⇒ Nachricht mit meinem Konto unterschreiben (
+) — так вам смогут ответить ⇒ ) — so you can be answered ⇒ ) – damit man dir antworten kann
+Уйдёт:  ⇒ Will be sent:  ⇒ Wird gesendet: 
+Можно приложить не больше трёх скриншотов. ⇒ You can attach no more than three screenshots. ⇒ Es können höchstens drei Screenshots angehängt werden.
+Скриншот ⇒ Screenshot ⇒ Screenshot
+Не получилось добавить файл:  ⇒ Could not add the file:  ⇒ Datei konnte nicht hinzugefügt werden: 
+Не получилось снять экран:  ⇒ Could not take a screenshot:  ⇒ Screenshot konnte nicht aufgenommen werden: 
+Эта картинка слишком большая даже после сжатия. ⇒ This picture is too large even after compression. ⇒ Dieses Bild ist selbst nach der Komprimierung zu groß.
+Подождите {} с и отправьте снова. ⇒ Wait {0} s and send again. ⇒ Warte {0} s und sende erneut.
+Отправляю… ⇒ Sending… ⇒ Sende…
+Отправлено — спасибо! Ответ появится ниже, в «Ваших сообщениях». ⇒ Sent — thank you! The reply will appear below, in "Your messages". ⇒ Gesendet – danke! Die Antwort erscheint unten unter „Deine Nachrichten“.
+Сообщение отправлено ⇒ Message sent ⇒ Nachricht gesendet
+Не получилось отправить:  ⇒ Could not send:  ⇒ Senden fehlgeschlagen: 
+. Текст сохранён — можно нажать «Отправить» ещё раз. ⇒ . The text is saved — you can press "Send" again. ⇒ . Der Text bleibt erhalten – du kannst erneut auf „Senden“ drücken.
+Пока вы ничего не отправляли. ⇒ You have not sent anything yet. ⇒ Du hast noch nichts gesendet.
+Статус неизвестен ⇒ Status unknown ⇒ Status unbekannt
+Ответ ⇒ Reply ⇒ Antwort
+Удалено ⇒ Deleted ⇒ Gelöscht
+В работе ⇒ In progress ⇒ In Arbeit
+Отклонено ⇒ Declined ⇒ Abgelehnt
+Отправлено ⇒ Sent ⇒ Gesendet
+ (сборка  ⇒  (build  ⇒  (Build 
+; лаунчер  ⇒ ; launcher  ⇒ ; Launcher 
+ (браузер)  ⇒  (browser)  ⇒  (Browser) 
+; плагины:  ⇒ ; plugins:  ⇒ ; Plugins: 
+Файл слишком большой (больше 25 МБ) ⇒ The file is too large (over 25 MB) ⇒ Die Datei ist zu groß (über 25 MB)
+Неизвестный тип сообщения ⇒ Unknown message type ⇒ Unbekannter Nachrichtentyp
+Напишите хотя бы пару слов ⇒ Write at least a few words ⇒ Schreibe mindestens ein paar Worte
+Некорректный путь в базе ⇒ Invalid path in the database ⇒ Ungültiger Pfad in der Datenbank
+База не вернула номер записи ⇒ The database did not return a record number ⇒ Die Datenbank hat keine Datensatznummer zurückgegeben
+Некорректный id ⇒ Invalid id ⇒ Ungültige ID
+Лаунчер (Windows) ⇒ Launcher (Windows) ⇒ Launcher (Windows)
+База не вернула номер заявки ⇒ The database did not return a request number ⇒ Die Datenbank hat keine Anfragenummer zurückgegeben
+Код занят, попробуй ещё раз ⇒ The code is taken, try again ⇒ Der Code ist vergeben, versuche es noch einmal
+Лаунчер / Windows ⇒ Launcher / Windows ⇒ Launcher / Windows
+Некорректный ключ устройства ⇒ Invalid device key ⇒ Ungültiger Geräteschlüssel
+Не знаю, где лежит лаунчер ⇒ I do not know where the launcher is ⇒ Ich weiß nicht, wo der Launcher liegt
+Контрольная сумма обновления не совпала ⇒ The update checksum did not match ⇒ Die Prüfsumme des Updates stimmt nicht
+У этого приложения нет EXE-версии ⇒ This app has no EXE version ⇒ Diese App hat keine EXE-Version
+Недоверенный адрес загрузки ⇒ Untrusted download address ⇒ Nicht vertrauenswürdige Download-Adresse
+Закрой «{}» и повтори. ⇒ Close "{0}" and try again. ⇒ Schließe „{0}“ und versuche es erneut.
+Скачиваю… ⇒ Downloading… ⇒ Lade herunter…
+Контрольная сумма не совпала — файл повреждён ⇒ The checksum did not match — the file is damaged ⇒ Die Prüfsumme stimmt nicht – die Datei ist beschädigt
+Заменяю файл… ⇒ Replacing the file… ⇒ Ersetze die Datei…
+Терминал ⇒ Terminal ⇒ Terminal
+Записываю ярлыки и версию… ⇒ Writing shortcuts and version… ⇒ Schreibe Verknüpfungen und Version…
+Запускаю снова… ⇒ Launching again… ⇒ Starte erneut…
+Убираю файлы и ярлыки… ⇒ Removing files and shortcuts… ⇒ Entferne Dateien und Verknüpfungen…
+Токен доступа ⇒ Access token ⇒ Zugriffstoken
+Аккаунт  ⇒ Account  ⇒ Konto 
+Модератор ⇒ Moderator ⇒ Moderator
+Админ ⇒ Admin ⇒ Admin
+Суперадмин ⇒ Superadmin ⇒ Superadmin
+Игрок ⇒ Player ⇒ Spieler
+latest.yml повреждён ⇒ latest.yml is damaged ⇒ latest.yml ist beschädigt
+В релизах нет установщика ⇒ No installer in the releases ⇒ Kein Installationsprogramm in den Releases
+Тролль-Баттл ⇒ Troll Battle ⇒ Troll Battle
+Голосовые баттлы — та же игра, что в Telegram. ⇒ Voice battles — the same game as in Telegram. ⇒ Sprach-Battles – dasselbe Spiel wie in Telegram.
+Тролль-Баттл (Desktop) ⇒ Troll Battle (Desktop) ⇒ Troll Battle (Desktop)
+Панель администратора: игроки, заявки, журнал, бэкапы, ВидеоЧат. ⇒ Admin panel: players, requests, log, backups, VideoChat. ⇒ Admin-Panel: Spieler, Anfragen, Protokoll, Backups, VideoChat.
+БАТТЛ Админ ⇒ BATTLE Admin ⇒ BATTLE Admin
+ВидеоЧат ⇒ VideoChat ⇒ VideoChat
+Случайные видеоразговоры. Аккаунт тот же, что в «Тролль-Баттле». ⇒ Random video calls. The account is the same as in "Troll Battle". ⇒ Zufällige Videogespräche. Das Konto ist dasselbe wie in „Troll Battle“.
+ВидеоЧат (Desktop) ⇒ VideoChat (Desktop) ⇒ VideoChat (Desktop)
+Панель задач Windows 11 по-своему: плавающая панель, вкладка или острова под значками; цвет — в Color Plus. ⇒ The Windows 11 taskbar your way: a floating bar, a tab or islands under the icons; color comes from Color Plus. ⇒ Die Windows-11-Taskleiste nach deinem Geschmack: schwebende Leiste, Tab oder Inseln unter den Symbolen; die Farbe kommt von Color Plus.
+Один цвет для окон, выделения и панели задач: выберите, посмотрите на предпросмотре и примените. ⇒ One color for windows, selection and the taskbar: choose it, look at the preview and apply. ⇒ Eine Farbe für Fenster, Auswahl und Taskleiste: auswählen, in der Vorschau ansehen und anwenden.
+Значки Windows по-своему: один цвет для всех значков или готовый набор иконок, сайт с иконками внутри. ⇒ Windows icons your way: one color for all icons or a ready-made icon pack, with an icon website built in. ⇒ Windows-Symbole nach deinem Geschmack: eine Farbe für alle Symbole oder ein fertiges Symbolpaket, mit eingebauter Symbol-Webseite.
+Живые обои рабочего стола: видео, GIF и анимированные страницы. Каталог, свои файлы и сайты, конструктор своих обоев. ⇒ Live desktop wallpapers: video, GIF and animated pages. A catalog, your own files and sites, and a builder for your own wallpapers. ⇒ Animierte Desktop-Hintergründe: Video, GIF und animierte Seiten. Katalog, eigene Dateien und Webseiten sowie ein Baukasten für eigene Hintergründe.
+Свой курсор: цвет, форма, шлейф за мышью (комета, искры, звёзды…) и эффекты клика. Можно нарисовать курсор самому. ⇒ Your own cursor: color, shape, a mouse trail (comet, sparks, stars…) and click effects. You can draw the cursor yourself. ⇒ Dein eigener Mauszeiger: Farbe, Form, Mausspur (Komet, Funken, Sterne …) und Klickeffekte. Den Zeiger kannst du selbst zeichnen.
+Защищённый DNS NextDNS для всей Windows: вставьте свой ID и нажмите «Включить». Сам сервис NextDNS (nextdns.io) бесплатный — профиль и фильтры настраиваются у них. Нужна Windows 11. ⇒ Protected NextDNS DNS for the whole of Windows: paste your ID and press "Turn on". The NextDNS service itself (nextdns.io) is free — the profile and filters are set up on their side. Requires Windows 11. ⇒ Geschütztes NextDNS-DNS für ganz Windows: ID einfügen und „Einschalten“ drücken. Der Dienst NextDNS (nextdns.io) selbst ist kostenlos – Profil und Filter richtest du dort ein. Windows 11 erforderlich.
+Личный VPN: мастер сам ставит на ваш сервер по SSH WireGuard или наш протокол GSP (лучше переносит потери связи), шлюз пускает через него весь интернет компьютера — сайты видят адрес и страну сервера. Нужен бесплатный аккаунт; только личное использование. ⇒ A personal VPN: the wizard installs WireGuard or our GSP protocol (better at coping with packet loss) on your server over SSH, and the gateway sends all of the computer's internet through it — sites see the server's address and country. A free account is required; personal use only. ⇒ Ein persönliches VPN: Der Assistent installiert per SSH WireGuard oder unser Protokoll GSP (kommt besser mit Paketverlust zurecht) auf deinem Server, und das Gateway leitet den gesamten Internetverkehr des Computers darüber – Webseiten sehen Adresse und Land des Servers. Ein kostenloses Konto ist nötig; nur für den persönlichen Gebrauch.
+Скины Windows: отметьте, какие плагины входят (панель задач, цвет, значки, обои, курсор), соберите скин и применяйте его одной кнопкой. Скин можно сохранить в файл и отдать другу. ⇒ Windows skins: tick which plugins are included (taskbar, color, icons, wallpapers, cursor), build a skin and apply it with one button. A skin can be saved to a file and given to a friend. ⇒ Windows-Skins: Wähle, welche Plugins enthalten sind (Taskleiste, Farbe, Symbole, Hintergründe, Mauszeiger), erstelle einen Skin und wende ihn mit einem Klick an. Ein Skin lässt sich in einer Datei speichern und an Freunde weitergeben.
+Подменяет часовой пояс, язык и местоположение в браузере под выбранную страну, по желанию — систему и браузер (Windows, macOS, Linux; Chrome, Edge, Firefox, Safari), и закрывает утечку адреса через WebRTC. IP-адрес, провайдер и DNS не меняет — для них шлюз Gateway Plus. ⇒ Changes the time zone, language and location in the browser to the chosen country, optionally the system and browser (Windows, macOS, Linux; Chrome, Edge, Firefox, Safari), and closes the address leak through WebRTC. It does not change the IP address, provider or DNS — the Gateway Plus gateway is for those. ⇒ Ändert Zeitzone, Sprache und Standort im Browser auf das gewählte Land, optional auch System und Browser (Windows, macOS, Linux; Chrome, Edge, Firefox, Safari), und schließt das Adressleck über WebRTC. IP-Adresse, Anbieter und DNS ändert es nicht – dafür gibt es das Gateway Plus.
+файл с контрольной суммой в релизе повреждён ⇒ the checksum file in the release is damaged ⇒ die Prüfsummendatei im Release ist beschädigt
+в релизе на GitHub нет файла расширения ⇒ the release on GitHub has no extension file ⇒ im Release auf GitHub gibt es keine Erweiterungsdatei
+GitHub временно отказывает в скачивании (слишком много запросов) — подождите несколько минут ⇒ GitHub is temporarily refusing downloads (too many requests) — wait a few minutes ⇒ GitHub verweigert Downloads vorübergehend (zu viele Anfragen) – warte ein paar Minuten
+GitHub сейчас недоступен (код  ⇒ GitHub is unavailable right now (code  ⇒ GitHub ist gerade nicht erreichbar (Code 
+нет связи с GitHub ⇒ no connection to GitHub ⇒ keine Verbindung zu GitHub
+время ожидания вышло — проверьте интернет ⇒ timed out — check the internet ⇒ Zeitüberschreitung – prüfe die Internetverbindung
+нет права записи в папку расширения:  ⇒ no permission to write to the extension folder:  ⇒ keine Schreibberechtigung für den Erweiterungsordner: 
+не удалось записать файлы:  ⇒ could not write the files:  ⇒ Dateien konnten nicht geschrieben werden: 
+Распаковываю и проверяю… ⇒ Unpacking and checking… ⇒ Entpacke und prüfe…
+В архиве нет manifest.json — это не расширение ⇒ The archive has no manifest.json — this is not an extension ⇒ Das Archiv enthält keine manifest.json – das ist keine Erweiterung
+Архив слишком большой ⇒ The archive is too large ⇒ Das Archiv ist zu groß
+В архиве слишком много файлов ⇒ The archive has too many files ⇒ Das Archiv enthält zu viele Dateien
+Файлы в архиве слишком большие ⇒ The files in the archive are too large ⇒ Die Dateien im Archiv sind zu groß
+Недопустимый путь в архиве ⇒ Invalid path in the archive ⇒ Ungültiger Pfad im Archiv
+Edge не найден на этом компьютере ⇒ Edge was not found on this computer ⇒ Edge wurde auf diesem Computer nicht gefunden
+Chrome не найден на этом компьютере ⇒ Chrome was not found on this computer ⇒ Chrome wurde auf diesem Computer nicht gefunden
+Папки расширения нет — скачайте его заново ⇒ The extension folder is missing — download it again ⇒ Der Erweiterungsordner fehlt – lade ihn erneut herunter
+БАТТЛ Лаунчер ⇒ BATTLE Launcher ⇒ BATTLE Launcher
+Установить «{}» на этот компьютер?\n\nПоявятся ярлыки в «Пуске» и на рабочем столе, лаунчер будет в списке установленных приложений. Права администратора не нужны. ⇒ Install "{0}" on this computer?\n\nShortcuts will appear in the Start menu and on the desktop, and the launcher will be in the list of installed apps. Administrator rights are not needed. ⇒ „{0}“ auf diesem Computer installieren?\n\nVerknüpfungen erscheinen im Startmenü und auf dem Desktop, und der Launcher steht in der Liste der installierten Apps. Administratorrechte sind nicht nötig.
+На компьютере уже стоит лаунчер {}. Заменить его этой версией ({})? ⇒ Launcher {0} is already installed on this computer. Replace it with this version ({1})? ⇒ Auf diesem Computer ist bereits Launcher {0} installiert. Durch diese Version ({1}) ersetzen?
+Не удалось установить:  ⇒ Could not install:  ⇒ Installation fehlgeschlagen: 
+\n\nЕсли лаунчер сейчас открыт — закрой его и попробуй ещё раз. ⇒ \n\nIf the launcher is open now, close it and try again. ⇒ \n\nIst der Launcher gerade geöffnet, schließe ihn und versuche es erneut.
+Удалить « ⇒ Delete " ⇒ „
+»?\n\nУдалить вместе с ним и сохранённые аккаунты (вход придётся пройти заново)?\n\nДа — удалить всё, Нет — оставить аккаунты. ⇒ "?\n\nAlso delete the saved accounts with it (you will have to sign in again)?\n\nYes — delete everything, No — keep the accounts. ⇒ “ löschen?\n\nAuch die gespeicherten Konten löschen (du musst dich dann erneut anmelden)?\n\nJa – alles löschen, Nein – Konten behalten.
+Устанавливаю (тихо, может занять минуту)… ⇒ Installing (silently, may take a minute)… ⇒ Installiere (im Hintergrund, kann eine Minute dauern)…
+Установщик отработал, но приложение не найдено ⇒ The installer finished, but the app was not found ⇒ Das Installationsprogramm ist fertig, aber die App wurde nicht gefunden
+Не удалось запустить установщик ⇒ Could not start the installer ⇒ Installationsprogramm konnte nicht gestartet werden
+Установщик завершился с кодом {} ⇒ The installer finished with code {0} ⇒ Das Installationsprogramm wurde mit Code {0} beendet
+Не нашёл программу удаления ⇒ Could not find the uninstaller ⇒ Deinstallationsprogramm nicht gefunden
+Программа удаления не найдена ⇒ The uninstaller was not found ⇒ Das Deinstallationsprogramm wurde nicht gefunden
+В очереди ⇒ Queued ⇒ In der Warteschlange
+Не вышло ⇒ Failed ⇒ Fehlgeschlagen
+Отменено ⇒ Cancelled ⇒ Abgebrochen
+Начинаю… ⇒ Starting… ⇒ Starte…
+нет доступа ⇒ no access ⇒ kein Zugriff

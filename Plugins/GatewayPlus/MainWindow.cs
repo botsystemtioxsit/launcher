@@ -125,7 +125,7 @@ sealed class MainWindow : Window
 
     void Logout()
     {
-        if (MessageBox.Show(this, "Выйти из аккаунта на этом компьютере?\n\nКлюч нужен, чтобы войти снова — убедитесь, что он у вас сохранён. Без аккаунта шлюз и мастер не включаются (уже работающий шлюз продолжит работать, его можно отключить).", "Выйти из аккаунта", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (Loc.Box(this, "Выйти из аккаунта на этом компьютере?\n\nКлюч нужен, чтобы войти снова — убедитесь, что он у вас сохранён. Без аккаунта шлюз и мастер не включаются (уже работающий шлюз продолжит работать, его можно отключить).", "Выйти из аккаунта", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         Account.Clear(); account = null; access = null; keyShown = false;
         BuildPage();
     }
@@ -484,6 +484,7 @@ sealed class MainWindow : Window
         System.Windows.Documents.TextElement.SetForeground(page, Foreground);
         System.Windows.Documents.TextElement.SetFontFamily(page, FontFamily);
         System.Windows.Documents.TextElement.SetFontSize(page, FontSize);
+        Loc.ApplyTree(page);   // служебный снимок: окно не показано, переводим вручную
         page.Measure(new Size(940, double.PositiveInfinity));
         var w = 940; var h = Math.Max(200, (int)Math.Ceiling(page.DesiredSize.Height));
         page.Arrange(new Rect(0, 0, w, h));

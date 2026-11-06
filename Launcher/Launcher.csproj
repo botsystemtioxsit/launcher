@@ -31,4 +31,11 @@
     <Compile Include="..\Shared\ChamferBorder.cs" Link="ChamferBorder.cs"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- языки интерфейса (русский / English / Deutsch): общий модуль и словари -->
+    <Compile Include="..\Shared\Loc.cs" Link="Loc.cs"/>
+    <EmbeddedResource Include="..\Shared\Loc\common.loc" LogicalName="loc/common.loc"/>
+    <EmbeddedResource Include="Loc\app.loc" LogicalName="loc/app.loc"/>
+  </ItemGroup>
+
 </Project>

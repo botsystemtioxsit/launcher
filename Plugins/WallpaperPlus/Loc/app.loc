@@ -1,0 +1,176 @@
+# Plugins/WallpaperPlus: русский ⇒ English ⇒ Deutsch (см. Shared/Loc.cs). Не править ключи — они совпадают с русскими строками в коде.
+Файл не найден. ⇒ File not found. ⇒ Datei nicht gefunden.
+Формат {} не поддерживается. Нужны видео (mp4, webm), GIF, картинка, страница (html) или архив zip. ⇒ The {0} format is not supported. Video (mp4, webm), GIF, a picture, a page (html) or a zip archive is needed. ⇒ Das Format {0} wird nicht unterstützt. Benötigt werden Video (mp4, webm), GIF, Bild, Seite (html) oder ein ZIP-Archiv.
+Файл {} — это программа, а не обои. Он не запускается и не добавляется. ⇒ The file {0} is a program, not a wallpaper. It is not run and not added. ⇒ Die Datei {0} ist ein Programm, kein Hintergrund. Sie wird weder ausgeführt noch hinzugefügt.
+Не знаю, как сделать обои из файла {}. Подходят видео (mp4, webm), GIF, картинки, страницы (html) и архивы zip. ⇒ I do not know how to make a wallpaper from the file {0}. Video (mp4, webm), GIF, pictures, pages (html) and zip archives are suitable. ⇒ Ich weiß nicht, wie sich aus der Datei {0} ein Hintergrund machen lässt. Geeignet sind Video (mp4, webm), GIF, Bilder, Seiten (html) und ZIP-Archive.
+Файл слишком большой (больше 700 МБ). ⇒ The file is too large (over 700 MB). ⇒ Die Datei ist zu groß (über 700 MB).
+Добавлено:  ⇒ Added:  ⇒ Hinzugefügt: 
+Это обои-программа или поток (' ⇒ This is a wallpaper program or stream (' ⇒ Das ist ein Hintergrund-Programm oder Stream („
+') — такие не поддерживаются. ⇒ ') — those are not supported. ⇒ “) – solche werden nicht unterstützt.
+В папке нет страницы index.html и нет видео или GIF. ⇒ The folder has no index.html page and no video or GIF. ⇒ Im Ordner gibt es weder eine Seite index.html noch ein Video oder GIF.
+Главный файл обоев « ⇒ The main wallpaper file " ⇒ Die Hauptdatei des Hintergrunds „
+» не найден. ⇒ " was not found. ⇒ “ wurde nicht gefunden.
+ (пропущено файлов, которые не бывают частью обоев: {}) ⇒  (skipped files that cannot be part of a wallpaper: {0}) ⇒  (übersprungene Dateien, die nicht Teil eines Hintergrunds sein können: {0})
+В обоях есть файл больше 700 МБ. ⇒ The wallpaper has a file larger than 700 MB. ⇒ Der Hintergrund enthält eine Datei über 700 MB.
+Обои слишком большие (больше 1,2 ГБ или 3000 файлов). ⇒ The wallpaper is too large (over 1.2 GB or 3000 files). ⇒ Der Hintergrund ist zu groß (über 1,2 GB oder 3000 Dateien).
+В архиве слишком много файлов. ⇒ The archive has too many files. ⇒ Das Archiv enthält zu viele Dateien.
+В архиве есть файл больше 700 МБ. ⇒ The archive has a file larger than 700 MB. ⇒ Das Archiv enthält eine Datei über 700 MB.
+Архив слишком большой (после распаковки больше 1,2 ГБ). ⇒ The archive is too large (over 1.2 GB after unpacking). ⇒ Das Archiv ist zu groß (nach dem Entpacken über 1,2 GB).
+Архив повреждён или это не zip. ⇒ The archive is damaged or it is not a zip. ⇒ Das Archiv ist beschädigt oder kein ZIP.
+В обоях из каталога нет manifest.json. ⇒ The catalog wallpaper has no manifest.json. ⇒ Dem Katalog-Hintergrund fehlt die manifest.json.
+manifest.json не читается. ⇒ manifest.json cannot be read. ⇒ manifest.json lässt sich nicht lesen.
+Недопустимое имя обоев. ⇒ Invalid wallpaper name. ⇒ Ungültiger Hintergrundname.
+Главный файл обоев не найден после установки. ⇒ The main wallpaper file was not found after installation. ⇒ Die Hauptdatei des Hintergrunds wurde nach der Installation nicht gefunden.
+Установлено:  ⇒ Installed:  ⇒ Installiert: 
+ (мои) ⇒  (mine) ⇒  (eigene)
+создано в Wallpaper Plus ⇒ made in Wallpaper Plus ⇒ in Wallpaper Plus erstellt
+Создано:  ⇒ Created:  ⇒ Erstellt: 
+укажите город в настройках ⇒ specify a city in the settings ⇒ Stadt in den Einstellungen angeben
+Мои обои ⇒ My wallpapers ⇒ Meine Hintergründe
+Каталог ⇒ Catalog ⇒ Katalog
+Создать ⇒ Create ⇒ Erstellen
+Сайты ⇒ Websites ⇒ Webseiten
+Настройки ⇒ Settings ⇒ Einstellungen
+Плагин Ghost Shell Launcher. Живые обои рабочего стола: видео, GIF, анимированные страницы. Берите из каталога, с сайтов, из своих файлов или создавайте свои.  ⇒ A Ghost Shell Launcher plugin. Live desktop wallpapers: video, GIF, animated pages. Take them from the catalog, from websites, from your own files, or make your own.  ⇒ Ein Plugin des Ghost Shell Launchers. Animierte Desktop-Hintergründe: Video, GIF, animierte Seiten. Nimm sie aus dem Katalog, von Webseiten, aus eigenen Dateien oder erstelle eigene. 
+Обои рисуются за значками, системные обои Windows не меняются: «Выключить» возвращает всё как было. ⇒ Wallpapers are drawn behind the icons, the Windows system wallpaper is not changed: "Turn off" restores everything as it was. ⇒ Die Hintergründe werden hinter den Symbolen gezeichnet, der Windows-Systemhintergrund wird nicht verändert: „Ausschalten“ stellt alles wie vorher wieder her.
+Добавляю:  ⇒ Adding:  ⇒ Füge hinzu: 
+Добавлено обоев: {}. ⇒ Wallpapers added: {0}. ⇒ Hintergründe hinzugefügt: {0}.
+ Не вышло:  ⇒  Failed:  ⇒  Fehlgeschlagen: 
+ КБ ⇒  KB ⇒  KB
+Каталог загружается из интернета; на снимке — заглушка. ⇒ The catalog is loaded from the internet; the screenshot shows a placeholder. ⇒ Der Katalog wird aus dem Internet geladen; der Screenshot zeigt einen Platzhalter.
+Добавить файл или архив… ⇒ Add a file or archive… ⇒ Datei oder Archiv hinzufügen …
+Выключить обои ⇒ Turn the wallpaper off ⇒ Hintergrund ausschalten
+Перетащите файлы прямо на окно: видео (mp4, webm), GIF, картинки, страницы (html) и архивы zip — в том числе обои из Lively.  ⇒ Drag files straight onto the window: video (mp4, webm), GIF, pictures, pages (html) and zip archives — including wallpapers from Lively.  ⇒ Ziehe Dateien einfach auf das Fenster: Video (mp4, webm), GIF, Bilder, Seiten (html) und ZIP-Archive – auch Hintergründe aus Lively. 
+Установщики и программы (.exe, .msi, .bat) не добавляются и не запускаются. Обои Wallpaper Engine (.pkg, scene) не поддерживаются. ⇒ Installers and programs (.exe, .msi, .bat) are not added and not run. Wallpaper Engine wallpapers (.pkg, scene) are not supported. ⇒ Installationsprogramme und Programme (.exe, .msi, .bat) werden weder hinzugefügt noch ausgeführt. Wallpaper-Engine-Hintergründe (.pkg, scene) werden nicht unterstützt.
+Пока нет ни одних обоев. ⇒ There are no wallpapers yet. ⇒ Es gibt noch keine Hintergründe.
+  ● на рабочем столе ⇒   ● on the desktop ⇒   ● auf dem Desktop
+ · интернет разрешён ⇒  · internet allowed ⇒  · Internet erlaubt
+процессор и память ⇒ processor and memory ⇒ Prozessor und Speicher
+звук ⇒ sound ⇒ Ton
+что играет ⇒ what is playing ⇒ was gerade läuft
+курсор ⇒ cursor ⇒ Mauszeiger
+журнал событий ⇒ event log ⇒ Ereignisprotokoll
+погода ⇒ weather ⇒ Wetter
+Использует:  ⇒ Uses:  ⇒ Verwendet: 
+ · под ним:  ⇒  · underneath:  ⇒  · darunter: 
+Выключить ⇒ Turn off ⇒ Ausschalten
+Сделать свои на основе… ⇒ Make my own based on… ⇒ Eigenen auf Basis davon erstellen …
+Поверх космоса ⇒ Over space ⇒ Über dem Weltraum
+Закрыть интернет ⇒ Block the internet ⇒ Internet sperren
+Разрешить интернет ⇒ Allow the internet ⇒ Internet erlauben
+Терминал на космосе ⇒ Terminal over space ⇒ Terminal über dem Weltraum
+Включено:  ⇒ Turned on:  ⇒ Eingeschaltet: 
+. Расположение панелей меняется в «Создать» → «Открыть редактор панелей». ⇒ . The layout of the panels is changed in "Create" → "Open the panel editor". ⇒ . Die Anordnung der Panels änderst du unter „Erstellen“ → „Panel-Editor öffnen“.
+Разрешить этим обоям выходить в интернет?\n\nСтраница обоев сможет обращаться к сайтам (например, за погодой или картинками).  ⇒ Allow this wallpaper to access the internet?\n\nThe wallpaper page will be able to contact websites (for example for the weather or pictures).  ⇒ Diesem Hintergrund den Internetzugriff erlauben?\n\nDie Hintergrundseite kann dann Webseiten aufrufen (zum Beispiel für Wetter oder Bilder). 
+Разрешайте только обоям, которым доверяете. ⇒ Only allow wallpapers you trust. ⇒ Erlaube es nur Hintergründen, denen du vertraust.
+Удалить обои «{}» из библиотеки? Файлы будут удалены. ⇒ Delete the wallpaper "{0}" from the library? The files will be deleted. ⇒ Hintergrund „{0}“ aus der Bibliothek löschen? Die Dateien werden gelöscht.
+Удалено:  ⇒ Deleted:  ⇒ Gelöscht: 
+Выберите обои ⇒ Choose a wallpaper ⇒ Hintergrund auswählen
+Папка с обоями (в ней index.html или видео) ⇒ A wallpaper folder (with index.html or a video inside) ⇒ Hintergrundordner (mit index.html oder einem Video darin)
+погода:  ⇒ weather:  ⇒ Wetter: 
+нет связи с сервисом погоды ⇒ no connection to the weather service ⇒ keine Verbindung zum Wetterdienst
+пауза:  ⇒ paused:  ⇒ pausiert: 
+Wallpaper Plus — редактор:  ⇒ Wallpaper Plus — editor:  ⇒ Wallpaper Plus – Editor: 
+Редактор не запустился:  ⇒ The editor did not start:  ⇒ Der Editor wurde nicht gestartet: 
+\n(нужен «Microsoft Edge WebView2 Runtime») ⇒ \n(needs "Microsoft Edge WebView2 Runtime") ⇒ \n(benötigt die „Microsoft Edge WebView2 Runtime“)
+Каталог не загрузился:  ⇒ The catalog did not load:  ⇒ Der Katalog wurde nicht geladen: 
+Обновить список ⇒ Refresh the list ⇒ Liste aktualisieren
+Каталог обоев ⇒ Wallpaper catalog ⇒ Hintergrundkatalog
+Список лежит в репозитории проекта, поэтому новые обои появляются без нового выпуска плагина. Скачиваются только страницы, картинки и видео из списка — программ среди них нет. ⇒ The list lives in the project repository, so new wallpapers appear without a new plugin release. Only pages, pictures and videos from the list are downloaded — there are no programs among them. ⇒ Die Liste liegt im Repository des Projekts, daher erscheinen neue Hintergründe ohne neue Plugin-Version. Heruntergeladen werden nur Seiten, Bilder und Videos aus der Liste – Programme sind nicht darunter.
+Загружаю список… ⇒ Loading the list… ⇒ Lade die Liste…
+Откройте вкладку, чтобы загрузить список. ⇒ Open the tab to load the list. ⇒ Öffne den Tab, um die Liste zu laden.
+В каталоге пока пусто. ⇒ The catalog is empty for now. ⇒ Der Katalog ist vorerst leer.
+Установить ⇒ Install ⇒ Installieren
+Пауза вручную ⇒ Manual pause ⇒ Manuelle Pause
+Обои замирают и не нагружают компьютер, пока вы не включите их снова ⇒ Wallpapers freeze and do not load the computer until you turn them on again ⇒ Die Hintergründe frieren ein und belasten den Computer nicht, bis du sie wieder einschaltest
+Работают ⇒ Running ⇒ Läuft
+Пауза ⇒ Paused ⇒ Pausiert
+Мониторы ⇒ Monitors ⇒ Monitore
+Одни и те же обои на всех мониторах или только на главном ⇒ The same wallpaper on all monitors or only on the main one ⇒ Derselbe Hintergrund auf allen Monitoren oder nur auf dem Hauptmonitor
+Все ⇒ All ⇒ Alle
+Только главный ⇒ Main only ⇒ Nur Hauptmonitor
+Как вписать обои ⇒ How to fit the wallpaper ⇒ Wie der Hintergrund eingepasst wird
+Заполнить — без полос, но края могут обрезаться; вписать — видна вся картинка; растянуть — на весь экран без сохранения пропорций ⇒ Fill — no bars, but the edges may be cropped; fit — the whole picture is visible; stretch — to the full screen without keeping proportions ⇒ Füllen – ohne Balken, aber die Ränder können abgeschnitten werden; Anpassen – das ganze Bild ist sichtbar; Strecken – auf den ganzen Bildschirm ohne Beibehaltung der Proportionen
+Заполнить ⇒ Fill ⇒ Füllen
+Вписать ⇒ Fit ⇒ Anpassen
+Растянуть ⇒ Stretch ⇒ Strecken
+Звук ⇒ Sound ⇒ Ton
+У обоев с видео звук по умолчанию выключен ⇒ Sound is off by default for wallpapers with video ⇒ Bei Hintergründen mit Video ist der Ton standardmäßig aus
+Кадров в секунду ⇒ Frames per second ⇒ Bilder pro Sekunde
+Ограничение для встроенных обоев-страниц: меньше — экономнее для видеокарты и батареи (видео идёт со своей частотой) ⇒ A limit for the built-in page wallpapers: lower is gentler on the graphics card and battery (video runs at its own rate) ⇒ Begrenzung für die eingebauten Seiten-Hintergründe: weniger schont Grafikkarte und Akku (Videos laufen mit ihrer eigenen Rate)
+Показ ⇒ Display ⇒ Anzeige
+Экономия ⇒ Saving resources ⇒ Ressourcen sparen
+Пауза при игре или видео на весь экран ⇒ Pause during a full-screen game or video ⇒ Pause bei Vollbild-Spiel oder -Video
+Когда запущена полноэкранная игра, презентация или экран заблокирован, обои замирают ⇒ When a full-screen game, a presentation is running or the screen is locked, the wallpaper freezes ⇒ Läuft ein Vollbild-Spiel oder eine Präsentation oder ist der Bildschirm gesperrt, friert der Hintergrund ein
+Пауза, когда рабочий стол закрыт окном ⇒ Pause when the desktop is covered by a window ⇒ Pause, wenn der Desktop von einem Fenster verdeckt ist
+Если окно развёрнуто на весь монитор, обои под ним не видны и не рисуются ⇒ If a window is maximized over the whole monitor, the wallpaper under it is not visible and is not drawn ⇒ Ist ein Fenster über den ganzen Monitor maximiert, ist der Hintergrund darunter nicht sichtbar und wird nicht gezeichnet
+Город:  ⇒ City:  ⇒ Stadt: 
+Город не выбран — погода в терминале не показывается. ⇒ No city chosen — the weather is not shown in the terminal. ⇒ Keine Stadt gewählt – das Wetter wird im Terminal nicht angezeigt.
+Найти ⇒ Find ⇒ Suchen
+Терминал: данные компьютера ⇒ Terminal: computer data ⇒ Terminal: Computerdaten
+Обои «Терминал» показывают время, погоду, звук, что играет, курсор и журнал событий. Ничего не записывается на диск и не отправляется:  ⇒ The "Terminal" wallpaper shows the time, weather, sound, what is playing, the cursor and an event log. Nothing is written to disk or sent:  ⇒ Der Hintergrund „Terminal“ zeigt Uhrzeit, Wetter, Ton, was gerade läuft, den Mauszeiger und ein Ereignisprotokoll. Nichts wird auf die Festplatte geschrieben oder gesendet: 
+единственный запрос в интернет — погода у бесплатного сервиса Open-Meteo, и в нём только название города. ⇒ the only request to the internet is the weather from the free Open-Meteo service, and it contains only the city name. ⇒ Die einzige Anfrage ins Internet ist das Wetter vom kostenlosen Dienst Open-Meteo, und sie enthält nur den Städtenamen.
+Город для погоды ⇒ City for the weather ⇒ Stadt für das Wetter
+Например: Москва ⇒ For example: Moscow ⇒ Zum Beispiel: Berlin
+Звук и музыка ⇒ Sound and music ⇒ Ton und Musik
+Уровень громкости системы, полосы-«эквалайзер» и что сейчас играет. Звук не записывается: из него берутся только высоты полос. ⇒ The system volume level, "equalizer" bars and what is playing now. Sound is not recorded: only the heights of the bars are taken from it. ⇒ Die Systemlautstärke, „Equalizer“-Balken und was gerade läuft. Der Ton wird nicht aufgezeichnet: Aus ihm werden nur die Höhen der Balken genommen.
+Журнал событий ⇒ Event log ⇒ Ereignisprotokoll
+Какие программы открыты и закрыты, смена окна, сеть, громкость, нагрузка. Только названия программ, без заголовков окон. ⇒ Which programs are opened and closed, window changes, network, volume, load. Only program names, no window titles. ⇒ Welche Programme geöffnet und geschlossen werden, Fensterwechsel, Netzwerk, Lautstärke, Auslastung. Nur Programmnamen, keine Fenstertitel.
+Система ⇒ System ⇒ System
+Обои появятся после входа в систему, окно открываться не будет ⇒ Wallpapers appear after signing in to the system, the window will not open ⇒ Die Hintergründe erscheinen nach der Anmeldung am System, das Fenster öffnet sich nicht
+Системные обои Windows плагин не меняет: его обои — отдельное окно за значками. «Выключить» или «Выйти» — и рабочий стол такой, как был.  ⇒ The plugin does not change the Windows system wallpaper: its wallpapers are a separate window behind the icons. "Turn off" or "Exit" — and the desktop is as it was.  ⇒ Das Plugin ändert den Windows-Systemhintergrund nicht: Seine Hintergründe sind ein eigenes Fenster hinter den Symbolen. „Ausschalten“ oder „Beenden“ – und der Desktop ist wie vorher. 
+Если запущен Wallpaper Engine или Lively, выключите их: две программы с живыми обоями мешают друг другу. ⇒ If Wallpaper Engine or Lively is running, turn it off: two live-wallpaper programs interfere with each other. ⇒ Läuft Wallpaper Engine oder Lively, schalte es aus: Zwei Programme für animierte Hintergründe stören sich gegenseitig.
+Ищу… ⇒ Searching… ⇒ Suche…
+Такой город не найден. Попробуйте написать иначе. ⇒ Such a city was not found. Try writing it differently. ⇒ Diese Stadt wurde nicht gefunden. Versuche es anders zu schreiben.
+Нет связи с сервисом погоды:  ⇒ No connection to the weather service:  ⇒ Keine Verbindung zum Wetterdienst: 
+Скачиваю «{}»: {} из {}… ⇒ Downloading "{0}": {1} of {2}… ⇒ Lade „{0}“ herunter: {1} von {2}…
+Файл {} не скачался (ответ {}). ⇒ The file {0} did not download (response {1}). ⇒ Die Datei {0} wurde nicht heruntergeladen (Antwort {1}).
+Файл {} слишком большой. ⇒ The file {0} is too large. ⇒ Die Datei {0} ist zu groß.
+Недопустимый путь файла в каталоге. ⇒ Invalid file path in the catalog. ⇒ Ungültiger Dateipfad im Katalog.
+Pexels · видео ⇒ Pexels · video ⇒ Pexels · Video
+бесплатные видео, свободная лицензия ⇒ free videos, free license ⇒ kostenlose Videos, freie Lizenz
+Pixabay · видео ⇒ Pixabay · video ⇒ Pixabay · Video
+Mixkit · видео ⇒ Mixkit · video ⇒ Mixkit · Video
+бесплатные видео-фоны ⇒ free video backgrounds ⇒ kostenlose Videohintergründe
+живые обои (проверяйте лицензию) ⇒ live wallpapers (check the license) ⇒ animierte Hintergründe (Lizenz prüfen)
+Откройте обои на сайте и нажмите «Скачать» — плагин сам добавит файл в «Мои обои». Сайт может попросить вход или проверку — это обычная работа сайта.  ⇒ Open a wallpaper on the website and press "Download" — the plugin will add the file to "My wallpapers" itself. The site may ask you to sign in or pass a check — that is how the site normally works.  ⇒ Öffne einen Hintergrund auf der Webseite und klicke auf „Herunterladen“ – das Plugin fügt die Datei selbst zu „Meine Hintergründe“ hinzu. Die Seite verlangt eventuell eine Anmeldung oder Prüfung – das ist ihr normales Verhalten. 
+Плагин сам ничего не качает; из скачанного берутся только видео, GIF, картинки, страницы и архивы zip. Программы (.exe, .msi) он не запускает. ⇒ The plugin downloads nothing by itself; only video, GIF, pictures, pages and zip archives are taken from what you download. It does not run programs (.exe, .msi). ⇒ Das Plugin lädt von sich aus nichts herunter; aus dem Heruntergeladenen werden nur Videos, GIFs, Bilder, Seiten und ZIP-Archive übernommen. Programme (.exe, .msi) führt es nicht aus.
+ Откройте сайт в обычном браузере, скачайте файл и перетащите его на окно плагина. ⇒  Open the website in a regular browser, download the file and drag it onto the plugin window. ⇒  Öffne die Webseite im normalen Browser, lade die Datei herunter und ziehe sie auf das Plugin-Fenster.
+Скачан файл «{}» — это не обои (программа или неподдерживаемый формат). Он не запускается и не добавляется. Файл лежит здесь: {} ⇒ The downloaded file "{0}" is not a wallpaper (a program or an unsupported format). It is not run and not added. The file is here: {1} ⇒ Die heruntergeladene Datei „{0}“ ist kein Hintergrund (ein Programm oder ein nicht unterstütztes Format). Sie wird weder ausgeführt noch hinzugefügt. Die Datei liegt hier: {1}
+с сайта ⇒ from a website ⇒ von einer Webseite
+Обои выключены. ⇒ The wallpaper is off. ⇒ Der Hintergrund ist aus.
+Выбранные обои не найдены. ⇒ The chosen wallpaper was not found. ⇒ Der gewählte Hintergrund wurde nicht gefunden.
+Обои «{}» на рабочем столе. ⇒ The wallpaper "{0}" is on the desktop. ⇒ Der Hintergrund „{0}“ ist auf dem Desktop.
+Обои не запустились:  ⇒ The wallpaper did not start:  ⇒ Der Hintergrund wurde nicht gestartet: 
+ (нужен «Microsoft Edge WebView2 Runtime» — он есть в Windows 11). ⇒  (needs "Microsoft Edge WebView2 Runtime" — it is in Windows 11). ⇒  (benötigt die „Microsoft Edge WebView2 Runtime“ – sie ist in Windows 11 enthalten).
+рабочий стол изменился (перезапуск Проводника?) — обои поднимаются заново ⇒ the desktop changed (Explorer restarted?) — the wallpaper is coming back up ⇒ der Desktop hat sich geändert (Explorer neu gestartet?) – der Hintergrund wird neu aufgebaut
+Пауза: обои не видны (полноэкранное окно) или поставлены на паузу. ⇒ Paused: the wallpaper is not visible (a full-screen window) or has been paused. ⇒ Pausiert: Der Hintergrund ist nicht sichtbar (Vollbildfenster) oder wurde angehalten.
+ Внимание: запущена другая программа с живыми обоями ( ⇒  Attention: another live-wallpaper program is running ( ⇒  Achtung: Ein anderes Programm für animierte Hintergründe läuft (
+) — выключите её, иначе обои будут мигать. ⇒ ) — turn it off, otherwise the wallpaper will flicker. ⇒ ) – schalte es aus, sonst flackert der Hintergrund.
+Пока нет обоев, которые можно настраивать. ⇒ There are no wallpapers that can be customized yet. ⇒ Es gibt noch keine Hintergründe, die sich anpassen lassen.
+1. Основа ⇒ 1. Base ⇒ 1. Grundlage
+Вы настраиваете свои обои. Изменения сохраняются кнопкой «Сохранить изменения». ⇒ You are customizing your own wallpaper. Changes are saved with the "Save changes" button. ⇒ Du passt deinen eigenen Hintergrund an. Änderungen werden mit „Änderungen speichern“ gesichert.
+Выберите, что взять за основу. Встроенные обои не меняются — получится новая копия со своими цветами. ⇒ Choose what to take as a base. Built-in wallpapers are not changed — you get a new copy with your own colors. ⇒ Wähle, was als Grundlage dienen soll. Eingebaute Hintergründe werden nicht verändert – du erhältst eine neue Kopie mit deinen Farben.
+Так обои будут называться в «Моих обоях» ⇒ This is what the wallpaper will be called in "My wallpapers" ⇒ So heißt der Hintergrund unter „Meine Hintergründe“
+Ничего (чёрный экран) ⇒ Nothing (a black screen) ⇒ Nichts (schwarzer Bildschirm)
+Что под терминалом ⇒ What is under the terminal ⇒ Was unter dem Terminal liegt
+Терминал рисуется поверх других обоев: можно поставить космос, сияние или своё видео. «Ничего» — чёрный экран. ⇒ The terminal is drawn over other wallpapers: you can put space, an aurora or your own video. "Nothing" — a black screen. ⇒ Das Terminal wird über andere Hintergründe gezeichnet: Du kannst Weltraum, ein Polarlicht oder dein eigenes Video darunterlegen. „Nichts“ – schwarzer Bildschirm.
+Открыть редактор панелей… ⇒ Open the panel editor… ⇒ Panel-Editor öffnen …
+Вернуть расположение по умолчанию ⇒ Restore the default layout ⇒ Standardanordnung wiederherstellen
+Расположение панелей сброшено. ⇒ The panel layout was reset. ⇒ Die Anordnung der Panels wurde zurückgesetzt.
+Панели терминала ⇒ Terminal panels ⇒ Terminal-Panels
+Часы, погода, звук, музыка, курсор, журнал событий и ваши панели: двигайте мышью, добавляйте и убирайте ⇒ Clock, weather, sound, music, cursor, event log and your panels: move with the mouse, add and remove ⇒ Uhr, Wetter, Ton, Musik, Mauszeiger, Ereignisprotokoll und deine Panels: mit der Maus verschieben, hinzufügen und entfernen
+2. Настройте ⇒ 2. Customize ⇒ 2. Anpassen
+Предпросмотр ⇒ Preview ⇒ Vorschau
+Сохранить и включить ⇒ Save and turn on ⇒ Speichern und einschalten
+Сохранить как новые ⇒ Save as new ⇒ Als neu speichern
+Сбросить значения ⇒ Reset values ⇒ Werte zurücksetzen
+3. Предпросмотр и сохранение ⇒ 3. Preview and saving ⇒ 3. Vorschau und Speichern
+Предпросмотр идёт в окне плагина; на рабочем столе обои появятся после «Включить». Своё расположение панелей терминала делается в редакторе (кнопка в шаге 2). ⇒ The preview runs in the plugin window; on the desktop the wallpaper appears after "Turn on". The layout of the terminal panels is made in the editor (the button in step 2). ⇒ Die Vorschau läuft im Plugin-Fenster; auf dem Desktop erscheint der Hintergrund nach „Einschalten“. Die Anordnung der Terminal-Panels erfolgt im Editor (Schaltfläche in Schritt 2).
+Предпросмотр не запустился:  ⇒ The preview did not start:  ⇒ Die Vorschau wurde nicht gestartet: 
+ (нужен «Microsoft Edge WebView2 Runtime»). ⇒  (needs "Microsoft Edge WebView2 Runtime"). ⇒  (benötigt die „Microsoft Edge WebView2 Runtime“).
+Сохранено:  ⇒ Saved:  ⇒ Gespeichert: 
+анимация GIF ⇒ GIF animation ⇒ GIF-Animation
+встроенные ⇒ built-in ⇒ eingebaut
+из файла ⇒ from a file ⇒ aus einer Datei
+каталог ⇒ catalog ⇒ Katalog

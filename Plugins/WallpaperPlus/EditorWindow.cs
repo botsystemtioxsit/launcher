@@ -22,7 +22,7 @@ sealed class EditorWindow : Window
         Loaded += async (_, _) =>
         {
             try { await WallpaperView.LoadAsync(web, w, s, values, new LoadOptions { Edit = true, Background = background, OnLayout = onLayout }); }
-            catch (Exception ex) { MessageBox.Show(this, "Редактор не запустился: " + ex.Message + "\n(нужен «Microsoft Edge WebView2 Runtime»)", "Wallpaper Plus"); Close(); }
+            catch (Exception ex) { Loc.Box(this, "Редактор не запустился: " + ex.Message + "\n(нужен «Microsoft Edge WebView2 Runtime»)", "Wallpaper Plus"); Close(); }
         };
         Closed += (_, _) => { WallpaperView.Detach(web); try { web.Dispose(); } catch { } };
     }

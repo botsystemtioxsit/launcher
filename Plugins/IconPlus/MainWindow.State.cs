@@ -70,7 +70,7 @@ sealed partial class MainWindow
     void AskExplorerRestart()
     {
         if (settings.AutoRestart) { RestartExplorer(); return; }
-        var r = MessageBox.Show(this, "Часть значков (панель слева, «Этот компьютер», диски, папки) обновится только после перезапуска Проводника.\n\n" +
+        var r = Loc.Box(this, "Часть значков (панель слева, «Этот компьютер», диски, папки) обновится только после перезапуска Проводника.\n\n" +
                                       "Перезапустить сейчас? Открытые окна папок на секунду закроются, ваши программы не затрагиваются.",
                                 "Icon Plus", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (r == MessageBoxResult.Yes) RestartExplorer();

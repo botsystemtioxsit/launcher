@@ -269,6 +269,7 @@ sealed class MainWindow : Window
         System.Windows.Documents.TextElement.SetFontSize(page, FontSize);
         var sv = (ScrollViewer)Content;
         sv.Content = null;
+        Loc.ApplyTree(page);   // служебный снимок: окно не показано, переводим вручную
         page.Measure(new Size(980, double.PositiveInfinity));
         var w = 980; var h = Math.Max(200, (int)Math.Ceiling(page.DesiredSize.Height));
         page.Arrange(new Rect(0, 0, w, h));

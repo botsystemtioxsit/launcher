@@ -1,0 +1,89 @@
+# Plugins/CursorPlus: русский ⇒ English ⇒ Deutsch (см. Shared/Loc.cs). Не править ключи — они совпадают с русскими строками в коде.
+Как в Windows ⇒ Like Windows ⇒ Wie Windows
+Классика ⇒ Classic ⇒ Klassisch
+Мягкая ⇒ Soft ⇒ Weich
+Точка ⇒ Dot ⇒ Punkt
+Кольцо ⇒ Ring ⇒ Ring
+Прицел ⇒ Crosshair ⇒ Fadenkreuz
+Призрак ⇒ Ghost ⇒ Geist
+Звезда ⇒ Star ⇒ Stern
+Комета ⇒ Comet ⇒ Komet
+Искры ⇒ Sparks ⇒ Funken
+Свечение ⇒ Glow ⇒ Leuchten
+Звёзды ⇒ Stars ⇒ Sterne
+Пузырьки ⇒ Bubbles ⇒ Blasen
+Сердечки ⇒ Hearts ⇒ Herzen
+Призраки ⇒ Ghosts ⇒ Geister
+Свой курсор: цвет, форма, шлейф за мышью и эффекты при клике. Выберите — внизу сразу видно, как будет. Понравилось — «Применить». Пока не нажали, в Windows ничего не меняется. ⇒ Your own cursor: color, shape, a mouse trail and click effects. Choose — the bottom shows right away how it will look. Like it — "Apply". Until you press it, nothing changes in Windows. ⇒ Dein eigener Mauszeiger: Farbe, Form, Mausspur und Klickeffekte. Wähle aus – unten siehst du sofort, wie es aussieht. Gefällt es dir, klicke auf „Anwenden“. Bis dahin ändert sich in Windows nichts.
+Поводите мышью по тёмной площадке: там по-настоящему работает шлейф. Кликните — увидите эффект клика. Курсор там нарисован таким, какой станет. ⇒ Move the mouse over the dark pad: the trail really works there. Click — you will see the click effect. The cursor there is drawn as it will be. ⇒ Bewege die Maus über das dunkle Feld: Dort funktioniert die Spur wirklich. Klicke – du siehst den Klickeffekt. Der Mauszeiger ist dort so gezeichnet, wie er werden wird.
+Остальные указатели Windows ⇒ Other Windows pointers ⇒ Andere Windows-Zeiger
+2. Курсор ⇒ 2. Cursor ⇒ 2. Mauszeiger
+Цвет курсора ⇒ Cursor color ⇒ Zeigerfarbe
+Перекрасить и остальные указатели ⇒ Recolor the other pointers too ⇒ Auch die anderen Zeiger umfärben
+Рука, текст, стрелки изменения размера, «недоступно» и другие тоже получат ваш цвет. Крутящийся указатель загрузки остаётся как в Windows. ⇒ The hand, text, resize arrows, "unavailable" and others will also get your color. The spinning loading pointer stays as in Windows. ⇒ Hand, Text, Größenpfeile, „nicht verfügbar“ und andere erhalten ebenfalls deine Farbe. Der drehende Ladezeiger bleibt wie in Windows.
+3. Шлейф за курсором ⇒ 3. The trail behind the cursor ⇒ 3. Die Spur hinter dem Mauszeiger
+Вид ⇒ Type ⇒ Art
+Цвет шлейфа ⇒ Trail color ⇒ Spurfarbe
+«Как курсор» — цвет курсора; «Радуга» — переливается; «Два цвета» — плавный переход от первого ко второму. ⇒ "Like the cursor" — the cursor's color; "Rainbow" — shimmers; "Two colors" — a smooth transition from the first to the second. ⇒ „Wie der Zeiger“ – die Farbe des Zeigers; „Regenbogen“ – schillert; „Zwei Farben“ – ein sanfter Übergang von der ersten zur zweiten.
+Как курсор ⇒ Like the cursor ⇒ Wie der Zeiger
+Радуга ⇒ Rainbow ⇒ Regenbogen
+Два цвета ⇒ Two colors ⇒ Zwei Farben
+Первый цвет ⇒ First color ⇒ Erste Farbe
+Второй цвет ⇒ Second color ⇒ Zweite Farbe
+Длина шлейфа ⇒ Trail length ⇒ Spurlänge
+Как долго след держится за курсором ⇒ How long the trail stays behind the cursor ⇒ Wie lange die Spur hinter dem Zeiger bleibt
+Размер ⇒ Size ⇒ Größe
+Толщина следа и размер частиц ⇒ The thickness of the trail and the size of the particles ⇒ Dicke der Spur und Größe der Partikel
+4. При клике ⇒ 4. On click ⇒ 4. Beim Klick
+Эффект ⇒ Effect ⇒ Effekt
+Вспыхивает там, где вы нажали кнопку мыши. Нажатия клавиатуры плагин не читает. ⇒ Flashes where you pressed the mouse button. The plugin does not read keyboard presses. ⇒ Blitzt dort auf, wo du die Maustaste gedrückt hast. Tastatureingaben liest das Plugin nicht.
+Круги ⇒ Circles ⇒ Kreise
+Вспышка ⇒ Burst ⇒ Blitz
+Сейчас применено. Можно изменить и нажать «Применить» ещё раз. ⇒ Applied now. You can change it and press "Apply" again. ⇒ Jetzt angewendet. Du kannst es ändern und erneut auf „Anwenden“ klicken.
+Ничего не применено — курсоры Windows как обычно. ⇒ Nothing is applied — the Windows cursors are as usual. ⇒ Nichts angewendet – die Windows-Mauszeiger sind wie gewohnt.
+Что нужно знать: форма и цвет курсора записываются в Windows и работают во всех программах (иногда окно программы подхватывает их после перезапуска).  ⇒ Good to know: the shape and color of the cursor are written to Windows and work in all programs (sometimes a program window picks them up after a restart).  ⇒ Gut zu wissen: Form und Farbe des Mauszeigers werden in Windows gespeichert und wirken in allen Programmen (manchmal übernimmt ein Programmfenster sie erst nach einem Neustart). 
+Шлейф и эффекты клика рисует прозрачное окно поверх экрана — для этого Cursor Plus остаётся работать в фоне и запускается вместе с Windows; в полноэкранных играх и видео шлейф сам выключается.  ⇒ The trail and click effects are drawn by a transparent window over the screen — so Cursor Plus keeps running in the background and starts with Windows; in full-screen games and videos the trail turns off by itself.  ⇒ Spur und Klickeffekte zeichnet ein transparentes Fenster über dem Bildschirm – deshalb läuft Cursor Plus im Hintergrund weiter und startet mit Windows; in Vollbild-Spielen und -Videos schaltet sich die Spur selbst ab. 
+«Вернуть как было» возвращает прежние указатели и останавливает шлейф. ⇒ "Restore as it was" brings back the previous pointers and stops the trail. ⇒ „Wie vorher wiederherstellen“ bringt die früheren Zeiger zurück und beendet die Spur.
+как было ⇒ as it was ⇒ wie vorher
+＋ Нарисовать свой… ⇒ ＋ Draw your own… ⇒ ＋ Eigenen zeichnen …
+Изменить выбранный ⇒ Edit the selected one ⇒ Ausgewählten bearbeiten
+Удалить выбранный ⇒ Delete the selected one ⇒ Ausgewählten löschen
+Авто ⇒ Auto ⇒ Auto
+Белая ⇒ White ⇒ Weiß
+Чёрная ⇒ Black ⇒ Schwarz
+Обводка ⇒ Outline ⇒ Umriss
+«Авто» — тёмный оттенок выбранного цвета. ⇒ "Auto" — a dark shade of the chosen color. ⇒ „Auto“ – ein dunkler Farbton der gewählten Farbe.
+Размер курсора ⇒ Cursor size ⇒ Zeigergröße
+100 % — обычный. Больше — крупнее. Меняется у всех указателей. ⇒ 100 % — normal. More — larger. Changes for all pointers. ⇒ 100 % – normal. Mehr – größer. Gilt für alle Zeiger.
+Шлейф работает; Cursor Plus остаётся в фоне. ⇒ The trail is working; Cursor Plus stays in the background. ⇒ Die Spur läuft; Cursor Plus bleibt im Hintergrund.
+ Если какая-то программа показывает старый курсор — перезапустите её. ⇒  If some program shows the old cursor — restart it. ⇒  Zeigt ein Programm noch den alten Mauszeiger, starte es neu.
+Всё возвращено: курсоры Windows как были, шлейф выключен. ⇒ Everything is restored: the Windows cursors are as they were, the trail is off. ⇒ Alles wiederhergestellt: Die Windows-Mauszeiger sind wie vorher, die Spur ist aus.
+Мой курсор ⇒ My cursor ⇒ Mein Mauszeiger
+Обычный ⇒ Normal ⇒ Normal
+Справка ⇒ Help ⇒ Hilfe
+Точный выбор ⇒ Precise selection ⇒ Präzise Auswahl
+Текст ⇒ Text ⇒ Text
+Недоступно ⇒ Unavailable ⇒ Nicht verfügbar
+Размер ↕ ⇒ Resize ↕ ⇒ Größe ↕
+Размер ↔ ⇒ Resize ↔ ⇒ Größe ↔
+Размер ↘ ⇒ Resize ↘ ⇒ Größe ↘
+Размер ↙ ⇒ Resize ↙ ⇒ Größe ↙
+Переместить ⇒ Move ⇒ Verschieben
+Выбор вверх ⇒ Alternate select ⇒ Alternative Auswahl
+Ссылка ⇒ Link ⇒ Link
+Свой курсор ⇒ Own cursor ⇒ Eigener Mauszeiger
+СВОЙ КУРСОР ⇒ OWN CURSOR ⇒ EIGENER MAUSZEIGER
+Левая кнопка — рисовать, правая — стирать. Инструмент «Точка клика» отмечает клетку, которой курсор попадает в кнопки и ссылки. ⇒ Left button — draw, right — erase. The "Click point" tool marks the cell with which the cursor hits buttons and links. ⇒ Linke Taste – zeichnen, rechte – radieren. Das Werkzeug „Klickpunkt“ markiert die Zelle, mit der der Zeiger Schaltflächen und Links trifft.
+Карандаш ⇒ Pencil ⇒ Stift
+Ластик ⇒ Eraser ⇒ Radierer
+Заливка ⇒ Fill ⇒ Füllen
+Точка клика ⇒ Click point ⇒ Klickpunkt
+Так выглядит ⇒ This is how it looks ⇒ So sieht es aus
+Очистить ⇒ Clear ⇒ Leeren
+Отразить ↔ ⇒ Flip ↔ ⇒ Spiegeln ↔
+Из картинки… ⇒ From a picture… ⇒ Aus einem Bild …
+Название: ⇒ Name: ⇒ Name:
+Картинка {}×{}. Точка клика — клетка {}, {} (голубая рамка). ⇒ Picture {0}×{1}. The click point is cell {2}, {3} (the blue frame). ⇒ Bild {0}×{1}. Der Klickpunkt ist Zelle {2}, {3} (blauer Rahmen).
+Картинки и курсоры|*.png;*.ico;*.cur;*.ani;*.jpg;*.jpeg;*.bmp;*.gif|Все файлы|*.* ⇒ Pictures and cursors|*.png;*.ico;*.cur;*.ani;*.jpg;*.jpeg;*.bmp;*.gif|All files|*.* ⇒ Bilder und Mauszeiger|*.png;*.ico;*.cur;*.ani;*.jpg;*.jpeg;*.bmp;*.gif|Alle Dateien|*.*
+Выберите картинку или курсор ⇒ Choose a picture or a cursor ⇒ Bild oder Mauszeiger auswählen
+Курсор пустой — нарисуйте что-нибудь. ⇒ The cursor is empty — draw something. ⇒ Der Mauszeiger ist leer – zeichne etwas.

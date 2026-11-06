@@ -173,7 +173,7 @@ sealed class ProfileWindow : Window
         if (was != now)
         {
             var q = $"Протокол профиля меняется: {ProtoName(was)} → {ProtoName(now)}.\n\nЭто сработает, только если на сервере порт и ключи в этом тексте — именно для {ProtoName(now)}. Обычно для смены протокола нужно поставить его на сервер кнопкой «Поставить на этом сервере…» выше, а не править текст.\n\nВсё равно сохранить?";
-            if (MessageBox.Show(this, q, "Смена протокола", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            if (Loc.Box(this, q, "Смена протокола", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         }
         try
         {
@@ -188,7 +188,7 @@ sealed class ProfileWindow : Window
 
     void Delete()
     {
-        if (MessageBox.Show(this, $"Удалить профиль «{name}»? Сам сервер не меняется. Восстановить конфиг можно, только если у вас осталась его копия.", "Удалить профиль", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (Loc.Box(this, $"Удалить профиль «{name}»? Сам сервер не меняется. Восстановить конфиг можно, только если у вас осталась его копия.", "Удалить профиль", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         Store.Delete(name);
         if (Store.Active.Equals(name, StringComparison.Ordinal)) Store.Active = Store.List().FirstOrDefault() ?? "";
         Result = Outcome.Deleted;

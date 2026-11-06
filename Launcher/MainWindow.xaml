@@ -31,6 +31,7 @@
         <Border Grid.Column="0" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0" Padding="12,18">
           <DockPanel>
             <TextBlock x:Name="VersionText" DockPanel.Dock="Bottom" Foreground="{DynamicResource Muted}" FontSize="12" Margin="6,0,0,0"/>
+            <StackPanel x:Name="LangRow" DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,0,0,12"/>
             <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,14">
               <Button x:Name="OpsToggleBtn" Content="☰ Очередь" Style="{StaticResource Ghost}" Margin="0,0,0,6" Click="OpsToggleBtn_Click" ToolTip="Что сейчас обновляется, что стоит в очереди и чем всё закончилось"/>
               <Button x:Name="BulkUpdateBtn" Content="⟳ Обновить всё" Style="{StaticResource Ghost}" Click="BulkUpdateBtn_Click" ToolTip="Обновить все приложения, плагины и расширения, у которых вышла новая версия"/>

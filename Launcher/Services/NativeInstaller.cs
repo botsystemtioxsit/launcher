@@ -236,9 +236,9 @@ static class NativeInstaller
     {
         var d = Catalog.ById(id);
         if (d?.NativeExe == null) return;
-        if (MessageBox.Show($"Удалить «{d.NativeName}» с этого компьютера?", "Ghost Shell Launcher", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (Loc.Box($"Удалить «{d.NativeName}» с этого компьютера?", "Ghost Shell Launcher", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         try { Uninstall(d); }
-        catch (Exception ex) { MessageBox.Show(ex.Message, "Ghost Shell Launcher", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        catch (Exception ex) { Loc.Box(ex.Message, "Ghost Shell Launcher", MessageBoxButton.OK, MessageBoxImage.Warning); }
     }
 
     // BattleLauncher.exe --selftest-update=<папка>: служебная проверка «обновление не выключает плагин» на Windows-раннере GitHub.

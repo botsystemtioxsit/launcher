@@ -1,0 +1,153 @@
+# Plugins/IconPlus: русский ⇒ English ⇒ Deutsch (см. Shared/Loc.cs). Не править ключи — они совпадают с русскими строками в коде.
+Папки и диски ⇒ Folders and drives ⇒ Ordner und Laufwerke
+Рабочий стол и система ⇒ Desktop and system ⇒ Desktop und System
+Типы файлов ⇒ File types ⇒ Dateitypen
+Ярлыки ⇒ Shortcuts ⇒ Verknüpfungen
+Папка (спросит разрешение администратора) ⇒ Folder (will ask for administrator permission) ⇒ Ordner (fragt nach Administratorerlaubnis)
+Жёсткий диск ⇒ Hard disk ⇒ Festplatte
+Флешка (USB) ⇒ Flash drive (USB) ⇒ USB-Stick
+Сетевой диск ⇒ Network drive ⇒ Netzlaufwerk
+Папки пользователя: Документы, Загрузки, Рабочий стол… ⇒ User folders: Documents, Downloads, Desktop… ⇒ Benutzerordner: Dokumente, Downloads, Desktop …
+Корзина (пустая) ⇒ Recycle Bin (empty) ⇒ Papierkorb (leer)
+Корзина (полная) ⇒ Recycle Bin (full) ⇒ Papierkorb (voll)
+Сеть ⇒ Network ⇒ Netzwerk
+Папка пользователя ⇒ User folder ⇒ Benutzerordner
+Текст (txt, log, ini, md) ⇒ Text (txt, log, ini, md) ⇒ Text (txt, log, ini, md)
+Документ (doc, docx, rtf) ⇒ Document (doc, docx, rtf) ⇒ Dokument (doc, docx, rtf)
+Таблица (xls, xlsx, csv) ⇒ Spreadsheet (xls, xlsx, csv) ⇒ Tabelle (xls, xlsx, csv)
+Презентация (ppt, pptx) ⇒ Presentation (ppt, pptx) ⇒ Präsentation (ppt, pptx)
+Архив (zip, rar, 7z) ⇒ Archive (zip, rar, 7z) ⇒ Archiv (zip, rar, 7z)
+Картинка (png, jpg, gif) ⇒ Picture (png, jpg, gif) ⇒ Bild (png, jpg, gif)
+Музыка (mp3, wav) ⇒ Music (mp3, wav) ⇒ Musik (mp3, wav)
+Видео (mp4, mkv, avi) ⇒ Video (mp4, mkv, avi) ⇒ Video (mp4, mkv, avi)
+Страница (html) ⇒ Page (html) ⇒ Seite (html)
+Код (js, json, xml, py) ⇒ Code (js, json, xml, py) ⇒ Code (js, json, xml, py)
+Сценарий (bat, cmd, ps1) ⇒ Script (bat, cmd, ps1) ⇒ Skript (bat, cmd, ps1)
+Все остальные типы файлов (по списку Windows) ⇒ All other file types (from the Windows list) ⇒ Alle anderen Dateitypen (laut Windows-Liste)
+Ярлыки на рабочем столе (и ярлыки-ссылки Steam) ⇒ Desktop shortcuts (and Steam link shortcuts) ⇒ Desktop-Verknüpfungen (und Steam-Link-Verknüpfungen)
+Ярлыки на общем рабочем столе (для всех; спросит разрешение администратора) ⇒ Shortcuts on the shared desktop (for everyone; will ask for administrator permission) ⇒ Verknüpfungen auf dem gemeinsamen Desktop (für alle; fragt nach Administratorerlaubnis)
+Ярлыки в меню «Пуск» (мои программы) ⇒ Start menu shortcuts (my programs) ⇒ Startmenü-Verknüpfungen (meine Programme)
+Ярлыки в меню «Пуск» (общие; спросит разрешение администратора) ⇒ Start menu shortcuts (shared; will ask for administrator permission) ⇒ Startmenü-Verknüpfungen (gemeinsam; fragt nach Administratorerlaubnis)
+Закреплённые на панели задач ⇒ Pinned to the taskbar ⇒ An die Taskleiste angeheftet
+Приложения «Пуска» без ярлыков (магазинные и системные: Блокнот, Терминал, Безопасность Windows…) ⇒ Start menu apps without shortcuts (Store and system ones: Notepad, Terminal, Windows Security…) ⇒ Startmenü-Apps ohne Verknüpfungen (Store- und Systemapps: Editor, Terminal, Windows-Sicherheit …)
+Цвет ⇒ Color ⇒ Farbe
+Наборы ⇒ Packs ⇒ Pakete
+Сайт с иконками ⇒ Icon website ⇒ Symbol-Webseite
+Состояние ⇒ Status ⇒ Status
+Плагин Ghost Shell Launcher. Значки Windows по-своему: один цвет для всех значков (как тема значков на Android) или готовый набор иконок.  ⇒ A Ghost Shell Launcher plugin. Windows icons your way: one color for all icons (like an icon theme on Android) or a ready-made icon pack.  ⇒ Ein Plugin des Ghost Shell Launchers. Windows-Symbole nach deinem Geschmack: eine Farbe für alle Symbole (wie ein Symbol-Theme auf Android) oder ein fertiges Symbolpaket. 
+Меняются только настройки вашего пользователя, права администратора не нужны; «Вернуть как было» возвращает всё. ⇒ Only your user's settings are changed, administrator rights are not needed; "Restore as it was" brings everything back. ⇒ Es werden nur die Einstellungen deines Benutzers geändert, Administratorrechte sind nicht nötig; „Wie vorher wiederherstellen“ bringt alles zurück.
+«Пуск» не отдаёт это приложение (код  ⇒ The Start menu does not give out this app (code  ⇒ Das Startmenü gibt diese App nicht heraus (Code 
+идентификатор программы не записался (код  ⇒ the app identifier was not written (code  ⇒ die App-Kennung wurde nicht geschrieben (Code 
+Набор ⇒ Pack ⇒ Paket
+В этом файле нет значков (.ico или .png). Если это установщик (.exe) — запускать его не нужно: найдите на сайте вариант с обычными значками. ⇒ There are no icons (.ico or .png) in this file. If it is an installer (.exe) — do not run it: find a version with ordinary icons on the website. ⇒ In dieser Datei gibt es keine Symbole (.ico oder .png). Ist es ein Installationsprogramm (.exe), führe es nicht aus: Suche auf der Webseite eine Variante mit gewöhnlichen Symbolen.
+Набор «{}»: значков {} ⇒ Pack "{0}": {1} icons ⇒ Paket „{0}“: {1} Symbole
+Готовые наборы значков (папки, диски, корзина, типы файлов) можно скачать на сайте с иконками — вкладка «Сайт с иконками»: нажали «Скачать», плагин сам добавит набор.  ⇒ Ready-made icon packs (folders, drives, recycle bin, file types) can be downloaded on the icon website — the "Icon website" tab: press "Download" and the plugin will add the pack itself.  ⇒ Fertige Symbolpakete (Ordner, Laufwerke, Papierkorb, Dateitypen) kannst du auf der Symbol-Webseite herunterladen – Tab „Symbol-Webseite“: Auf „Herunterladen“ klicken, das Plugin fügt das Paket selbst hinzu. 
+Или добавьте набор, который у вас уже есть: архив (zip, 7z, rar) либо папку с файлами .ico или .png. Из архива берутся только значки, ничего не запускается. ⇒ Or add a pack you already have: an archive (zip, 7z, rar) or a folder with .ico or .png files. Only icons are taken from the archive, nothing is run. ⇒ Oder füge ein Paket hinzu, das du schon hast: ein Archiv (zip, 7z, rar) oder einen Ordner mit .ico- oder .png-Dateien. Aus dem Archiv werden nur Symbole übernommen, nichts wird ausgeführt.
+Добавить архив или значок… ⇒ Add an archive or icon… ⇒ Archiv oder Symbol hinzufügen …
+Пароль архива (если он есть): ⇒ Archive password (if any): ⇒ Archivpasswort (falls vorhanden):
+Добавить набор ⇒ Add a pack ⇒ Paket hinzufügen
+Мои наборы ⇒ My packs ⇒ Meine Pakete
+Пока наборов нет. Скачайте набор на вкладке «Сайт с иконками» или добавьте свой выше. ⇒ There are no packs yet. Download a pack in the "Icon website" tab or add your own above. ⇒ Noch keine Pakete vorhanden. Lade ein Paket im Tab „Symbol-Webseite“ herunter oder füge oben ein eigenes hinzu.
+Значков в наборе: {} ⇒ Icons in the pack: {0} ⇒ Symbole im Paket: {0}
+Применить набор ⇒ Apply the pack ⇒ Paket anwenden
+Удалить набор ⇒ Delete the pack ⇒ Paket löschen
+Программа сама подобрала значки из набора по названиям файлов. Если что-то не так или значка не нашлось — нажмите «Выбрать…» у нужной строки.  ⇒ The program picked icons from the pack by file names. If something is wrong or an icon was not found — press "Choose…" on the needed row.  ⇒ Das Programm hat die Symbole aus dem Paket anhand der Dateinamen ausgewählt. Stimmt etwas nicht oder wurde kein Symbol gefunden, klicke in der passenden Zeile auf „Auswählen …“. 
+Строки без значка остаются как в Windows. ⇒ Rows without an icon stay as in Windows. ⇒ Zeilen ohne Symbol bleiben wie in Windows.
+— нет — ⇒ — none — ⇒ — keins —
+Подобрать заново ⇒ Pick again ⇒ Neu auswählen
+Какой значок куда — « ⇒ Which icon goes where — " ⇒ Welches Symbol wohin – „
+Выберите значок ⇒ Choose an icon ⇒ Symbol auswählen
+Ставлю значки из набора… ⇒ Installing icons from the pack… ⇒ Installiere Symbole aus dem Paket…
+Ставлю:  ⇒ Installing:  ⇒ Installiere: 
+Удалить набор «{}»? Если он сейчас применён, сначала верните значки как было. ⇒ Delete the pack "{0}"? If it is applied now, first restore the icons as they were. ⇒ Paket „{0}“ löschen? Ist es gerade angewendet, stelle zuerst die Symbole wie vorher wieder her.
+Не удалось удалить:  ⇒ Could not delete:  ⇒ Löschen nicht möglich: 
+Архив с набором значков ⇒ An icon pack archive ⇒ Archiv mit Symbolpaket
+Архивы и значки|*.zip;*.7z;*.rar;*.tar;*.gz;*.ico;*.png|Все файлы|*.* ⇒ Archives and icons|*.zip;*.7z;*.rar;*.tar;*.gz;*.ico;*.png|All files|*.* ⇒ Archive und Symbole|*.zip;*.7z;*.rar;*.tar;*.gz;*.ico;*.png|Alle Dateien|*.*
+Папка со значками ⇒ Folder with icons ⇒ Ordner mit Symbolen
+Добавляю набор… ⇒ Adding the pack… ⇒ Füge das Paket hinzu…
+Набор «{}» добавлен. ⇒ Pack "{0}" added. ⇒ Paket „{0}“ hinzugefügt.
+Набор не добавлен:  ⇒ The pack was not added:  ⇒ Das Paket wurde nicht hinzugefügt: 
+в «Пуске» уже есть ярлык с таким именем ⇒ the Start menu already has a shortcut with this name ⇒ im Startmenü gibt es bereits eine Verknüpfung mit diesem Namen
+ярлык не записывается ⇒ the shortcut cannot be written ⇒ die Verknüpfung lässt sich nicht schreiben
+Изображения ⇒ Pictures ⇒ Bilder
+Видео ⇒ Videos ⇒ Videos
+desktop.ini не записывается ⇒ desktop.ini cannot be written ⇒ desktop.ini lässt sich nicht schreiben
+не загрузился ⇒ did not load ⇒ nicht geladen
+пустой ⇒ empty ⇒ leer
+ярлык не читается ⇒ the shortcut cannot be read ⇒ die Verknüpfung lässt sich nicht lesen
+значок из файлов приложения ⇒ the icon from the app files ⇒ Symbol aus den App-Dateien
+как рисует Проводник ⇒ as Explorer draws it ⇒ wie der Explorer es zeichnet
+файл значка ⇒ icon file ⇒ Symboldatei
+значок пустой (плитка без рисунка) — красить нечего ⇒ the icon is empty (a tile without a picture) — nothing to recolor ⇒ das Symbol ist leer (eine Kachel ohne Bild) – nichts zu färben
+значок не найден ⇒ icon not found ⇒ Symbol nicht gefunden
+значок не читается ⇒ the icon cannot be read ⇒ das Symbol lässt sich nicht lesen
+после перекраски значок стал сплошным пятном — оставлен как был ⇒ after recoloring the icon became a solid blob — left as it was ⇒ nach dem Umfärben wurde das Symbol zu einem einfarbigen Fleck – so belassen, wie es war
+«Пуск» показывает приложение дважды — ярлык убран ⇒ The Start menu shows the app twice — the shortcut was removed ⇒ Das Startmenü zeigt die App doppelt – die Verknüpfung wurde entfernt
+«Пуск» показал {} приложений дважды — их ярлыки убраны ⇒ The Start menu showed {0} apps twice — their shortcuts were removed ⇒ Das Startmenü zeigte {0} Apps doppelt – ihre Verknüpfungen wurden entfernt
+после перекраски стал бы сплошным пятном — оставим как есть ⇒ after recoloring it would become a solid blob — we leave it as is ⇒ nach dem Umfärben würde es zu einem einfarbigen Fleck – wir lassen es, wie es ist
+для администратора:  ⇒ for the administrator:  ⇒ für den Administrator: 
+значок папок не изменён ⇒ the icon of folders was not changed ⇒ das Symbol der Ordner wurde nicht geändert
+Сейчас плагин ничего не менял — значки как в Windows. ⇒ The plugin has not changed anything now — the icons are as in Windows. ⇒ Das Plugin hat derzeit nichts geändert – die Symbole sind wie in Windows.
+перекраска в один цвет ⇒ recoloring to a single color ⇒ Umfärben in eine einzige Farbe
+набор значков ⇒ an icon pack ⇒ ein Symbolpaket
+Запомнено изменений: в реестре — {}, ярлыков — {}. По этому списку «Вернуть как было» возвращает прежнее. ⇒ Changes remembered: in the registry — {0}, shortcuts — {1}. "Restore as it was" brings back the previous state from this list. ⇒ Gemerkte Änderungen: in der Registry – {0}, Verknüpfungen – {1}. „Wie vorher wiederherstellen“ stellt anhand dieser Liste den früheren Zustand wieder her.
+Обновить значки ⇒ Refresh icons ⇒ Symbole aktualisieren
+Проводнику сказано обновить значки. ⇒ Explorer has been told to refresh the icons. ⇒ Der Explorer wurde angewiesen, die Symbole zu aktualisieren.
+Перезапустить Проводник ⇒ Restart Explorer ⇒ Explorer neu starten
+Что сделано ⇒ What was done ⇒ Was gemacht wurde
+Перезапускать Проводник сам ⇒ Restart Explorer by itself ⇒ Explorer selbst neu starten
+После применения Проводник сам перезапускается и чистит кэш значков — тогда все значки новые сразу (окна папок на пару секунд закроются) ⇒ After applying, Explorer restarts by itself and clears the icon cache — then all icons are new right away (folder windows will close for a couple of seconds) ⇒ Nach dem Anwenden startet der Explorer selbst neu und leert den Symbol-Cache – dann sind alle Symbole sofort neu (Ordnerfenster schließen sich für ein paar Sekunden)
+Спрашивать ⇒ Ask ⇒ Fragen
+Сам ⇒ By itself ⇒ Selbst
+Отправлять отчёт сам ⇒ Send the report by itself ⇒ Bericht selbst senden
+После каждого применения отчёт уходит разработчику без кнопки (названия ярлыков и причины; имя пользователя и компьютера вычищаются) ⇒ After each application the report goes to the developer without a button (shortcut names and reasons; the user and computer names are scrubbed) ⇒ Nach jeder Anwendung geht der Bericht ohne Schaltfläche an den Entwickler (Namen der Verknüpfungen und Gründe; Benutzer- und Computername werden entfernt)
+Здесь видно, какие значки перекрасились, а какие Windows не отдала и почему. Если не перекрасилось то, что должно было, нажмите «Отправить отчёт разработчику» —  ⇒ Here you can see which icons were recolored and which Windows did not hand over and why. If something that should have been recolored was not, press "Send the report to the developer" —  ⇒ Hier siehst du, welche Symbole umgefärbt wurden und welche Windows nicht herausgegeben hat – und warum. Wurde etwas nicht umgefärbt, das hätte umgefärbt werden sollen, klicke auf „Bericht an den Entwickler senden“ – 
+в отчёт попадут названия ярлыков и причины (имя пользователя и компьютера вычищаются), и это можно будет исправить. ⇒ the report will contain shortcut names and reasons (the user and computer names are scrubbed), and it can be fixed. ⇒ der Bericht enthält Namen von Verknüpfungen und Gründe (Benutzer- und Computername werden entfernt), und es lässt sich beheben.
+Скопировать отчёт ⇒ Copy the report ⇒ Bericht kopieren
+Отчёт скопирован. ⇒ The report is copied. ⇒ Der Bericht ist kopiert.
+Отчёта пока нет — он появится после первого применения. ⇒ There is no report yet — it will appear after the first application. ⇒ Noch kein Bericht – er erscheint nach der ersten Anwendung.
+Отчёт о последнем применении ⇒ Report on the last application ⇒ Bericht zur letzten Anwendung
+  (было:  ⇒   (was:  ⇒   (war: 
+  (не было) ⇒   (did not exist) ⇒   (gab es nicht)
+… и ещё {} ⇒ … and {0} more ⇒ … und {0} weitere
+Изменённые записи ⇒ Changed entries ⇒ Geänderte Einträge
+Где хранятся файлы ⇒ Where the files are stored ⇒ Wo die Dateien liegen
+Наборы и перекрашенные значки:  ⇒ Packs and recolored icons:  ⇒ Pakete und umgefärbte Symbole: 
+Перекрашенные значки — обычные файлы .ico в папке generated. Если удалить папку, не вернув значки как было, Windows покажет пустые значки: сначала нажмите «Вернуть как было». ⇒ Recolored icons are ordinary .ico files in the generated folder. If you delete the folder without restoring the icons as they were, Windows will show empty icons: first press "Restore as it was". ⇒ Umgefärbte Symbole sind gewöhnliche .ico-Dateien im Ordner „generated“. Löschst du den Ordner, ohne die Symbole wiederherzustellen, zeigt Windows leere Symbole: Klicke zuerst auf „Wie vorher wiederherstellen“.
+Часть значков (панель слева, «Этот компьютер», диски, папки) обновится только после перезапуска Проводника.\n\n ⇒ Some icons (the left pane, "This PC", drives, folders) will update only after Explorer restarts.\n\n ⇒ Ein Teil der Symbole (linker Bereich, „Dieser PC“, Laufwerke, Ordner) wird erst nach einem Neustart des Explorers aktualisiert.\n\n
+Перезапустить сейчас? Открытые окна папок на секунду закроются, ваши программы не затрагиваются. ⇒ Restart now? Open folder windows will close for a second, your programs are not affected. ⇒ Jetzt neu starten? Geöffnete Ordnerfenster schließen sich kurz, deine Programme sind nicht betroffen.
+Обновляю значки: Проводник перезапустится на несколько секунд… ⇒ Refreshing the icons: Explorer will restart for a few seconds… ⇒ Aktualisiere die Symbole: Der Explorer startet für ein paar Sekunden neu…
+Готово: значки обновлены. ⇒ Done: the icons are refreshed. ⇒ Fertig: Die Symbole sind aktualisiert.
+почти прозрачный ⇒ almost transparent ⇒ fast durchsichtig
+Слева — значок сейчас, справа — каким станет. Показаны настоящие значки с вашей панели задач и самые частые типы.  ⇒ On the left — the icon now, on the right — what it will become. Real icons from your taskbar and the most common types are shown.  ⇒ Links – das Symbol jetzt, rechts – wie es wird. Gezeigt werden echte Symbole aus deiner Taskleiste und die häufigsten Typen. 
+Крестик значит, что у такого значка Windows не отдаёт картинку, — под ним написано, почему. ⇒ A cross means that Windows does not give out a picture for that icon — the reason is written under it. ⇒ Ein Kreuz bedeutet, dass Windows für dieses Symbol kein Bild herausgibt – der Grund steht darunter.
+2. Выберите цвет ⇒ 2. Choose a color ⇒ 2. Farbe auswählen
+Применить цвет ⇒ Apply the color ⇒ Farbe anwenden
+Пока вы не нажали «Применить цвет», в Windows ничего не меняется. После применения Проводник обновит значки сам (на пару секунд закроются окна папок). ⇒ Until you press "Apply the color", nothing changes in Windows. After applying, Explorer will refresh the icons itself (folder windows will close for a couple of seconds). ⇒ Solange du nicht auf „Farbe anwenden“ klickst, ändert sich in Windows nichts. Nach dem Anwenden aktualisiert der Explorer die Symbole selbst (Ordnerfenster schließen sich für ein paar Sekunden).
+Тонкая настройка ▾ ⇒ Fine-tuning ▾ ⇒ Feineinstellung ▾
+Тонкая настройка ▸ ⇒ Fine-tuning ▸ ⇒ Feineinstellung ▸
+Способ ⇒ Method ⇒ Methode
+«Один цвет» — все значки становятся оттенками выбранного цвета. «Сменить оттенок» — сохраняются краски, оттенок сдвигается к выбранному. ⇒ "Single color" — all icons become shades of the chosen color. "Shift the hue" — the paints are kept, the hue is shifted toward the chosen one. ⇒ „Eine Farbe“ – alle Symbole werden zu Schattierungen der gewählten Farbe. „Farbton verschieben“ – die Farben bleiben erhalten, der Farbton wird zum gewählten hin verschoben.
+Один цвет ⇒ Single color ⇒ Eine Farbe
+Сменить оттенок ⇒ Shift the hue ⇒ Farbton verschieben
+Сила ⇒ Strength ⇒ Stärke
+100% — полностью новый цвет; меньше — часть прежних красок остаётся. ⇒ 100% — a completely new color; less — part of the original paints stays. ⇒ 100 % – komplett neue Farbe; weniger – ein Teil der ursprünglichen Farben bleibt.
+Что перекрасить:  ⇒ What to recolor:  ⇒ Was umgefärbt wird: 
+Значок обычных папок и ярлыки «для всех» (общий рабочий стол и общий «Пуск») меняются с правами администратора — Windows спросит один раз.  ⇒ The icon of ordinary folders and the "for everyone" shortcuts (the shared desktop and the shared Start menu) are changed with administrator rights — Windows will ask once.  ⇒ Das Symbol gewöhnlicher Ordner und die Verknüpfungen „für alle“ (gemeinsamer Desktop und gemeinsames Startmenü) werden mit Administratorrechten geändert – Windows fragt einmal. 
+Приложениям «Пуска» без ярлыков (Блокнот, Терминал, Безопасность Windows…) плагин кладёт в «Пуск» свой ярлык с нужным значком; «Вернуть как было» его убирает. ⇒ For Start menu apps without shortcuts (Notepad, Terminal, Windows Security…) the plugin puts its own shortcut with the right icon into the Start menu; "Restore as it was" removes it. ⇒ Für Startmenü-Apps ohne Verknüpfungen (Editor, Terminal, Windows-Sicherheit …) legt das Plugin eine eigene Verknüpfung mit dem passenden Symbol ins Startmenü; „Wie vorher wiederherstellen“ entfernt sie.
+Тонкая настройка ⇒ Fine-tuning ⇒ Feineinstellung
+Загружаю значки… ⇒ Loading icons… ⇒ Lade Symbole…
+Закреплено на панели задач ⇒ Pinned to the taskbar ⇒ An die Taskleiste angeheftet
+Папки, диски и файлы ⇒ Folders, drives and files ⇒ Ordner, Laufwerke und Dateien
+Перекрашиваю значки… ⇒ Recoloring icons… ⇒ Färbe Symbole um…
+Перекрашиваю:  ⇒ Recoloring:  ⇒ Färbe um: 
+Всё возвращено как было (изменений отменено: {}). ⇒ Everything is restored as it was (changes undone: {0}). ⇒ Alles ist wie vorher wiederhergestellt (rückgängig gemachte Änderungen: {0}).
+Откройте набор на сайте и нажмите «Скачать» — плагин сам добавит его во вкладку «Наборы». На сайте могут понадобиться вход или проверка — это обычная работа сайта.  ⇒ Open a pack on the website and press "Download" — the plugin will add it to the "Packs" tab itself. The website may ask you to sign in or pass a check — that is how the site normally works.  ⇒ Öffne ein Paket auf der Webseite und klicke auf „Herunterladen“ – das Plugin fügt es selbst dem Tab „Pakete“ hinzu. Die Webseite verlangt eventuell eine Anmeldung oder Prüfung – das ist ihr normales Verhalten. 
+Плагин сам ничего не качает и не запускает: из скачанного берутся только файлы значков (.ico, .png). Установщики и темы (.exe, .msi, .7tsp) он не запускает. ⇒ The plugin downloads and runs nothing by itself: only icon files (.ico, .png) are taken from what you download. It does not run installers and themes (.exe, .msi, .7tsp). ⇒ Das Plugin lädt und startet von sich aus nichts: Aus dem Heruntergeladenen werden nur Symboldateien (.ico, .png) übernommen. Installationsprogramme und Themes (.exe, .msi, .7tsp) führt es nicht aus.
+Иконки на сайте ⇒ Icons on the website ⇒ Symbole auf der Webseite
+Добавить скачанное вручную… ⇒ Add something downloaded manually… ⇒ Manuell Heruntergeladenes hinzufügen …
+ Откройте сайт в обычном браузере, скачайте набор и добавьте его кнопкой «Добавить скачанное вручную». ⇒  Open the website in a regular browser, download the pack and add it with the "Add something downloaded manually" button. ⇒  Öffne die Webseite im normalen Browser, lade das Paket herunter und füge es mit der Schaltfläche „Manuell Heruntergeladenes hinzufügen“ hinzu.
+Скачан файл «{}» — это не набор значков (установщик или тема). Плагин его не запускает. Файл лежит здесь: {} ⇒ The downloaded file "{0}" is not an icon pack (an installer or a theme). The plugin does not run it. The file is here: {1} ⇒ Die heruntergeladene Datei „{0}“ ist kein Symbolpaket (ein Installationsprogramm oder Theme). Das Plugin führt sie nicht aus. Die Datei liegt hier: {1}
+разрешение администратора не дано ⇒ administrator permission was not given ⇒ Administratorerlaubnis wurde nicht erteilt
+нет ответа от действия администратора ⇒ no answer from the administrator action ⇒ keine Antwort der Administrator-Aktion
+ярлык не записывается (нет доступа или файл занят) ⇒ the shortcut cannot be written (no access or the file is busy) ⇒ die Verknüpfung lässt sich nicht schreiben (kein Zugriff oder Datei belegt)

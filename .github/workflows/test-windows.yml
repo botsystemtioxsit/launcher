@@ -10,7 +10,7 @@ on:
         description: 'plugins — проверка плагина панели; bg — опыты с прозрачным фоном окон; glass — опыты со «стеклом» под окном'
         default: plugins
         type: choice
-        options: [plugins, bg, glass, site, icons, store, startapps, taskbar, wallpaper, colorplus, cursor, gateway, gateway-ssh, browser, skins, dns, gsp]
+        options: [plugins, bg, glass, site, icons, store, startapps, taskbar, wallpaper, colorplus, cursor, gateway, gateway-ssh, browser, skins, dns, gsp, loc]
 
 permissions:
   contents: write
@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
-        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'icons' || env.SCENARIO == 'startapps' || env.SCENARIO == 'taskbar' || env.SCENARIO == 'wallpaper' || env.SCENARIO == 'colorplus' || env.SCENARIO == 'cursor' || env.SCENARIO == 'gateway' || env.SCENARIO == 'browser' || env.SCENARIO == 'skins' || env.SCENARIO == 'dns'
+        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'icons' || env.SCENARIO == 'startapps' || env.SCENARIO == 'taskbar' || env.SCENARIO == 'wallpaper' || env.SCENARIO == 'colorplus' || env.SCENARIO == 'cursor' || env.SCENARIO == 'gateway' || env.SCENARIO == 'browser' || env.SCENARIO == 'skins' || env.SCENARIO == 'dns' || env.SCENARIO == 'loc'
         with:
           dotnet-version: 8.0.x
 
@@ -61,7 +61,7 @@ jobs:
           if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notmatch 'WireGuard') { throw 'подпись wintun.dll не подтвердилась' }
 
       - name: Build engine
-        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'taskbar' || env.SCENARIO == 'colorplus' || env.SCENARIO == 'skins'
+        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'taskbar' || env.SCENARIO == 'colorplus' || env.SCENARIO == 'skins' || env.SCENARIO == 'loc'
         shell: pwsh
         run: |
           cmake -S Plugins/TaskbarPlus/Engine -B Plugins/TaskbarPlus/Engine/build -A x64
@@ -105,6 +105,18 @@ jobs:
         run: |
           dotnet publish Plugins/GatewayPlus/GatewayPlus.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-test
           if ($LASTEXITCODE -ne 0) { throw 'publish GatewayPlus не удался' }
+
+      # Языки интерфейса: публикуем лаунчер и все плагины в одну папку и просим каждый нарисовать окна с --lang=en / --lang=de
+      - name: Publish launcher and all plugins
+        if: env.SCENARIO == 'loc'
+        shell: pwsh
+        run: |
+          dotnet publish Launcher/Launcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-test
+          if ($LASTEXITCODE -ne 0) { throw 'publish Launcher не удался' }
+          foreach ($p in 'GatewayPlus','IconPlus','WallpaperPlus','TaskbarPlus','SkinLoader','CursorPlus','ColorPlus','DnsPlus') {
+            dotnet publish Plugins/$p/$p.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-test
+            if ($LASTEXITCODE -ne 0) { throw "publish $p не удался" }
+          }
 
       - name: Publish DNS Plus
         if: env.SCENARIO == 'dns'
@@ -157,6 +169,7 @@ jobs:
           elseif ($env:SCENARIO -eq 'skins') { ./tests/e2e/skin-loader.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'dns') { ./tests/e2e/dns-plus.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'gsp') { ./tests/e2e/gsp-windows.ps1 -Out results }
+          elseif ($env:SCENARIO -eq 'loc') { ./tests/e2e/loc.ps1 -Out results }
           else { ./tests/e2e/run.ps1 -Out results }
         continue-on-error: true
 
@@ -170,7 +183,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } elseif ($env:SCENARIO -eq 'site') { 'ci-e2e-site' } elseif ($env:SCENARIO -eq 'icons') { 'ci-e2e-icons' } elseif ($env:SCENARIO -eq 'store') { 'ci-e2e-store' } elseif ($env:SCENARIO -eq 'startapps') { 'ci-e2e-startapps' } elseif ($env:SCENARIO -eq 'taskbar') { 'ci-e2e-taskbar' } elseif ($env:SCENARIO -eq 'gpu') { 'ci-e2e-gpu' } elseif ($env:SCENARIO -eq 'extend') { 'ci-e2e-extend' } elseif ($env:SCENARIO -eq 'accent') { 'ci-e2e-accent' } elseif ($env:SCENARIO -eq 'wallpaper') { 'ci-e2e-wallpaper' } elseif ($env:SCENARIO -eq 'colorplus') { 'ci-e2e-colorplus' } elseif ($env:SCENARIO -eq 'cursor') { 'ci-e2e-cursor' } elseif ($env:SCENARIO -eq 'gateway') { 'ci-e2e-gateway' } elseif ($env:SCENARIO -eq 'browser') { 'ci-e2e-browser' } elseif ($env:SCENARIO -eq 'skins') { 'ci-e2e-skins' } elseif ($env:SCENARIO -eq 'dns') { 'ci-e2e-dns' } elseif ($env:SCENARIO -eq 'gsp') { 'ci-e2e-gsp' } else { 'ci-e2e' }
+          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } elseif ($env:SCENARIO -eq 'site') { 'ci-e2e-site' } elseif ($env:SCENARIO -eq 'icons') { 'ci-e2e-icons' } elseif ($env:SCENARIO -eq 'store') { 'ci-e2e-store' } elseif ($env:SCENARIO -eq 'startapps') { 'ci-e2e-startapps' } elseif ($env:SCENARIO -eq 'taskbar') { 'ci-e2e-taskbar' } elseif ($env:SCENARIO -eq 'gpu') { 'ci-e2e-gpu' } elseif ($env:SCENARIO -eq 'extend') { 'ci-e2e-extend' } elseif ($env:SCENARIO -eq 'accent') { 'ci-e2e-accent' } elseif ($env:SCENARIO -eq 'wallpaper') { 'ci-e2e-wallpaper' } elseif ($env:SCENARIO -eq 'colorplus') { 'ci-e2e-colorplus' } elseif ($env:SCENARIO -eq 'cursor') { 'ci-e2e-cursor' } elseif ($env:SCENARIO -eq 'gateway') { 'ci-e2e-gateway' } elseif ($env:SCENARIO -eq 'browser') { 'ci-e2e-browser' } elseif ($env:SCENARIO -eq 'skins') { 'ci-e2e-skins' } elseif ($env:SCENARIO -eq 'dns') { 'ci-e2e-dns' } elseif ($env:SCENARIO -eq 'gsp') { 'ci-e2e-gsp' } elseif ($env:SCENARIO -eq 'loc') { 'ci-e2e-loc' } else { 'ci-e2e' }
           $dir = Join-Path $env:RUNNER_TEMP 'e2e-branch'
           New-Item -ItemType Directory -Force $dir | Out-Null
           Copy-Item results/* $dir -Recurse -ErrorAction SilentlyContinue

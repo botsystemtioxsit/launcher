@@ -19,6 +19,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        Loc.Start(e.Args);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         // служебные режимы для проверки в CI (без окна)
@@ -33,6 +34,7 @@ public partial class App : Application
                 w.RenderTo(Path.Combine(shot, "skin-loader-mine.png"), "mine");
             }
             catch (Exception ex) { try { File.WriteAllText(Path.Combine(shot, "skin-loader-ui-error.txt"), ex.ToString()); } catch { } }
+            Loc.WriteAudit(shot);
             Shutdown(); return;
         }
         var self = Arg(e, "--selftest=");

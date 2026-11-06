@@ -116,7 +116,7 @@ sealed partial class MainWindow
 
     void ToggleOnline(Wallpaper w)
     {
-        if (!w.Online && MessageBox.Show(this, "Разрешить этим обоям выходить в интернет?\n\nСтраница обоев сможет обращаться к сайтам (например, за погодой или картинками). " +
+        if (!w.Online && Loc.Box(this, "Разрешить этим обоям выходить в интернет?\n\nСтраница обоев сможет обращаться к сайтам (например, за погодой или картинками). " +
                 "Разрешайте только обоям, которым доверяете.", "Wallpaper Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         w.Online = !w.Online;
         Library.Save(w);
@@ -126,7 +126,7 @@ sealed partial class MainWindow
 
     void DeleteWallpaper(Wallpaper w)
     {
-        if (MessageBox.Show(this, $"Удалить обои «{w.Title}» из библиотеки? Файлы будут удалены.", "Wallpaper Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (Loc.Box(this, $"Удалить обои «{w.Title}» из библиотеки? Файлы будут удалены.", "Wallpaper Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         if (settings.Active == w.Id) { settings.Active = ""; settings.Save(); _ = ctl.ApplyAsync(settings); }
         Library.Delete(w.Id);
         Say("Удалено: " + w.Title);
