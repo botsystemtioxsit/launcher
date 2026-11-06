@@ -136,7 +136,7 @@ static class SelfTest
                 var (c4, spub) = Wg.Run(tool, "pubkey", 10000, spriv);
                 Check("ключи созданы (wg genkey/pubkey)", c1 == 0 && c2 == 0 && c3 == 0 && c4 == 0 && priv.Length > 40 && pub.Length > 40);
                 // AllowedIPs — только маленькая сеть: весь интернет раннера через несуществующий сервер пускать нельзя
-                var conf = $"[Interface]\nPrivateKey = {priv}\nAddress = 10.99.0.2/32\n\n[Peer]\nPublicKey = {spub}\nEndpoint = 192.0.2.1:51820\nAllowedIPs = 10.99.0.0/24\nPersistentKeepalive = 25\n";
+                var conf = $"[Interface]\nPrivateKey = {priv}\nAddress = 10.99.0.2/32\n\n[Peer]\nPublicKey = {spub}\nEndpoint = 192.0.2.1:51820\nAllowedIPs = 10.99.0.0/24, {ManyRoutes}\nPersistentKeepalive = 25\n";
                 Check("конфиг из ключей проходит проверку", Store.Validate(conf) == null);
                 var tmp = Path.Combine(Path.GetTempPath(), "gp-selftest"); Directory.CreateDirectory(tmp);
                 var file = Path.Combine(tmp, "citest.conf"); File.WriteAllText(file, conf);
@@ -144,6 +144,9 @@ static class SelfTest
                 log.AppendLine($"подключение: {(r.Ok ? "ok" : "ПРОВАЛ")} — {r.Message}");
                 Check("служба WireGuardTunnel$citest работает", Wg.IsRunning("citest"));
                 Check("сетевой адаптер citest появился", NetworkInterface.GetAllNetworkInterfaces().Any(n => n.Name.Equals("citest", StringComparison.OrdinalIgnoreCase)));
+                // «Мимо шлюза» даёт службе сотни сетей вместо 0.0.0.0/0: WireGuard должен принять и проложить их все (проверка на безопасном блоке 198.18.0.0/15)
+                var wgRoutes = WaitRoutes("citest", 340);
+                Check($"WireGuard: {ManyCount} маршрутов из AllowedIPs проложены ({wgRoutes})", wgRoutes >= ManyCount);
                 Check("файл конфига лежит в ProgramData", File.Exists(Path.Combine(Helper.WorkDir, "citest.conf")));
                 var acl = Wg.Run("icacls.exe", "\"" + Helper.WorkDir + "\"", 10000).Output;
                 log.AppendLine("права на папку:" + Environment.NewLine + acl);
@@ -252,7 +255,7 @@ static class SelfTest
             {
                 var first = echo.StandardOutput.ReadLine() ?? "";
                 Check("GSP: ответчик запущен (" + first + ")", first.StartsWith("echo-server port=7110"));
-                var conf = $"# GSP\n[Interface]\nPrivateKey = {ck}\nAddress = 10.77.0.2/32\nMTU = 1380\nFEC = auto\n\n[Peer]\nPublicKey = {sp}\nEndpoint = 127.0.0.1:7110\nAllowedIPs = 10.77.0.1/32\nPersistentKeepalive = 5\n";
+                var conf = $"# GSP\n[Interface]\nPrivateKey = {ck}\nAddress = 10.77.0.2/32\nMTU = 1380\nFEC = auto\n\n[Peer]\nPublicKey = {sp}\nEndpoint = 127.0.0.1:7110\nAllowedIPs = 10.77.0.1/32, {ManyRoutes}\nPersistentKeepalive = 5\n";
                 Check("GSP: настоящий конфиг проходит проверку", Store.Validate(conf) == null);
                 var tmp = Path.Combine(Path.GetTempPath(), "gp-selftest-gsp"); Directory.CreateDirectory(tmp);
                 var file = Path.Combine(tmp, "citest-gsp.conf"); File.WriteAllText(file, conf);
@@ -260,6 +263,8 @@ static class SelfTest
                 log.AppendLine($"GSP подключение: {(r.Ok ? "ok" : "ПРОВАЛ")} — {r.Message}");
                 Check("GSP: служба работает", r.Ok && GspClient.IsRunning("citest-gsp"));
                 Check("GSP: сетевая карта шлюза появилась", NetworkInterface.GetAllNetworkInterfaces().Any(n => n.Name.Equals("GhostShell-citest-gsp", StringComparison.OrdinalIgnoreCase)));
+                var gspRoutes = WaitRoutes("GhostShell-citest-gsp", 340);
+                Check($"GSP: {ManyCount} маршрутов из AllowedIPs проложены ({gspRoutes})", gspRoutes >= ManyCount);
                 Check("GSP: конфиг и программа лежат в ProgramData", File.Exists(GspClient.ConfFile("citest-gsp")) && File.Exists(GspClient.ExePath));
                 var acl = Wg.Run("icacls.exe", "\"" + Helper.WorkDir + "\"", 10000).Output;
                 Check("GSP: права на папку: обычных пользователей нет (в ней закрытый ключ и программа службы)", !acl.Contains("BUILTIN\\Users", StringComparison.OrdinalIgnoreCase) && !acl.Contains("Everyone", StringComparison.OrdinalIgnoreCase));
@@ -285,6 +290,30 @@ static class SelfTest
         }
         catch (Exception ex) { log.AppendLine("GSP: ОШИБКА проверки: " + ex); Check("GSP: проверка не упала с исключением", false); }
         finally { try { Directory.Delete(prog, true); } catch { } }
+    }
+
+    // Безопасный блок для проверки «сотни маршрутов»: 198.18.0.0/15 (для тестов сетей, в интернете не используется) — 340 сетей /24.
+    const int ManyCount = 340;
+    static string ManyRoutes => string.Join(", ", Enumerable.Range(0, ManyCount).Select(i => $"198.{18 + i / 256}.{i % 256}.0/24"));
+
+    // Сколько маршрутов 198.18/15 лежит на сетевой карте (ждём, пока служба проложит их все).
+    static int WaitRoutes(string alias, int want)
+    {
+        var best = -1;
+        for (var i = 0; i < 40; i++)
+        {
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo("powershell.exe", $"-NoProfile -Command \"(Get-NetRoute -InterfaceAlias '{alias}' -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object {{ $_.DestinationPrefix -like '198.1[89].*' }} | Measure-Object).Count\"") { RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true };
+                using var p = System.Diagnostics.Process.Start(psi)!;
+                var o = p.StandardOutput.ReadToEnd(); p.WaitForExit(30000);
+                if (int.TryParse(o.Trim(), out var n)) best = Math.Max(best, n);
+            }
+            catch { }
+            if (best >= want) break;
+            Thread.Sleep(1000);
+        }
+        return best;
     }
 
     static int FreePort() { var l = new TcpListener(IPAddress.Loopback, 0); l.Start(); var p = ((IPEndPoint)l.LocalEndpoint).Port; l.Stop(); return p; }
