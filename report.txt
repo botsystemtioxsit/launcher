@@ -1,0 +1,153 @@
+=== самопроверка модуля перевода (лаунчер) ===
+selftest-loc: код 0
+OK    точная строка
+OK    шаблон
+OK    шаблон с двумя дырами
+OK    обрыв-приставка
+OK    пробелы по краям
+OK    нет перевода — как есть
+OK    латиница не трогается
+OK    немецкий
+OK    немецкий шаблон
+OK    русский — без изменений
+ВСЕ ПРОВЕРКИ ПРОШЛИ (словарь: 519)
+=== BattleLauncher --lang=en ===
+BattleLauncher en: код 0
+  launcher-1-login.png 274722
+  launcher-2-apps.png 360492
+  launcher-3-plugins-browser.png 460257
+  launcher-4-feedback.png 366888
+  launcher-5-env.png 261187
+  launcher-6-boot.png 121793
+  launcher-7-style.png 408655
+  launcher-8-net.png 362049
+  launcher-9-ops.png 411369
+  loc-missing-BattleLauncher-en.txt 804
+  непереведённых строк в loc-missing-BattleLauncher-en.txt: 9
+=== GatewayPlus --lang=en ===
+GatewayPlus en: код 0
+  gateway-plus-account-key.png 62280
+  gateway-plus-account.png 57881
+  gateway-plus-profile-gsp.png 72917
+  gateway-plus-profile.png 65437
+  gateway-plus-ui-blocked.png 186225
+  gateway-plus-ui-noaccount.png 178970
+  gateway-plus-ui.png 170495
+  gateway-plus-wizard.png 124062
+  loc-missing-GatewayPlus-en.txt 578
+  непереведённых строк в loc-missing-GatewayPlus-en.txt: 5
+=== IconPlus --lang=en ===
+IconPlus en: код 0
+  icon-plus-ui-0.png 85257
+  icon-plus-ui-1.png 31460
+  icon-plus-ui-3.png 78672
+  loc-missing-IconPlus-en.txt 108
+  непереведённых строк в loc-missing-IconPlus-en.txt: 0
+=== WallpaperPlus --lang=en ===
+WallpaperPlus en: код 0
+  loc-missing-WallpaperPlus-en.txt 108
+  wallpaper-plus-ui-0.png 132016
+  wallpaper-plus-ui-1.png 5761
+  wallpaper-plus-ui-2.png 54483
+  wallpaper-plus-ui-4.png 139047
+  непереведённых строк в loc-missing-WallpaperPlus-en.txt: 0
+=== TaskbarPlus --lang=en ===
+TaskbarPlus en: код 0
+  loc-missing-TaskbarPlus-en.txt 108
+  taskbar-plus-ui-pill.png 154839
+  taskbar-plus-ui.png 280183
+  непереведённых строк в loc-missing-TaskbarPlus-en.txt: 0
+=== SkinLoader --lang=en ===
+SkinLoader en: код 0
+  loc-missing-SkinLoader-en.txt 108
+  skin-loader-build.png 84079
+  skin-loader-mine.png 52360
+  непереведённых строк в loc-missing-SkinLoader-en.txt: 0
+=== CursorPlus --lang=en ===
+CursorPlus en: код 0
+  cursor-plus-editor.png 54328
+  cursor-plus-ui.png 181514
+  loc-missing-CursorPlus-en.txt 108
+  roles.png 73511
+  shapes.png 33972
+  непереведённых строк в loc-missing-CursorPlus-en.txt: 0
+=== ColorPlus --lang=en ===
+ColorPlus en: код 0
+  color-plus-ui.png 162994
+  loc-missing-ColorPlus-en.txt 108
+  непереведённых строк в loc-missing-ColorPlus-en.txt: 0
+=== DnsPlus --lang=en ===
+DnsPlus en: код 0
+  dns-plus-ui.png 48729
+  loc-missing-DnsPlus-en.txt 108
+  непереведённых строк в loc-missing-DnsPlus-en.txt: 0
+=== BattleLauncher --lang=de ===
+BattleLauncher de: код 0
+  launcher-1-login.png 301303
+  launcher-2-apps.png 400829
+  launcher-3-plugins-browser.png 494915
+  launcher-4-feedback.png 380533
+  launcher-5-env.png 279245
+  launcher-6-boot.png 131228
+  launcher-7-style.png 468987
+  launcher-8-net.png 398792
+  launcher-9-ops.png 473156
+  loc-missing-BattleLauncher-de.txt 804
+  непереведённых строк в loc-missing-BattleLauncher-de.txt: 9
+=== GatewayPlus --lang=de ===
+GatewayPlus de: код 0
+  gateway-plus-account-key.png 71363
+  gateway-plus-account.png 64606
+  gateway-plus-profile-gsp.png 82179
+  gateway-plus-profile.png 75799
+  gateway-plus-ui-blocked.png 212980
+  gateway-plus-ui-noaccount.png 210483
+  gateway-plus-ui.png 198663
+  gateway-plus-wizard.png 132183
+  loc-missing-GatewayPlus-de.txt 578
+  непереведённых строк в loc-missing-GatewayPlus-de.txt: 5
+=== IconPlus --lang=de ===
+IconPlus de: код 0
+  icon-plus-ui-0.png 88832
+  icon-plus-ui-1.png 38243
+  icon-plus-ui-3.png 88242
+  loc-missing-IconPlus-de.txt 108
+  непереведённых строк в loc-missing-IconPlus-de.txt: 0
+=== WallpaperPlus --lang=de ===
+WallpaperPlus de: код 0
+  loc-missing-WallpaperPlus-de.txt 108
+  wallpaper-plus-ui-0.png 147486
+  wallpaper-plus-ui-1.png 5806
+  wallpaper-plus-ui-2.png 61304
+  wallpaper-plus-ui-4.png 155945
+  непереведённых строк в loc-missing-WallpaperPlus-de.txt: 0
+=== TaskbarPlus --lang=de ===
+TaskbarPlus de: код 0
+  loc-missing-TaskbarPlus-de.txt 108
+  taskbar-plus-ui-pill.png 158721
+  taskbar-plus-ui.png 305189
+  непереведённых строк в loc-missing-TaskbarPlus-de.txt: 0
+=== SkinLoader --lang=de ===
+SkinLoader de: код 0
+  loc-missing-SkinLoader-de.txt 108
+  skin-loader-build.png 94697
+  skin-loader-mine.png 59271
+  непереведённых строк в loc-missing-SkinLoader-de.txt: 0
+=== CursorPlus --lang=de ===
+CursorPlus de: код 0
+  cursor-plus-editor.png 58385
+  cursor-plus-ui.png 198569
+  loc-missing-CursorPlus-de.txt 108
+  roles.png 73511
+  shapes.png 33972
+  непереведённых строк в loc-missing-CursorPlus-de.txt: 0
+=== ColorPlus --lang=de ===
+ColorPlus de: код 0
+  color-plus-ui.png 169250
+  loc-missing-ColorPlus-de.txt 108
+  непереведённых строк в loc-missing-ColorPlus-de.txt: 0
+=== DnsPlus --lang=de ===
+DnsPlus de: код 0
+  dns-plus-ui.png 54993
+  loc-missing-DnsPlus-de.txt 108
+  непереведённых строк в loc-missing-DnsPlus-de.txt: 0
