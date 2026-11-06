@@ -246,6 +246,25 @@ public static class Loc
             if (exact.TryGetValue(head, out var he)) { var tt = Translate(tail); if (tt != tail || !Cyr.IsMatch(tail)) return Pick(he) + ": " + tt; }
         }
         if (s.EndsWith("…") && s.Length > 1 && exact.TryGetValue(s[..^1], out var de2)) return Pick(de2) + "…";
+        // ЗАГЛАВНЫЕ заголовки (код делает ToUpper от обычной строки): ищем обычную форму
+        if (s.Length > 2 && s == s.ToUpperInvariant() && s != s.ToLowerInvariant())
+        {
+            var norm = char.ToUpperInvariant(s[0]) + s[1..].ToLowerInvariant();
+            if (exact.TryGetValue(norm, out var ue)) return Pick(ue).ToUpperInvariant();
+        }
+        // список через запятую: переводим каждую часть отдельно
+        if (s.Contains(", "))
+        {
+            var parts = s.Split(", ");
+            var anyChanged = false;
+            for (var i = 0; i < parts.Length; i++)
+            {
+                if (!Cyr.IsMatch(parts[i])) continue;
+                var r = Translate(parts[i]);
+                if (r != parts[i]) { parts[i] = r; anyChanged = true; }
+            }
+            if (anyChanged) return string.Join(", ", parts);
+        }
         if (Cyr.IsMatch(s)) lock (missing) { if (missing.Count < 600) missing.Add(s); }
         return s;
     }

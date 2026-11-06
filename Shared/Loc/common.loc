@@ -100,3 +100,92 @@ English ⇒ English ⇒ English
 Экран Android-телефона на ноутбуке с Linux по USB, с управлением мышью и клавиатурой. Распаковать и запустить install.sh. ⇒ Your Android phone's screen on a Linux laptop over USB, with mouse and keyboard control. Unpack and run install.sh. ⇒ Der Bildschirm deines Android-Telefons auf einem Linux-Laptop per USB, mit Maus- und Tastatursteuerung. Entpacken und install.sh ausführen.
 Расширение для Chrome и Chromebook: выгружает неактивные вкладки, когда мало памяти. ⇒ An extension for Chrome and Chromebook: unloads inactive tabs when memory is low. ⇒ Eine Erweiterung für Chrome und Chromebook: entlädt inaktive Tabs, wenn der Speicher knapp wird.
 Защищённый DNS NextDNS для всей Windows: вставьте свой ID и нажмите «Включить». Включает бесплатный сервис NextDNS (nextdns.io) — мы его не заменяем, а подключаем; профиль и фильтры настраиваются у них. Нужна Windows 11. ⇒ Protected NextDNS DNS for the whole of Windows: paste your ID and press "Turn on". It connects the free NextDNS service (nextdns.io) — we do not replace it, we connect to it; the profile and filters are set up on their side. Windows 11 is required. ⇒ Geschütztes NextDNS-DNS für ganz Windows: ID einfügen und „Einschalten“ drücken. Es bindet den kostenlosen Dienst NextDNS (nextdns.io) ein – wir ersetzen ihn nicht, sondern schließen uns an; Profil und Filter richtest du dort ein. Windows 11 erforderlich.
+Терминал ⇒ Terminal ⇒ Terminal
+Вайбовый терминал на рабочем столе: часы, мировое время (любые города и часовые пояса), погода, звук и музыка, курсор, журнал событий. Любые панели можно двигать, добавлять и убирать, а под ними поставить другие обои (например, космос). ⇒ A vibe terminal on the desktop: a clock, world time (any cities and time zones), weather, sound and music, the cursor, an event log. Any panel can be moved, added and removed, and other wallpapers (for example, space) can be put under them. ⇒ Ein Vibe-Terminal auf dem Desktop: Uhr, Weltzeit (beliebige Städte und Zeitzonen), Wetter, Ton und Musik, Mauszeiger, Ereignisprotokoll. Jedes Panel lässt sich verschieben, hinzufügen und entfernen, und darunter lässt sich ein anderer Hintergrund legen (zum Beispiel Weltraum).
+Цвет текста и свечения ⇒ Text and glow color ⇒ Farbe von Text und Leuchten
+Сбой изображения (цветная «дрожь») ⇒ Image glitch (a colored "shake") ⇒ Bildstörung (farbiges „Zittern“)
+Строки развёртки (как у старого монитора; затемняют картинку, по умолчанию выключены) ⇒ Scan lines (like an old monitor; they darken the picture, off by default) ⇒ Rasterzeilen (wie bei einem alten Monitor; sie dunkeln das Bild ab, standardmäßig aus)
+Размер текста ⇒ Text size ⇒ Textgröße
+Язык подписей ⇒ Label language ⇒ Sprache der Beschriftungen
+Расположение панелей ⇒ Panel layout ⇒ Anordnung der Panels
+Неоновые часы ⇒ Neon clock ⇒ Neon-Uhr
+Большие неоновые часы и дата посреди рабочего стола. Цвет свечения, фон и размер настраиваются. ⇒ A large neon clock and date in the middle of the desktop. The glow color, background and size can be adjusted. ⇒ Eine große Neon-Uhr mit Datum mitten auf dem Desktop. Leuchtfarbe, Hintergrund und Größe sind einstellbar.
+Цвет часов ⇒ Clock color ⇒ Farbe der Uhr
+Цвет даты ⇒ Date color ⇒ Farbe des Datums
+Цвет фона ⇒ Background color ⇒ Hintergrundfarbe
+Размер часов ⇒ Clock size ⇒ Größe der Uhr
+Показывать секунды (0 — нет, 1 — да) ⇒ Show seconds (0 — no, 1 — yes) ⇒ Sekunden anzeigen (0 – nein, 1 – ja)
+Северное сияние ⇒ Northern lights ⇒ Nordlichter
+Мягкие переливающиеся полосы света над тёмным небом. Два цвета сияния, фон и скорость настраиваются. ⇒ Soft shimmering bands of light over a dark sky. Two aurora colors, the background and the speed can be adjusted. ⇒ Sanft schimmernde Lichtbänder über dunklem Himmel. Zwei Polarlichtfarben, Hintergrund und Geschwindigkeit sind einstellbar.
+Первый цвет сияния ⇒ First aurora color ⇒ Erste Polarlichtfarbe
+Второй цвет сияния ⇒ Second aurora color ⇒ Zweite Polarlichtfarbe
+Цвет неба ⇒ Sky color ⇒ Himmelsfarbe
+Скорость ⇒ Speed ⇒ Geschwindigkeit
+Неоновая сетка ⇒ Neon grid ⇒ Neon-Gitter
+Синтвейв: бесконечная сетка уходит к горизонту, над ней садится неоновое солнце. ⇒ Synthwave: an endless grid runs to the horizon, with a neon sun setting above it. ⇒ Synthwave: Ein endloses Gitter verläuft zum Horizont, darüber geht eine Neon-Sonne unter.
+Цвет линий сетки ⇒ Grid line color ⇒ Farbe der Gitterlinien
+Цвет солнца ⇒ Sun color ⇒ Sonnenfarbe
+Цифровой дождь ⇒ Digital rain ⇒ Digitaler Regen
+Падающие цепочки символов, как в кино про хакеров. Цвет, скорость и размер знаков настраиваются. ⇒ Falling strings of characters, like in a hacker movie. The color, speed and size of the characters can be adjusted. ⇒ Fallende Zeichenketten wie im Hackerfilm. Farbe, Geschwindigkeit und Größe der Zeichen sind einstellbar.
+Цвет знаков ⇒ Character color ⇒ Zeichenfarbe
+Размер знаков ⇒ Character size ⇒ Zeichengröße
+Звёздное поле ⇒ Starfield ⇒ Sternenfeld
+Полёт сквозь звёзды. Можно выбрать цвет звёзд, фон, скорость и количество звёзд. ⇒ A flight through the stars. You can choose the star color, the background, the speed and the number of stars. ⇒ Ein Flug durch die Sterne. Du kannst Sternfarbe, Hintergrund, Geschwindigkeit und Anzahl der Sterne wählen.
+Цвет звёзд ⇒ Star color ⇒ Sternfarbe
+Цвет космоса ⇒ Space color ⇒ Farbe des Weltraums
+Скорость полёта ⇒ Flight speed ⇒ Fluggeschwindigkeit
+Количество звёзд ⇒ Number of stars ⇒ Anzahl der Sterne
+Лава-лампа ⇒ Lava lamp ⇒ Lavalampe
+Мягкие цветные капли медленно плывут и сливаются, как в лава-лампе. Цвета, фон и скорость настраиваются в «Создать». ⇒ Soft colored blobs slowly drift and merge, like in a lava lamp. Colors, background and speed are adjusted in "Create". ⇒ Weiche farbige Tropfen treiben langsam und verschmelzen wie in einer Lavalampe. Farben, Hintergrund und Geschwindigkeit stellst du unter „Erstellen“ ein.
+Мягкие цветные капли медленно плывут и сливаются, как в лава-лампе. ⇒ Soft colored blobs slowly drift and merge, like in a lava lamp. ⇒ Weiche farbige Tropfen treiben langsam und verschmelzen wie in einer Lavalampe.
+Сеть частиц ⇒ Particle network ⇒ Partikelnetz
+Светящиеся точки плывут по экрану и соединяются линиями, когда оказываются рядом. ⇒ Glowing dots drift across the screen and connect with lines when they come close. ⇒ Leuchtende Punkte ziehen über den Bildschirm und verbinden sich durch Linien, wenn sie nahe beieinander sind.
+Снегопад ⇒ Snowfall ⇒ Schneefall
+Тихий снегопад над тёмным небом: количество снежинок, скорость и цвет настраиваются. ⇒ A quiet snowfall under a dark sky: the number of snowflakes, speed and color can be adjusted. ⇒ Ruhiger Schneefall unter dunklem Himmel: Anzahl der Schneeflocken, Geschwindigkeit und Farbe sind einstellbar.
+Тихий снегопад над тёмным небом. ⇒ A quiet snowfall under a dark sky. ⇒ Ruhiger Schneefall unter dunklem Himmel.
+Первый цвет ⇒ First color ⇒ Erste Farbe
+Второй цвет ⇒ Second color ⇒ Zweite Farbe
+Цвет снега ⇒ Snow color ⇒ Schneefarbe
+Цвет ночного неба ⇒ Night sky color ⇒ Farbe des Nachthimmels
+Количество снежинок ⇒ Number of snowflakes ⇒ Anzahl der Schneeflocken
+Цвет точек и линий ⇒ Dot and line color ⇒ Farbe von Punkten und Linien
+Количество точек ⇒ Number of dots ⇒ Anzahl der Punkte
+страница ⇒ page ⇒ Seite
+видео ⇒ video ⇒ Video
+картинка ⇒ picture ⇒ Bild
+{} КБ ⇒ {0} KB ⇒ {0} KB
+{} МБ ⇒ {0} MB ⇒ {0} MB
+{} ГБ ⇒ {0} GB ⇒ {0} GB
+{} · Обновление ⇒ {0} · Update ⇒ {0} · Aktualisierung
+{} · Установка ⇒ {0} · Installation ⇒ {0} · Installation
+{} · Удаление ⇒ {0} · Removal ⇒ {0} · Deinstallation
+Дальше: {} ⇒ Next: {0} ⇒ Als Nächstes: {0}
+Windows {} (сборка {}), {}; лаунчер {} ⇒ Windows {0} (build {1}), {2}; launcher {3} ⇒ Windows {0} (Build {1}), {2}; Launcher {3}
+Windows {} (сборка {}), {}; лаунчер {}; плагины: {} ⇒ Windows {0} (build {1}), {2}; launcher {3}; plugins: {4} ⇒ Windows {0} (Build {1}), {2}; Launcher {3}; Plugins: {4}
+Готово — запущен снова · {} ⇒ Done — launched again · {0} ⇒ Fertig – erneut gestartet · {0}
+Установлено {} ⇒ Installed {0} ⇒ Installiert {0}
+▲ Доступно {} ⇒ ▲ Available {0} ⇒ ▲ Verfügbar {0}
+⟳ Идёт работа · готово {} из {} · не вышло: {} ⇒ ⟳ Working · {0} of {1} done · failed: {2} ⇒ ⟳ In Arbeit · {0} von {1} erledigt · fehlgeschlagen: {2}
+{} · {} ⇒ {0} · {1} ⇒ {0} · {1}
+Доступ закрыт. ⇒ Access closed. ⇒ Zugang gesperrt.
+{}  ·  номер {} ⇒ {0}  ·  number {1} ⇒ {0}  ·  Nummer {1}
+1. {} ⇒ 1. {0} ⇒ 1. {0}
+2. {} ⇒ 2. {0} ⇒ 2. {0}
+3. {} ⇒ 3. {0} ⇒ 3. {0}
+4. {} ⇒ 4. {0} ⇒ 4. {0}
+5. {} ⇒ 5. {0} ⇒ 5. {0}
+6. {} ⇒ 6. {0} ⇒ 6. {0}
+Архив ⇒ Archive ⇒ Archiv
+Картинка ⇒ Picture ⇒ Bild
+Корзина ⇒ Recycle Bin ⇒ Papierkorb
+Папка ⇒ Folder ⇒ Ordner
+Текст ⇒ Text ⇒ Text
+Документ ⇒ Document ⇒ Dokument
+Таблица ⇒ Spreadsheet ⇒ Tabelle
+Презентация ⇒ Presentation ⇒ Präsentation
+Видео ⇒ Video ⇒ Video
+Страница ⇒ Page ⇒ Seite
+Код ⇒ Code ⇒ Code
+Сценарий ⇒ Script ⇒ Skript
+Флешка ⇒ USB drive ⇒ USB-Stick
+Жёсткий ⇒ Hard drive ⇒ Festplatte
