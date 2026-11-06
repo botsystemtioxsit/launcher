@@ -38,6 +38,8 @@ public partial class App : Application
                 new AccountWindow(false).RenderTo(Path.Combine(shot, "gateway-plus-account.png"));
                 new AccountWindow(true).RenderTo(Path.Combine(shot, "gateway-plus-account-key.png"));
                 new WizardWindow().RenderTo(Path.Combine(shot, "gateway-plus-wizard.png"), demo: true);
+                new ProfileWindow("nl", "[Interface]\nPrivateKey = AAAA\nAddress = 10.0.0.2/32\nDNS = 1.1.1.1\n\n[Peer]\nPublicKey = BBBB\nEndpoint = 203.0.113.5:51820\nAllowedIPs = 0.0.0.0/0\n", false).RenderTo(Path.Combine(shot, "gateway-plus-profile.png"));
+                new ProfileWindow("nl-gsp", "# GSP\n[Interface]\nPrivateKey = AAAA\nAddress = 10.78.0.2/32\nFEC = auto\n\n[Peer]\nPublicKey = BBBB\nEndpoint = 203.0.113.5:51821\nAllowedIPs = 0.0.0.0/0\n", false).RenderTo(Path.Combine(shot, "gateway-plus-profile-gsp.png"));
             }
             catch (Exception ex) { try { File.WriteAllText(Path.Combine(shot, "gateway-plus-ui-error.txt"), ex.ToString()); } catch { } }
             Shutdown(); return;
