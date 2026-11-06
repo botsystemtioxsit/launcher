@@ -259,6 +259,33 @@ const tzOf = p => p.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZ
     await pop.screenshot({ path: shots + name + '.png' });
     await pop.close();
   }
+
+  // --- язык окна: русский / English / Deutsch ---
+  {
+    await setState(worker, { enabled: true, cc: 'AU' });
+    const pop = await ctx.newPage();
+    await pop.addInitScript(tab => { const q = chrome.tabs.query.bind(chrome.tabs); chrome.tabs.query = async () => [{ id: tab, url: 'http://127.0.0.1/p' }]; }, tabId);
+    await pop.setViewportSize({ width: 340, height: 700 });
+    await pop.goto('chrome-extension://' + id + '/popup.html');
+    await sleep(700);
+    const lab = () => pop.textContent('label.cap');
+    const opt = cc => pop.textContent('#country option[value="' + cc + '"]');
+    await pop.click('#uilang button:has-text("EN")'); await sleep(500);
+    check('язык окна: English', /The country to mask as/.test(await lab()) && (await opt('DE')).startsWith('Germany') && /Time and time zone/.test(await pop.textContent('main')), await lab());
+    await pop.screenshot({ path: shots + 'popup-en.png' });
+    await pop.click('#uilang button:has-text("DE")'); await sleep(500);
+    check('язык окна: Deutsch', /Land, als das du dich ausgibst/.test(await lab()) && (await opt('FR')).startsWith('Frankreich') && /Uhrzeit und Zeitzone/.test(await pop.textContent('main')), await lab());
+    check('язык окна: подвал переведён', /ändert die IP-Adresse nicht/.test(await pop.textContent('footer')), await pop.textContent('footer'));
+    await pop.screenshot({ path: shots + 'popup-de.png' });
+    const stl = await worker.evaluate(() => chrome.storage.local.get('uiLang'));
+    check('язык окна: выбор сохраняется', stl.uiLang === 'de', JSON.stringify(stl));
+    await sleep(600);
+    const title = await worker.evaluate(() => chrome.action.getTitle({}));
+    check('язык окна: подсказка значка на немецком', /jetzt/.test(title), title);
+    await pop.click('#uilang button:has-text("RU")'); await sleep(500);
+    check('язык окна: возврат на русский', /Страна, под которую маскируемся/.test(await lab()) && (await opt('DE')).startsWith('Германия') && /Время и часовой пояс/.test(await pop.textContent('main')), await lab());
+    await pop.close();
+  }
   console.log('\nИТОГО: ок', okN, ' плохо', badN);
   await ctx.close(); server.close();
 })().catch(e => { console.error('СБОЙ ТЕСТА', e); process.exit(1); });

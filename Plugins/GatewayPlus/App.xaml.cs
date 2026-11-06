@@ -19,6 +19,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        Loc.Start(e.Args);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         // помощник с правами администратора: ставит и снимает службу туннеля
@@ -42,6 +43,7 @@ public partial class App : Application
                 new ProfileWindow("nl-gsp", "# GSP\n[Interface]\nPrivateKey = AAAA\nAddress = 10.78.0.2/32\nFEC = auto\n\n[Peer]\nPublicKey = BBBB\nEndpoint = 203.0.113.5:51821\nAllowedIPs = 0.0.0.0/0\n", false).RenderTo(Path.Combine(shot, "gateway-plus-profile-gsp.png"));
             }
             catch (Exception ex) { try { File.WriteAllText(Path.Combine(shot, "gateway-plus-ui-error.txt"), ex.ToString()); } catch { } }
+            Loc.WriteAudit(shot);
             Shutdown(); return;
         }
         var self = Arg(e, "--selftest=");

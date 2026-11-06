@@ -48,3 +48,9 @@ body.off main > section:not(:first-child), body.off .shows { opacity: .45; }
 
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
 .uastr { margin-top: 8px; color: var(--muted); font: 10.5px/1.4 Consolas, monospace; word-break: break-all; }
+
+/* переключатель языка окна */
+.uilang { display: flex; gap: 3px; margin-left: auto; margin-right: 10px; }
+.uilang button { background: transparent; color: var(--muted, #8b86b8); border: 1px solid transparent; border-radius: 3px; font: 600 11px/1 system-ui, sans-serif; padding: 4px 5px; cursor: pointer; }
+.uilang button.on { color: var(--fg, #e6f4ff); border-color: currentColor; }
+.uilang button:hover { color: var(--fg, #e6f4ff); }

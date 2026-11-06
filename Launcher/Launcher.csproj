@@ -10,7 +10,7 @@
     <AssemblyName>BattleLauncher</AssemblyName>
     <RootNamespace>BattleLauncher</RootNamespace>
     <!-- Версию поднимать при каждом изменении: по ней лаунчер понимает, что вышло обновление -->
-    <Version>1.47.2</Version>
+    <Version>1.48.0</Version>
     <Product>Ghost Shell Launcher</Product>
     <Company>TIOXSIT</Company>
     <Authors>TIOXSIT</Authors>
@@ -29,6 +29,13 @@
     <!-- общий киберпанк-стиль (Shared/CyberTheme.xaml), один на все приложения -->
     <Page Include="..\Shared\CyberTheme.xaml" Link="CyberTheme.xaml"/>
     <Compile Include="..\Shared\ChamferBorder.cs" Link="ChamferBorder.cs"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- языки интерфейса (русский / English / Deutsch): общий модуль и словари -->
+    <Compile Include="..\Shared\Loc.cs" Link="Loc.cs"/>
+    <EmbeddedResource Include="..\Shared\Loc\common.loc" LogicalName="loc/common.loc"/>
+    <EmbeddedResource Include="Loc\app.loc" LogicalName="loc/app.loc"/>
   </ItemGroup>
 
 </Project>

@@ -548,6 +548,7 @@ class MainActivity : Activity() {
             val c = card().apply { background = shape(PANEL2, 14, ACCENT) }
             c.addView(tv("Вышла новая версия лаунчера: ${u.version}", 15f, ACCENT, true))
             c.addView(button("Обновить лаунчер", primary = true) { installRelease(u, null, "") }, lp(10))
+            c.addView(tv("Если Android пишет «Приложение не установлено»: у прежней версии другая подпись. Удалите лаунчер и поставьте новую версию заново — это нужно один раз, дальше обновления встают сами.", 12f, MUTED), lp(8))
             banner?.addView(c)
         }
         if (rows.isEmpty()) {

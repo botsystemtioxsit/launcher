@@ -22,6 +22,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        Loc.Start(e.Args);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         // служебные режимы для проверки в CI (без окна)
@@ -52,6 +53,7 @@ public partial class App : Application
         {
             try { Directory.CreateDirectory(shot); new MainWindow(ColorSettings.Load()).RenderTo(Path.Combine(shot, "color-plus-ui.png")); }
             catch (Exception ex) { try { File.WriteAllText(Path.Combine(shot, "color-plus-ui-error.txt"), ex.ToString()); } catch { } }
+            Loc.WriteAudit(shot);
             Shutdown(); return;
         }
 

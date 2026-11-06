@@ -53,6 +53,7 @@ static class Ui
         System.Windows.Documents.TextElement.SetForeground(page, w.Foreground);
         System.Windows.Documents.TextElement.SetFontFamily(page, w.FontFamily);
         System.Windows.Documents.TextElement.SetFontSize(page, w.FontSize);
+        Loc.ApplyTree(page);   // служебный снимок: окно не показано, переводим вручную
         page.Measure(new Size(width, double.PositiveInfinity));
         var h = Math.Max(200, (int)Math.Ceiling(page.DesiredSize.Height));
         page.Arrange(new Rect(0, 0, width, h));

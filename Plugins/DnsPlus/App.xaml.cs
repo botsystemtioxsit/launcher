@@ -7,6 +7,18 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        Loc.Start(e.Args);
+        // служебный режим: окно в PNG без показа и список непереведённых надписей
+        var shot = e.Args.FirstOrDefault(a => a.StartsWith("--screenshot=", StringComparison.OrdinalIgnoreCase));
+        if (shot != null)
+        {
+            var dir = shot.Substring("--screenshot=".Length).Trim('"');
+            try { System.IO.Directory.CreateDirectory(dir); new MainWindow().RenderTo(System.IO.Path.Combine(dir, "dns-plus-ui.png")); }
+            catch (Exception ex) { try { System.IO.File.WriteAllText(System.IO.Path.Combine(dir, "dns-plus-ui-error.txt"), ex.ToString()); } catch { } }
+            Loc.WriteAudit(dir);
+            Shutdown();
+            return;
+        }
         // служебный режим для проверки на настоящей Windows (см. SelfTest.cs): окна нет, итог — файл report.txt и код выхода
         var st = e.Args.FirstOrDefault(a => a.StartsWith("--selftest=", StringComparison.OrdinalIgnoreCase));
         if (st != null)

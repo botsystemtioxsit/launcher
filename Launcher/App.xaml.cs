@@ -13,6 +13,7 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        Loc.Start(e.Args);   // язык интерфейса: русский / English / Deutsch
         // Программа удаления из списка «Установленные приложения»
         if (e.Args.Contains("--uninstall")) { SelfInstall.Uninstall(); Shutdown(); return; }
         var un = e.Args.FirstOrDefault(a => a.StartsWith("--uninstall-native=", StringComparison.Ordinal));
@@ -29,6 +30,16 @@ public partial class App : Application
         // --selftest-ops=<папка>: служебная проверка очереди менеджера обновлений (порядок «по одной», отмена, ошибки)
         var ot = e.Args.FirstOrDefault(a => a.StartsWith("--selftest-ops=", StringComparison.Ordinal));
         if (ot != null) { Task.Run(() => OpsSelfTest.Run(ot["--selftest-ops=".Length..])).GetAwaiter().GetResult(); var code = Environment.ExitCode; Shutdown(code); return; }
+
+        // --selftest-loc=<папка>: проверка модуля перевода (английский / немецкий / возврат на русский)
+        var lt = e.Args.FirstOrDefault(a => a.StartsWith("--selftest-loc=", StringComparison.Ordinal));
+        if (lt != null)
+        {
+            var ldir = lt["--selftest-loc=".Length..].Trim('"');
+            try { System.IO.Directory.CreateDirectory(ldir); var rep = Loc.SelfTest(); System.IO.File.WriteAllText(System.IO.Path.Combine(ldir, "loc-selftest.txt"), rep); Shutdown(rep.Contains("НЕ ПРОШЛО") ? 1 : 0); }
+            catch (Exception ex) { try { System.IO.File.WriteAllText(System.IO.Path.Combine(ldir, "loc-selftest.txt"), "упало: " + ex); } catch { } Shutdown(2); }
+            return;
+        }
 
         var shot = e.Args.FirstOrDefault(a => a.StartsWith("--screenshot=", StringComparison.Ordinal));
         if (shot != null)

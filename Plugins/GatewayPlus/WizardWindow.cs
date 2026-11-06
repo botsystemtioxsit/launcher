@@ -102,13 +102,13 @@ sealed class WizardWindow : Window
 
     void Log(string line) => Dispatcher.BeginInvoke(new Action(() =>
     {
-        logBox.AppendText(line + "\n");
+        logBox.AppendText(Loc.T(line) + "\n");
         if (logBox.Text.Length > 60000) logBox.Text = logBox.Text[^40000..];
         logBox.ScrollToEnd();
     }));
 
     bool Ask(string text, string title, MessageBoxImage icon) =>
-        Dispatcher.Invoke(() => MessageBox.Show(this, text, title, MessageBoxButton.YesNo, icon) == MessageBoxResult.Yes);
+        Dispatcher.Invoke(() => Loc.Box(this, text, title, MessageBoxButton.YesNo, icon) == MessageBoxResult.Yes);
 
     bool ConfirmKey(HostKeyQuestion q)
     {
@@ -159,7 +159,7 @@ sealed class WizardWindow : Window
     void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         if (!running) return;
-        if (MessageBox.Show(this, "Установка ещё идёт. Прервать её?", "Создать свой VPN", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) { e.Cancel = true; return; }
+        if (Loc.Box(this, "Установка ещё идёт. Прервать её?", "Создать свой VPN", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) { e.Cancel = true; return; }
         cts?.Cancel();
     }
 

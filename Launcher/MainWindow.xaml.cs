@@ -44,8 +44,24 @@ public partial class MainWindow : Window
         loginTimer.Tick += (_, _) => LoginTick();
         toastTimer.Tick += (_, _) => { toastTimer.Stop(); ToastBox.Visibility = Visibility.Collapsed; };
         VersionText.Text = "Версия " + SelfUpdate.CurrentVersion;
+        BuildLangRow();
+        Loc.Changed += BuildLangRow;
         Loaded += async (_, _) => await StartAsync();
         Closing += (_, _) => loginCts?.Cancel();
+    }
+
+    // Переключатель языка интерфейса (русский / English / Deutsch) внизу бокового меню; язык общий для лаунчера и всех плагинов.
+    void BuildLangRow()
+    {
+        LangRow.Children.Clear();
+        foreach (var code in Loc.Languages)
+        {
+            var c = code;
+            var b = new Button { Content = c.ToUpperInvariant(), ToolTip = Loc.NameOf(c), Padding = new Thickness(10, 5, 10, 5), Margin = new Thickness(0, 0, 6, 0), MinWidth = 40 };
+            b.Style = (Style)FindResource(c == Loc.Lang ? "Primary" : "Ghost");
+            b.Click += (_, _) => Loc.Set(c);
+            LangRow.Children.Add(b);
+        }
     }
 
     async Task StartAsync()
@@ -531,7 +547,7 @@ public partial class MainWindow : Window
     {
         var key = p.Def.Id + ":plugin";
         if (busy.ContainsKey(key) || ops.IsActive(key) || p.Native == null) return;
-        if (MessageBox.Show(this, $"Удалить «{p.Def.Name}» с этого компьютера?\n\nЕсли плагин менял панель задач, он сам вернёт её к обычному виду.", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (Loc.Box(this, $"Удалить «{p.Def.Name}» с этого компьютера?\n\nЕсли плагин менял панель задач, он сам вернёт её к обычному виду.", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         await RunOp(key, p.Def.Name, "Удаление", RenderPlugins, async (item, ct) =>
         {
             try
@@ -753,7 +769,7 @@ public partial class MainWindow : Window
     {
         var key = p.Def.Id + ":browser";
         if (busy.ContainsKey(key) || p.Installed == null) return;
-        if (MessageBox.Show(this, $"Удалить файлы «{p.Def.Name}» с этого компьютера?\n\nИз самого браузера расширение лучше убрать отдельно: страница расширений → «Удалить».", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (Loc.Box(this, $"Удалить файлы «{p.Def.Name}» с этого компьютера?\n\nИз самого браузера расширение лучше убрать отдельно: страница расширений → «Удалить».", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         try
         {
             await Task.Run(() => BrowserInstaller.Uninstall(p.Def));
@@ -1031,7 +1047,7 @@ public partial class MainWindow : Window
     {
         var id = a.Def.Id;
         if (busy.ContainsKey(id) || a.Installed == null) return;
-        if (MessageBox.Show(this, $"Удалить «{a.Def.Name}» с этого компьютера?", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (Loc.Box(this, $"Удалить «{a.Def.Name}» с этого компьютера?", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         busy[id] = (true, null);
         RenderApps();
         try
@@ -1071,7 +1087,7 @@ public partial class MainWindow : Window
     {
         var key = a.Def.Id + ":exe";
         if (busy.ContainsKey(key) || ops.IsActive(key) || a.Native == null) return;
-        if (MessageBox.Show(this, $"Удалить «{a.Def.NativeName}» с этого компьютера?", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (Loc.Box(this, $"Удалить «{a.Def.NativeName}» с этого компьютера?", "Удаление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         await RunOp(key, a.Def.NativeName ?? a.Def.Name, "Удаление", RenderApps, async (item, ct) =>
         {
             try
@@ -1191,6 +1207,7 @@ public partial class MainWindow : Window
             await OpsDemo();
             await Capture(Path.Combine(dir, "launcher-9-ops.png"), () => RenderOps());
         }
+        Loc.WriteAudit(dir);
         Application.Current.Shutdown();
     }
 
@@ -1199,6 +1216,8 @@ public partial class MainWindow : Window
         prepare();
         await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
         await Task.Delay(500);
+        Loc.ApplyTree(this);   // язык снимков задаётся --lang=…; то, что не переведено, попадёт в loc-missing-*.txt
+        await Task.Delay(100);
         // Снимаем окно в натуральном размере, но с удвоенным разрешением (k = 2): так картинка получается чёткой
         // и без растяжения, а размер окна на экране сборочной машины не важен.
         UpdateLayout();

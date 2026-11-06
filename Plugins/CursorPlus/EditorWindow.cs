@@ -73,7 +73,7 @@ sealed class EditorWindow : Window
         foreach (var (id, title) in new[] { ("pencil", "Карандаш"), ("eraser", "Ластик"), ("fill", "Заливка"), ("hot", "Точка клика") })
         {
             var t = id;
-            var b = new Button { Content = title, Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 0, 6, 0) };
+            var b = new Button { Content = title, Tag = id, Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 0, 6, 0) };
             b.Click += (_, _) => { tool = t; PaintTools(); };
             toolRow.Children.Add(b);
         }
@@ -161,7 +161,7 @@ sealed class EditorWindow : Window
     {
         foreach (var o in toolRow.Children.OfType<Button>())
         {
-            var id = (o.Content as string) switch { "Карандаш" => "pencil", "Ластик" => "eraser", "Заливка" => "fill", _ => "hot" };
+            var id = o.Tag as string ?? "hot";   // инструмент определяется по Tag, а не по подписи (подпись переводится)
             o.Style = id == tool ? (Style)FindResource("Primary") : null;
         }
     }
@@ -258,20 +258,20 @@ sealed class EditorWindow : Window
             nameBox.Text = System.IO.Path.GetFileNameWithoutExtension(dlg.FileName);
             Redraw();
         }
-        catch (Exception ex) { MessageBox.Show(this, "Не получилось открыть: " + ex.Message, "Cursor Plus"); }
+        catch (Exception ex) { Loc.Box(this, "Не получилось открыть: " + ex.Message, "Cursor Plus"); }
     }
 
     void Save()
     {
         var any = false;
         for (var i = 3; i < px.Length; i += 4) if (px[i] > 0) { any = true; break; }
-        if (!any) { MessageBox.Show(this, "Курсор пустой — нарисуйте что-нибудь.", "Cursor Plus"); return; }
+        if (!any) { Loc.Box(this, "Курсор пустой — нарисуйте что-нибудь.", "Cursor Plus"); return; }
         var name = nameBox.Text.Trim();
         if (name.Length == 0) name = "Мой курсор";
         if (name.Length > 40) name = name[..40];
         var e = new MineEntry { Id = existingId, Name = name, N = n, HotX = hotX, HotY = hotY, Smooth = smooth };
         try { MineStore.Save(e, px); Result = e; DialogResult = true; }
-        catch (Exception ex) { MessageBox.Show(this, "Не сохранилось: " + ex.Message, "Cursor Plus"); }
+        catch (Exception ex) { Loc.Box(this, "Не сохранилось: " + ex.Message, "Cursor Plus"); }
     }
 
     // Для снимков окна
@@ -283,6 +283,7 @@ sealed class EditorWindow : Window
         System.Windows.Documents.TextElement.SetForeground(page, Foreground);
         System.Windows.Documents.TextElement.SetFontFamily(page, FontFamily);
         System.Windows.Documents.TextElement.SetFontSize(page, FontSize);
+        Loc.ApplyTree(page);   // служебный снимок: окно не показано, переводим вручную
         page.Measure(new Size(740, double.PositiveInfinity));
         var w = 740; var h = Math.Max(200, (int)Math.Ceiling(page.DesiredSize.Height));
         page.Arrange(new Rect(0, 0, w, h));

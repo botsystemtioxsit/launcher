@@ -12,6 +12,7 @@ public class MainWindow : Window
     readonly Button onBtn = new() { Content = "Включить" };
     readonly Button offBtn = new() { Content = "Выключить и вернуть как было" };
     readonly Button checkBtn = new() { Content = "Проверить" };
+    StackPanel page = null!;
 
     // Цвета берём из общего киберпанк-стиля (Shared/CyberTheme.xaml); неизвестный цвет — как есть
     static Brush B(string hex) => hex.ToUpperInvariant() switch
@@ -38,6 +39,7 @@ public class MainWindow : Window
         FontFamily = new FontFamily("Segoe UI");
 
         var root = new StackPanel { Margin = new Thickness(22) };
+        page = root;
         root.Children.Add(Label("DNS Plus", 24, "#00F0FF", true));
         root.Children.Add(Label("Защищённый DNS NextDNS для всей Windows. Вставьте свой ID и нажмите «Включить».", 13, "#8B86B8"));
 
@@ -124,5 +126,29 @@ public class MainWindow : Window
         else msgText.Text = ok ? "Выключено, прежние настройки DNS возвращены." : msg;
         SetBusy(false);
         offBtn.IsEnabled = Dns.IsOn();
+    }
+
+    // Служебный режим: рисует окно целиком в PNG без показа (проверка внешнего вида и перевода)
+    public void RenderTo(string file)
+    {
+        System.Windows.Documents.TextElement.SetForeground(page, Foreground);
+        System.Windows.Documents.TextElement.SetFontFamily(page, FontFamily);
+        var sv = (ScrollViewer)Content;
+        sv.Content = null;
+        Loc.ApplyTree(page);
+        page.Measure(new Size(520, double.PositiveInfinity));
+        var w = 520; var h = Math.Max(200, (int)Math.Ceiling(page.DesiredSize.Height));
+        page.Arrange(new Rect(0, 0, w, h));
+        page.UpdateLayout();
+        var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
+        var bg = new DrawingVisual();
+        using (var dc = bg.RenderOpen()) dc.DrawRectangle(Background, null, new Rect(0, 0, w, h));
+        rtb.Render(bg);
+        rtb.Render(page);
+        var enc = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(rtb));
+        using var fs = System.IO.File.Create(file);
+        enc.Save(fs);
+        sv.Content = page;
     }
 }

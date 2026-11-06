@@ -21,6 +21,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        Loc.Start(e.Args);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         var test = e.Args.FirstOrDefault(a => a.StartsWith("--selftest="));
@@ -93,6 +94,7 @@ public partial class App : Application
             w2.RenderTo(Path.Combine(dir, "taskbar-plus-ui-pill.png"));
         }
         catch (Exception ex) { File.WriteAllText(Path.Combine(dir, "taskbar-plus-ui-error.txt"), ex.ToString()); }
+        Loc.WriteAudit(dir);
     }
 
     void ShowWindow()

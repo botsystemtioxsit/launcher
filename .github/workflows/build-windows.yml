@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'Launcher/**'
+      - 'Shared/**'
       - 'Terminal/**'
       - 'Plugins/**'
       - 'BrowserPlugins/**'

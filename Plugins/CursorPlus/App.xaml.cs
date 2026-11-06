@@ -45,6 +45,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        Loc.Start(e.Args);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         // служебные режимы для проверки в CI (без окна)
@@ -68,6 +69,7 @@ public partial class App : Application
                 SelfTest.Sheets(shot, s);
             }
             catch (Exception ex) { try { File.WriteAllText(Path.Combine(shot, "cursor-plus-ui-error.txt"), ex.ToString()); } catch { } }
+            Loc.WriteAudit(shot);
             Shutdown(); return;
         }
         var self = Arg(e, "--selftest=");

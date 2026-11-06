@@ -66,7 +66,7 @@ for o, b in UA_COMBOS:
     with open(os.path.join(out, 'u', '%s-%s.js' % (o, b)), 'w', encoding='utf-8', newline='\n') as f:
         f.write('globalThis.__gsmask.ua={os:"%s",br:"%s"};\n' % (o, b))
 
-ui = [{k: c[k] for k in ('cc', 'name', 'city', 'tz', 'locale', 'langs')} for c in countries]
+ui = [{k: c[k] for k in ('cc', 'name', 'city', 'name_en', 'city_en', 'name_de', 'city_de', 'tz', 'locale', 'langs')} for c in countries]
 with open(os.path.join(out, 'countries.js'), 'w', encoding='utf-8', newline='\n') as f:
     f.write('// Создано tools/mask-plus/generate.py из countries.json — руками не править.\n')
     f.write('const MASK_COUNTRIES = ' + json.dumps(ui, ensure_ascii=False, indent=1) + ';\n')

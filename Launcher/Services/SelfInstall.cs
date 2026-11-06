@@ -40,7 +40,7 @@ static class SelfInstall
         var text = have == null
             ? $"Установить «{AppName}» на этот компьютер?\n\nПоявятся ярлыки в «Пуске» и на рабочем столе, лаунчер будет в списке установленных приложений. Права администратора не нужны."
             : $"На компьютере уже стоит лаунчер {have}. Заменить его этой версией ({SelfUpdate.CurrentVersion})?";
-        if (MessageBox.Show(text, AppName, MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return false;
+        if (Loc.Box(text, AppName, MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return false;
         try
         {
             Install(src);
@@ -49,7 +49,7 @@ static class SelfInstall
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Не удалось установить: " + ex.Message + "\n\nЕсли лаунчер сейчас открыт — закрой его и попробуй ещё раз.", AppName, MessageBoxButton.OK, MessageBoxImage.Warning);
+            Loc.Box("Не удалось установить: " + ex.Message + "\n\nЕсли лаунчер сейчас открыт — закрой его и попробуй ещё раз.", AppName, MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
     }
@@ -114,7 +114,7 @@ static class SelfInstall
 
     public static void Uninstall()
     {
-        var wipeData = MessageBox.Show("Удалить «" + AppName + "»?\n\nУдалить вместе с ним и сохранённые аккаунты (вход придётся пройти заново)?\n\nДа — удалить всё, Нет — оставить аккаунты.", AppName,
+        var wipeData = Loc.Box("Удалить «" + AppName + "»?\n\nУдалить вместе с ним и сохранённые аккаунты (вход придётся пройти заново)?\n\nДа — удалить всё, Нет — оставить аккаунты.", AppName,
             MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
         if (wipeData == MessageBoxResult.Cancel) return;
         try { File.Delete(StartMenuLink); } catch { }

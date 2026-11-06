@@ -130,7 +130,7 @@ sealed partial class MainWindow
 
     void DeletePack(IconPack pack)
     {
-        if (MessageBox.Show(this, $"Удалить набор «{pack.Name}»? Если он сейчас применён, сначала верните значки как было.", "Icon Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (Loc.Box(this, $"Удалить набор «{pack.Name}»? Если он сейчас применён, сначала верните значки как было.", "Icon Plus", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         try { Packs.Delete(pack.Name); settings.Maps.Remove(pack.Name); settings.Save(); if (selectedPack?.Name == pack.Name) selectedPack = null; }
         catch (Exception ex) { Say("Не удалось удалить: " + ex.Message); }
         BuildPacks();

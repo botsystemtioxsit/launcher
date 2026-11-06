@@ -19,6 +19,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        Loc.Start(e.Args);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         // служебные режимы для проверки в CI: ничего не показывают и сразу выходят
@@ -83,5 +84,6 @@ public partial class App : Application
             w.RenderTo(dir);
         }
         catch (Exception ex) { File.WriteAllText(Path.Combine(dir, "icon-plus-ui-error.txt"), ex.ToString()); }
+        Loc.WriteAudit(dir);
     }
 }
