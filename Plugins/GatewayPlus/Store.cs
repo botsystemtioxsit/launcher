@@ -14,7 +14,10 @@ static class Store
     static string SettingsFile => Path.Combine(Dir, "settings.json");
     static readonly byte[] Entropy = Encoding.UTF8.GetBytes("GhostShell.GatewayPlus.v1");
 
-    sealed class Settings { public string Active { get; set; } = ""; }
+    sealed class Settings { public string Active { get; set; } = ""; public string[]? Bypass { get; set; } }
+
+    static Settings LoadSettings() { try { return JsonSerializer.Deserialize<Settings>(File.ReadAllText(SettingsFile)) ?? new Settings(); } catch { return new Settings(); } }
+    static void SaveSettings(Settings s) { try { Directory.CreateDirectory(Dir); File.WriteAllText(SettingsFile, JsonSerializer.Serialize(s)); } catch { } }
 
     // Имя туннеля: латиница, цифры, «_ - . = +», до 32 знаков (так требует WireGuard).
     public static bool ValidName(string s) => Regex.IsMatch(s ?? "", @"^[A-Za-z0-9_=+.\-]{1,32}$");
@@ -64,14 +67,15 @@ static class Store
 
     public static string Active
     {
-        get
-        {
-            try { return JsonSerializer.Deserialize<Settings>(File.ReadAllText(SettingsFile))?.Active ?? ""; } catch { return ""; }
-        }
-        set
-        {
-            try { Directory.CreateDirectory(Dir); File.WriteAllText(SettingsFile, JsonSerializer.Serialize(new Settings { Active = value })); } catch { }
-        }
+        get => LoadSettings().Active ?? "";
+        set { var st = LoadSettings(); st.Active = value; SaveSettings(st); }
+    }
+
+    // Сервисы, которые идут мимо шлюза (см. Split.cs). Пока человек не выбирал — WhatsApp (владелец просил: звонки прерывались).
+    public static string[] Bypass
+    {
+        get => LoadSettings().Bypass ?? Split.Default;
+        set { var st = LoadSettings(); st.Bypass = value; SaveSettings(st); }
     }
 
     // Проверка конфига до сохранения и перед подключением. Возвращает текст проблемы или null.
@@ -124,6 +128,19 @@ static class Store
         }
         if (!done) lines.Insert(last + 1, key + " = " + value);
         return string.Join("\n", lines);
+    }
+
+    // Значение строки из раздела [Peer] (для проверок и показа); пусто, если строки нет.
+    public static string InterfaceValueOfPeer(string conf, string key)
+    {
+        var inPeer = false;
+        foreach (var raw in conf.Replace("\r", "").Split('\n'))
+        {
+            var t = raw.Trim();
+            if (t.StartsWith('[')) { inPeer = t.Equals("[Peer]", StringComparison.OrdinalIgnoreCase); continue; }
+            if (inPeer && t.StartsWith(key, StringComparison.OrdinalIgnoreCase) && t[key.Length..].TrimStart().StartsWith('=')) return t[(t.IndexOf('=') + 1)..].Trim();
+        }
+        return "";
     }
 
     public static int MtuOf(string conf) => int.TryParse(InterfaceValue(conf, "MTU"), out var m) ? m : 0;

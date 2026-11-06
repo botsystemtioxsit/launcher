@@ -270,6 +270,19 @@ sealed class MainWindow : Window
         if (profiles.Count > 0 && active.Length > 0 && !activeGsp) buttons.Children.Add(Btn("Скорость и размер пакета…", null, () => ShowSpeed(active, connected)));
         if (profiles.Count > 0 && active.Length > 0 && !activeGsp) buttons.Children.Add(Btn("Телефон и ускорение сервера…", null, () => ShowPhoneQr(active)));
         gw.Add(buttons);
+        if (profiles.Count > 0)
+        {
+            var wa = new CheckBox { Content = "Не пускать WhatsApp через шлюз (звонки идут напрямую — так они слышны лучше)", IsChecked = Store.Bypass.Contains("whatsapp"), Margin = new Thickness(0, 6, 0, 2) };
+            wa.Click += (_, _) =>
+            {
+                var cur = Store.Bypass.Where(x => x != "whatsapp").ToList();
+                if (wa.IsChecked == true) cur.Add("whatsapp");
+                Store.Bypass = cur.ToArray();
+                status.Text = connected ? "Изменение вступит в силу при следующем подключении: отключите шлюз и включите снова." : "Сохранено: вступит в силу при подключении.";
+            };
+            gw.Add(wa);
+            gw.Add(Note("Исключаются адреса серверов WhatsApp. Это сети компании Meta, поэтому Facebook и Instagram тоже пойдут напрямую, а WhatsApp увидит ваш настоящий адрес. Пока исключение включено, WireGuard не закрывает «прямой выход» при обрыве шлюза (эта защита работает только когда в туннель идёт всё). Список адресов обновляется сам раз в неделю."));
+        }
         if (activeGsp)
         {
             if (connected)
@@ -406,9 +419,19 @@ sealed class MainWindow : Window
             tmpDir = Path.Combine(Path.GetTempPath(), "gpc-" + Guid.NewGuid().ToString("N")[..10]);
             Directory.CreateDirectory(tmpDir);
             var file = Path.Combine(tmpDir, name + ".conf");
+            // «Мимо шлюза» (WhatsApp): вместо 0.0.0.0/0 службе уходит «всё, кроме сетей сервиса и адреса сервера»; сохранённый профиль не меняется
+            var bypassOn = false;
+            var bypass = Store.Bypass;
+            if (bypass.Length > 0)
+            {
+                await Split.RefreshIfStaleAsync();
+                var eps = await Split.ResolveAsync(Store.EndpointOf(conf));
+                var split = Split.Apply(conf, bypass, eps);
+                if (split != conf && Store.Validate(split) == null) { conf = split; bypassOn = true; }
+            }
             await File.WriteAllTextAsync(file, conf);
             var r = await Helper.RunAsync(new Job { Action = gspProfile ? "gsp-connect" : "connect", Name = name, Conf = file });
-            status.Text = r.Message;
+            status.Text = r.Message + (r.Ok && bypassOn ? " WhatsApp идёт мимо шлюза." : "");
             await Task.Delay(r.Ok ? 2500 : 200);
         }
         catch (Exception ex) { status.Text = "Не вышло: " + ex.Message; }
