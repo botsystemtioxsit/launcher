@@ -33,7 +33,7 @@ foreach ($lang in 'en', 'de') {
         New-Item -ItemType Directory -Force $dir | Out-Null
         Say "=== $($a.n) --lang=$lang ==="
         $p = Start-Process -FilePath $exe.Path -ArgumentList "--screenshot=$dir", "--lang=$lang" -PassThru
-        if (-not $p.WaitForExit(240000)) { $p.Kill(); Say "$($a.n) $lang: не завершился за 240 с" } else { Say "$($a.n) $lang: код $($p.ExitCode)" }
+        if (-not $p.WaitForExit(240000)) { $p.Kill(); Say "$($a.n) ${lang}: не завершился за 240 с" } else { Say "$($a.n) ${lang}: код $($p.ExitCode)" }
         Get-ChildItem $dir -File | ForEach-Object { Say ("  " + $_.Name + " " + $_.Length) }
         # список непереведённого — в общую сводку
         Get-ChildItem $dir -Filter 'loc-missing-*.txt' -File | ForEach-Object {
