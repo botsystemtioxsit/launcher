@@ -225,6 +225,12 @@ public static class Loc
         foreach (var sf in suffixes)
             if (s.Length > sf.ru.Length && s.EndsWith(sf.ru, StringComparison.Ordinal))
                 return T2(s[..^sf.ru.Length]) + (Lang == "en" ? sf.en : sf.de);
+        // значок-украшение в начале («▲ Есть обновление», «⟳ Обновить»): переводим остаток, значок оставляем
+        if (s.Length > 2 && s[1] == ' ' && "▲▼▶⟳☰✓✗●○←→＋+".IndexOf(s[0]) >= 0)
+        {
+            var rest = s[2..]; var rr = Translate(rest);
+            if (rr != rest) return s[0] + " " + rr;
+        }
         // многострочный текст — построчно
         if (s.Contains('\n'))
         {
