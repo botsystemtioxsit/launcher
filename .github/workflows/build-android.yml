@@ -53,7 +53,7 @@ jobs:
             } >> "$GITHUB_ENV"
           else
             echo "SIGNING=debug" >> "$GITHUB_ENV"
-            echo "::warning::Секрет ANDROID_KEYSTORE_BASE64 не задан: APK подписан одноразовым отладочным ключом."
+            echo "::warning::Секрет ANDROID_KEYSTORE_BASE64 не задан: APK подписан одноразовым отладочным ключом — обновиться поверх прежней версии Android не даст («Приложение не установлено»). Добавьте секрет (Settings → Secrets and variables → Actions)."
           fi
 
       - name: Build debug APK
