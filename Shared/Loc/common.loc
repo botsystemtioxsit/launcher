@@ -189,3 +189,5 @@ Windows {} (сборка {}), {}; лаунчер {}; плагины: {} ⇒ Wind
 Сценарий ⇒ Script ⇒ Skript
 Флешка ⇒ USB drive ⇒ USB-Stick
 Жёсткий ⇒ Hard drive ⇒ Festplatte
+{}  ·  этот профиль ⇒ {0}  ·  this profile ⇒ {0}  ·  dieses Profil
+Готово! Профиль «{}» сохранён (сервер {}). Закройте окно и нажмите «Подключить». ⇒ Done! Profile "{0}" saved (server {1}). Close the window and press "Connect". ⇒ Fertig! Profil „{0}“ gespeichert (Server {1}). Schließe das Fenster und klicke auf „Verbinden“.
