@@ -265,6 +265,7 @@ sealed class MainWindow : Window
             buttons.Children.Add(d);
         }
         buttons.Children.Add(Btn("＋ Добавить конфиг…", null, AddProfile));
+        if (profiles.Count > 0 && active.Length > 0) buttons.Children.Add(Btn("Изменить профиль / протокол…", null, () => EditProfile(active, connected)));
         if (profiles.Count > 0 && active.Length > 0 && !connected) buttons.Children.Add(Btn("Удалить выбранный профиль", null, () => { Store.Delete(active); Store.Active = Store.List().FirstOrDefault() ?? ""; BuildPage(); }));
         if (profiles.Count > 0 && active.Length > 0 && !activeGsp) buttons.Children.Add(Btn("Скорость и размер пакета…", null, () => ShowSpeed(active, connected)));
         if (profiles.Count > 0 && active.Length > 0 && !activeGsp) buttons.Children.Add(Btn("Телефон и ускорение сервера…", null, () => ShowPhoneQr(active)));
@@ -283,7 +284,7 @@ sealed class MainWindow : Window
         page.Children.Add(Card("Шлюз", gw));
 
         // 3. свой сервер: мастер и ручной путь
-        var wizBtn = Btn("Создать мой VPN на сервере…", "Primary", OpenWizard, first: true);
+        var wizBtn = Btn("Создать мой VPN на сервере…", "Primary", () => OpenWizard(), first: true);
         wizBtn.IsEnabled = account != null && !Blocked;
         page.Children.Add(Card("Создать свой VPN", new UIElement[]
         {
@@ -348,11 +349,39 @@ sealed class MainWindow : Window
         BuildPage();
     }
 
-    async void OpenWizard()
+    // Окно «Изменить профиль»: выбор протокола для сервера, правка текста, переименование.
+    void EditProfile(string name, bool connected)
+    {
+        var conf = Store.Load(name);
+        if (conf == null) { status.Text = "Профиль не прочитался."; return; }
+        var w = new ProfileWindow(name, conf, connected) { Owner = this };
+        w.ShowDialog();
+        switch (w.Result)
+        {
+            case ProfileWindow.Outcome.Use:
+                Store.Active = w.ResultName;
+                status.Text = "Выбран профиль «" + w.ResultName + "» (" + (IsGspProfile(w.ResultName) ? "GSP" : "WireGuard") + "). Нажмите «Подключить».";
+                BuildPage();
+                break;
+            case ProfileWindow.Outcome.Saved:
+                status.Text = "Профиль «" + w.ResultName + "» сохранён.";
+                BuildPage();
+                break;
+            case ProfileWindow.Outcome.Deleted:
+                status.Text = "Профиль «" + name + "» удалён.";
+                BuildPage();
+                break;
+            case ProfileWindow.Outcome.Install:
+                OpenWizard(w.InstallHost, w.InstallProtocol, w.InstallName);
+                break;
+        }
+    }
+
+    async void OpenWizard(string? host = null, string? protocol = null, string? profileName = null)
     {
         if (busy) return;
         if (!await EnsureAllowedAsync()) return;
-        var w = new WizardWindow { Owner = this };
+        var w = new WizardWindow(host, protocol, profileName) { Owner = this };
         w.ShowDialog();
         if (w.SavedName != null) status.Text = "Профиль «" + w.SavedName + "» сохранён. Нажмите «Подключить».";
         if (account != null) _ = Cloud.HeartbeatAsync(account.Id, Account.DeviceHash(), Ui.Version, Store.List().Count, account.TermsV, account.Name);

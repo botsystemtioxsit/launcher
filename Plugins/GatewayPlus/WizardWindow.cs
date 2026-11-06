@@ -31,9 +31,13 @@ sealed class WizardWindow : Window
 
     public string? SavedName { get; private set; }
 
-    public WizardWindow()
+    // host/protocol/name — подсказки из окна «Изменить профиль»: адрес сервера, "wg" или "gsp", предлагаемое имя нового профиля.
+    public WizardWindow(string? host = null, string? protocol = null, string? profileName = null)
     {
         Ui.Setup(this, "Создать свой VPN", 700, 860);
+        if (!string.IsNullOrWhiteSpace(host)) hostBox.Text = host.Trim();
+        if (protocol == "gsp") rbGsp.IsChecked = true;
+        if (!string.IsNullOrWhiteSpace(profileName)) nameBox.Text = Store.SafeName(profileName);
         page.Margin = new Thickness(24, 18, 24, 18);
         scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = page };
         Content = scroll;
