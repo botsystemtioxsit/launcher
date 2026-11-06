@@ -16,7 +16,7 @@ const TYPES = ['main_frame', 'sub_frame', 'stylesheet', 'script', 'image', 'font
 importScripts('countries.js', 'ua.js');
 
 async function load() {
-  const s = Object.assign({}, DEFAULTS, await chrome.storage.local.get(Object.keys(DEFAULTS)));
+  const s = Object.assign({}, DEFAULTS, await chrome.storage.local.get(Object.keys(DEFAULTS).concat('uiLang')));
   if (!MASK_COUNTRIES.some(c => c.cc === s.cc)) s.cc = DEFAULTS.cc;
   s.ua = s.ua === true;
   if (!OS_LIST.includes(s.os)) s.os = DEFAULTS.os;
@@ -100,7 +100,9 @@ async function applyBadge(s) {
   await chrome.action.setBadgeBackgroundColor({ color: '#FF2A9D' });
   if (chrome.action.setBadgeTextColor) await chrome.action.setBadgeTextColor({ color: '#06050D' });
   await chrome.action.setBadgeText({ text: s.enabled ? s.cc : '' });
-  await chrome.action.setTitle({ title: s.enabled ? 'Mask Plus — сейчас: ' + s.cc : 'Mask Plus — выключено' });
+  const ui = ['ru', 'en', 'de'].includes(s.uiLang) ? s.uiLang : (() => { try { const l = String(chrome.i18n.getUILanguage()).slice(0, 2).toLowerCase(); return ['ru', 'uk', 'be', 'kk'].includes(l) ? 'ru' : l === 'de' ? 'de' : 'en'; } catch (e) { return 'ru'; } })();
+  const now = { ru: 'сейчас', en: 'now', de: 'jetzt' }[ui], off = { ru: 'выключено', en: 'off', de: 'aus' }[ui];
+  await chrome.action.setTitle({ title: s.enabled ? 'Mask Plus — ' + now + ': ' + s.cc : 'Mask Plus — ' + off });
 }
 
 let chain = Promise.resolve();

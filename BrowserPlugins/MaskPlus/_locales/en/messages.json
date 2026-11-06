@@ -1,0 +1,5 @@
+{
+  "desc": {
+    "message": "Masks the browser time zone, language and location as a chosen country, and optionally fakes the system and the browser. Does not change the IP address. Made by AI. Ghost Shell."
+  }
+}
