@@ -108,6 +108,18 @@
         "windows",
         "linux"
       ]
+    },
+    {
+      "id": "gateway-plus-android",
+      "name": "Gateway Plus (Android)",
+      "desc": "Личный VPN на вашем сервере для телефона. Вход по нику и паролю, профили из QR с компьютера. Нужен свой сервер WireGuard.",
+      "platform": "Android",
+      "repo": "launcher",
+      "tag": "android-gateway-latest",
+      "asset": "GatewayPlus.apk",
+      "os": [
+        "android"
+      ]
     }
   ],
   "plugins": [

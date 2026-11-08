@@ -1,0 +1,64 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.tioxsit.gatewayplus'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.tioxsit.gatewayplus"
+        minSdk 24
+        targetSdk 34
+        // Версию поднимать при каждом изменении (иначе обновиться поверх прежней нельзя)
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    signingConfigs {
+        // Постоянный ключ подписи из секрета репозитория ANDROID_KEYSTORE_BASE64 (тот же, что у лаунчера, игры и админ-панели).
+        // Без него сборка подписывается одноразовым отладочным ключом — обновиться поверх прежней версии тогда нельзя.
+        stable {
+            def ksFile = System.getenv('ANDROID_KEYSTORE_FILE')
+            if (ksFile) {
+                storeFile file(ksFile)
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            if (System.getenv('ANDROID_KEYSTORE_FILE')) {
+                signingConfig signingConfigs.stable
+            }
+        }
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.activity:activity-ktx:1.9.2'
+    // Туннель WireGuard (официальная библиотека, Apache-2.0): сеть, шифрование и VpnService — её; аккаунт, профили и вид — наши
+    implementation 'com.wireguard.android:tunnel:1.0.20230706'
+    // Сканер QR-кода (Apache-2.0): профиль с компьютера («Для телефона» в Gateway Plus)
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
+    testImplementation 'junit:junit:4.13.2'
+}

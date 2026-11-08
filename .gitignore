@@ -8,3 +8,8 @@ Android/local.properties
 *.apk
 Plugins/TaskbarPlus/Engine/build/
 Plugins/GatewayPlus/Resources/bin/
+
+AndroidGateway/**/build/
+AndroidGateway/.gradle/
+AndroidGateway/local.properties
+AndroidGateway/.kotlin/
