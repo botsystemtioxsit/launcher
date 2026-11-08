@@ -63,7 +63,7 @@ static class Split
         {
             if (File.Exists(CacheFile) && DateTime.UtcNow - File.GetLastWriteTimeUtc(CacheFile) < TimeSpan.FromDays(7)) return;
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(6) };
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("GhostShell-GatewayPlus/" + Ui.Version);
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("GhostShell-GatewayPlus/" + (typeof(Split).Assembly.GetName().Version is { } v ? $"{v.Major}.{v.Minor}.{v.Build}" : "3"));
             var json = await http.GetStringAsync("https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS32934");
             var list = ParseRipe(json);
             if (list == null) return;

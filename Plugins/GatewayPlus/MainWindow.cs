@@ -211,6 +211,7 @@ sealed class MainWindow : Window
         var wgPath = Wg.ExePath();
         var profiles = Store.List();
         var active = Store.Active;
+        if (profiles.Count > 0 && !profiles.Contains(active, StringComparer.Ordinal)) { active = profiles[0]; Store.Active = active; }   // выбранный профиль пропал (удалён) — берём первый
         var activeGsp = active.Length > 0 && IsGspProfile(active);
         gspLine = null;
         if (wgPath == null && !activeGsp)
@@ -219,21 +220,14 @@ sealed class MainWindow : Window
             gw.Add(Btn("Установить WireGuard", "Primary", InstallWg, first: true));
         }
         else if (wgPath != null) gw.Add(new TextBlock { Text = "WireGuard установлен.", Foreground = Res("Muted"), FontSize = 12, Margin = new Thickness(0, 0, 0, 10) });
-        if (profiles.Count > 0)
+        var rows = Servers.List();
+        if (rows.Count > 0)
         {
-            var wrap = new WrapPanel { Margin = new Thickness(0, 6, 0, 10) };
-            foreach (var p in profiles)
-            {
-                var name = p;
-                var b = new Button { Content = name + (IsGspProfile(name) ? "  ·  GSP" : ""), Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(0, 0, 8, 8) };
-                if (name == active) b.Style = (Style)FindResource("Primary");
-                b.Click += (_, _) => { if (!connected) { Store.Active = name; BuildPage(); } else status.Text = "Сначала отключите шлюз."; };
-                wrap.Children.Add(b);
-            }
-            gw.Add(new TextBlock { Text = "Профиль (куда подключаться)", FontWeight = FontWeights.SemiBold });
-            gw.Add(wrap);
+            gw.Add(new TextBlock { Text = $"Мои серверы: {rows.Count}", FontWeight = FontWeights.SemiBold, FontSize = 16, Margin = new Thickness(0, 2, 0, 0) });
+            gw.Add(Note("Один сервер — одна аренда у хостера. На нём могут стоять оба протокола: переключайте их кнопками в карточке. Протокол, которого на сервере ещё нет, ставится кнопкой «— поставить»; если доступ к серверу сохранён (кнопка «Сервер…»), пароль вводить заново не нужно."));
+            foreach (var r in rows) gw.Add(ServerCard(r, active));
         }
-        else gw.Add(Note("Профилей пока нет. Добавьте конфиг: от своего сервера (см. ниже) или от VPN-сервиса, который даёт файл WireGuard."));
+        else gw.Add(Note("Серверов пока нет. Создайте свой сервер мастером (кнопка «Создать мой VPN на сервере…» ниже) или добавьте конфиг от VPN-сервиса."));
 
         // какой протокол выбран и работает ли он сейчас
         if (active.Length > 0)
@@ -246,10 +240,6 @@ sealed class MainWindow : Window
                 FontSize = 14, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 8),
             });
         }
-        // как получить профиль GSP, пока его нет
-        if (profiles.Count > 0 && !profiles.Any(IsGspProfile))
-            gw.Add(Note("Протокол выбирается профилем: «· GSP» на кнопке — наш протокол (лучше переносит потери связи), остальные профили — WireGuard. Чтобы появился профиль GSP, создайте его мастером ниже («Создать мой VPN на сервере…», в окне мастера выберите «GSP»); WireGuard на сервере при этом не трогается. Переключать профиль можно, пока шлюз выключен."));
-
         var buttons = new WrapPanel { Margin = new Thickness(0, 4, 0, 4) };
         if (!connected)
         {
@@ -326,6 +316,89 @@ sealed class MainWindow : Window
         page.Children.Add(last);
         page.Children.Add(status);
         page.Children.Add(Note("«Вернуть как было» выключает шлюз и убирает его следы (службу и файл конфига в ProgramData). Ваши сохранённые профили остаются."));
+    }
+
+    // Карточка одного сервера: название, какой протокол выбран, кнопки WireGuard / GSP (или «— поставить»), доступ по SSH, окно «Сервер…».
+    UIElement ServerCard(ServerRow r, string active)
+    {
+        var isActive = r.All.Contains(active, StringComparer.Ordinal);
+        var col = new StackPanel();
+        var title = new TextBlock { FontSize = 15, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+        title.Inlines.Add(new System.Windows.Documents.Run(Servers.Label(r.Info)));
+        if (r.Info.Host.Length > 0 && Servers.Label(r.Info) != r.Info.Host)
+            title.Inlines.Add(new System.Windows.Documents.Run("  ·  " + r.Info.Host) { FontWeight = FontWeights.Normal, Foreground = Res("Muted"), FontSize = 13 });
+        col.Children.Add(title);
+
+        string state; Brush stateCol;
+        if (isActive && connected) { state = "Сейчас работает: " + (IsGspProfile(active) ? "GSP" : "WireGuard"); stateCol = Res("Green"); }
+        else if (isActive) { state = "Выбран · шлюз выключен"; stateCol = Res("Accent2"); }
+        else { state = "Не выбран"; stateCol = Res("Muted"); }
+        col.Children.Add(new TextBlock { Text = state, Foreground = stateCol, FontSize = 12.5, Margin = new Thickness(0, 2, 0, 8) });
+
+        var protos = new WrapPanel();
+        protos.Children.Add(ProtoBtn(r, false, r.Wg, active));
+        protos.Children.Add(ProtoBtn(r, true, r.Gsp, active));
+        foreach (var extra in r.Extra)
+        {
+            var name = extra;
+            var b = new Button { Content = name + (IsGspProfile(name) ? " · GSP" : ""), Padding = new Thickness(12, 8, 12, 8), Margin = new Thickness(0, 0, 8, 8) };
+            if (name == active) b.Style = (Style)FindResource("Primary");
+            b.Click += (_, _) => SelectProfile(name);
+            protos.Children.Add(b);
+        }
+        col.Children.Add(protos);
+
+        var foot = new WrapPanel { Margin = new Thickness(0, 2, 0, 0) };
+        foot.Children.Add(new TextBlock { Text = r.Info.HasAccess ? "Доступ к серверу сохранён" : "Доступ к серверу не сохранён", Foreground = r.Info.HasAccess ? Res("Green") : Res("Muted"), FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 14, 0) });
+        if (r.Info.Id.Length > 0)
+        {
+            var more = new Button { Content = "Сервер…", Padding = new Thickness(12, 5, 12, 5) };
+            more.Click += (_, _) => OpenServer(r);
+            foot.Children.Add(more);
+        }
+        col.Children.Add(foot);
+
+        return new Border
+        {
+            Background = Res("Panel2"), BorderBrush = isActive ? Res("Accent") : Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3),
+            Padding = new Thickness(16, 12, 16, 10), Margin = new Thickness(0, 6, 0, 4), Child = col,
+        };
+    }
+
+    Button ProtoBtn(ServerRow r, bool gsp, string? profile, string active)
+    {
+        var proto = gsp ? "GSP" : "WireGuard";
+        var b = new Button { Padding = new Thickness(16, 8, 16, 8), Margin = new Thickness(0, 0, 8, 8) };
+        if (profile != null)
+        {
+            var on = profile == active;
+            b.Content = proto + (on ? "  ✓" : "");
+            if (on) b.Style = (Style)FindResource("Primary");
+            b.Click += (_, _) => SelectProfile(profile);
+        }
+        else
+        {
+            b.Content = proto + " — поставить";
+            b.IsEnabled = r.Info.Host.Length > 0;
+            b.Click += (_, _) => OpenWizard(r.Info.Host, gsp ? "gsp" : "wg", Store.SafeName(Servers.SuggestName(r.Wg ?? r.Gsp ?? "server") + (gsp ? "-gsp" : "-wg")));
+        }
+        return b;
+    }
+
+    void SelectProfile(string name)
+    {
+        if (connected) { status.Text = "Сначала отключите шлюз."; return; }
+        Store.Active = name;
+        status.Text = "Выбран профиль «" + name + "» (" + (IsGspProfile(name) ? "GSP" : "WireGuard") + "). Нажмите «Подключить».";
+        BuildPage();
+    }
+
+    void OpenServer(ServerRow r)
+    {
+        var w = new ServerWindow(r, connected && r.All.Contains(Store.Active, StringComparer.Ordinal)) { Owner = this };
+        w.ShowDialog();
+        if (w.Result == ServerWindow.Outcome.Removed) status.Text = "Сервер убран из списка.";
+        BuildPage();
     }
 
     // ---------- действия ----------

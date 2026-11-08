@@ -89,6 +89,8 @@ type Engine struct {
 	fecK    int
 	fecM    int
 	fecAuto bool
+	hsLimit *hsLimiter    // ограничитель рукопожатий (сервер)
+	hsDrop  atomic.Uint64 // сколько рукопожатий отброшено ограничителем
 	Log     func(format string, a ...any)
 }
 
@@ -101,14 +103,15 @@ func NewEngine(cfg Config, dev Device) (*Engine, error) {
 		return nil, err
 	}
 	e := &Engine{
-		cfg:    cfg,
-		static: noise.DHKey{Private: cfg.PrivateKey, Public: pub},
-		myObf:  obfKeyFor(pub),
-		dev:    dev,
-		peers:  map[[32]byte]*peer{},
-		byAddr: map[netip.AddrPort]*peer{},
-		byIdx:  map[uint32]*session{},
-		Log:    func(string, ...any) {},
+		cfg:     cfg,
+		static:  noise.DHKey{Private: cfg.PrivateKey, Public: pub},
+		myObf:   obfKeyFor(pub),
+		dev:     dev,
+		peers:   map[[32]byte]*peer{},
+		byAddr:  map[netip.AddrPort]*peer{},
+		byIdx:   map[uint32]*session{},
+		hsLimit: newHSLimiter(),
+		Log:     func(string, ...any) {},
 	}
 	e.pool.New = func() any { b := make([]byte, bufSize); return &b }
 	switch cfg.FEC {
@@ -789,6 +792,11 @@ func (e *Engine) handleHandshake(pk []byte, src netip.AddrPort, ua *net.UDPAddr)
 	msg, err := openHandshake(&e.myObf, pk)
 	if err != nil {
 		return // чужой/битый пакет: молчим, ответа не получит никто
+	}
+	// разбор init стоит двух умножений на кривой: сначала ограничитель (см. ratelimit.go)
+	if !e.hsLimit.allow(src.Addr(), time.Now()) {
+		e.hsDrop.Add(1)
+		return
 	}
 	info, err := parseInit(e.static, msg)
 	if err != nil {

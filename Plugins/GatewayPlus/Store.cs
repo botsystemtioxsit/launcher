@@ -9,7 +9,9 @@ namespace GatewayPlusApp;
 // Профили шлюза (конфиги WireGuard) хранятся зашифрованными (DPAPI: расшифровать может только этот пользователь Windows на этом компьютере).
 static class Store
 {
-    public static string Dir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BattleLauncher", "gateway-plus");
+    // Только для служебного режима --screenshot: демо-серверы кладутся во временную папку, а не в настоящие данные человека.
+    public static string? DirOverride { get; set; }
+    public static string Dir => DirOverride ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BattleLauncher", "gateway-plus");
     static string ProfilesDir => Path.Combine(Dir, "profiles");
     static string SettingsFile => Path.Combine(Dir, "settings.json");
     static readonly byte[] Entropy = Encoding.UTF8.GetBytes("GhostShell.GatewayPlus.v1");

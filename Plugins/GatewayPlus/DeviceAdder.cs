@@ -30,43 +30,18 @@ static class DeviceAdder
         var bad = Provisioner.ValidateTarget(t);
         if (bad != null) { result.Error = bad; return result; }
         if (!ValidName(deviceName)) { result.Error = "Название устройства: латиницей, цифры, «-» и «_», до 20 знаков (например phone)."; return result; }
-        bool refused = false;
+        var st = new Provisioner.ConnectState();
         SshClient? ssh = null;
         string? scriptPath = null;
         try
         {
-            var methods = new List<AuthenticationMethod>();
-            if (!string.IsNullOrEmpty(t.KeyFile))
-            {
-                var pk = string.IsNullOrEmpty(t.KeyPass) ? new PrivateKeyFile(t.KeyFile) : new PrivateKeyFile(t.KeyFile, t.KeyPass);
-                methods.Add(new PrivateKeyAuthenticationMethod(t.User, pk));
-            }
-            if (!string.IsNullOrEmpty(t.Password))
-            {
-                var pwd = t.Password!;
-                methods.Add(new PasswordAuthenticationMethod(t.User, pwd));
-                var kbd = new KeyboardInteractiveAuthenticationMethod(t.User);
-                kbd.AuthenticationPrompt += (_, e) => { foreach (var p in e.Prompts) p.Response = pwd; };
-                methods.Add(kbd);
-            }
-            var info = new ConnectionInfo(t.Host, t.Port, t.User, methods.ToArray()) { Timeout = TimeSpan.FromSeconds(20) };
-            ssh = new SshClient(info) { KeepAliveInterval = TimeSpan.FromSeconds(15) };
+            ssh = Provisioner.BuildClient(t, confirmKey, log, st, "Отпечаток сервера знакомый.");
             var sshRef = ssh;
             using var cancelReg = ct.Register(() => { try { sshRef.Disconnect(); } catch { } });
-            ssh.HostKeyReceived += (_, e) =>
-            {
-                var fp = Provisioner.Fingerprint(e.HostKey);
-                result.Fingerprint = fp;
-                var key = t.Host.ToLowerInvariant() + ":" + t.Port;
-                Provisioner.LoadKnown().TryGetValue(key, out var old);
-                if (old == fp) { log("Отпечаток сервера знакомый."); e.CanTrust = true; return; }
-                var q = new HostKeyQuestion { Host = t.Host, Port = t.Port, Algorithm = e.HostKeyName, Fingerprint = fp, Known = old != null, Changed = old != null };
-                e.CanTrust = confirmKey(q);
-                if (e.CanTrust) Provisioner.RememberHost(key, fp); else refused = true;
-            };
             log($"Подключаюсь к {t.Host}:{t.Port} как {t.User}…");
             ct.ThrowIfCancellationRequested();
             ssh.Connect();
+            result.Fingerprint = st.Fingerprint;
             log("Вход выполнен.");
 
             string Exec(string cmd, int seconds = 60)
@@ -138,7 +113,7 @@ static class DeviceAdder
         catch (OperationCanceledException) { result.Error = "Отменено."; return result; }
         catch (Exception ex)
         {
-            result.Error = refused ? "Подключение отменено: вы не подтвердили отпечаток сервера." : Provisioner.Explain(ex);
+            Provisioner.Fail(result, ex, st);
             return result;
         }
         finally
