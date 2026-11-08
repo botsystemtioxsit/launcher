@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"time"
 
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 	"golang.zx2c4.com/wireguard/windows/tunnel/winipcfg"
@@ -79,6 +80,9 @@ func installService(conf, name, statusPath string) error {
 		DisplayName: "Ghost Shell Gateway (GSP) — " + name,
 		Description: "Шлюз Gateway Plus по протоколу GSP. Управляется плагином Gateway Plus.",
 		StartType:   mgr.StartManual,
+		// у службы должно быть собственное удостоверение (service SID): по нему правила брандмауэра (защита от утечек) узнают нашу программу
+		// и пропускают её зашифрованные пакеты к серверу, пока весь остальной трафик заблокирован
+		SidType: windows.SERVICE_SID_TYPE_UNRESTRICTED,
 	}, args...)
 	if err != nil {
 		return fmt.Errorf("создание службы: %w", err)
