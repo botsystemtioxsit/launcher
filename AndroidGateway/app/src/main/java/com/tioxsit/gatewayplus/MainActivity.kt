@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
         lastAccessCheck = System.currentTimeMillis()
         val dev = store.deviceHash()
         val res = Cloud.checkAccess(this, a.id, dev)
-        if (!res.blocked) Cloud.heartbeat(a.id, dev, version, store.profileNames().size.coerceAtMost(50), a.termsV)
+        if (!res.blocked) Cloud.heartbeat(a.id, dev, version, store.profileNames().size.coerceAtMost(50), a.termsV, a.nick)
         main.post {
             access = res
             // заблокирован, а VPN включён — отключаем (выключить можно всегда, включить нельзя)
@@ -293,7 +293,7 @@ class MainActivity : ComponentActivity() {
         lastNick = ""
         render()
         thread {
-            if (accept) Cloud.acceptTerms(a.id, store.deviceHash(), version, store.profileNames().size)
+            if (accept) Cloud.acceptTerms(a.id, store.deviceHash(), version, store.profileNames().size, a.nick)
             refreshAccess(force = true)
             refreshIp()
         }
@@ -361,7 +361,7 @@ class MainActivity : ComponentActivity() {
                 store.saveProfile(name, text)
                 store.active = name
                 say("Профиль «$name» сохранён. Нажмите «Включить».", Pal.GREEN)
-                thread { acct?.let { Cloud.heartbeat(it.id, store.deviceHash(), version, store.profileNames().size, it.termsV) } }
+                thread { acct?.let { Cloud.heartbeat(it.id, store.deviceHash(), version, store.profileNames().size, it.termsV, it.nick) } }
             }
             .setNegativeButton("Отмена", null)
             .show()
@@ -394,7 +394,7 @@ class MainActivity : ComponentActivity() {
     private fun acceptNewTermsThenConnect(a: Store.Acct) {
         val updated = a.copy(termsV = Terms.VERSION)
         store.saveAccount(updated); acct = updated
-        thread { Cloud.acceptTerms(updated.id, store.deviceHash(), version, store.profileNames().size) }
+        thread { Cloud.acceptTerms(updated.id, store.deviceHash(), version, store.profileNames().size, updated.nick) }
         connect()
     }
 

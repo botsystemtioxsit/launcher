@@ -82,11 +82,11 @@ object Cloud {
     }
 
     // Новый аккаунт. Дату создания ставит сервер (правила не дают её менять).
-    fun register(id: String, name: String, dev: String, ver: String, servers: Int) {
+    fun register(id: String, name: String, dev: String, ver: String, servers: Int, termsV: Int = Terms.VERSION) {
         if (!ID_RE.matches(id) || !DEV_RE.matches(dev)) throw CloudException("плохой номер")
         try {
             send("PUT", "gatewayAccounts/$id", JSONObject()
-                .put("name", name).put("createdAt", NOW).put("lastSeen", NOW).put("termsV", Terms.VERSION)
+                .put("name", name).put("createdAt", NOW).put("lastSeen", NOW).put("termsV", termsV.coerceIn(0, 100))
                 .put("ver", "android-$ver").put("dev", dev).put("servers", servers.coerceIn(0, 50)))
         } catch (e: CloudException) {
             throw e
@@ -96,14 +96,19 @@ object Cloud {
     }
 
     // «Пульс»: когда заходили, версия, сколько серверов, какие правила приняты, на каком телефоне. Ошибки молча пропускаются.
-    fun heartbeat(id: String, dev: String, ver: String, servers: Int, termsV: Int) {
+    // Аккаунты, не заходившие полгода, база удаляет сама (задача «Cleanup Gateway accounts»); правила не дают дописать поля
+    // в несуществующую запись, поэтому если записи нет — заводим её заново под тем же номером и именем (ключ у человека прежний).
+    fun heartbeat(id: String, dev: String, ver: String, servers: Int, termsV: Int, name: String? = null) {
         if (!ID_RE.matches(id) || !DEV_RE.matches(dev)) return
         try {
             send("PATCH", "gatewayAccounts/$id", JSONObject()
                 .put("lastSeen", NOW).put("ver", "android-$ver").put("dev", dev).put("servers", servers.coerceIn(0, 50)).put("termsV", termsV.coerceIn(0, 100)))
-        } catch (_: Exception) { /* нет связи — в следующий раз */ }
+        } catch (_: Exception) {
+            if (name.isNullOrEmpty()) return
+            try { if (get("gatewayAccounts/$id") == null) register(id, name, dev, ver, servers, termsV) } catch (_: Exception) { /* нет связи — в следующий раз */ }
+        }
     }
 
     // Принятые правила: пишем в аккаунт новую версию (если у аккаунта их не было или правила обновились).
-    fun acceptTerms(id: String, dev: String, ver: String, servers: Int) = heartbeat(id, dev, ver, servers, Terms.VERSION)
+    fun acceptTerms(id: String, dev: String, ver: String, servers: Int, name: String? = null) = heartbeat(id, dev, ver, servers, Terms.VERSION, name)
 }
