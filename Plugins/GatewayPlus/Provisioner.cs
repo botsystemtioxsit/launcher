@@ -41,6 +41,7 @@ sealed class ProvisionResult
     public string Os { get; set; } = "";
     public string Fingerprint { get; set; } = "";
     public string Protocol { get; set; } = "wg";
+    public bool AuthFailed { get; set; }           // сервер не принял логин/пароль/ключ (нужно, чтобы окно могло предложить ввести доступ заново)
     public string Ipv6Prefix { get; set; } = "";   // «Проверить и ускорить сервер»: сервер включил IPv6 в туннеле — профиль на компьютере нужно дополнить
 }
 
@@ -105,6 +106,91 @@ static class Provisioner
         _ => ex.Message,
     };
 
+    // Единый разбор ошибки подключения: отпечаток, отказ, неверный логин/пароль, человеческий текст.
+    internal static void Fail(ProvisionResult r, Exception ex, ConnectState st)
+    {
+        r.Fingerprint = st.Fingerprint;
+        r.AuthFailed = ex is SshAuthenticationException;
+        r.Error = st.Refused ? "Подключение отменено: вы не подтвердили отпечаток сервера." : Explain(ex);
+    }
+
+    internal sealed class ConnectState { public bool Refused; public string Fingerprint = ""; }
+
+    // Собирает SSH-подключение: способы входа (ключ и/или пароль) и проверка отпечатка сервера. Общее для мастера, «Для телефона» и проверки доступа.
+    internal static SshClient BuildClient(SshTarget t, Func<HostKeyQuestion, bool> confirmKey, Action<string> log, ConnectState st, string knownMessage)
+    {
+        var methods = new List<AuthenticationMethod>();
+        if (!string.IsNullOrEmpty(t.KeyFile))
+        {
+            var pk = string.IsNullOrEmpty(t.KeyPass) ? new PrivateKeyFile(t.KeyFile) : new PrivateKeyFile(t.KeyFile, t.KeyPass);
+            methods.Add(new PrivateKeyAuthenticationMethod(t.User, pk));
+        }
+        if (!string.IsNullOrEmpty(t.Password))
+        {
+            var pwd = t.Password!;
+            methods.Add(new PasswordAuthenticationMethod(t.User, pwd));
+            var kbd = new KeyboardInteractiveAuthenticationMethod(t.User);
+            kbd.AuthenticationPrompt += (_, e) => { foreach (var p in e.Prompts) p.Response = pwd; };
+            methods.Add(kbd);
+        }
+        var info = new ConnectionInfo(t.Host, t.Port, t.User, methods.ToArray()) { Timeout = TimeSpan.FromSeconds(20) };
+        var ssh = new SshClient(info) { KeepAliveInterval = TimeSpan.FromSeconds(15) };
+        ssh.HostKeyReceived += (_, e) =>
+        {
+            var fp = Fingerprint(e.HostKey);
+            st.Fingerprint = fp;
+            var key = t.Host.ToLowerInvariant() + ":" + t.Port;
+            var known = LoadKnown();
+            known.TryGetValue(key, out var old);
+            if (old == fp) { log(knownMessage); e.CanTrust = true; return; }
+            var q = new HostKeyQuestion { Host = t.Host, Port = t.Port, Algorithm = e.HostKeyName, Fingerprint = fp, Known = old != null, Changed = old != null };
+            e.CanTrust = confirmKey(q);
+            if (e.CanTrust) RememberHost(key, fp); else st.Refused = true;
+        };
+        return ssh;
+    }
+
+    // «Проверить доступ»: заходит на сервер, смотрит систему и права, больше ничего не делает и не меняет.
+    public static Task<ProvisionResult> TestAsync(SshTarget t, Func<HostKeyQuestion, bool> confirmKey, Action<string> log, CancellationToken ct = default)
+        => Task.Run(() => Test(t, confirmKey, log, ct), ct);
+
+    static ProvisionResult Test(SshTarget t, Func<HostKeyQuestion, bool> confirmKey, Action<string> log, CancellationToken ct)
+    {
+        var result = new ProvisionResult();
+        var bad = ValidateTarget(t);
+        if (bad != null) { result.Error = bad; return result; }
+        var st = new ConnectState();
+        SshClient? ssh = null;
+        try
+        {
+            ssh = BuildClient(t, confirmKey, log, st, "Отпечаток сервера знакомый.");
+            var sshRef = ssh;
+            using var cancelReg = ct.Register(() => { try { sshRef.Disconnect(); } catch { } });
+            log($"Подключаюсь к {t.Host}:{t.Port} как {t.User}…");
+            ct.ThrowIfCancellationRequested();
+            ssh.Connect();
+            result.Fingerprint = st.Fingerprint;
+            log("Вход выполнен.");
+            string Exec(string cmd)
+            {
+                using var c = sshRef.CreateCommand(cmd);
+                c.CommandTimeout = TimeSpan.FromSeconds(30);
+                return c.Execute() + c.Error;
+            }
+            var root = Exec("id -u").Trim() == "0";
+            if (!root && !Exec("sudo -n true 2>/dev/null && echo SUDO_OK || echo SUDO_NO").Contains("SUDO_OK"))
+            { result.Error = $"Вы вошли как «{t.User}», а не root, и sudo просит пароль. Войдите как root (так делает большинство хостеров) или настройте sudo без пароля."; return result; }
+            var os = Exec(". /etc/os-release 2>/dev/null; echo \"${ID:-?} ${VERSION_ID:-?}\"").Replace("\r", "").Split('\n');
+            result.Os = os.Length > 0 ? os[0].Trim() : "?";
+            log("Система: " + result.Os + (root ? "." : ", права через sudo."));
+            result.Ok = true;
+            return result;
+        }
+        catch (OperationCanceledException) { result.Error = "Отменено."; return result; }
+        catch (Exception ex) { Fail(result, ex, st); return result; }
+        finally { try { if (ssh is { IsConnected: true }) ssh.Disconnect(); } catch { } ssh?.Dispose(); }
+    }
+
     public static Task<ProvisionResult> RunAsync(SshTarget t, Func<HostKeyQuestion, bool> confirmKey, Func<string, bool> confirmReplace, Action<string> log, CancellationToken ct = default)
         => Task.Run(() => Run(t, confirmKey, confirmReplace, log, ct), ct);
 
@@ -114,45 +200,19 @@ static class Provisioner
         var result = new ProvisionResult { Protocol = t.Protocol };
         var bad = ValidateTarget(t);
         if (bad != null) { result.Error = bad; return result; }
-        bool refused = false;
+        var st = new ConnectState();
         SshClient? ssh = null;
         string? scriptPath = null;
         string pre = "";
         try
         {
-            var methods = new List<AuthenticationMethod>();
-            if (!string.IsNullOrEmpty(t.KeyFile))
-            {
-                var pk = string.IsNullOrEmpty(t.KeyPass) ? new PrivateKeyFile(t.KeyFile) : new PrivateKeyFile(t.KeyFile, t.KeyPass);
-                methods.Add(new PrivateKeyAuthenticationMethod(t.User, pk));
-            }
-            if (!string.IsNullOrEmpty(t.Password))
-            {
-                var pwd = t.Password!;
-                methods.Add(new PasswordAuthenticationMethod(t.User, pwd));
-                var kbd = new KeyboardInteractiveAuthenticationMethod(t.User);
-                kbd.AuthenticationPrompt += (_, e) => { foreach (var p in e.Prompts) p.Response = pwd; };
-                methods.Add(kbd);
-            }
-            var info = new ConnectionInfo(t.Host, t.Port, t.User, methods.ToArray()) { Timeout = TimeSpan.FromSeconds(20) };
-            ssh = new SshClient(info) { KeepAliveInterval = TimeSpan.FromSeconds(15) };
+            ssh = BuildClient(t, confirmKey, log, st, "Отпечаток сервера знакомый — этот сервер уже был подтверждён раньше.");
             var sshRef = ssh;
             using var cancelReg = ct.Register(() => { try { sshRef.Disconnect(); } catch { } });
-            ssh.HostKeyReceived += (_, e) =>
-            {
-                var fp = Fingerprint(e.HostKey);
-                result.Fingerprint = fp;
-                var key = t.Host.ToLowerInvariant() + ":" + t.Port;
-                var known = LoadKnown();
-                known.TryGetValue(key, out var old);
-                if (old == fp) { log("Отпечаток сервера знакомый — этот сервер уже был подтверждён раньше."); e.CanTrust = true; return; }
-                var q = new HostKeyQuestion { Host = t.Host, Port = t.Port, Algorithm = e.HostKeyName, Fingerprint = fp, Known = old != null, Changed = old != null };
-                e.CanTrust = confirmKey(q);
-                if (e.CanTrust) RememberHost(key, fp); else refused = true;
-            };
             log($"Подключаюсь к {t.Host}:{t.Port} как {t.User}…");
             ct.ThrowIfCancellationRequested();
             ssh.Connect();
+            result.Fingerprint = st.Fingerprint;
             log("Вход выполнен.");
 
             string Exec(string cmd, int seconds = 60)
@@ -234,7 +294,7 @@ static class Provisioner
         catch (OperationCanceledException) { result.Error = "Отменено."; return result; }
         catch (Exception ex)
         {
-            result.Error = refused ? "Подключение отменено: вы не подтвердили отпечаток сервера." : Explain(ex);
+            Fail(result, ex, st);
             return result;
         }
         finally

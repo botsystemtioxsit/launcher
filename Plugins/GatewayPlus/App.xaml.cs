@@ -30,9 +30,14 @@ public partial class App : Application
         var shot = Arg(e, "--screenshot=");
         if (shot != null)
         {
+            var demoDir = Path.Combine(Path.GetTempPath(), "gp-shot-" + Guid.NewGuid().ToString("N")[..8]);
             try
             {
                 Directory.CreateDirectory(shot);
+                Store.DirOverride = demoDir;   // демо-серверы не должны попасть в настоящие данные
+                var de = SeedDemoServers();
+                new ServerWindow(de, false).RenderTo(Path.Combine(shot, "gateway-plus-server.png"));
+                new WizardWindow("203.0.113.5", "gsp", "germany-gsp").RenderTo(Path.Combine(shot, "gateway-plus-wizard-saved.png"), demo: false);
                 new MainWindow(GwDemo.Account).RenderTo(Path.Combine(shot, "gateway-plus-ui.png"));
                 new MainWindow(GwDemo.NoAccount).RenderTo(Path.Combine(shot, "gateway-plus-ui-noaccount.png"));
                 new MainWindow(GwDemo.Blocked).RenderTo(Path.Combine(shot, "gateway-plus-ui-blocked.png"));
@@ -43,6 +48,7 @@ public partial class App : Application
                 new ProfileWindow("nl-gsp", "# GSP\n[Interface]\nPrivateKey = AAAA\nAddress = 10.78.0.2/32\nFEC = auto\n\n[Peer]\nPublicKey = BBBB\nEndpoint = 203.0.113.5:51821\nAllowedIPs = 0.0.0.0/0\n", false).RenderTo(Path.Combine(shot, "gateway-plus-profile-gsp.png"));
             }
             catch (Exception ex) { try { File.WriteAllText(Path.Combine(shot, "gateway-plus-ui-error.txt"), ex.ToString()); } catch { } }
+            try { Store.DirOverride = null; Directory.Delete(demoDir, true); } catch { }
             Loc.WriteAudit(shot);
             Shutdown(); return;
         }
@@ -74,6 +80,23 @@ public partial class App : Application
         }) { IsBackground = true }.Start();
 
         ShowWindow();
+    }
+
+    // Два демо-сервера для снимков окон: Германия (WireGuard + GSP, доступ сохранён) и Финляндия (только WireGuard).
+    static ServerRow SeedDemoServers()
+    {
+        const string wg = "[Interface]\nPrivateKey = AAAA\nAddress = 10.0.0.2/32\n\n[Peer]\nPublicKey = BBBB\nEndpoint = {0}:51820\nAllowedIPs = 0.0.0.0/0\n";
+        const string gsp = "# GSP\n[Interface]\nPrivateKey = AAAA\nAddress = 10.78.0.2/32\nFEC = auto\n\n[Peer]\nPublicKey = BBBB\nEndpoint = {0}:51821\nAllowedIPs = 0.0.0.0/0\n";
+        Store.Save("germany-wg", string.Format(wg, "203.0.113.5"));
+        Store.Save("germany-gsp", string.Format(gsp, "203.0.113.5"));
+        Store.Save("finland", string.Format(wg, "198.51.100.7"));
+        Store.Active = "germany-gsp";
+        var rows = Servers.List();
+        var de = rows.First(r => r.Info.Host == "203.0.113.5");
+        var fi = rows.First(r => r.Info.Host == "198.51.100.7");
+        Servers.Rename(de.Info.Id, "Германия"); Servers.Rename(fi.Info.Id, "Финляндия");
+        Servers.SaveAccess(de.Info.Id, new SavedAccess { Password = "demo" });
+        return Servers.List().First(r => r.Info.Host == "203.0.113.5");
     }
 
     void ShowWindow()

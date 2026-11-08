@@ -8,10 +8,7 @@ namespace GatewayPlusApp;
 sealed class DeviceWindow : Window
 {
     readonly string profile, profileConf;
-    readonly TextBox hostBox = new() { Width = 320, HorizontalAlignment = HorizontalAlignment.Left, MaxLength = 253 };
-    readonly TextBox portBox = new() { Text = "22", Width = 90, HorizontalAlignment = HorizontalAlignment.Left, MaxLength = 5 };
-    readonly TextBox userBox = new() { Text = "root", Width = 200, HorizontalAlignment = HorizontalAlignment.Left, MaxLength = 32 };
-    readonly PasswordBox passBox = new() { Width = 320, HorizontalAlignment = HorizontalAlignment.Left, MaxLength = 256 };
+    readonly AccessBox access;
     readonly TextBox nameBox = new() { Text = "phone", Width = 220, HorizontalAlignment = HorizontalAlignment.Left, MaxLength = 20 };
     readonly TextBox logBox = new() { IsReadOnly = true, FontFamily = (System.Windows.Media.FontFamily)Application.Current.FindResource("Mono"), FontSize = 12, Height = 150, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, TextWrapping = TextWrapping.NoWrap, Padding = new Thickness(8) };
     readonly TextBlock msg = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
@@ -19,6 +16,7 @@ sealed class DeviceWindow : Window
     CancellationTokenSource? cts;
     bool running;
     string? lastConf;
+    readonly string host;
 
     public DeviceWindow(string profile, string conf)
     {
@@ -28,17 +26,12 @@ sealed class DeviceWindow : Window
         Content = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = page };
 
         page.Children.Add(Ui.Title("ТЕЛЕФОН И СКОРОСТЬ"));
-        page.Children.Add(Ui.Note("Плагин зайдёт на ваш сервер и создаст отдельный ключ для телефона. Тогда телефон и компьютер работают одновременно, как «один аккаунт — несколько устройств» у обычных VPN. Потом вы наведёте камеру телефона на QR-код в приложении WireGuard (Google Play / App Store). Пароль от сервера нигде не сохраняется.", 12.5));
+        page.Children.Add(Ui.Note("Плагин зайдёт на ваш сервер и создаст отдельный ключ для телефона. Тогда телефон и компьютер работают одновременно, как «один аккаунт — несколько устройств» у обычных VPN. Потом вы наведёте камеру телефона на QR-код в приложении WireGuard (Google Play / App Store). Если доступ к серверу уже сохранён, пароль вводить не нужно.", 12.5));
         if (Store.Bypass.Contains("whatsapp")) page.Children.Add(Ui.Note("WhatsApp на телефоне пойдёт мимо VPN: в QR-код добавлено исключение этого приложения (звонки лучше слышны). Поменять можно в приложении WireGuard: туннель → ✎ → «Исключённые приложения».", 12));
 
-        hostBox.Text = Store.EndpointOf(profileConf);
-        page.Children.Add(Ui.Label("Адрес сервера (подставлен из профиля «" + profile + "»)")); page.Children.Add(hostBox);
-        var pu = new StackPanel { Orientation = Orientation.Horizontal };
-        var pc = new StackPanel { Margin = new Thickness(0, 0, 18, 0) }; pc.Children.Add(Ui.Label("Порт SSH")); pc.Children.Add(portBox);
-        var uc = new StackPanel(); uc.Children.Add(Ui.Label("Пользователь")); uc.Children.Add(userBox);
-        pu.Children.Add(pc); pu.Children.Add(uc);
-        page.Children.Add(pu);
-        page.Children.Add(Ui.Label("Пароль от сервера")); page.Children.Add(passBox);
+        host = Store.EndpointOf(profileConf);
+        access = new AccessBox(host);
+        page.Children.Add(access);
         page.Children.Add(Ui.Label("Название устройства (латиницей)")); page.Children.Add(nameBox);
 
         go = Ui.Btn("Создать ключ для телефона", "Primary", Go, first: true);
@@ -49,7 +42,7 @@ sealed class DeviceWindow : Window
         page.Children.Add(msg);
 
         page.Children.Add(Ui.Label("VPN медленный?"));
-        page.Children.Add(Ui.Note("Кнопка зайдёт на сервер по тем же данным (адрес, пользователь, пароль выше), подгонит размер пакетов, включит быструю пересылку UDP (если ядро сервера умеет) и IPv6 внутри туннеля (если у сервера есть свой IPv6), и покажет, насколько быстр сам сервер. Если медленный сам сервер, VPN быстрее него не станет. Размер пакета для вашего компьютера подбирается отдельно — кнопка «Скорость и размер пакета…» в главном окне.", 12));
+        page.Children.Add(Ui.Note("Кнопка зайдёт на сервер по тем же данным (доступ выше), подгонит размер пакетов, включит быструю пересылку UDP (если ядро сервера умеет) и IPv6 внутри туннеля (если у сервера есть свой IPv6), и покажет, насколько быстр сам сервер. Если медленный сам сервер, VPN быстрее него не станет. Размер пакета для вашего компьютера подбирается отдельно — кнопка «Скорость и размер пакета…» в главном окне.", 12));
         tuneBtn = Ui.Btn("Проверить и ускорить сервер", null, Tune, first: true);
         page.Children.Add(tuneBtn);
 
@@ -78,16 +71,15 @@ sealed class DeviceWindow : Window
     {
         if (running) return;
         msg.Foreground = Ui.Res("Accent2"); msg.Text = "";
-        var t = new SshTarget { Host = hostBox.Text.Trim(), Port = int.TryParse(portBox.Text.Trim(), out var p) ? p : 22, User = userBox.Text.Trim(), Password = passBox.Password };
-        var bad = Provisioner.ValidateTarget(t);
-        if (bad != null) { msg.Text = bad; return; }
+        var t = access.Build(out var bad);
+        if (t == null) { msg.Text = bad ?? "Проверьте данные для входа на сервер."; return; }
         running = true; go.IsEnabled = false; tuneBtn.IsEnabled = false; logBox.Clear();
         cts = new CancellationTokenSource();
         try
         {
             var res = await DeviceAdder.TuneAsync(t, ConfirmKey, Log, cts.Token);
-            passBox.Clear(); t.Password = null;
-            if (!res.Ok) { msg.Text = res.Error; return; }
+            if (!res.Ok) { Failed(res); return; }
+            access.Persist(t, host, "");
             msg.Foreground = Ui.Res("Green");
             msg.Text = "Готово. Итог проверки — в журнале выше («ВЫВОД»). Если вы на телефоне, выключите и снова включите туннель в WireGuard.";
             // сервер включил IPv6 в туннеле — профиль на этом компьютере должен получить свой IPv6-адрес, иначе IPv6 так и останется «в тупике»
@@ -103,7 +95,7 @@ sealed class DeviceWindow : Window
             }
         }
         catch (Exception ex) { msg.Text = "Не вышло: " + ex.Message; }
-        finally { running = false; go.IsEnabled = true; tuneBtn.IsEnabled = true; }
+        finally { access.ClearSecrets(); t.Password = null; t.KeyPass = null; running = false; go.IsEnabled = true; tuneBtn.IsEnabled = true; }
     }
 
     async void Go()
@@ -111,18 +103,17 @@ sealed class DeviceWindow : Window
         if (running) return;
         if (lastConf != null) { new QrWindow(nameBox.Text.Trim(), Split.ForPhone(lastConf, Store.Bypass)) { Owner = this }.ShowDialog(); return; }
         msg.Foreground = Ui.Res("Accent2"); msg.Text = "";
-        var t = new SshTarget { Host = hostBox.Text.Trim(), Port = int.TryParse(portBox.Text.Trim(), out var p) ? p : 22, User = userBox.Text.Trim(), Password = passBox.Password };
         var name = nameBox.Text.Trim();
-        var bad = Provisioner.ValidateTarget(t);
-        if (bad != null) { msg.Text = bad; return; }
+        var t = access.Build(out var bad);
+        if (t == null) { msg.Text = bad ?? "Проверьте данные для входа на сервер."; return; }
         if (!DeviceAdder.ValidName(name)) { msg.Text = "Название устройства: латиницей, цифры, «-» и «_», до 20 знаков."; return; }
         running = true; go.IsEnabled = false; logBox.Clear();
         cts = new CancellationTokenSource();
         try
         {
             var res = await DeviceAdder.RunAsync(t, name, ConfirmKey, Log, cts.Token);
-            passBox.Clear(); t.Password = null;
-            if (!res.Ok) { msg.Text = res.Error; return; }
+            if (!res.Ok) { Failed(res); return; }
+            access.Persist(t, host, "");
             lastConf = res.Conf;
             msg.Foreground = Ui.Res("Green");
             msg.Text = "Готово! Откройте на телефоне WireGuard → «+» → «Сканировать QR-код» и наведите камеру на экран.";
@@ -130,6 +121,13 @@ sealed class DeviceWindow : Window
             new QrWindow(name, Split.ForPhone(res.Conf, Store.Bypass)) { Owner = this }.ShowDialog();
         }
         catch (Exception ex) { msg.Text = "Не вышло: " + ex.Message; }
-        finally { running = false; go.IsEnabled = true; }
+        finally { access.ClearSecrets(); t.Password = null; t.KeyPass = null; running = false; go.IsEnabled = true; }
+    }
+
+    // Сервер не принял сохранённые данные (сменили пароль) — показываем поля для ввода.
+    void Failed(ProvisionResult res)
+    {
+        if (res.AuthFailed && access.UsingSaved) { access.SwitchToManual(); msg.Text = res.Error + " Введите доступ заново."; }
+        else msg.Text = res.Error;
     }
 }

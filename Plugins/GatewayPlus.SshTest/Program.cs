@@ -203,6 +203,23 @@ if (gspBin.Length > 0)
     Check("GSP: уже настроенный сервер: спросили, отказ — «Отменено»", asked2 == 1 && !r2.Ok && r2.Error.Contains("Отменено") && Sh3("systemctl is-active gsp").Trim() == "active", r2.Error);
 }
 
+// «Проверить доступ» (окно «Сервер»): только заходит и смотрит систему, ничего не меняет и не оставляет на сервере
+{
+    ForgetHosts();
+    var log = new List<string>();
+    var r = Provisioner.TestAsync(new SshTarget { Host = host, Port = port, User = user, KeyFile = key }, _ => true, l => { lock (log) log.Add(l); }).GetAwaiter().GetResult();
+    Check("проверка доступа по ключу: успех, система и отпечаток определены", r.Ok && r.Os.Length > 3 && r.Fingerprint.StartsWith("SHA256:") && !r.AuthFailed, r.Error + " " + r.Os);
+    var w = Provisioner.TestAsync(new SshTarget { Host = host, Port = port, User = user, Password = "definitely-wrong" }, _ => true, _ => { }).GetAwaiter().GetResult();
+    Check("проверка доступа: неверный пароль → AuthFailed (окно предложит ввести заново)", !w.Ok && w.AuthFailed && w.Error.Contains("не принял вход"), w.Error);
+    var nc = Provisioner.TestAsync(new SshTarget { Host = "127.0.0.1", Port = 1, User = user, Password = "x" }, _ => true, _ => { }).GetAwaiter().GetResult();
+    Check("проверка доступа: недоступный порт — не «неверный пароль»", !nc.Ok && !nc.AuthFailed && nc.Error.Contains("связаться"), nc.Error);
+    ForgetHosts();
+    var rf = Provisioner.TestAsync(new SshTarget { Host = host, Port = port, User = user, KeyFile = key }, _ => false, _ => { }).GetAwaiter().GetResult();
+    Check("проверка доступа: отказ от отпечатка — подключение отменено, не «неверный пароль»", !rf.Ok && !rf.AuthFailed && rf.Error.Contains("не подтвердили"), rf.Error);
+    var badT = Provisioner.TestAsync(new SshTarget { Host = "bad host", Port = port, User = user, KeyFile = key }, _ => true, _ => { }).GetAwaiter().GetResult();
+    Check("проверка доступа: неверный адрес отклоняется до подключения", !badT.Ok && badT.Error.Contains("Адрес сервера"), badT.Error);
+}
+
 Say(bad == 0 ? "ВСЕ ПРОВЕРКИ ПРОШЛИ" : $"ПРОВАЛЕНО: {bad}");
 File.WriteAllText(Path.Combine(outDir, "report.txt"), report.ToString());
 return bad == 0 ? 0 : 1;

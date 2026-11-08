@@ -43,6 +43,9 @@ static class SelfTest
             // 3-split. «Мимо шлюза»: арифметика сетей и подмена AllowedIPs
             SplitChecks(Check, log);
 
+            // 3-servers. «Мои серверы»: профили собираются в серверы по адресу; сохранённый доступ шифруется и забывается
+            ServersChecks(Check);
+
             // 3a. аккаунт: ключ, номер, шифрование
             var raw = Account.NewKey();
             Check("ключ: 32 знака A-Z2-7", Regex.IsMatch(raw, "^[A-Z2-7]{32}$") && Account.NewKey() != raw);
@@ -163,6 +166,84 @@ static class SelfTest
         catch (Exception ex) { log.AppendLine("ОШИБКА: " + ex); }
         File.WriteAllText(Path.Combine(dir, "report.txt"), log.ToString());
     }
+    // «Мои серверы» (Servers.cs) на настоящем DPAPI. Данные кладутся во временную папку (Store.DirOverride), настоящие профили не трогаются.
+    static void ServersChecks(Action<string, bool> Check)
+    {
+        var prev = Store.DirOverride;
+        var tmp = Path.Combine(Path.GetTempPath(), "gp-servers-" + Guid.NewGuid().ToString("N")[..8]);
+        Store.DirOverride = tmp;
+        try
+        {
+            const string wg = "[Interface]\nPrivateKey = AAAA\nAddress = 10.0.0.2/32\n\n[Peer]\nPublicKey = BBBB\nEndpoint = {0}:51820\nAllowedIPs = 0.0.0.0/0\n";
+            const string gsp = "# GSP\n[Interface]\nPrivateKey = AAAA\nAddress = 10.78.0.2/32\nFEC = auto\n\n[Peer]\nPublicKey = BBBB\nEndpoint = {0}:51821\nAllowedIPs = 0.0.0.0/0\n";
+            const string h1 = "203.0.113.5", h2 = "198.51.100.7";
+            Store.Save("de-wg", string.Format(wg, h1));
+            Store.Save("de-gsp", string.Format(gsp, h1));
+            Store.Save("de-wg2", string.Format(wg, h1));
+            Store.Save("fi", string.Format(wg, h2));
+            Store.Active = "de-gsp";
+            var rows = Servers.List();
+            Check("серверы: четыре профиля на двух адресах → два сервера", rows.Count == 2);
+            var de = rows.First(r => r.Info.Host == h1);
+            var fi = rows.First(r => r.Info.Host == h2);
+            Check("серверы: у первого есть WireGuard и GSP, лишний профиль отдельно", de.Wg is "de-wg" or "de-wg2" && de.Gsp == "de-gsp" && de.Extra.Count == 1 && de.All.Count() == 3);
+            Check("серверы: у второго только WireGuard", fi.Wg == "fi" && fi.Gsp == null && fi.Extra.Count == 0);
+            Check("серверы: номера вида s-xxxxxxxx и servers.json записан", rows.All(r => Regex.IsMatch(r.Info.Id, "^s-[0-9a-f]{8}$")) && File.Exists(Path.Combine(tmp, "servers.json")));
+            var again = Servers.List();
+            Check("серверы: номера не меняются между вызовами", again.Select(r => r.Info.Id).OrderBy(x => x).SequenceEqual(rows.Select(r => r.Info.Id).OrderBy(x => x)));
+
+            Check("доступ: по умолчанию не сохранён", !de.Info.HasAccess && Servers.LoadAccess(de.Info.Id) == null && Servers.Find(h1) is { HasAccess: false });
+            Servers.SaveAccess(de.Info.Id, new SavedAccess { Password = "S3cret-пароль" });
+            var file = Path.Combine(tmp, "servers", de.Info.Id + ".dat");
+            var back = Servers.LoadAccess(de.Info.Id);
+            Check("доступ: пароль шифруется (в файле его нет) и читается обратно", back?.Password == "S3cret-пароль" && File.Exists(file) && !File.ReadAllText(file, Encoding.Latin1).Contains("S3cret") && !File.ReadAllText(Path.Combine(tmp, "servers.json")).Contains("S3cret") && Servers.Find(h1) is { HasAccess: true });
+            var tgt = Servers.Target(Servers.Find(h1)!, out var problem);
+            Check("доступ: данные для входа собираются (адрес, порт, логин, пароль)", tgt is { Host: h1, Port: 22, User: "root", Password: "S3cret-пароль" } && problem == null);
+            Check("доступ: в словах — без самого пароля", !Servers.SavedSentence(Servers.Find(h1)!, back!).Contains("S3cret") && Servers.SavedSentence(Servers.Find(h1)!, back!).Contains("root"));
+
+            // запомнить другой адрес для входа по SSH и порт; подпись не затирается
+            Servers.Rename(de.Info.Id, "  Герм\u202eания\n ");
+            var rem = Servers.Remember(h1, "de.example.com", 2222, "admin", "другое");
+            Check("сервер: подпись очищена от управляющих знаков и не затирается при повторной записи", Servers.Label(rem) == "Герм ания" && rem.Id == de.Info.Id);
+            Check("сервер: адрес и порт для SSH запоминаются, находится и по ним", rem.SshHost == "de.example.com" && rem.SshPort == 2222 && rem.SshUser == "admin" && Servers.Find("de.example.com") is { } f && f.Id == de.Info.Id);
+            var tgt2 = Servers.Target(Servers.Find("de.example.com")!, out _);
+            Check("доступ: после смены адреса SSH данные для входа берут новый адрес и порт", tgt2 is { Host: "de.example.com", Port: 2222, User: "admin" });
+
+            // файл ключа: если файла нет, понятная причина; если есть — путь и парольная фраза
+            Servers.SaveAccess(de.Info.Id, new SavedAccess { KeyFile = Path.Combine(tmp, "нет-такого-ключа"), KeyPass = "фраза" });
+            var tk = Servers.Target(Servers.Find(h1)!, out var why);
+            Check("доступ: ключ-файл пропал → входа нет, причина названа", tk == null && why != null && why.Contains("Файл ключа не найден"));
+            var keyFile = Path.Combine(tmp, "id_test"); File.WriteAllText(keyFile, "stub");
+            Servers.SaveAccess(de.Info.Id, new SavedAccess { KeyFile = keyFile, KeyPass = "фраза" });
+            Check("доступ: ключ-файл на месте → путь и фраза отдаются", Servers.Target(Servers.Find(h1)!, out _) is { } kt && kt.KeyFile == keyFile && kt.KeyPass == "фраза" && string.IsNullOrEmpty(kt.Password));
+
+            Servers.ForgetAccess(de.Info.Id);
+            Check("доступ: «забыть» удаляет файл и снимает отметку", !File.Exists(file) && Servers.Find(h1) is { HasAccess: false } && Servers.LoadAccess(de.Info.Id) == null);
+
+            // сервер без профилей забывается вместе с доступом; удаление сервера убирает его профили
+            Servers.SaveAccess(fi.Info.Id, new SavedAccess { Password = "x" });
+            var fiFile = Path.Combine(tmp, "servers", fi.Info.Id + ".dat");
+            Store.Delete("fi");
+            var after = Servers.List();
+            Check("серверы: без профилей сервер исчезает из списка вместе с сохранённым доступом", after.Count == 1 && !File.Exists(fiFile) && Servers.Find(h2) == null);
+            var deNow = after.First();
+            Servers.Remove(deNow);
+            Check("серверы: «Убрать сервер» удаляет все его профили, выбранный профиль не остаётся пустым", Store.List().Count == 0 && Servers.List().Count == 0 && Store.Active.Length == 0);
+
+            // профиль, у которого адрес не читается, в список попадает, но в файл не пишется
+            File.WriteAllBytes(Path.Combine(tmp, "profiles", "broken.dat"), new byte[] { 1, 2, 3 });
+            var br = Servers.List();
+            Check("серверы: нечитаемый профиль виден в списке отдельно, без номера", br.Count == 1 && br[0].Info.Id.Length == 0 && br[0].Info.Name == "broken");
+            Check("подпись по умолчанию: «germany-gsp» → «germany»", Servers.SuggestName("germany-gsp") == "germany" && Servers.SuggestName("de_wg") == "de" && Servers.SuggestName("nl") == "nl");
+        }
+        catch (Exception ex) { Check("серверы: исключение " + ex.GetType().Name + ": " + ex.Message, false); }
+        finally
+        {
+            Store.DirOverride = prev;
+            try { Directory.Delete(tmp, true); } catch { }
+        }
+    }
+
     // «Мимо шлюза» (Split.cs): сети считаются верно, подмена AllowedIPs не ломает конфиг, ответ сети проверяется.
     static void SplitChecks(Action<string, bool> Check, StringBuilder log)
     {
