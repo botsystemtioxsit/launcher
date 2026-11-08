@@ -108,6 +108,21 @@ try {
     Check 'узкий маршрут /32 убран' ($null -eq (Get-NetRoute -DestinationPrefix '203.0.113.9/32' -ErrorAction SilentlyContinue))
 
     Say ""
+    Say "=== смена сети: маршрут к серверу, убранный Windows, возвращается сам ==="
+    $rw = Start-Process -FilePath $gsp -ArgumentList @('selftest-route', '-ip', '203.0.113.9', '-hold', '16', '-watch') -PassThru -RedirectStandardOutput (Join-Path $work 'route-watch.out') -RedirectStandardError (Join-Path $work 'route-watch.err') -WindowStyle Hidden
+    Start-Sleep -Seconds 4
+    Check 'маршрут /32 поставлен (слежение)' ($null -ne (Get-NetRoute -DestinationPrefix '203.0.113.9/32' -ErrorAction SilentlyContinue))
+    Remove-NetRoute -DestinationPrefix '203.0.113.9/32' -Confirm:$false -ErrorAction SilentlyContinue
+    Check 'маршрут убран руками (имитация смены сети)' ($null -eq (Get-NetRoute -DestinationPrefix '203.0.113.9/32' -ErrorAction SilentlyContinue))
+    $back = $false
+    for ($i = 0; $i -lt 16; $i++) { Start-Sleep -Milliseconds 500; if (Get-NetRoute -DestinationPrefix '203.0.113.9/32' -ErrorAction SilentlyContinue) { $back = $true; break } }
+    Check 'маршрут вернулся сам в течение 8 секунд' $back
+    $rw.WaitForExit(40000) | Out-Null
+    Say ("  вывод: " + ((Get-Content (Join-Path $work 'route-watch.out') -ErrorAction SilentlyContinue) -join ' | '))
+    Check 'программа сообщила о переустановке маршрута' (((Get-Content (Join-Path $work 'route-watch.out') -ErrorAction SilentlyContinue) -join ' ') -match 'переставлен')
+    Check 'после выхода маршрут убран' ($null -eq (Get-NetRoute -DestinationPrefix '203.0.113.9/32' -ErrorAction SilentlyContinue))
+
+    Say ""
     Say "=== повторная установка поверх работающей ==="
     $o = & $gsp install-service -c $conf -name test -status $statusFile 2>&1
     Check 'повторная установка прошла' (($LASTEXITCODE -eq 0) -and ((& $gsp service-state -name test) -eq 'running')) ($o -join ' ')

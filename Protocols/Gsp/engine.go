@@ -841,6 +841,30 @@ func (e *Engine) install(p *peer, s *session) {
 	p.cur.Store(s)
 }
 
+// NetworkChanged: сеть под нами сменилась (на Windows поставлен новый маршрут к серверу). Сразу даём серверу знать новый адрес
+// (первый же подлинный пакет обновит его эндпоинт) и через пару секунд проверяем, что от сервера что-то пришло; если нет — новое рукопожатие.
+func (e *Engine) NetworkChanged() {
+	now := time.Now()
+	for _, p := range e.snapshotPeers() {
+		if !p.fixedEP {
+			continue
+		}
+		if s := p.cur.Load(); s != nil {
+			e.sendControl(p, s, frKeep, nil)
+		}
+		p := p
+		time.AfterFunc(3*time.Second, func() {
+			if e.closed.Load() || time.Unix(0, p.lastRecv.Load()).After(now) {
+				return
+			}
+			p.mu.Lock()
+			p.lastHS = time.Time{}
+			p.mu.Unlock()
+			e.kickHandshake(p)
+		})
+	}
+}
+
 // ---------- таймеры ----------
 
 func (e *Engine) timerLoop() {
