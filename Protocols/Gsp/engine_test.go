@@ -459,10 +459,10 @@ func TestFECDecoderUnit(t *testing.T) {
 
 func TestHandshakePacketsLookRandomAndVary(t *testing.T) {
 	k, _ := newKeypair()
-	ob := obfKeyFor(k.Public)
+	ob := obfKeyFor(k.Public, protoV1)
 	sizes := map[int]bool{}
 	for i := 0; i < 50; i++ {
-		pend, msg, err := buildInit(k, k.Public, uint32(i))
+		pend, msg, err := buildInit(k, k.Public, uint32(i), protoV1)
 		_ = pend
 		if err != nil {
 			t.Fatal(err)

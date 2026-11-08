@@ -36,6 +36,7 @@ type Config struct {
 	Peers      []PeerConfig
 	FEC        string // "off" | "auto" | "10+2"
 	PadMax     int    // случайная набивка до N байт
+	Proto      int    // версия протокола у клиента: 1 (по умолчанию) или 2; сервер принимает обе
 	Debug      bool
 	// Для тестов и сравнений: искусственные потери исходящих пакетов (доля 0..1).
 	DebugDropTx float64
@@ -44,6 +45,7 @@ type Config struct {
 type peer struct {
 	e         *Engine
 	pub       [32]byte
+	ver       int      // версия протокола, на которой клиент начинает рукопожатие (у сервера не используется: он принимает обе)
 	obf       [32]byte // ключ обфускации рукопожатия (из открытого ключа СЕРВЕРА — того, к кому идёт init)
 	allowed   []netip.Prefix
 	keepalive time.Duration
@@ -74,7 +76,7 @@ type peer struct {
 type Engine struct {
 	cfg     Config
 	static  noise.DHKey
-	myObf   [32]byte
+	myObf   [3][32]byte // ключ упаковки рукопожатий по версиям протокола (индекс — версия)
 	dev     Device
 	conn    *net.UDPConn
 	pc      batchIO
@@ -105,7 +107,6 @@ func NewEngine(cfg Config, dev Device) (*Engine, error) {
 	e := &Engine{
 		cfg:     cfg,
 		static:  noise.DHKey{Private: cfg.PrivateKey, Public: pub},
-		myObf:   obfKeyFor(pub),
 		dev:     dev,
 		peers:   map[[32]byte]*peer{},
 		byAddr:  map[netip.AddrPort]*peer{},
@@ -113,6 +114,8 @@ func NewEngine(cfg Config, dev Device) (*Engine, error) {
 		hsLimit: newHSLimiter(),
 		Log:     func(string, ...any) {},
 	}
+	e.myObf[protoV1] = obfKeyFor(pub, protoV1)
+	e.myObf[protoV2] = obfKeyFor(pub, protoV2)
 	e.pool.New = func() any { b := make([]byte, bufSize); return &b }
 	switch cfg.FEC {
 	case "", "auto":
@@ -131,7 +134,15 @@ func NewEngine(cfg Config, dev Device) (*Engine, error) {
 		}
 		p := &peer{e: e, allowed: pc.Allowed, keepalive: pc.Keepalive, dec: newFecDec()}
 		copy(p.pub[:], pc.PublicKey)
-		p.obf = obfKeyFor(pc.PublicKey)
+		p.ver = protoV1
+		switch cfg.Proto {
+		case 0, protoV1:
+		case protoV2:
+			p.ver = protoV2
+		default:
+			return nil, errors.New("Proto: поддерживаются версии 1 и 2")
+		}
+		p.obf = obfKeyFor(pc.PublicKey, p.ver)
 		if pc.Endpoint.IsValid() {
 			if !pc.Endpoint.Addr().Unmap().Is4() {
 				return nil, errors.New("пока поддерживается только IPv4-адрес сервера (внутри туннеля IPv6 уже можно)")
@@ -745,7 +756,7 @@ func (e *Engine) kickHandshake(p *peer) {
 	}
 	p.lastHS = time.Now()
 	idx := randU32()
-	pend, msg, err := buildInit(e.static, p.pub[:], idx)
+	pend, msg, err := buildInit(e.static, p.pub[:], idx, p.ver)
 	if err != nil {
 		p.mu.Unlock()
 		return
@@ -775,7 +786,7 @@ func (e *Engine) handleHandshake(pk []byte, src netip.AddrPort, ua *net.UDPAddr)
 		if err != nil {
 			continue
 		}
-		s := newSession(pend.idx, srvIdx, send, recv, shp, rhp, p)
+		s := newSession(pend.ver, pend.idx, srvIdx, send, recv, shp, rhp, p)
 		e.install(p, s)
 		p.mu.Lock()
 		p.pending = nil
@@ -789,8 +800,16 @@ func (e *Engine) handleHandshake(pk []byte, src netip.AddrPort, ua *net.UDPAddr)
 		return
 	}
 	// 2) init от клиента (мы сервер)
-	msg, err := openHandshake(&e.myObf, pk)
-	if err != nil {
+	// сервер понимает обе версии: смотрим, чьим ключом упаковано рукопожатие
+	var msg []byte
+	var hver int
+	for _, v := range [2]int{protoV2, protoV1} {
+		if m, err := openHandshake(&e.myObf[v], pk); err == nil {
+			msg, hver = m, v
+			break
+		}
+	}
+	if hver == 0 {
 		return // чужой/битый пакет: молчим, ответа не получит никто
 	}
 	// разбор init стоит двух умножений на кривой: сначала ограничитель (см. ratelimit.go)
@@ -798,7 +817,7 @@ func (e *Engine) handleHandshake(pk []byte, src netip.AddrPort, ua *net.UDPAddr)
 		e.hsDrop.Add(1)
 		return
 	}
-	info, err := parseInit(e.static, msg)
+	info, err := parseInit(e.static, msg, hver)
 	if err != nil {
 		return
 	}
@@ -822,10 +841,10 @@ func (e *Engine) handleHandshake(pk []byte, src netip.AddrPort, ua *net.UDPAddr)
 	if err != nil {
 		return
 	}
-	s := newSession(srvIdx, info.clientIdx, send, recv, shp, rhp, p)
+	s := newSession(hver, srvIdx, info.clientIdx, send, recv, shp, rhp, p)
 	e.install(p, s)
 	p.setEndpoint(src)
-	pkt := sealHandshake(&e.myObf, rmsg)
+	pkt := sealHandshake(&e.myObf[hver], rmsg)
 	_, _ = e.conn.WriteToUDP(pkt, ua)
 	e.Log("новый сеанс от %v", src)
 }

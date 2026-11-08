@@ -313,6 +313,7 @@ sealed class MainWindow : Window
         status.Foreground = Res("Accent2"); status.FontSize = 13; status.TextWrapping = TextWrapping.Wrap; status.Margin = new Thickness(0, 4, 0, 0);
         var last = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
         last.Children.Add(Btn("Вернуть как было", "Danger", RevertAll, first: true));
+        last.Children.Add(Btn("Скопировать сведения для поддержки", null, CopyDiagnostics));
         page.Children.Add(last);
         page.Children.Add(status);
         page.Children.Add(Note("«Вернуть как было» выключает шлюз и убирает его следы (службу и файл конфига в ProgramData). Ваши сохранённые профили остаются."));
@@ -399,6 +400,38 @@ sealed class MainWindow : Window
         w.ShowDialog();
         if (w.Result == ServerWindow.Outcome.Removed) status.Text = "Сервер убран из списка.";
         BuildPage();
+    }
+
+    // Сведения для поддержки: версии, настройки выбранного профиля и состояние шлюза — БЕЗ ключей, паролей и полного адреса сервера.
+    void CopyDiagnostics()
+    {
+        try
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"Gateway Plus {Ui.Version} · Windows {Environment.OSVersion.Version} · администратор: {Helper.IsAdmin()}");
+            var rows = Servers.List();
+            sb.AppendLine($"Серверов: {rows.Count}; WhatsApp мимо шлюза: {(Store.Bypass.Contains("whatsapp") ? "да" : "нет")}; WireGuard установлен: {(Wg.ExePath() != null ? "да" : "нет")}; программа GSP в плагине: {(GspClient.Available ? "да" : "нет")}");
+            var active = Store.Active;
+            var conf = active.Length > 0 ? Store.Load(active) : null;
+            if (conf == null) sb.AppendLine("Выбранный профиль: нет");
+            else
+            {
+                var gsp = Gsp.IsGsp(conf);
+                var ep = Store.EndpointOf(conf);
+                var masked = System.Text.RegularExpressions.Regex.Replace(ep, @"(\d+\.\d+\.\d+)\.\d+$", "$1.x");
+                sb.AppendLine($"Выбранный профиль: «{active}» · {(gsp ? "GSP, версия протокола " + Gsp.ProtoOf(conf) : "WireGuard")} · сервер {masked} · MTU {Store.MtuOf(conf)}");
+                if (gsp) sb.AppendLine($"FEC: {(Store.InterfaceValue(conf, "FEC").Length > 0 ? Store.InterfaceValue(conf, "FEC") : "auto")} · защита от утечек: {Gsp.KillSwitchOf(conf)}");
+                sb.AppendLine($"Шлюз сейчас: {(RunningNow(active) ? "включён" : "выключен")}");
+                if (gsp)
+                {
+                    var st = GspClient.ReadStatus(active);
+                    sb.AppendLine("Состояние GSP: " + GspClient.Describe(st));
+                }
+            }
+            Clipboard.SetText(sb.ToString());
+            status.Text = "Сведения скопированы (без ключей, паролей и полного адреса сервера). Их можно вставить в сообщение.";
+        }
+        catch (Exception ex) { status.Text = "Не удалось скопировать: " + ex.Message; }
     }
 
     // ---------- действия ----------

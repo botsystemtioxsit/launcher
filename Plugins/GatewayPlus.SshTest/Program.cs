@@ -180,6 +180,13 @@ if (gspBin.Length > 0)
 {
     string Sh3(string cmd) { var psi = new System.Diagnostics.ProcessStartInfo("bash", "-c \"" + cmd.Replace("\"", "\\\"") + "\"") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false }; using var p = System.Diagnostics.Process.Start(psi)!; var o = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd(); p.WaitForExit(); return o; }
     var env = $"GSP_BIN={gspBin} GSP_PUBIP=127.0.0.1";
+    // обновление там, где GSP ещё не поставлен: ничего не трогаем, ошибка понятная; для WireGuard обновление не бывает
+    {
+        var ln = new List<string>();
+        var rn = Run(new SshTarget { Host = host, Port = port, User = user, KeyFile = key, Protocol = "gsp", Update = true, ScriptEnv = $"GSP_BIN={gspBin}" }, _ => true, _ => true, ln);
+        Check("GSP: обновление на сервере без GSP — отказ с понятной причиной, служба не появилась", !rn.Ok && rn.Error.Contains("не настроен") && Sh3("test -f /etc/gsp/gsp0.conf && echo yes || echo no").Trim() == "no", rn.Error);
+        Check("обновление для WireGuard отклоняется до подключения", Provisioner.ValidateTarget(new SshTarget { Host = host, Port = port, User = user, KeyFile = key, Protocol = "wg", Update = true }) is { } vm && vm.Contains("только для GSP"));
+    }
     var log = new List<string>(); int replaceAsked = 0;
     var r = Run(new SshTarget { Host = host, Port = port, User = user, KeyFile = key, Protocol = "gsp", ScriptEnv = env }, _ => true, _ => { replaceAsked++; return true; }, log);
     Say("--- журнал мастера (GSP) ---"); foreach (var l in log) Say("  " + l); Say("--- конец журнала ---");
@@ -187,6 +194,7 @@ if (gspBin.Length > 0)
     if (r.Ok)
     {
         Check("GSP: конфиг — профиль GSP и проходит проверку плагина", Gsp.IsGsp(r.Conf) && Store.Validate(r.Conf) == null && r.Protocol == "gsp");
+        Check("GSP: профиль, выданный сервером, — версия протокола 2", Gsp.ProtoOf(r.Conf) == 2);
         Check("GSP: в конфиге адрес и порт сервера", r.Conf.Contains("Endpoint = 127.0.0.1:51821"), r.Endpoint);
         Check("GSP: мастер не спрашивал про перенастройку на чистом сервере", replaceAsked == 0);
         var priv = r.Conf.Replace("\r", "").Split('\n').First(l => l.TrimStart().StartsWith("PrivateKey")).Split('=', 2)[1].Trim();
@@ -200,6 +208,16 @@ if (gspBin.Length > 0)
     // повторный запуск: мастер спрашивает про перенастройку, отказ ничего не трогает
     var log2 = new List<string>(); int asked2 = 0;
     var r2 = Run(new SshTarget { Host = host, Port = port, User = user, KeyFile = key, Protocol = "gsp", ScriptEnv = env }, _ => true, m => { asked2++; return false; }, log2);
+    // обновление программы GSP на настроенном сервере: ключи и настройки те же, служба работает, конфиг не выдаётся
+    {
+        var before = Sh3("sudo sha256sum /etc/gsp/gsp0.conf").Split(' ')[0];
+        var lu = new List<string>(); int askedU = 0;
+        var ru = Run(new SshTarget { Host = host, Port = port, User = user, KeyFile = key, Protocol = "gsp", Update = true, ScriptEnv = $"GSP_BIN={gspBin}" }, _ => true, _ => { askedU++; return true; }, lu);
+        Say("--- журнал обновления GSP ---"); foreach (var l in lu) Say("  " + l); Say("--- конец журнала ---");
+        Check("GSP: обновление через мастер: успех, спрашивать про перенастройку не пришлось, конфиг не выдаётся", ru.Ok && askedU == 0 && ru.Conf.Length == 0, ru.Error);
+        Check("GSP: после обновления ключи и настройки на сервере те же, служба работает", before.Length == 64 && Sh3("sudo sha256sum /etc/gsp/gsp0.conf").Split(' ')[0] == before && Sh3("systemctl is-active gsp").Trim() == "active");
+        Check("GSP: после обновления следов скрипта в /tmp нет", Sh3("ls /tmp/ghostshell-gateway-* 2>&1").Contains("No such file"));
+    }
     Check("GSP: уже настроенный сервер: спросили, отказ — «Отменено»", asked2 == 1 && !r2.Ok && r2.Error.Contains("Отменено") && Sh3("systemctl is-active gsp").Trim() == "active", r2.Error);
 }
 

@@ -73,6 +73,23 @@ jobs:
 
   # Скрипт установки сервера GSP (тот же, что запускает мастер Gateway Plus) на настоящей Ubuntu-машине GitHub:
   # служба systemd, NAT, порт, готовый конфиг клиента — и клиент в отдельной сетевой «комнате» выходит через сервер в интернет.
+  vuln:
+    # известные уязвимости в используемых библиотеках: отчёт govulncheck (и для Linux-сервера, и для Windows-клиента)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: Protocols/Gsp/go.sum
+      - name: govulncheck
+        working-directory: Protocols/Gsp
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          echo "=== Linux ==="; "$(go env GOPATH)/bin/govulncheck" ./...
+          echo "=== Windows ==="; GOOS=windows "$(go env GOPATH)/bin/govulncheck" ./...
+
   server-script:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -128,6 +145,46 @@ jobs:
           test -n "$NSIP" && test "$HOSTIP" = "$NSIP"
           cat "$RUNNER_TEMP/st.json"; echo
           sudo cat /run/gsp/status.json; echo
+          # новый профиль (скрипт сервера пишет Proto = 2) говорит на версии 2 протокола
+          grep -q '^Proto = 2' "$RUNNER_TEMP/client.conf"
+          grep -q '"proto":2' "$RUNNER_TEMP/st.json"
+      - name: Прежний профиль (без строки Proto, версия 1) подключается к тому же серверу
+        run: |
+          set -x
+          sudo pkill -TERM -f "gsp run -c $RUNNER_TEMP/c.conf" || true
+          sleep 2
+          grep -v '^Proto' "$RUNNER_TEMP/c.conf" > "$RUNNER_TEMP/c1.conf"
+          ! grep -q '^Proto' "$RUNNER_TEMP/c1.conf"
+          sudo ip netns exec gsc "$RUNNER_TEMP/gsp" run -c "$RUNNER_TEMP/c1.conf" -status "$RUNNER_TEMP/st1.json" > "$RUNNER_TEMP/client1.log" 2>&1 &
+          sleep 3
+          sudo ip netns exec gsc ip route replace 0.0.0.0/1 dev gspc
+          sudo ip netns exec gsc ip route replace 128.0.0.0/1 dev gspc
+          for i in $(seq 1 10); do sudo ip netns exec gsc ping -c 1 -W 2 10.78.0.1 && break; sleep 1; done
+          sudo ip netns exec gsc ping -c 3 -W 3 10.78.0.1
+          sleep 1; cat "$RUNNER_TEMP/st1.json"; echo
+          grep -q '"proto":1' "$RUNNER_TEMP/st1.json"
+      - name: Обновление сервера (GSP_UPDATE=1) не меняет ключи и настройки
+        run: |
+          set -x
+          sudo sha256sum /etc/gsp/gsp0.conf > "$RUNNER_TEMP/conf.sha"
+          sudo env GSP_BIN="$RUNNER_TEMP/gsp" GSP_UPDATE=1 bash Plugins/GatewayPlus/Resources/gsp-server-setup.sh | tee "$RUNNER_TEMP/upd.out"
+          grep -q "обновлён" "$RUNNER_TEMP/upd.out"
+          ! grep -q "НАЧАЛО КОНФИГА" "$RUNNER_TEMP/upd.out"
+          sudo sha256sum -c "$RUNNER_TEMP/conf.sha"
+          systemctl is-active gsp
+          # клиент после перезапуска сервера возвращается сам (через пару десятков секунд: обрыв замечается по тишине)
+          ok=0
+          for i in $(seq 1 25); do if sudo ip netns exec gsc ping -c 1 -W 2 10.78.0.1; then ok=1; break; fi; sleep 2; done
+          test "$ok" = 1
+          # если GSP на сервере не настроен — обновлять нечего (код 2), ничего не ломается
+          sudo mv /etc/gsp/gsp0.conf /etc/gsp/gsp0.conf.keep
+          set +e
+          sudo env GSP_BIN="$RUNNER_TEMP/gsp" GSP_UPDATE=1 bash Plugins/GatewayPlus/Resources/gsp-server-setup.sh > "$RUNNER_TEMP/upd2.out" 2>&1
+          code=$?
+          set -e
+          sudo mv /etc/gsp/gsp0.conf.keep /etc/gsp/gsp0.conf
+          cat "$RUNNER_TEMP/upd2.out"
+          test "$code" = "2"
       - name: Повторный запуск скрипта ничего не ломает
         if: always()
         run: |
