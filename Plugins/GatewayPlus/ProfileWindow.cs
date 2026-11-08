@@ -86,6 +86,19 @@ sealed class ProfileWindow : Window
                 if (fec.SelectedItem is ComboBoxItem it && it.Tag is string v) confBox.Text = Store.WithInterfaceValue(confBox.Text.Trim(), "FEC", v);
             };
             page.Children.Add(fec);
+
+            page.Children.Add(Ui.Label("Защита от утечек (Windows) — только GSP"));
+            var ks = new ComboBox { Width = 460, HorizontalAlignment = HorizontalAlignment.Left };
+            var ksOptions = new[] { ("auto", "Авто — включена, когда через шлюз идёт весь интернет"), ("on", "Всегда включена (WhatsApp и другие исключения пойдут через шлюз)"), ("off", "Выключена") };
+            foreach (var (v, text) in ksOptions) ks.Items.Add(new ComboBoxItem { Content = text, Tag = v });
+            var ksNow = Gsp.KillSwitchOf(original);
+            ks.SelectedIndex = Math.Max(0, Array.FindIndex(ksOptions, o => o.Item1 == ksNow));
+            ks.SelectionChanged += (_, _) =>
+            {
+                if (ks.SelectedItem is ComboBoxItem it && it.Tag is string v) confBox.Text = Store.WithInterfaceValue(confBox.Text.Trim(), "KillSwitch", v);
+            };
+            page.Children.Add(ks);
+            page.Children.Add(Ui.Note("Пока шлюз включён, всё, что идёт мимо туннеля, блокируется: обычный трафик, запросы DNS не к серверам шлюза и IPv6. Если связь со шлюзом оборвётся, интернет не «утечёт» наружу, а просто остановится. Побочное действие: локальная сеть (принтеры, NAS) недоступна. Если служба шлюза остановится аварийно, Windows снимет защиту вместе с ней.", 11.5));
         }
 
         // 3. имя и текст конфига

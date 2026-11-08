@@ -281,7 +281,7 @@ sealed class MainWindow : Window
                 gw.Add(gspLine);
             }
             if (!GspClient.Available) gw.Add(Note("В этой сборке плагина нет программы GSP — обновите Gateway Plus из лаунчера."));
-            gw.Add(Note("GSP — наш собственный протокол: на ненадёжной связи (мобильная сеть, Wi-Fi, далёкий сервер) он сам включает защиту от потерь пакетов, и скорость падает меньше, чем у WireGuard. На хорошей связи он не быстрее WireGuard. Протокол молодой: проверен тестами и на стенде, но не годами, как WireGuard. Включение и выключение требуют разрешения администратора Windows. Пока служба шлюза работает, весь интернет идёт через сервер; если служба остановится аварийно, интернет пойдёт напрямую (отдельной защиты от утечки при аварии пока нет — если она критична, берите WireGuard)."));
+            gw.Add(Note("GSP — наш собственный протокол: на ненадёжной связи (мобильная сеть, Wi-Fi, далёкий сервер) он сам включает защиту от потерь пакетов, и скорость падает меньше, чем у WireGuard. На хорошей связи он не быстрее WireGuard. Протокол молодой: проверен тестами и на стенде, но не годами, как WireGuard. Включение и выключение требуют разрешения администратора Windows. Пока служба шлюза работает, весь интернет идёт через сервер. Защита от утечек (Windows): пока шлюз включён, всё, что идёт мимо туннеля, заблокировано — в том числе запросы DNS не к серверам шлюза и IPv6; локальная сеть (принтеры, NAS) при этом недоступна. Она включается сама, когда через шлюз идёт весь интернет, и выключена, пока WhatsApp идёт мимо шлюза (иначе его трафик был бы заблокирован). Настройка — «Изменить профиль / протокол…». Если служба остановится аварийно, Windows снимет защиту вместе с ней, и интернет пойдёт напрямую."));
         }
         else gw.Add(Note("Включение и выключение шлюза требуют разрешения администратора Windows — оно спросит каждый раз. Если связь со шлюзом оборвётся, интернет не «утечёт» мимо него: пока шлюз включён, WireGuard закрывает прямой выход."));
         page.Children.Add(Card("Шлюз", gw));
@@ -313,6 +313,7 @@ sealed class MainWindow : Window
         status.Foreground = Res("Accent2"); status.FontSize = 13; status.TextWrapping = TextWrapping.Wrap; status.Margin = new Thickness(0, 4, 0, 0);
         var last = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
         last.Children.Add(Btn("Вернуть как было", "Danger", RevertAll, first: true));
+        last.Children.Add(Btn("Скопировать сведения для поддержки", null, CopyDiagnostics));
         page.Children.Add(last);
         page.Children.Add(status);
         page.Children.Add(Note("«Вернуть как было» выключает шлюз и убирает его следы (службу и файл конфига в ProgramData). Ваши сохранённые профили остаются."));
@@ -399,6 +400,38 @@ sealed class MainWindow : Window
         w.ShowDialog();
         if (w.Result == ServerWindow.Outcome.Removed) status.Text = "Сервер убран из списка.";
         BuildPage();
+    }
+
+    // Сведения для поддержки: версии, настройки выбранного профиля и состояние шлюза — БЕЗ ключей, паролей и полного адреса сервера.
+    void CopyDiagnostics()
+    {
+        try
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"Gateway Plus {Ui.Version} · Windows {Environment.OSVersion.Version} · администратор: {Helper.IsAdmin()}");
+            var rows = Servers.List();
+            sb.AppendLine($"Серверов: {rows.Count}; WhatsApp мимо шлюза: {(Store.Bypass.Contains("whatsapp") ? "да" : "нет")}; WireGuard установлен: {(Wg.ExePath() != null ? "да" : "нет")}; программа GSP в плагине: {(GspClient.Available ? "да" : "нет")}");
+            var active = Store.Active;
+            var conf = active.Length > 0 ? Store.Load(active) : null;
+            if (conf == null) sb.AppendLine("Выбранный профиль: нет");
+            else
+            {
+                var gsp = Gsp.IsGsp(conf);
+                var ep = Store.EndpointOf(conf);
+                var masked = System.Text.RegularExpressions.Regex.Replace(ep, @"(\d+\.\d+\.\d+)\.\d+$", "$1.x");
+                sb.AppendLine($"Выбранный профиль: «{active}» · {(gsp ? "GSP, версия протокола " + Gsp.ProtoOf(conf) : "WireGuard")} · сервер {masked} · MTU {Store.MtuOf(conf)}");
+                if (gsp) sb.AppendLine($"FEC: {(Store.InterfaceValue(conf, "FEC").Length > 0 ? Store.InterfaceValue(conf, "FEC") : "auto")} · защита от утечек: {Gsp.KillSwitchOf(conf)}");
+                sb.AppendLine($"Шлюз сейчас: {(RunningNow(active) ? "включён" : "выключен")}");
+                if (gsp)
+                {
+                    var st = GspClient.ReadStatus(active);
+                    sb.AppendLine("Состояние GSP: " + GspClient.Describe(st));
+                }
+            }
+            Clipboard.SetText(sb.ToString());
+            status.Text = "Сведения скопированы (без ключей, паролей и полного адреса сервера). Их можно вставить в сообщение.";
+        }
+        catch (Exception ex) { status.Text = "Не удалось скопировать: " + ex.Message; }
     }
 
     // ---------- действия ----------
@@ -494,7 +527,10 @@ sealed class MainWindow : Window
             var file = Path.Combine(tmpDir, name + ".conf");
             // «Мимо шлюза» (WhatsApp): вместо 0.0.0.0/0 службе уходит «всё, кроме сетей сервиса и адреса сервера»; сохранённый профиль не меняется
             var bypassOn = false;
+            var bypassSkipped = false;
             var bypass = Store.Bypass;
+            // защита от утечек, включённая вручную, важнее исключений: иначе трафик исключённых сетей был бы заблокирован
+            if (gspProfile && Gsp.KillSwitchOf(conf) == "on" && bypass.Length > 0) { bypass = Array.Empty<string>(); bypassSkipped = true; }
             if (bypass.Length > 0)
             {
                 await Split.RefreshIfStaleAsync();
@@ -504,7 +540,9 @@ sealed class MainWindow : Window
             }
             await File.WriteAllTextAsync(file, conf);
             var r = await Helper.RunAsync(new Job { Action = gspProfile ? "gsp-connect" : "connect", Name = name, Conf = file });
-            status.Text = r.Message + (r.Ok && bypassOn ? " WhatsApp идёт мимо шлюза." : "");
+            status.Text = r.Message + (r.Ok && bypassOn ? " WhatsApp идёт мимо шлюза." : "")
+                + (r.Ok && bypassOn && gspProfile && Gsp.KillSwitchOf(conf) != "off" ? " Защита от утечек при этом выключена." : "")
+                + (r.Ok && bypassSkipped ? " Защита от утечек включена, поэтому исключения не применены." : "");
             await Task.Delay(r.Ok ? 2500 : 200);
         }
         catch (Exception ex) { status.Text = "Не вышло: " + ex.Message; }

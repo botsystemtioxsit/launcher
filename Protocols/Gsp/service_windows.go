@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"time"
 
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 	"golang.zx2c4.com/wireguard/windows/tunnel/winipcfg"
@@ -79,6 +80,9 @@ func installService(conf, name, statusPath string) error {
 		DisplayName: "Ghost Shell Gateway (GSP) — " + name,
 		Description: "Шлюз Gateway Plus по протоколу GSP. Управляется плагином Gateway Plus.",
 		StartType:   mgr.StartManual,
+		// у службы должно быть собственное удостоверение (service SID): по нему правила брандмауэра (защита от утечек) узнают нашу программу
+		// и пропускают её зашифрованные пакеты к серверу, пока весь остальной трафик заблокирован
+		SidType: windows.SERVICE_SID_TYPE_UNRESTRICTED,
 	}, args...)
 	if err != nil {
 		return fmt.Errorf("создание службы: %w", err)
@@ -158,18 +162,22 @@ func serviceState(name string) (string, error) {
 }
 
 // Для проверок на Windows-машине GitHub: ставит узкий маршрут к адресу «как сейчас до него добирается Windows», держит hold секунд и убирает.
-func selftestRoute(ip string, hold int) error {
+// С watch — ещё и следит за маршрутом (как при работе службы): если его убрать руками, он должен вернуться.
+func selftestRoute(ip string, hold int, watch bool) error {
 	a, err := netip.ParseAddr(ip)
 	if err != nil {
 		return err
 	}
-	undo, err := addEndpointRoute(winipcfg.LUID(0), a)
-	if err != nil {
+	er := newEndpointRoute(winipcfg.LUID(0), a)
+	if _, err := er.ensure(); err != nil {
 		return err
 	}
 	fmt.Println("маршрут поставлен")
+	if watch {
+		er.watch(500*time.Millisecond, func() { fmt.Println("маршрут переставлен (сеть сменилась)") })
+	}
 	time.Sleep(time.Duration(hold) * time.Second)
-	undo()
+	er.remove()
 	fmt.Println("маршрут убран")
 	return nil
 }

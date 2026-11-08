@@ -2,6 +2,7 @@
 # Ghost Shell Gateway: ставит сервер GSP (свой протокол, лучше переносит потери пакетов) на ЭТОТ сервер и печатает готовый конфиг для компьютера.
 # Подходит для Ubuntu 22.04/24.04 и Debian 12 (x86_64 и arm64). Запускать от root (sudo -i). WireGuard, если он уже стоит, не трогается:
 # GSP живёт на другом порту (51821/udp) и в другой сети (10.78.0.0/24).
+# GSP_UPDATE=1 — не настраивать заново, а только заменить программу на свежую и перезапустить службу (ключи и настройки остаются).
 set -euo pipefail
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -38,7 +39,7 @@ fi
 
 IFACE="$(ip -4 route show default | awk '{print $5; exit}')"
 PUBIP="${GSP_PUBIP:-$(curl -4 -fsS --max-time 10 https://api.ipify.org || curl -4 -fsS --max-time 10 https://ifconfig.me || true)}"
-if [ -z "$IFACE" ] || [ -z "$PUBIP" ]; then
+if [ "${GSP_UPDATE:-}" != "1" ] && { [ -z "$IFACE" ] || [ -z "$PUBIP" ]; }; then
   echo "Не удалось узнать сетевой интерфейс или внешний адрес сервера." >&2
   exit 1
 fi
@@ -62,6 +63,28 @@ else
 fi
 chmod 755 "$TMP/gsp"
 "$TMP/gsp" version >/dev/null || { echo "Скачанная программа gsp не запускается на этом сервере." >&2; exit 1; }
+
+# --- обновление: только программа и перезапуск службы, ключи не трогаем ---
+if [ "${GSP_UPDATE:-}" = "1" ]; then
+  if [ ! -f /etc/gsp/gsp0.conf ]; then
+    echo "GSP на этом сервере не настроен: обновлять нечего." >&2
+    exit 2
+  fi
+  install -m 755 "$TMP/gsp" /usr/local/bin/gsp
+  systemctl restart gsp
+  OK=0
+  for _ in $(seq 1 20); do
+    if systemctl is-active --quiet gsp && ip link show gsp0 > /dev/null 2>&1; then OK=1; break; fi
+    sleep 0.5
+  done
+  if [ "$OK" != "1" ]; then
+    echo "После обновления служба gsp не запустилась. Журнал:" >&2
+    journalctl -u gsp -n 15 --no-pager >&2 || true
+    exit 1
+  fi
+  echo "Сервер GSP обновлён: $(/usr/local/bin/gsp version). Ключи и настройки не менялись."
+  exit 0
+fi
 
 systemctl stop gsp 2>/dev/null || true
 install -m 755 "$TMP/gsp" /usr/local/bin/gsp
@@ -173,6 +196,7 @@ Address = ${SUBNET}.2/32
 MTU = 1380
 DNS = 1.1.1.1, 9.9.9.9
 FEC = auto
+Proto = 2
 
 [Peer]
 PublicKey = ${SP}

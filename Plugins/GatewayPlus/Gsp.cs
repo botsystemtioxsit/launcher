@@ -29,9 +29,10 @@ static class Gsp
     static readonly Regex Cidr6 = new(@"^[0-9a-fA-F:]{2,39}/\d{1,3}$");
     static readonly Regex Ep4 = new(@"^\d{1,3}(\.\d{1,3}){3}:\d{1,5}$");
     static readonly Regex FecRe = new(@"^(off|auto|\d{1,2}\+\d{1,2})$", RegexOptions.IgnoreCase);
+    static readonly Regex KillRe = new(@"^(auto|on|off)$", RegexOptions.IgnoreCase);
     static readonly Regex NameRe = new(@"^[A-Za-z0-9 _\-.]{1,40}$");
 
-    static readonly HashSet<string> IfaceKeys = new(StringComparer.OrdinalIgnoreCase) { "PrivateKey", "Address", "ListenPort", "MTU", "FEC", "Pad", "Name", "DNS" };
+    static readonly HashSet<string> IfaceKeys = new(StringComparer.OrdinalIgnoreCase) { "PrivateKey", "Address", "ListenPort", "MTU", "FEC", "Pad", "Name", "DNS", "KillSwitch", "Proto" };
     static readonly HashSet<string> PeerKeys = new(StringComparer.OrdinalIgnoreCase) { "PublicKey", "Endpoint", "AllowedIPs", "PersistentKeepalive" };
 
     static bool Cidrs(string v) => v.Split(',').Select(x => x.Trim()).All(x => x.Length > 0 && (Cidr4.IsMatch(x) || Cidr6.IsMatch(x)) && int.TryParse(x[(x.IndexOf('/') + 1)..], out var b) && b <= (x.Contains(':') ? 128 : 32));
@@ -68,6 +69,8 @@ static class Gsp
                     case "mtu": if (!int.TryParse(v, out var m) || m < 1200 || m > 1500) return "MTU: число от 1200 до 1500."; break;
                     case "fec": if (!FecRe.IsMatch(v)) return "FEC: off, auto или два числа через плюс (например 8+3)."; break;
                     case "pad": if (!int.TryParse(v, out var pd) || pd < 0 || pd > 255) return "Pad: число от 0 до 255."; break;
+                    case "proto": if (v != "1" && v != "2") return "Proto: 1 или 2."; break;
+                    case "killswitch": if (!KillRe.IsMatch(v)) return "KillSwitch: auto, on или off."; break;
                     case "name": if (!NameRe.IsMatch(v)) return "Name: латиница, цифры, пробел, «_ - .», до 40 знаков."; break;
                     case "dns": if (!v.Split(',').All(x => IPAddress.TryParse(x.Trim(), out _))) return "DNS: список IP-адресов через запятую."; break;
                 }
@@ -95,6 +98,16 @@ static class Gsp
         return null;
     }
 
+    // Защита от утечек в профиле: "auto" (по умолчанию), "on" или "off".
+    public static string KillSwitchOf(string conf)
+    {
+        var v = Store.InterfaceValue(conf, "KillSwitch").Trim().ToLowerInvariant();
+        return v is "on" or "off" ? v : "auto";
+    }
+
+    // Версия протокола профиля: 2 — стандартные конструкции (ChaCha20-защита заголовка, HKDF), без строки Proto — 1 (прежняя; сервер понимает обе).
+    public static int ProtoOf(string conf) => Store.InterfaceValue(conf, "Proto").Trim() == "2" ? 2 : 1;
+
     public static string WithName(string conf, string adapterName) => Store.WithInterfaceValue(conf, "Name", adapterName);
 
     // Состояние, которое раз в секунду пишет служба (gsp … -status файл).
@@ -108,6 +121,8 @@ static class Gsp
         public long RxBytes { get; set; }
         public int SessionAgeS { get; set; }
         public int LastRecvAgoS { get; set; }
+        public bool KillSwitch { get; set; }     // защита от утечек (Windows) сейчас включена
+        public int Proto { get; set; }           // версия протокола текущего сеанса (1 или 2; 0 — неизвестно)
         public string Error { get; set; } = "";
     }
 
@@ -119,6 +134,7 @@ static class Gsp
             using var d = JsonDocument.Parse(json);
             var root = d.RootElement;
             var s = new StatusInfo();
+            s.KillSwitch = root.TryGetProperty("killSwitch", out var ks) && ks.ValueKind == JsonValueKind.True;
             if (root.TryGetProperty("error", out var e) && e.ValueKind == JsonValueKind.String) { s.Error = e.GetString() ?? ""; return s; }
             if (!root.TryGetProperty("peers", out var peers) || peers.ValueKind != JsonValueKind.Array || peers.GetArrayLength() == 0) return s;
             var p = peers[0];
@@ -127,7 +143,7 @@ static class Gsp
             s.LossPct = p.TryGetProperty("lossPct", out var lp) && lp.ValueKind == JsonValueKind.Number ? lp.GetDouble() : 0;
             s.Fec = p.TryGetProperty("fec", out var f) && f.ValueKind == JsonValueKind.String ? (f.GetString() ?? "off") : "off";
             s.Recovered = L("recovered"); s.TxBytes = L("txBytes"); s.RxBytes = L("rxBytes");
-            s.SessionAgeS = (int)L("sessionAgeS"); s.LastRecvAgoS = (int)L("lastRecvAgoS");
+            s.SessionAgeS = (int)L("sessionAgeS"); s.LastRecvAgoS = (int)L("lastRecvAgoS"); s.Proto = (int)L("proto");
             return s;
         }
         catch { return null; }

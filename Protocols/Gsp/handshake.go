@@ -13,24 +13,30 @@ import (
 	"time"
 
 	"github.com/flynn/noise"
-	"golang.org/x/crypto/blake2s"
 )
 
-var prologue = []byte("ghostshell-gsp-v1")
+// Пролог Noise входит в итоговый хеш рукопожатия: у версий он разный, поэтому участники разных версий ключей не получат.
+func prologueFor(ver int) []byte {
+	if ver == protoV2 {
+		return []byte("ghostshell-gsp-v2")
+	}
+	return []byte("ghostshell-gsp-v1")
+}
 
 type pendingHS struct {
 	hs   *noise.HandshakeState
 	idx  uint32
 	sent time.Time
+	ver  int
 }
 
-func newHS(initiator bool, static noise.DHKey, peerStatic []byte) (*noise.HandshakeState, error) {
+func newHS(ver int, initiator bool, static noise.DHKey, peerStatic []byte) (*noise.HandshakeState, error) {
 	return noise.NewHandshakeState(noise.Config{
 		CipherSuite:   noiseSuite,
 		Random:        crand.Reader,
 		Pattern:       noise.HandshakeIK,
 		Initiator:     initiator,
-		Prologue:      prologue,
+		Prologue:      prologueFor(ver),
 		StaticKeypair: static,
 		PeerStatic:    peerStatic,
 	})
@@ -56,8 +62,8 @@ func tsLess(a, b [12]byte) bool {
 // Возможности (на будущее): бит 0 — понимаю защиту от потерь.
 const capFEC = 1
 
-func buildInit(static noise.DHKey, serverPub []byte, myIdx uint32) (*pendingHS, []byte, error) {
-	hs, err := newHS(true, static, serverPub)
+func buildInit(static noise.DHKey, serverPub []byte, myIdx uint32, ver int) (*pendingHS, []byte, error) {
+	hs, err := newHS(ver, true, static, serverPub)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -70,10 +76,11 @@ func buildInit(static noise.DHKey, serverPub []byte, myIdx uint32) (*pendingHS, 
 	if err != nil {
 		return nil, nil, err
 	}
-	return &pendingHS{hs: hs, idx: myIdx, sent: time.Now()}, msg, nil
+	return &pendingHS{hs: hs, idx: myIdx, sent: time.Now(), ver: ver}, msg, nil
 }
 
 type initInfo struct {
+	ver       int
 	hs        *noise.HandshakeState
 	clientPub []byte
 	ts        [12]byte
@@ -81,8 +88,8 @@ type initInfo struct {
 	caps      uint16
 }
 
-func parseInit(static noise.DHKey, msg []byte) (*initInfo, error) {
-	hs, err := newHS(false, static, nil)
+func parseInit(static noise.DHKey, msg []byte, ver int) (*initInfo, error) {
+	hs, err := newHS(ver, false, static, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +100,7 @@ func parseInit(static noise.DHKey, msg []byte) (*initInfo, error) {
 	if len(pl) < 18 {
 		return nil, errors.New("короткая нагрузка рукопожатия")
 	}
-	info := &initInfo{hs: hs, clientPub: append([]byte(nil), hs.PeerStatic()...)}
+	info := &initInfo{ver: ver, hs: hs, clientPub: append([]byte(nil), hs.PeerStatic()...)}
 	copy(info.ts[:], pl[0:12])
 	info.clientIdx = binary.BigEndian.Uint32(pl[12:16])
 	info.caps = binary.BigEndian.Uint16(pl[16:18])
@@ -114,7 +121,7 @@ func buildResponse(info *initInfo, serverIdx uint32) (msg []byte, send, recv, se
 		return
 	}
 	msg = m
-	send, recv, sendHP, recvHP = deriveKeys(cs1, cs2, false)
+	send, recv, sendHP, recvHP = deriveKeys(info.ver, cs1, cs2, false)
 	return
 }
 
@@ -129,16 +136,15 @@ func parseResponse(p *pendingHS, msg []byte) (serverIdx uint32, send, recv, send
 		return
 	}
 	serverIdx = binary.BigEndian.Uint32(pl[0:4])
-	send, recv, sendHP, recvHP = deriveKeys(cs1, cs2, true)
+	send, recv, sendHP, recvHP = deriveKeys(p.ver, cs1, cs2, true)
 	return
 }
 
-// cs1 — от клиента к серверу, cs2 — обратно. Ключи заголовков выводятся отдельно от ключей данных.
-func deriveKeys(cs1, cs2 *noise.CipherState, initiator bool) (send, recv, sendHP, recvHP [32]byte) {
+// cs1 — от клиента к серверу, cs2 — обратно. Ключи заголовков выводятся отдельно от ключей данных (см. hpKeyFor).
+func deriveKeys(ver int, cs1, cs2 *noise.CipherState, initiator bool) (send, recv, sendHP, recvHP [32]byte) {
 	k1, k2 := cs1.UnsafeKey(), cs2.UnsafeKey()
-	hp := func(k [32]byte) [32]byte { return blake2s.Sum256(append(k[:], []byte("gsp-hp-v1")...)) }
 	if initiator {
-		return k1, k2, hp(k1), hp(k2)
+		return k1, k2, hpKeyFor(ver, k1), hpKeyFor(ver, k2)
 	}
-	return k2, k1, hp(k2), hp(k1)
+	return k2, k1, hpKeyFor(ver, k2), hpKeyFor(ver, k1)
 }

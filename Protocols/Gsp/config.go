@@ -22,6 +22,9 @@ import (
 //	FEC        = auto | off | 10+2
 //	Pad        = 0            (случайная набивка пакетов до N байт, для маскировки размеров)
 //	Name       = gsp0
+//	Proto      = 1 | 2      (версия протокола у клиента; без строки — 1, чтобы прежние профили работали; новые профили — 2; сервер понимает обе)
+//	KillSwitch = auto | on | off   (Windows: «защита от утечек» — пока шлюз работает, весь трафик вне туннеля заблокирован;
+//	                                auto: включена, когда в туннель идёт весь интернет, то есть в AllowedIPs есть 0.0.0.0/0)
 //	[Peer]
 //	PublicKey  = ...
 //	Endpoint   = 203.0.113.5:51821   (у клиента)
@@ -33,6 +36,8 @@ type FileConfig struct {
 	MTU     int
 	Address []netip.Prefix
 	DNS     []netip.Addr // сервера имён внутри туннеля (Windows ставит их на сетевую карту шлюза)
+	// Защита от утечек (Windows): "auto" (по умолчанию), "on" или "off". См. killswitch.go.
+	KillSwitch string
 }
 
 func parseConfig(path string) (*FileConfig, error) {
@@ -41,7 +46,7 @@ func parseConfig(path string) (*FileConfig, error) {
 		return nil, err
 	}
 	defer f.Close()
-	fc := &FileConfig{Name: "gsp0", MTU: 1380}
+	fc := &FileConfig{Name: "gsp0", MTU: 1380, KillSwitch: "auto"}
 	var cur *PeerConfig
 	section := ""
 	sc := bufio.NewScanner(f)
@@ -122,6 +127,18 @@ func parseConfig(path string) (*FileConfig, error) {
 				}
 			case "name":
 				fc.Name = v
+			case "proto":
+				fc.Engine.Proto, err = strconv.Atoi(v)
+				if err == nil && fc.Engine.Proto != 1 && fc.Engine.Proto != 2 {
+					err = errors.New("Proto: 1 или 2")
+				}
+			case "killswitch":
+				switch strings.ToLower(v) {
+				case "auto", "on", "off":
+					fc.KillSwitch = strings.ToLower(v)
+				default:
+					err = errors.New("KillSwitch: auto, on или off")
+				}
 			case "debugdroptx":
 				fc.Engine.DebugDropTx, err = strconv.ParseFloat(v, 64)
 			default:

@@ -87,6 +87,8 @@ static class GspClient
         var loss = s.LossPct < 0.05 ? "потерь нет" : "потери сети " + s.LossPct.ToString("0.#") + "%";
         var fec = s.Fec == "off" ? "защита от потерь выключена (включится сама, если понадобится)" : "защита от потерь " + s.Fec;
         var rec = s.Recovered > 0 ? " · восстановлено пакетов: " + s.Recovered : "";
-        return "GSP · " + loss + " · " + fec + rec;
+        var ks = s.KillSwitch ? " · защита от утечек включена" : "";
+        var ver = s.Proto == 2 ? " · протокол версии 2" : "";
+        return "GSP · " + loss + " · " + fec + rec + ks + ver;
     }
 }

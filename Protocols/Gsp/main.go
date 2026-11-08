@@ -16,7 +16,7 @@ import (
 	"golang.zx2c4.com/wireguard/tun"
 )
 
-const version = "0.2.0"
+const version = "0.3.0"
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `gsp — Ghost Shell Protocol `+version+`
@@ -27,7 +27,7 @@ func usage() {
   gsp install-service -c файл -name Имя [-status файл]   Windows: поставить и запустить службу шлюза
   gsp remove-service -name Имя                           Windows: остановить и убрать службу
   gsp service-state -name Имя                            Windows: running | stopped | none
-  gsp selftest-route -ip АДРЕС [-hold СЕК]               Windows, для проверок: поставить и убрать маршрут к серверу мимо туннеля
+  gsp selftest-route -ip АДРЕС [-hold СЕК] [-watch]       Windows, для проверок: поставить и убрать маршрут к серверу мимо туннеля (с -watch — ещё и следить за ним)
   gsp version`)
 	os.Exit(2)
 }
@@ -87,8 +87,9 @@ func main() {
 		fs := flag.NewFlagSet("selftest-route", flag.ExitOnError)
 		ip := fs.String("ip", "", "адрес, к которому ставим узкий маршрут")
 		hold := fs.Int("hold", 5, "сколько секунд держать маршрут")
+		watch := fs.Bool("watch", false, "следить за маршрутом и переставлять его, если Windows его убрала (как при смене сети)")
 		_ = fs.Parse(os.Args[2:])
-		if err := selftestRoute(*ip, *hold); err != nil {
+		if err := selftestRoute(*ip, *hold, *watch); err != nil {
 			fatal(err)
 		}
 	case "winservice":
@@ -174,6 +175,8 @@ func startNode(path, statusPath string, verbose bool) (stop func(), err error) {
 		return nil, err
 	}
 	fmt.Printf("gsp %s: интерфейс %s, порт %d\n", version, real, e.LocalPort())
+	hook := func() { e.NetworkChanged() }
+	netChangeHook.Store(&hook)
 
 	var prof func()
 	if pf := os.Getenv("GSP_CPUPROFILE"); pf != "" { // для разработчика: где тратится время
@@ -195,6 +198,7 @@ func startNode(path, statusPath string, verbose bool) (stop func(), err error) {
 		close(done)
 	}
 	return func() {
+		netChangeHook.Store(nil)
 		e.Close() // сначала прощаемся с сервером (маршрут к нему ещё на месте), потом убираем сеть
 		<-done
 		undo()

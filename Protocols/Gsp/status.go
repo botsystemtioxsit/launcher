@@ -15,17 +15,19 @@ type PeerStatus struct {
 	Recovered    uint64  `json:"recovered"`
 	LossPct      float64 `json:"lossPct"`
 	FEC          string  `json:"fec"`
+	Proto        int     `json:"proto"` // версия протокола текущего сеанса (1 или 2)
 }
 
 type Status struct {
 	Version string       `json:"version"`
 	Port    int          `json:"port"`
-	HsDrop  uint64       `json:"hsDropped"` // рукопожатий отброшено ограничителем (сервер под нагрузкой)
+	HsDrop  uint64       `json:"hsDropped"`  // рукопожатий отброшено ограничителем (сервер под нагрузкой)
+	KillSw  bool         `json:"killSwitch"` // защита от утечек (Windows) включена
 	Peers   []PeerStatus `json:"peers"`
 }
 
 func (e *Engine) Status() Status {
-	st := Status{Version: version, Port: e.LocalPort(), HsDrop: e.hsDrop.Load()}
+	st := Status{Version: version, Port: e.LocalPort(), HsDrop: e.hsDrop.Load(), KillSw: killSwitchOn.Load()}
 	now := time.Now()
 	for _, p := range e.snapshotPeers() {
 		ps := PeerStatus{Key: keyToB64(p.pub[:]), TxBytes: p.txBytes.Load(), RxBytes: p.rxBytes.Load(),
@@ -35,6 +37,7 @@ func (e *Engine) Status() Status {
 		}
 		if s := p.cur.Load(); s != nil {
 			ps.Connected = true
+			ps.Proto = s.ver
 			ps.SessionAgeS = int(now.Sub(s.created).Seconds())
 		}
 		if lr := p.lastRecv.Load(); lr > 0 {

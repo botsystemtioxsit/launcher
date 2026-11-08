@@ -17,7 +17,7 @@ sealed class ServerWindow : Window
     readonly TextBlock msg = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
     readonly StackPanel page = new();
     readonly ScrollViewer scroll;
-    Button test = null!, forget = null!;
+    Button test = null!, forget = null!, upd = null!;
     CancellationTokenSource? cts;
     bool running;
 
@@ -68,6 +68,18 @@ sealed class ServerWindow : Window
         forget.IsEnabled = info.HasAccess;
         accessButtons.Children.Add(test); accessButtons.Children.Add(forget);
         page.Children.Add(accessButtons);
+        if (row.Gsp != null)
+        {
+            page.Children.Add(Ui.Label("Версия протокола GSP"));
+            var v = Gsp.ProtoOf(Store.Load(row.Gsp) ?? "");
+            page.Children.Add(Ui.Note(v == 2
+                ? "Профиль «" + row.Gsp + "» уже работает по версии 2 протокола GSP (стандартная защита заголовков и вывод ключей). Если на сервере программа GSP старая, обновите её кнопкой ниже."
+                : "Профиль «" + row.Gsp + "» работает по версии 1 протокола GSP. Версия 2 заменяет самодельные куски шифрования на стандартные (защита заголовка ChaCha20 как в QUIC, ключи через HKDF). Кнопка ниже зайдёт на сервер, заменит программу GSP на свежую (ключи и настройки не меняются) и переведёт этот профиль на версию 2.", 12));
+            upd = Ui.Btn("Обновить GSP на сервере (версия 2)", null, UpdateGsp, first: true);
+            upd.IsEnabled = !connected;
+            page.Children.Add(upd);
+            if (connected) page.Children.Add(Ui.Note("Шлюз сейчас включён — сначала отключите его.", 12));
+        }
         page.Children.Add(Ui.Label("Что происходит"));
         page.Children.Add(Ui.Box(logBox));
         page.Children.Add(msg);
@@ -124,6 +136,35 @@ sealed class ServerWindow : Window
         }
         catch (Exception ex) { msg.Text = "Не вышло: " + ex.Message; }
         finally { access.ClearSecrets(); t.Password = null; t.KeyPass = null; running = false; test.IsEnabled = true; }
+    }
+
+    // Обновляет программу GSP на сервере (без смены ключей) и переводит профиль на этом компьютере на версию 2.
+    async void UpdateGsp()
+    {
+        if (running || row.Gsp == null) return;
+        msg.Foreground = Ui.Res("Accent2"); msg.Text = "";
+        var t = access.Build(out var bad);
+        if (t == null) { msg.Text = bad ?? "Проверьте данные для входа на сервер."; return; }
+        t.Protocol = "gsp"; t.Update = true;
+        running = true; test.IsEnabled = false; upd.IsEnabled = false; logBox.Clear();
+        cts = new CancellationTokenSource();
+        try
+        {
+            var res = await Provisioner.RunAsync(t, ConfirmKey, _ => false, Log, cts.Token);
+            if (!res.Ok)
+            {
+                if (res.AuthFailed && access.UsingSaved) { access.SwitchToManual(); msg.Text = res.Error + " Введите доступ заново."; }
+                else msg.Text = res.Error;
+                return;
+            }
+            var conf = Store.Load(row.Gsp);
+            var upgraded = conf == null ? null : Store.WithInterfaceValue(conf, "Proto", "2");
+            if (conf != null && upgraded != null && Store.Validate(upgraded) == null) { Store.Save(row.Gsp, upgraded); Result = Outcome.Changed; }
+            msg.Foreground = Ui.Res("Green");
+            msg.Text = "Сервер GSP обновлён, профиль «" + row.Gsp + "» переведён на версию 2. Если шлюз был включён — отключите и подключите снова.";
+        }
+        catch (Exception ex) { msg.Text = "Не вышло: " + ex.Message; }
+        finally { access.ClearSecrets(); t.Password = null; t.KeyPass = null; running = false; test.IsEnabled = true; upd.IsEnabled = !connected; }
     }
 
     void Forget()

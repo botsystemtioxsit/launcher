@@ -78,6 +78,8 @@ type relay struct {
 	dropped atomic.Int64
 	capture chan []byte
 	stop    chan struct{}
+	sside   atomic.Pointer[net.UDPConn] // сокет, с которого сервер видит клиента (меняется в roam)
+	startRd func(*net.UDPConn)
 }
 
 func newRelay(t *testing.T, srvPort int, drop float64) *relay {
@@ -87,6 +89,7 @@ func newRelay(t *testing.T, srvPort int, drop float64) *relay {
 	}
 	r := &relay{conn: c, srv: &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: srvPort}, drop: drop, capture: make(chan []byte, 1024), stop: make(chan struct{})}
 	srvSide, _ := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
+	r.sside.Store(srvSide)
 	rng := rand.New(rand.NewSource(7))
 	var rmu sync.Mutex
 	lost := func() bool {
@@ -119,28 +122,43 @@ func newRelay(t *testing.T, srvPort int, drop float64) *relay {
 				r.dropped.Add(1)
 				continue
 			}
-			fwd(srvSide, r.srv, b)
+			fwd(r.sside.Load(), r.srv, b)
 		}
 	}()
-	go func() { // сервер → клиент
-		buf := make([]byte, 4096)
-		for {
-			n, _, err := srvSide.ReadFromUDP(buf)
-			if err != nil {
-				return
+	r.startRd = func(sock *net.UDPConn) { // сервер → клиент
+		go func() {
+			buf := make([]byte, 4096)
+			for {
+				n, _, err := sock.ReadFromUDP(buf)
+				if err != nil {
+					return
+				}
+				a := r.cli.Load()
+				if a == nil || lost() {
+					r.dropped.Add(1)
+					continue
+				}
+				fwd(c, a, append([]byte(nil), buf[:n]...))
 			}
-			a := r.cli.Load()
-			if a == nil || lost() {
-				r.dropped.Add(1)
-				continue
-			}
-			fwd(c, a, append([]byte(nil), buf[:n]...))
-		}
-	}()
+		}()
+	}
+	r.startRd(srvSide)
 	return r
 }
 func (r *relay) addr() netip.AddrPort { return r.conn.LocalAddr().(*net.UDPAddr).AddrPort() }
-func (r *relay) close()               { r.conn.Close() }
+func (r *relay) close()               { r.conn.Close(); r.sside.Load().Close() }
+
+// roam: клиент «сменил сеть» — с точки зрения сервера пакеты теперь приходят с другого адреса и порта.
+func (r *relay) roam(t *testing.T) netip.AddrPort {
+	sock, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := r.sside.Swap(sock)
+	r.startRd(sock)
+	_ = old // старый сокет оставляем открытым: ответы по старому адресу уйдут в пустоту, как при настоящей смене сети
+	return sock.LocalAddr().(*net.UDPAddr).AddrPort()
+}
 
 // ---- пара узлов ----
 
@@ -441,10 +459,10 @@ func TestFECDecoderUnit(t *testing.T) {
 
 func TestHandshakePacketsLookRandomAndVary(t *testing.T) {
 	k, _ := newKeypair()
-	ob := obfKeyFor(k.Public)
+	ob := obfKeyFor(k.Public, protoV1)
 	sizes := map[int]bool{}
 	for i := 0; i < 50; i++ {
-		pend, msg, err := buildInit(k, k.Public, uint32(i))
+		pend, msg, err := buildInit(k, k.Public, uint32(i), protoV1)
 		_ = pend
 		if err != nil {
 			t.Fatal(err)
@@ -481,5 +499,42 @@ func TestEchoDeviceAnswersPing(t *testing.T) {
 	}
 	if icmpEchoReply(rep) != nil {
 		t.Fatal("на ответ отвечать не надо")
+	}
+}
+
+// Роуминг: клиент сменил сеть (для сервера — другой адрес и порт). Сервер узнаёт новый адрес по первому же подлинному пакету
+// и дальше отвечает туда; сеанс, ключи и счётчики не сбрасываются.
+func TestRoamingServerFollowsClient(t *testing.T) {
+	p := newPair(t, "off", 0, nil)
+	deadline := time.Now().Add(5 * time.Second)
+	for p.cli.peerOnly().cur.Load() == nil && time.Now().Before(deadline) {
+		p.cliDev.in <- mkIP(cliIP, srvIP, 0, 100)
+		time.Sleep(50 * time.Millisecond)
+	}
+	if p.cli.peerOnly().cur.Load() == nil {
+		t.Fatal("сеанс не установился")
+	}
+	sess := p.srv.peerOnly().cur.Load()
+	time.Sleep(200 * time.Millisecond)
+	for len(p.srvDev.out) > 0 {
+		<-p.srvDev.out
+	}
+	newAddr := p.rel.roam(t)
+	p.cliDev.in <- mkIP(cliIP, srvIP, 100, 100)
+	got := recvN(p.srvDev, 1, 2*time.Second)
+	if len(got) != 1 {
+		t.Fatal("после смены адреса пакет клиента не дошёл до сервера")
+	}
+	if ep := p.srv.peerOnly().endpoint.Load(); ep == nil || ep.AddrPort() != newAddr {
+		t.Fatalf("сервер должен был запомнить новый адрес %v, а помнит %v", newAddr, ep)
+	}
+	if p.srv.peerOnly().cur.Load() != sess {
+		t.Fatal("сеанс не должен был смениться из-за смены адреса")
+	}
+	// ответ сервера теперь идёт на новый адрес и доходит до клиента
+	p.srvDev.in <- mkIP(srvIP, cliIP, 200, 100)
+	back := recvN(p.cliDev, 1, 2*time.Second)
+	if len(back) != 1 || binary.BigEndian.Uint32(back[0][20:]) != 200 {
+		t.Fatalf("ответ сервера не дошёл до клиента после смены адреса (получено %d)", len(back))
 	}
 }

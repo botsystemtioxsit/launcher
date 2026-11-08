@@ -100,7 +100,7 @@ func TestLimiterMemoryIsBounded(t *testing.T) {
 // лишние отбрасываются и считаются в статусе.
 func TestServerDropsHandshakeFlood(t *testing.T) {
 	p := newPair(t, "off", 0, nil)
-	obf := obfKeyFor(pubOf(t, p.srv))
+	obf := obfKeyFor(pubOf(t, p.srv), protoV2)
 	c, err := net.DialUDP("udp", nil, &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: p.srv.LocalPort()})
 	if err != nil {
 		t.Fatal(err)

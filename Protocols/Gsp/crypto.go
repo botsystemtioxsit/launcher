@@ -8,7 +8,9 @@ package main
 
 import (
 	"crypto/cipher"
+	"crypto/hkdf"
 	crand "crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
@@ -18,6 +20,7 @@ import (
 
 	"github.com/flynn/noise"
 	"golang.org/x/crypto/blake2s"
+	"golang.org/x/crypto/chacha20"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/curve25519"
 )
@@ -28,6 +31,19 @@ const (
 	bodyOff  = hdrLen + 2 // с этого места в буфере лежит IP-пакет (после типа и длины набивки)
 	minPlain = 16         // образец для маски заголовка берётся из шифртекста, он должен быть ≥ 16 байт
 	bufSize  = 2048
+)
+
+// Версии протокола.
+//
+//	1 — GSP 0.2: маска заголовка = BLAKE2s(ключ ‖ образец), ключи заголовков и ключ маскировки рукопожатия — BLAKE2s от ключа с «солью»-строкой.
+//	2 — GSP 0.3: только стандартные конструкции — защита заголовка на ChaCha20 как в QUIC (RFC 9001, §5.4.4) и ключи через HKDF-SHA256 (RFC 5869);
+//	    в прологе Noise другая строка, поэтому клиент версии 2 и сервер версии 1 (и наоборот) друг с другом не договорятся.
+//
+// Сервер принимает обе версии (смотрит, чьим ключом упаковано рукопожатие), клиент говорит ровно на той версии, что указана в его настройках
+// (`Proto`, по умолчанию 1 — чтобы прежние профили продолжали работать). Новые профили, которые выдаёт скрипт сервера, — версии 2.
+const (
+	protoV1 = 1
+	protoV2 = 2
 )
 
 // Типы кадров внутри шифртекста.
@@ -67,8 +83,26 @@ func keyFromB64(s string) ([]byte, error) {
 
 // Ключ обфускации рукопожатия выводится из открытого ключа сервера: его знает каждый клиент,
 // а посторонний не может даже получить ответ — пакет без правильной подписи молча отбрасывается.
-func obfKeyFor(serverPub []byte) [32]byte {
+// Это маскировка, а не секрет: открытый ключ сервера не тайна.
+func obfKeyFor(serverPub []byte, ver int) [32]byte {
+	if ver == protoV2 {
+		k, _ := hkdf.Key(sha256.New, serverPub, nil, "gsp v2 handshake obfuscation", 32)
+		var out [32]byte
+		copy(out[:], k)
+		return out
+	}
 	return blake2s.Sum256(append([]byte("gsp-obfs-v1"), serverPub...))
+}
+
+// Ключ защиты заголовка выводится из ключа данных (ключ — случайные 256 бит из Noise, поэтому HKDF-Expand без «извлечения» уместен).
+func hpKeyFor(ver int, dataKey [32]byte) [32]byte {
+	if ver == protoV2 {
+		k, _ := hkdf.Expand(sha256.New, dataKey[:], "gsp v2 header protection", 32)
+		var out [32]byte
+		copy(out[:], k)
+		return out
+	}
+	return blake2s.Sum256(append(append([]byte(nil), dataKey[:]...), []byte("gsp-hp-v1")...))
 }
 
 func randU32() uint32 {
@@ -113,9 +147,21 @@ func openHandshake(key *[32]byte, pkt []byte) ([]byte, error) {
 	return plain[2 : 2+n], nil
 }
 
-// Маска заголовка: BLAKE2s(ключ || образец шифртекста), как защита заголовка в QUIC.
-// Первые 12 байт пакета (индекс и счётчик) в канале всегда случайны на вид.
-func hpMask(hp *[32]byte, sample []byte) (m [hdrLen]byte) {
+// Маска заголовка. Первые 12 байт пакета (индекс и счётчик) в канале всегда случайны на вид.
+//
+// Версия 2 — ровно то, что описано в RFC 9001 §5.4.4 для ChaCha20: образец — первые 16 байт шифртекста, из него счётчик (4 байта, little-endian)
+// и nonce (12 байт), маска — первые байты потока ChaCha20 по ключу защиты заголовка (у QUIC берут 5 байт, у нас 12 из того же блока).
+// Версия 1 (прежняя) — BLAKE2s(ключ ‖ образец).
+func hpMask(ver int, hp *[32]byte, sample []byte) (m [hdrLen]byte) {
+	if ver == protoV2 {
+		c, err := chacha20.NewUnauthenticatedCipher(hp[:], sample[4:16])
+		if err != nil {
+			return
+		}
+		c.SetCounter(binary.LittleEndian.Uint32(sample[0:4]))
+		c.XORKeyStream(m[:], m[:])
+		return
+	}
 	var in [48]byte
 	copy(in[:32], hp[:])
 	copy(in[32:], sample[:16])
@@ -161,6 +207,7 @@ func (w *replayWin) mark(c uint64) {
 
 // Сеанс: один набор ключей между двумя узлами.
 type session struct {
+	ver            int    // версия протокола (protoV1/protoV2)
 	id, peerID     uint32 // наш индекс (по нему нас находят) и индекс собеседника (его мы пишем в пакеты)
 	send, recv     cipher.AEAD
 	sendHP, recvHP [32]byte
@@ -175,8 +222,8 @@ type session struct {
 	rxRef uint64 // наибольший счётчик на момент прошлого отчёта
 }
 
-func newSession(id, peerID uint32, sendKey, recvKey, sendHP, recvHP [32]byte, p *peer) *session {
-	s := &session{id: id, peerID: peerID, sendHP: sendHP, recvHP: recvHP, created: time.Now(), peer: p}
+func newSession(ver int, id, peerID uint32, sendKey, recvKey, sendHP, recvHP [32]byte, p *peer) *session {
+	s := &session{ver: ver, id: id, peerID: peerID, sendHP: sendHP, recvHP: recvHP, created: time.Now(), peer: p}
 	s.send, _ = chacha20poly1305.New(sendKey[:])
 	s.recv, _ = chacha20poly1305.New(recvKey[:])
 	return s
@@ -192,7 +239,7 @@ func (s *session) seal(buf []byte, plen int) int {
 	binary.BigEndian.PutUint64(aad[4:12], ctr)
 	out := s.send.Seal(buf[hdrLen:hdrLen], nonce[:], buf[hdrLen:hdrLen+plen], aad[:])
 	n := hdrLen + len(out)
-	m := hpMask(&s.sendHP, buf[hdrLen:hdrLen+16])
+	m := hpMask(s.ver, &s.sendHP, buf[hdrLen:hdrLen+16])
 	for i := 0; i < hdrLen; i++ {
 		buf[i] = aad[i] ^ m[i]
 	}
@@ -204,7 +251,7 @@ func (s *session) peekIndex(p []byte) (hdr [hdrLen]byte, ok bool) {
 	if len(p) < hdrLen+minPlain+tagLen {
 		return hdr, false
 	}
-	m := hpMask(&s.recvHP, p[hdrLen:hdrLen+16])
+	m := hpMask(s.ver, &s.recvHP, p[hdrLen:hdrLen+16])
 	for i := 0; i < hdrLen; i++ {
 		hdr[i] = p[i] ^ m[i]
 	}
