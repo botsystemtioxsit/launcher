@@ -1,0 +1,80 @@
+name: Cleanup Gateway accounts
+
+# Удаляет аккаунты Gateway Plus (база vpn0dns, узел gatewayAccounts), не заходившие 183 дня (≈ полгода).
+# Клиентам правила базы не дают ничего удалять, поэтому удаляет эта задача ключом сервисного аккаунта —
+# тем же секретом VPN_FIREBASE_SERVICE_ACCOUNT, которым выкладываются правила (workflow «Deploy Gateway DB rules»).
+# Что и почему не трогается — в шапке tools/gateway-cleanup/cleanup.py. Журнал содержит только числа.
+on:
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Только посчитать, ничего не удалять'
+        type: boolean
+        default: true
+      force:
+        description: 'Не останавливаться, если удалять пришлось бы очень много'
+        type: boolean
+        default: false
+  pull_request:
+    paths:
+      - 'tools/gateway-cleanup/**'
+      - '.github/workflows/cleanup-gateway-accounts.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gateway-cleanup/**'
+      - '.github/workflows/cleanup-gateway-accounts.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cleanup-gateway-accounts
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Проверки скрипта (подставная база, настоящая подпись токена)
+        run: python3 -m unittest discover -s tools/gateway-cleanup -v
+
+  cleanup:
+    needs: test
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Проверить секрет
+        id: secret
+        env:
+          KEY: ${{ secrets.VPN_FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::warning::Секрет VPN_FIREBASE_SERVICE_ACCOUNT не задан — очистка не выполнена."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Очистить неактивные аккаунты
+        if: steps.secret.outputs.present == 'true'
+        env:
+          KEY: ${{ secrets.VPN_FIREBASE_SERVICE_ACCOUNT }}
+          # по расписанию — всегда по-настоящему; вручную — как выбрано в запуске (по умолчанию пробный)
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
+        run: |
+          umask 077
+          printf '%s' "$KEY" > "$RUNNER_TEMP/vpn-sa.json"
+          ARGS=(--credentials "$RUNNER_TEMP/vpn-sa.json")
+          [ "$DRY_RUN" = "true" ] && ARGS+=(--dry-run)
+          [ "$FORCE" = "true" ] && ARGS+=(--force)
+          status=0
+          python3 tools/gateway-cleanup/cleanup.py "${ARGS[@]}" || status=$?
+          rm -f "$RUNNER_TEMP/vpn-sa.json"
+          exit $status
