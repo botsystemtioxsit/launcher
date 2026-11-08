@@ -158,18 +158,22 @@ func serviceState(name string) (string, error) {
 }
 
 // Для проверок на Windows-машине GitHub: ставит узкий маршрут к адресу «как сейчас до него добирается Windows», держит hold секунд и убирает.
-func selftestRoute(ip string, hold int) error {
+// С watch — ещё и следит за маршрутом (как при работе службы): если его убрать руками, он должен вернуться.
+func selftestRoute(ip string, hold int, watch bool) error {
 	a, err := netip.ParseAddr(ip)
 	if err != nil {
 		return err
 	}
-	undo, err := addEndpointRoute(winipcfg.LUID(0), a)
-	if err != nil {
+	er := newEndpointRoute(winipcfg.LUID(0), a)
+	if _, err := er.ensure(); err != nil {
 		return err
 	}
 	fmt.Println("маршрут поставлен")
+	if watch {
+		er.watch(500*time.Millisecond, func() { fmt.Println("маршрут переставлен (сеть сменилась)") })
+	}
 	time.Sleep(time.Duration(hold) * time.Second)
-	undo()
+	er.remove()
 	fmt.Println("маршрут убран")
 	return nil
 }
