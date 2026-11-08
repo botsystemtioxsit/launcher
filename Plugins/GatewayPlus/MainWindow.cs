@@ -281,7 +281,7 @@ sealed class MainWindow : Window
                 gw.Add(gspLine);
             }
             if (!GspClient.Available) gw.Add(Note("В этой сборке плагина нет программы GSP — обновите Gateway Plus из лаунчера."));
-            gw.Add(Note("GSP — наш собственный протокол: на ненадёжной связи (мобильная сеть, Wi-Fi, далёкий сервер) он сам включает защиту от потерь пакетов, и скорость падает меньше, чем у WireGuard. На хорошей связи он не быстрее WireGuard. Протокол молодой: проверен тестами и на стенде, но не годами, как WireGuard. Включение и выключение требуют разрешения администратора Windows. Пока служба шлюза работает, весь интернет идёт через сервер; если служба остановится аварийно, интернет пойдёт напрямую (отдельной защиты от утечки при аварии пока нет — если она критична, берите WireGuard)."));
+            gw.Add(Note("GSP — наш собственный протокол: на ненадёжной связи (мобильная сеть, Wi-Fi, далёкий сервер) он сам включает защиту от потерь пакетов, и скорость падает меньше, чем у WireGuard. На хорошей связи он не быстрее WireGuard. Протокол молодой: проверен тестами и на стенде, но не годами, как WireGuard. Включение и выключение требуют разрешения администратора Windows. Пока служба шлюза работает, весь интернет идёт через сервер. Защита от утечек (Windows): пока шлюз включён, всё, что идёт мимо туннеля, заблокировано — в том числе запросы DNS не к серверам шлюза и IPv6; локальная сеть (принтеры, NAS) при этом недоступна. Она включается сама, когда через шлюз идёт весь интернет, и выключена, пока WhatsApp идёт мимо шлюза (иначе его трафик был бы заблокирован). Настройка — «Изменить профиль / протокол…». Если служба остановится аварийно, Windows снимет защиту вместе с ней, и интернет пойдёт напрямую."));
         }
         else gw.Add(Note("Включение и выключение шлюза требуют разрешения администратора Windows — оно спросит каждый раз. Если связь со шлюзом оборвётся, интернет не «утечёт» мимо него: пока шлюз включён, WireGuard закрывает прямой выход."));
         page.Children.Add(Card("Шлюз", gw));
@@ -494,7 +494,10 @@ sealed class MainWindow : Window
             var file = Path.Combine(tmpDir, name + ".conf");
             // «Мимо шлюза» (WhatsApp): вместо 0.0.0.0/0 службе уходит «всё, кроме сетей сервиса и адреса сервера»; сохранённый профиль не меняется
             var bypassOn = false;
+            var bypassSkipped = false;
             var bypass = Store.Bypass;
+            // защита от утечек, включённая вручную, важнее исключений: иначе трафик исключённых сетей был бы заблокирован
+            if (gspProfile && Gsp.KillSwitchOf(conf) == "on" && bypass.Length > 0) { bypass = Array.Empty<string>(); bypassSkipped = true; }
             if (bypass.Length > 0)
             {
                 await Split.RefreshIfStaleAsync();
@@ -504,7 +507,9 @@ sealed class MainWindow : Window
             }
             await File.WriteAllTextAsync(file, conf);
             var r = await Helper.RunAsync(new Job { Action = gspProfile ? "gsp-connect" : "connect", Name = name, Conf = file });
-            status.Text = r.Message + (r.Ok && bypassOn ? " WhatsApp идёт мимо шлюза." : "");
+            status.Text = r.Message + (r.Ok && bypassOn ? " WhatsApp идёт мимо шлюза." : "")
+                + (r.Ok && bypassOn && gspProfile && Gsp.KillSwitchOf(conf) != "off" ? " Защита от утечек при этом выключена." : "")
+                + (r.Ok && bypassSkipped ? " Защита от утечек включена, поэтому исключения не применены." : "");
             await Task.Delay(r.Ok ? 2500 : 200);
         }
         catch (Exception ex) { status.Text = "Не вышло: " + ex.Message; }

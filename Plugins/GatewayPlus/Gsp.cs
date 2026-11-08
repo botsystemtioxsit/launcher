@@ -29,9 +29,10 @@ static class Gsp
     static readonly Regex Cidr6 = new(@"^[0-9a-fA-F:]{2,39}/\d{1,3}$");
     static readonly Regex Ep4 = new(@"^\d{1,3}(\.\d{1,3}){3}:\d{1,5}$");
     static readonly Regex FecRe = new(@"^(off|auto|\d{1,2}\+\d{1,2})$", RegexOptions.IgnoreCase);
+    static readonly Regex KillRe = new(@"^(auto|on|off)$", RegexOptions.IgnoreCase);
     static readonly Regex NameRe = new(@"^[A-Za-z0-9 _\-.]{1,40}$");
 
-    static readonly HashSet<string> IfaceKeys = new(StringComparer.OrdinalIgnoreCase) { "PrivateKey", "Address", "ListenPort", "MTU", "FEC", "Pad", "Name", "DNS" };
+    static readonly HashSet<string> IfaceKeys = new(StringComparer.OrdinalIgnoreCase) { "PrivateKey", "Address", "ListenPort", "MTU", "FEC", "Pad", "Name", "DNS", "KillSwitch" };
     static readonly HashSet<string> PeerKeys = new(StringComparer.OrdinalIgnoreCase) { "PublicKey", "Endpoint", "AllowedIPs", "PersistentKeepalive" };
 
     static bool Cidrs(string v) => v.Split(',').Select(x => x.Trim()).All(x => x.Length > 0 && (Cidr4.IsMatch(x) || Cidr6.IsMatch(x)) && int.TryParse(x[(x.IndexOf('/') + 1)..], out var b) && b <= (x.Contains(':') ? 128 : 32));
@@ -68,6 +69,7 @@ static class Gsp
                     case "mtu": if (!int.TryParse(v, out var m) || m < 1200 || m > 1500) return "MTU: число от 1200 до 1500."; break;
                     case "fec": if (!FecRe.IsMatch(v)) return "FEC: off, auto или два числа через плюс (например 8+3)."; break;
                     case "pad": if (!int.TryParse(v, out var pd) || pd < 0 || pd > 255) return "Pad: число от 0 до 255."; break;
+                    case "killswitch": if (!KillRe.IsMatch(v)) return "KillSwitch: auto, on или off."; break;
                     case "name": if (!NameRe.IsMatch(v)) return "Name: латиница, цифры, пробел, «_ - .», до 40 знаков."; break;
                     case "dns": if (!v.Split(',').All(x => IPAddress.TryParse(x.Trim(), out _))) return "DNS: список IP-адресов через запятую."; break;
                 }
@@ -95,6 +97,13 @@ static class Gsp
         return null;
     }
 
+    // Защита от утечек в профиле: "auto" (по умолчанию), "on" или "off".
+    public static string KillSwitchOf(string conf)
+    {
+        var v = Store.InterfaceValue(conf, "KillSwitch").Trim().ToLowerInvariant();
+        return v is "on" or "off" ? v : "auto";
+    }
+
     public static string WithName(string conf, string adapterName) => Store.WithInterfaceValue(conf, "Name", adapterName);
 
     // Состояние, которое раз в секунду пишет служба (gsp … -status файл).
@@ -108,6 +117,7 @@ static class Gsp
         public long RxBytes { get; set; }
         public int SessionAgeS { get; set; }
         public int LastRecvAgoS { get; set; }
+        public bool KillSwitch { get; set; }     // защита от утечек (Windows) сейчас включена
         public string Error { get; set; } = "";
     }
 
@@ -119,6 +129,7 @@ static class Gsp
             using var d = JsonDocument.Parse(json);
             var root = d.RootElement;
             var s = new StatusInfo();
+            s.KillSwitch = root.TryGetProperty("killSwitch", out var ks) && ks.ValueKind == JsonValueKind.True;
             if (root.TryGetProperty("error", out var e) && e.ValueKind == JsonValueKind.String) { s.Error = e.GetString() ?? ""; return s; }
             if (!root.TryGetProperty("peers", out var peers) || peers.ValueKind != JsonValueKind.Array || peers.GetArrayLength() == 0) return s;
             var p = peers[0];

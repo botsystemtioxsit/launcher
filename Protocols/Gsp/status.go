@@ -20,12 +20,13 @@ type PeerStatus struct {
 type Status struct {
 	Version string       `json:"version"`
 	Port    int          `json:"port"`
-	HsDrop  uint64       `json:"hsDropped"` // рукопожатий отброшено ограничителем (сервер под нагрузкой)
+	HsDrop  uint64       `json:"hsDropped"`  // рукопожатий отброшено ограничителем (сервер под нагрузкой)
+	KillSw  bool         `json:"killSwitch"` // защита от утечек (Windows) включена
 	Peers   []PeerStatus `json:"peers"`
 }
 
 func (e *Engine) Status() Status {
-	st := Status{Version: version, Port: e.LocalPort(), HsDrop: e.hsDrop.Load()}
+	st := Status{Version: version, Port: e.LocalPort(), HsDrop: e.hsDrop.Load(), KillSw: killSwitchOn.Load()}
 	now := time.Now()
 	for _, p := range e.snapshotPeers() {
 		ps := PeerStatus{Key: keyToB64(p.pub[:]), TxBytes: p.txBytes.Load(), RxBytes: p.rxBytes.Load(),

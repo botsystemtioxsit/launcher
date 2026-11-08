@@ -87,6 +87,12 @@ func setupNetwork(dev tun.Device, name string, fc *FileConfig) (func(), error) {
 		}
 	}
 
+	// защита от утечек: без DNS в настройках имена не открылись бы (запросы к DNS провайдера уходят мимо туннеля и блокируются)
+	ks := wantKillSwitch(fc)
+	if ks && len(fc.DNS) == 0 {
+		fc.DNS = append([]netip.Addr(nil), fallbackDNS...)
+	}
+
 	// DNS
 	var v4, v6 []netip.Addr
 	for _, d := range fc.DNS {
@@ -103,6 +109,16 @@ func setupNetwork(dev tun.Device, name string, fc *FileConfig) (func(), error) {
 	}
 	if len(v6) > 0 {
 		_ = luid.SetDNS(windows.AF_INET6, v6, nil)
+	}
+
+	// защита от утечек — последней, когда адрес, маршруты и DNS уже на месте (при остановке снимается первой)
+	if ks {
+		off, err := enableKillSwitch(uint64(luid), fc.DNS)
+		if err != nil {
+			return fail(fmt.Errorf("не удалось включить защиту от утечек: %w", err))
+		}
+		killSwitchOn.Store(true)
+		undo = append(undo, func() { killSwitchOn.Store(false); off() })
 	}
 	return cleanup, nil
 }

@@ -8,6 +8,21 @@ function Say($t) { $t | Tee-Object -FilePath $log -Append }
 $script:fail = 0
 function Check($name, $ok, $extra = '') { if ($ok) { Say "  OK    $name" } else { $script:fail++; Say "  FAIL  $name $extra" } }
 
+# Попытка соединиться с адресом вне туннеля. Результат: connected | timeout | socket-<код> (например socket-AccessDenied, если трафик заблокирован брандмауэром).
+function Probe($ip, $port) {
+    $c = New-Object System.Net.Sockets.TcpClient
+    try {
+        $t = $c.ConnectAsync($ip, $port)
+        if ($t.Wait(3000)) { return 'connected' }
+        return 'timeout'
+    } catch {
+        $e = $_.Exception
+        while ($e.InnerException) { $e = $e.InnerException }
+        if ($e -is [System.Net.Sockets.SocketException]) { return 'socket-' + $e.SocketErrorCode }
+        return 'error-' + $e.GetType().Name
+    } finally { $c.Dispose() }
+}
+
 $gsp = (Resolve-Path 'out-test/gsp.exe').Path
 Say "gsp: $(& $gsp version)"
 Say ("wintun.dll рядом: " + (Test-Path (Join-Path (Split-Path $gsp) 'wintun.dll')))
@@ -101,6 +116,13 @@ try {
     Check 'после переустановки ping идёт' ($p3 -match 'TTL=')
 
     Say ""
+    Say "=== без защиты от утечек трафик вне туннеля не блокируется (контроль) ==="
+    $base = Probe '203.0.113.9' 80
+    Say "  зонд 203.0.113.9:80 → $base"
+    Check 'без защиты зонд не получает «отказано в доступе»' ($base -ne 'socket-AccessDenied')
+    if (Test-Path $statusFile) { Check 'файл состояния: защита выключена (в AllowedIPs нет 0.0.0.0/0)' ((Get-Content $statusFile -Raw | ConvertFrom-Json).killSwitch -eq $false) }
+
+    Say ""
     Say "=== остановка и уборка ==="
     $o = & $gsp remove-service -name test 2>&1
     Say ("remove-service: код $LASTEXITCODE; " + ($o -join ' '))
@@ -109,6 +131,34 @@ try {
     Check 'карта шлюза исчезла' ($null -eq (Get-NetAdapter -Name $name -ErrorAction SilentlyContinue))
     Check 'маршрут шлюза исчез' ($null -eq (Get-NetRoute -DestinationPrefix '198.51.100.0/24' -ErrorAction SilentlyContinue))
     Check 'файл состояния убран' (-not (Test-Path $statusFile))
+
+    Say ""
+    Say "=== защита от утечек (KillSwitch = on): всё вне туннеля заблокировано, пока служба работает ==="
+    $confKs = Join-Path $work 'client-ks.conf'
+    (Get-Content $conf -Raw) -replace '(?m)^Name = .*$', "Name = $name`nKillSwitch = on" | Set-Content -Path $confKs -Encoding ascii
+    try {
+        $o = & $gsp install-service -c $confKs -name ks -status $statusFile 2>&1
+        Say ("install-service (с защитой): код $LASTEXITCODE; " + ($o -join ' '))
+        Check 'служба с защитой запустилась' (($LASTEXITCODE -eq 0) -and ((& $gsp service-state -name ks) -eq 'running'))
+        Start-Sleep -Seconds 3
+        $pk = ping.exe -n 3 -w 2000 10.77.0.1 | Out-String
+        Check 'через туннель трафик ходит и с защитой' ($pk -match 'TTL=')
+        $leak1 = Probe '203.0.113.9' 80   # адрес вне туннеля (маршрут обычный, мимо шлюза)
+        $leak2 = Probe '8.8.8.8' 53       # запрос DNS не к серверу из настроек
+        Say "  зонд 203.0.113.9:80 → $leak1;  зонд 8.8.8.8:53 → $leak2"
+        Check 'вне туннеля заблокировано (отказано в доступе)' ($leak1 -eq 'socket-AccessDenied')
+        Check 'DNS не к серверу из настроек заблокирован' ($leak2 -eq 'socket-AccessDenied')
+        if (Test-Path $statusFile) { Check 'файл состояния сообщает о защите' ((Get-Content $statusFile -Raw | ConvertFrom-Json).killSwitch -eq $true) }
+        else { Check 'файл состояния сообщает о защите' $false }
+    } finally {
+        $o = & $gsp remove-service -name ks 2>&1
+        Say ("remove-service (с защитой): код $LASTEXITCODE; " + ($o -join ' '))
+    }
+    Start-Sleep -Seconds 2
+    Check 'службы с защитой больше нет' ((& $gsp service-state -name ks) -eq 'none')
+    $after = Probe '203.0.113.9' 80
+    Say "  зонд после остановки: $after"
+    Check 'после остановки блокировки нет (интернет вернулся)' ($after -ne 'socket-AccessDenied')
 
     Say ""
     Say "=== плохие настройки: служба не остаётся, ошибка видна ==="
@@ -124,6 +174,7 @@ try {
 finally {
     & $gsp remove-service -name test 2>&1 | Out-Null
     & $gsp remove-service -name bad 2>&1 | Out-Null
+    & $gsp remove-service -name ks 2>&1 | Out-Null
     if ($echo -and -not $echo.HasExited) { $echo.Kill() }
 }
 Say ""
