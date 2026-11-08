@@ -29,6 +29,7 @@ sealed class DeviceWindow : Window
 
         page.Children.Add(Ui.Title("ТЕЛЕФОН И СКОРОСТЬ"));
         page.Children.Add(Ui.Note("Плагин зайдёт на ваш сервер и создаст отдельный ключ для телефона. Тогда телефон и компьютер работают одновременно, как «один аккаунт — несколько устройств» у обычных VPN. Потом вы наведёте камеру телефона на QR-код в приложении WireGuard (Google Play / App Store). Пароль от сервера нигде не сохраняется.", 12.5));
+        if (Store.Bypass.Contains("whatsapp")) page.Children.Add(Ui.Note("WhatsApp на телефоне пойдёт мимо VPN: в QR-код добавлено исключение этого приложения (звонки лучше слышны). Поменять можно в приложении WireGuard: туннель → ✎ → «Исключённые приложения».", 12));
 
         hostBox.Text = Store.EndpointOf(profileConf);
         page.Children.Add(Ui.Label("Адрес сервера (подставлен из профиля «" + profile + "»)")); page.Children.Add(hostBox);
@@ -54,7 +55,7 @@ sealed class DeviceWindow : Window
 
         page.Children.Add(Ui.Label("Запасной путь"));
         page.Children.Add(Ui.Note("Не хотите вводить пароль от сервера? Можно показать QR-код того же профиля, что у компьютера. Тогда телефон и компьютер включайте по очереди: с одним ключом они выбивают друг друга.", 12));
-        page.Children.Add(Ui.Btn("Показать QR того же профиля", null, () => new QrWindow(profile, profileConf) { Owner = this }.ShowDialog(), first: true));
+        page.Children.Add(Ui.Btn("Показать QR того же профиля", null, () => new QrWindow(profile, Split.ForPhone(profileConf, Store.Bypass)) { Owner = this }.ShowDialog(), first: true));
         Closing += (_, e) =>
         {
             if (!running) return;
@@ -108,7 +109,7 @@ sealed class DeviceWindow : Window
     async void Go()
     {
         if (running) return;
-        if (lastConf != null) { new QrWindow(nameBox.Text.Trim(), lastConf) { Owner = this }.ShowDialog(); return; }
+        if (lastConf != null) { new QrWindow(nameBox.Text.Trim(), Split.ForPhone(lastConf, Store.Bypass)) { Owner = this }.ShowDialog(); return; }
         msg.Foreground = Ui.Res("Accent2"); msg.Text = "";
         var t = new SshTarget { Host = hostBox.Text.Trim(), Port = int.TryParse(portBox.Text.Trim(), out var p) ? p : 22, User = userBox.Text.Trim(), Password = passBox.Password };
         var name = nameBox.Text.Trim();
@@ -126,7 +127,7 @@ sealed class DeviceWindow : Window
             msg.Foreground = Ui.Res("Green");
             msg.Text = "Готово! Откройте на телефоне WireGuard → «+» → «Сканировать QR-код» и наведите камеру на экран.";
             go.Content = "Показать QR ещё раз";
-            new QrWindow(name, res.Conf) { Owner = this }.ShowDialog();
+            new QrWindow(name, Split.ForPhone(res.Conf, Store.Bypass)) { Owner = this }.ShowDialog();
         }
         catch (Exception ex) { msg.Text = "Не вышло: " + ex.Message; }
         finally { running = false; go.IsEnabled = true; }

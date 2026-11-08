@@ -40,6 +40,9 @@ static class SelfTest
             Check("скрипт сервера вшит (" + script.Length + " знаков)", script.StartsWith("#!/usr/bin/env bash") && script.Contains("wg genkey") && !script.Contains('\r'));
             File.WriteAllText(Path.Combine(dir, "server-setup.sh"), script, new UTF8Encoding(false));
 
+            // 3-split. «Мимо шлюза»: арифметика сетей и подмена AllowedIPs
+            SplitChecks(Check, log);
+
             // 3a. аккаунт: ключ, номер, шифрование
             var raw = Account.NewKey();
             Check("ключ: 32 знака A-Z2-7", Regex.IsMatch(raw, "^[A-Z2-7]{32}$") && Account.NewKey() != raw);
@@ -133,7 +136,7 @@ static class SelfTest
                 var (c4, spub) = Wg.Run(tool, "pubkey", 10000, spriv);
                 Check("ключи созданы (wg genkey/pubkey)", c1 == 0 && c2 == 0 && c3 == 0 && c4 == 0 && priv.Length > 40 && pub.Length > 40);
                 // AllowedIPs — только маленькая сеть: весь интернет раннера через несуществующий сервер пускать нельзя
-                var conf = $"[Interface]\nPrivateKey = {priv}\nAddress = 10.99.0.2/32\n\n[Peer]\nPublicKey = {spub}\nEndpoint = 192.0.2.1:51820\nAllowedIPs = 10.99.0.0/24\nPersistentKeepalive = 25\n";
+                var conf = $"[Interface]\nPrivateKey = {priv}\nAddress = 10.99.0.2/32\n\n[Peer]\nPublicKey = {spub}\nEndpoint = 192.0.2.1:51820\nAllowedIPs = 10.99.0.0/24, {ManyRoutes}\nPersistentKeepalive = 25\n";
                 Check("конфиг из ключей проходит проверку", Store.Validate(conf) == null);
                 var tmp = Path.Combine(Path.GetTempPath(), "gp-selftest"); Directory.CreateDirectory(tmp);
                 var file = Path.Combine(tmp, "citest.conf"); File.WriteAllText(file, conf);
@@ -141,6 +144,9 @@ static class SelfTest
                 log.AppendLine($"подключение: {(r.Ok ? "ok" : "ПРОВАЛ")} — {r.Message}");
                 Check("служба WireGuardTunnel$citest работает", Wg.IsRunning("citest"));
                 Check("сетевой адаптер citest появился", NetworkInterface.GetAllNetworkInterfaces().Any(n => n.Name.Equals("citest", StringComparison.OrdinalIgnoreCase)));
+                // «Мимо шлюза» даёт службе сотни сетей вместо 0.0.0.0/0: WireGuard должен принять и проложить их все (проверка на безопасном блоке 198.18.0.0/15)
+                var wgRoutes = WaitRoutes("citest", 340);
+                Check($"WireGuard: {ManyCount} маршрутов из AllowedIPs проложены ({wgRoutes})", wgRoutes >= ManyCount);
                 Check("файл конфига лежит в ProgramData", File.Exists(Path.Combine(Helper.WorkDir, "citest.conf")));
                 var acl = Wg.Run("icacls.exe", "\"" + Helper.WorkDir + "\"", 10000).Output;
                 log.AppendLine("права на папку:" + Environment.NewLine + acl);
@@ -157,6 +163,54 @@ static class SelfTest
         catch (Exception ex) { log.AppendLine("ОШИБКА: " + ex); }
         File.WriteAllText(Path.Combine(dir, "report.txt"), log.ToString());
     }
+    // «Мимо шлюза» (Split.cs): сети считаются верно, подмена AllowedIPs не ломает конфиг, ответ сети проверяется.
+    static void SplitChecks(Action<string, bool> Check, StringBuilder log)
+    {
+        // арифметика: «всё, кроме 10.0.0.0/8» — ровно 8 сетей, 10.x не покрыто, остальное покрыто
+        var c10 = Split.Complement(new[] { "10.0.0.0/8" }, false);
+        Check("«всё, кроме 10.0.0.0/8» = 8 сетей (" + c10.Count + ")", c10.Count == 8 && !Split.Covers(c10, "10.1.2.3") && Split.Covers(c10, "9.255.255.255") && Split.Covers(c10, "11.0.0.0") && Split.Covers(c10, "0.0.0.0") && Split.Covers(c10, "255.255.255.255"));
+        var c0 = Split.Complement(Array.Empty<string>(), false);
+        Check("без исключений остаётся 0.0.0.0/0", c0.Count == 1 && c0[0] == "0.0.0.0/0");
+        var cAll = Split.Complement(new[] { "0.0.0.0/0" }, false);
+        Check("исключили всё — пусто", cAll.Count == 0);
+        var edge = Split.Complement(new[] { "0.0.0.0/32", "255.255.255.255/32" }, false);
+        Check("края адресного пространства (0.0.0.0 и 255.255.255.255) исключаются точно", !Split.Covers(edge, "0.0.0.0") && !Split.Covers(edge, "255.255.255.255") && Split.Covers(edge, "0.0.0.1") && Split.Covers(edge, "255.255.255.254"));
+        var m = Split.Merge(new[] { "10.0.0.0/25", "10.0.0.128/25", "10.0.1.0/24", "10.0.0.0/30" }, false);
+        Check("соседние и вложенные сети склеиваются (10.0.0.0/23)", m.Count == 1 && m[0] == "10.0.0.0/23");
+        var c6 = Split.Complement(new[] { "2a03:2880::/32" }, true);
+        Check("IPv6: «всё, кроме 2a03:2880::/32»", c6.Count > 0 && !Split.Covers(c6, "2a03:2880:f101::1") && Split.Covers(c6, "2001:4860:4860::8888") && Split.Covers(c6, "2a03:2881::1") && Split.Covers(c6, "::1"));
+
+        // подмена в конфиге
+        const string conf = "[Interface]\nPrivateKey = AAAA\nAddress = 10.0.0.2/32\n\n[Peer]\nPublicKey = BBBB\nEndpoint = 192.0.2.1:51820\nAllowedIPs = 0.0.0.0/0\n";
+        var ep = new[] { System.Net.IPAddress.Parse("192.0.2.1") };
+        var applied = Split.Apply(conf, new[] { "whatsapp" }, ep);
+        var allowed = Store.InterfaceValueOfPeer(applied, "AllowedIPs").Split(',').Select(x => x.Trim()).ToList();
+        Check("подмена: 0.0.0.0/0 исчез, сетей " + allowed.Count, !allowed.Contains("0.0.0.0/0") && allowed.Count > 100 && allowed.Count < 800);
+        Check("подмена: WhatsApp (157.240.1.1, 31.13.65.1) и адрес сервера (192.0.2.1) вне туннеля", !Split.Covers(allowed, "157.240.1.1") && !Split.Covers(allowed, "31.13.65.1") && !Split.Covers(allowed, "192.0.2.1"));
+        Check("подмена: обычные адреса (8.8.8.8, 1.1.1.1, 192.168.1.5, 10.0.0.1) в туннеле", new[] { "8.8.8.8", "1.1.1.1", "192.168.1.5", "10.0.0.1", "93.184.216.34" }.All(a => Split.Covers(allowed, a)));
+        Check("подмена: WireGuard-конфиг после неё проходит проверку", Store.Validate(applied) == null && applied.Length < 20000);
+        var gspConf = "# GSP\n[Interface]\nPrivateKey = " + new string('A', 43) + "=\nAddress = 10.78.0.2/32\nFEC = auto\n\n[Peer]\nPublicKey = " + new string('B', 43) + "=\nEndpoint = 192.0.2.1:51821\nAllowedIPs = 0.0.0.0/0\n";
+        var gspApplied = Split.Apply(gspConf, new[] { "whatsapp" }, ep);
+        Check("подмена: GSP-конфиг после неё проходит проверку", gspApplied != gspConf && Gsp.Validate(gspApplied) == null && Store.Validate(gspApplied) == null);
+        Check("без выбранных сервисов конфиг не меняется", Split.Apply(conf, Array.Empty<string>(), ep) == conf);
+        var partial = conf.Replace("0.0.0.0/0", "10.0.0.0/24");
+        Check("если в туннель идёт не «всё» — конфиг не меняется", Split.Apply(partial, new[] { "whatsapp" }, ep) == partial);
+        var v6conf = conf.Replace("AllowedIPs = 0.0.0.0/0", "AllowedIPs = 0.0.0.0/0, ::/0");
+        var v6 = Store.InterfaceValueOfPeer(Split.Apply(v6conf, new[] { "whatsapp" }, ep), "AllowedIPs").Split(',').Select(x => x.Trim()).ToList();
+        Check("0.0.0.0/0 и ::/0 заменяются оба (Meta по IPv6 — вне туннеля)", !v6.Contains("::/0") && !v6.Contains("0.0.0.0/0") && !Split.Covers(v6, "2a03:2880:f101::1") && Split.Covers(v6, "2001:4860:4860::8888"));
+        Check("телефон: ExcludedApplications добавляется (com.whatsapp)", Split.ForPhone(conf, new[] { "whatsapp" }).Contains("ExcludedApplications = com.whatsapp,com.whatsapp.w4b") && Split.ForPhone(conf, Array.Empty<string>()) == conf);
+
+        // ответ RIPEstat: настоящий — принимается, подделка — нет
+        string Ripe(IEnumerable<string> ps) => "{\"data\":{\"prefixes\":[" + string.Join(",", ps.Select(x => "{\"prefix\":\"" + x + "\"}")) + "]}}";
+        var many = Enumerable.Range(0, 40).Select(i => $"{40 + i}.{i}.0.0/16").Concat(new[] { "2a03:2880::/32" });   // не соседние сети: после склейки их остаётся достаточно
+        Check("ответ сети: нормальный список принимается", Split.ParseRipe(Ripe(many)) != null);
+        Check("ответ сети: «0.0.0.0/0» отклоняется (иначе шлюз перестал бы работать)", Split.ParseRipe(Ripe(many.Concat(new[] { "0.0.0.0/0" }))) == null);
+        Check("ответ сети: слишком широкая сеть (/8) отклоняется", Split.ParseRipe(Ripe(many.Concat(new[] { "57.0.0.0/8" }))) == null);
+        Check("ответ сети: слишком короткий список и мусор отклоняются", Split.ParseRipe(Ripe(new[] { "157.240.0.0/16" })) == null && Split.ParseRipe("{ не json") == null && Split.ParseRipe(Ripe(many.Concat(new[] { "evil" }))) == null);
+        var meta = Split.CidrsOf("whatsapp");
+        Check("вшитый список Meta: " + meta.Length + " сетей, в нём 157.240.0.0/17 и 2a03:2880::/32", meta.Length >= 30 && meta.Contains("157.240.0.0/17") && meta.Contains("2a03:2880::/32"));
+    }
+
     static void GspChecks(Action<string, bool> Check, StringBuilder log, string dir)
     {
         var k = new string('A', 43) + "=";
@@ -201,7 +255,7 @@ static class SelfTest
             {
                 var first = echo.StandardOutput.ReadLine() ?? "";
                 Check("GSP: ответчик запущен (" + first + ")", first.StartsWith("echo-server port=7110"));
-                var conf = $"# GSP\n[Interface]\nPrivateKey = {ck}\nAddress = 10.77.0.2/32\nMTU = 1380\nFEC = auto\n\n[Peer]\nPublicKey = {sp}\nEndpoint = 127.0.0.1:7110\nAllowedIPs = 10.77.0.1/32\nPersistentKeepalive = 5\n";
+                var conf = $"# GSP\n[Interface]\nPrivateKey = {ck}\nAddress = 10.77.0.2/32\nMTU = 1380\nFEC = auto\n\n[Peer]\nPublicKey = {sp}\nEndpoint = 127.0.0.1:7110\nAllowedIPs = 10.77.0.1/32, {ManyRoutes}\nPersistentKeepalive = 5\n";
                 Check("GSP: настоящий конфиг проходит проверку", Store.Validate(conf) == null);
                 var tmp = Path.Combine(Path.GetTempPath(), "gp-selftest-gsp"); Directory.CreateDirectory(tmp);
                 var file = Path.Combine(tmp, "citest-gsp.conf"); File.WriteAllText(file, conf);
@@ -209,6 +263,8 @@ static class SelfTest
                 log.AppendLine($"GSP подключение: {(r.Ok ? "ok" : "ПРОВАЛ")} — {r.Message}");
                 Check("GSP: служба работает", r.Ok && GspClient.IsRunning("citest-gsp"));
                 Check("GSP: сетевая карта шлюза появилась", NetworkInterface.GetAllNetworkInterfaces().Any(n => n.Name.Equals("GhostShell-citest-gsp", StringComparison.OrdinalIgnoreCase)));
+                var gspRoutes = WaitRoutes("GhostShell-citest-gsp", 340);
+                Check($"GSP: {ManyCount} маршрутов из AllowedIPs проложены ({gspRoutes})", gspRoutes >= ManyCount);
                 Check("GSP: конфиг и программа лежат в ProgramData", File.Exists(GspClient.ConfFile("citest-gsp")) && File.Exists(GspClient.ExePath));
                 var acl = Wg.Run("icacls.exe", "\"" + Helper.WorkDir + "\"", 10000).Output;
                 Check("GSP: права на папку: обычных пользователей нет (в ней закрытый ключ и программа службы)", !acl.Contains("BUILTIN\\Users", StringComparison.OrdinalIgnoreCase) && !acl.Contains("Everyone", StringComparison.OrdinalIgnoreCase));
@@ -234,6 +290,30 @@ static class SelfTest
         }
         catch (Exception ex) { log.AppendLine("GSP: ОШИБКА проверки: " + ex); Check("GSP: проверка не упала с исключением", false); }
         finally { try { Directory.Delete(prog, true); } catch { } }
+    }
+
+    // Безопасный блок для проверки «сотни маршрутов»: 198.18.0.0/15 (для тестов сетей, в интернете не используется) — 340 сетей /24.
+    const int ManyCount = 340;
+    static string ManyRoutes => string.Join(", ", Enumerable.Range(0, ManyCount).Select(i => $"198.{18 + i / 256}.{i % 256}.0/24"));
+
+    // Сколько маршрутов 198.18/15 лежит на сетевой карте (ждём, пока служба проложит их все).
+    static int WaitRoutes(string alias, int want)
+    {
+        var best = -1;
+        for (var i = 0; i < 40; i++)
+        {
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo("powershell.exe", $"-NoProfile -Command \"(Get-NetRoute -InterfaceAlias '{alias}' -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object {{ $_.DestinationPrefix -like '198.1[89].*' }} | Measure-Object).Count\"") { RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true };
+                using var p = System.Diagnostics.Process.Start(psi)!;
+                var o = p.StandardOutput.ReadToEnd(); p.WaitForExit(30000);
+                if (int.TryParse(o.Trim(), out var n)) best = Math.Max(best, n);
+            }
+            catch { }
+            if (best >= want) break;
+            Thread.Sleep(1000);
+        }
+        return best;
     }
 
     static int FreePort() { var l = new TcpListener(IPAddress.Loopback, 0); l.Start(); var p = ((IPEndPoint)l.LocalEndpoint).Port; l.Stop(); return p; }
