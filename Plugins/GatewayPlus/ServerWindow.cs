@@ -62,12 +62,12 @@ sealed class ServerWindow : Window
         page.Children.Add(Ui.Note("Нужен только для установки второго протокола, добавления телефона и «Проверить и ускорить сервер». Для обычной работы шлюза доступ не нужен. Сохранённый доступ шифруется средствами Windows и никуда не отправляется; забыть его можно здесь же.", 12));
         page.Children.Add(access);
 
+        var accessButtons = new WrapPanel { Margin = new Thickness(0, 12, 0, 0) };
         test = Ui.Btn("Проверить и сохранить доступ", "Primary", Test, first: true);
-        test.Margin = new Thickness(0, 12, 0, 8);
-        page.Children.Add(test);
-        forget = Ui.Btn("Забыть сохранённый доступ", null, Forget, first: true);
+        forget = Ui.Btn("Забыть сохранённый доступ", null, Forget);
         forget.IsEnabled = info.HasAccess;
-        page.Children.Add(forget);
+        accessButtons.Children.Add(test); accessButtons.Children.Add(forget);
+        page.Children.Add(accessButtons);
         page.Children.Add(Ui.Label("Что происходит"));
         page.Children.Add(Ui.Box(logBox));
         page.Children.Add(msg);
