@@ -2,6 +2,8 @@ module ghostshell/gsp
 
 go 1.26.0
 
+toolchain go1.26.10
+
 require (
 	github.com/flynn/noise v1.1.0
 	github.com/klauspost/reedsolomon v1.14.2
