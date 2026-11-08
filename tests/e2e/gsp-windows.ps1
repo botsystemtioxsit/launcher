@@ -154,6 +154,7 @@ try {
     try {
         $o = & $gsp install-service -c $confKs -name ks -status $statusFile 2>&1
         Say ("install-service (с защитой): код $LASTEXITCODE; " + ($o -join ' '))
+        if (Test-Path $statusFile) { Say ("  файл состояния: " + (Get-Content $statusFile -Raw)) }
         Check 'служба с защитой запустилась' (($LASTEXITCODE -eq 0) -and ((& $gsp service-state -name ks) -eq 'running'))
         Start-Sleep -Seconds 3
         $pk = ping.exe -n 3 -w 2000 10.77.0.1 | Out-String
