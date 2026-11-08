@@ -13,3 +13,5 @@ AndroidGateway/**/build/
 AndroidGateway/.gradle/
 AndroidGateway/local.properties
 AndroidGateway/.kotlin/
+__pycache__/
+*.pyc
