@@ -202,7 +202,7 @@ static class SelfTest
 
         // ответ RIPEstat: настоящий — принимается, подделка — нет
         string Ripe(IEnumerable<string> ps) => "{\"data\":{\"prefixes\":[" + string.Join(",", ps.Select(x => "{\"prefix\":\"" + x + "\"}")) + "]}}";
-        var many = Enumerable.Range(0, 40).Select(i => $"157.{i + 100}.0.0/16").Concat(new[] { "2a03:2880::/32" });
+        var many = Enumerable.Range(0, 40).Select(i => $"{40 + i}.{i}.0.0/16").Concat(new[] { "2a03:2880::/32" });   // не соседние сети: после склейки их остаётся достаточно
         Check("ответ сети: нормальный список принимается", Split.ParseRipe(Ripe(many)) != null);
         Check("ответ сети: «0.0.0.0/0» отклоняется (иначе шлюз перестал бы работать)", Split.ParseRipe(Ripe(many.Concat(new[] { "0.0.0.0/0" }))) == null);
         Check("ответ сети: слишком широкая сеть (/8) отклоняется", Split.ParseRipe(Ripe(many.Concat(new[] { "57.0.0.0/8" }))) == null);
