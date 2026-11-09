@@ -39,6 +39,7 @@ public partial class App : Application
                 new ServerWindow(de, false).RenderTo(Path.Combine(shot, "gateway-plus-server.png"));
                 new WizardWindow("203.0.113.5", "gsp", "germany-gsp").RenderTo(Path.Combine(shot, "gateway-plus-wizard-saved.png"), demo: false);
                 new WizardWindow("198.51.100.7", "gsp", "finland-gsp").RenderTo(Path.Combine(shot, "gateway-plus-wizard-nosaved.png"), demo: false);
+                new WizardWindow("198.51.100.7", "gsp", "finland-gsp").RenderTo(Path.Combine(shot, "gateway-plus-wizard-nosaved-pressed.png"), demo: false, pressInstall: true);
                 new MainWindow(GwDemo.Account).RenderTo(Path.Combine(shot, "gateway-plus-ui.png"));
                 new MainWindow(GwDemo.NoAccount).RenderTo(Path.Combine(shot, "gateway-plus-ui-noaccount.png"));
                 new MainWindow(GwDemo.Blocked).RenderTo(Path.Combine(shot, "gateway-plus-ui-blocked.png"));

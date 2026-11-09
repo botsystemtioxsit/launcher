@@ -28,7 +28,7 @@ sealed class WizardWindow : Window
     public WizardWindow(string? host = null, string? protocol = null, string? profileName = null)
     {
         Ui.Setup(this, "Создать свой VPN", 700, 860);
-        access = new AccessBox(host);
+        access = new AccessBox(host, deferForm: true);
         if (protocol == "gsp") rbGsp.IsChecked = true;
         if (!string.IsNullOrWhiteSpace(profileName)) nameBox.Text = Store.SafeName(profileName);
         page.Margin = new Thickness(24, 18, 24, 18);
@@ -132,8 +132,14 @@ sealed class WizardWindow : Window
     }
 
     // Служебный режим: рисует окно в PNG без показа (с примером журнала).
-    public void RenderTo(string file, bool demo)
+    public void RenderTo(string file, bool demo, bool pressInstall = false)
     {
+        if (pressInstall)
+        {
+            // как после нажатия «Создать VPN» на сервере без сохранённого доступа: форма показывается и просит пароль
+            access.Build(out var ask);
+            msg.Foreground = Ui.Res("Accent2"); msg.Text = ask ?? "";
+        }
         if (demo)
         {
             access.SetHost("203.0.113.5");

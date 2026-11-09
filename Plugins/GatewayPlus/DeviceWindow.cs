@@ -30,7 +30,7 @@ sealed class DeviceWindow : Window
         if (Store.Bypass.Contains("whatsapp")) page.Children.Add(Ui.Note("WhatsApp на телефоне пойдёт мимо VPN: в QR-код добавлено исключение этого приложения (звонки лучше слышны). Поменять можно в приложении WireGuard: туннель → ✎ → «Исключённые приложения».", 12));
 
         host = Store.EndpointOf(profileConf);
-        access = new AccessBox(host);
+        access = new AccessBox(host, deferForm: true);
         page.Children.Add(access);
         page.Children.Add(Ui.Label("Название устройства (латиницей)")); page.Children.Add(nameBox);
 
