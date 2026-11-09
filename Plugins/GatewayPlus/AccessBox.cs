@@ -17,6 +17,12 @@ sealed class AccessBox : StackPanel
     readonly RadioButton rbKey = new() { Content = "Файл ключа SSH" };
     readonly CheckBox remember = new() { Content = "Запомнить доступ к этому серверу на этом компьютере", IsChecked = true, Margin = new Thickness(0, 12, 0, 2) };
     readonly StackPanel hostRow = new(), manual = new(), savedPanel = new() { Visibility = Visibility.Collapsed };
+    // Для сервера, который приложение уже знает (по профилям), но доступ к нему не сохранён: объясняем, зачем пароль и что он нужен один раз.
+    readonly TextBlock firstTime = new()
+    {
+        TextWrapping = TextWrapping.Wrap, Foreground = Ui.Res("Yellow"), FontSize = 12.5, Margin = new Thickness(0, 12, 0, 4), Visibility = Visibility.Collapsed,
+        Text = "Пароль нужен один раз. Чтобы сделать что-то на самом сервере (поставить второй протокол, добавить телефон, ускорить), приложению нужно зайти на него по SSH — без пароля или ключа это невозможно. Для этого сервера доступ раньше не сохраняли. Введите его ниже и оставьте галочку «Запомнить доступ» — в следующий раз пароль не спросят. А переключаться между протоколами, которые уже стоят на сервере, пароль не нужно вообще: это кнопки в карточке сервера.",
+    };
     readonly TextBlock savedText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Ui.Res("Green"), Margin = new Thickness(0, 8, 0, 4) };
     readonly StackPanel passPanel = new(), keyPanel = new() { Visibility = Visibility.Collapsed };
     readonly StackPanel portUser = new() { Orientation = Orientation.Horizontal };
@@ -32,6 +38,7 @@ sealed class AccessBox : StackPanel
         Children.Add(Ui.Label("Адрес сервера (IP, например 203.0.113.5)"));
         hostRow.Children.Add(hostBox);
         Children.Add(hostRow);
+        Children.Add(firstTime);
         var portCol = new StackPanel { Margin = new Thickness(0, 0, 18, 0) };
         portCol.Children.Add(Ui.Label("Порт SSH")); portCol.Children.Add(portBox);
         var userCol = new StackPanel();
@@ -101,6 +108,7 @@ sealed class AccessBox : StackPanel
             portBox.Text = server!.SshPort.ToString(); userBox.Text = server.SshUser;
             savedText.Text = Servers.SavedSentence(server, sa!);
         }
+        firstTime.Visibility = !useSaved && showRemember && server != null ? Visibility.Visible : Visibility.Collapsed;
         savedPanel.Visibility = useSaved ? Visibility.Visible : Visibility.Collapsed;
         manual.Visibility = useSaved ? Visibility.Collapsed : Visibility.Visible;
     }
