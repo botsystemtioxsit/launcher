@@ -30,3 +30,12 @@ $p3 = Start-Process -FilePath $exe -ArgumentList "--selftest-ops=$ops" -PassThru
 if (-not $p3.WaitForExit(120000)) { $p3.Kill(); Say 'selftest-ops: не завершился за 2 минуты' } else { Say "selftest-ops: код $($p3.ExitCode)" }
 $rep3 = Join-Path $ops 'report.txt'
 if (Test-Path $rep3) { Get-Content $rep3 | ForEach-Object { Say $_ } } else { Say 'report.txt очереди не появился' }
+
+# Самообновление лаунчера: новый выпуск находится прямыми адресами github.com (без лимита API), «не новее» не предлагается
+Say ''
+Say '=== самообновление лаунчера ==='
+$su = Join-Path $outFull 'selfupdate'
+$p4 = Start-Process -FilePath $exe -ArgumentList "--selftest-selfupdate=$su" -PassThru
+if (-not $p4.WaitForExit(120000)) { $p4.Kill(); Say 'selftest-selfupdate: не завершился за 2 минуты' } else { Say "selftest-selfupdate: код $($p4.ExitCode)" }
+$rep4 = Join-Path $su 'report.txt'
+if (Test-Path $rep4) { Get-Content $rep4 | ForEach-Object { Say $_ } } else { Say 'report.txt самообновления не появился' }

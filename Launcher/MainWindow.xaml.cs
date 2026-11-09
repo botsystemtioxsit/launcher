@@ -1243,11 +1243,13 @@ public partial class MainWindow : Window
     async Task CheckSelfUpdateLoop()
     {
         if (App.ScreenshotDir != null) return;
+        var fails = 0;
         while (true)
         {
             try
             {
                 var u = await SelfUpdate.Check();
+                fails = 0;
                 if (u != null && u.Version != pendingUpdate?.Version)
                 {
                     pendingUpdate = u;
@@ -1255,8 +1257,13 @@ public partial class MainWindow : Window
                     UpdateBar.Visibility = Visibility.Visible;
                 }
             }
-            catch { /* нет связи — попробуем через час */ }
-            await Task.Delay(TimeSpan.FromHours(1));
+            catch (Exception ex)
+            {
+                // Раньше любая ошибка молча ждала ещё час, и обновление могло «не приходить» часами. Теперь проверка идёт
+                // каждые 15 минут, а если не выходит три раза подряд — один раз говорим об этом и называем причину.
+                if (++fails == 3) Toast("Не получается проверить обновление лаунчера: " + BrowserInstaller.Explain(ex));
+            }
+            await Task.Delay(TimeSpan.FromMinutes(15));
         }
     }
 
