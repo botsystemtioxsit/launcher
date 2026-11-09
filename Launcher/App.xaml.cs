@@ -31,6 +31,10 @@ public partial class App : Application
         var ot = e.Args.FirstOrDefault(a => a.StartsWith("--selftest-ops=", StringComparison.Ordinal));
         if (ot != null) { Task.Run(() => OpsSelfTest.Run(ot["--selftest-ops=".Length..])).GetAwaiter().GetResult(); var code = Environment.ExitCode; Shutdown(code); return; }
 
+        // --selftest-selfupdate=<папка>: служебная проверка «лаунчер находит свой новый выпуск прямыми адресами» на настоящем релизе
+        var st = e.Args.FirstOrDefault(a => a.StartsWith("--selftest-selfupdate=", StringComparison.Ordinal));
+        if (st != null) { Task.Run(() => SelfUpdate.SelfTest(st["--selftest-selfupdate=".Length..].Trim('"'))).GetAwaiter().GetResult(); var scode = Environment.ExitCode; Shutdown(scode); return; }
+
         // --selftest-loc=<папка>: проверка модуля перевода (английский / немецкий / возврат на русский)
         var lt = e.Args.FirstOrDefault(a => a.StartsWith("--selftest-loc=", StringComparison.Ordinal));
         if (lt != null)
