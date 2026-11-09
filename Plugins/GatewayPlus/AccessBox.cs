@@ -27,18 +27,27 @@ sealed class AccessBox : StackPanel
     readonly StackPanel passPanel = new(), keyPanel = new() { Visibility = Visibility.Collapsed };
     readonly StackPanel portUser = new() { Orientation = Orientation.Horizontal };
 
+    // Для сервера, который приложение знает, но доступ к которому не сохранён: форму пароля с экрана убираем и показываем её только тогда,
+    // когда человек нажал кнопку установки (см. Build) — один раз, дальше доступ запоминается и форма не нужна.
+    readonly TextBlock deferNote = new()
+    {
+        TextWrapping = TextWrapping.Wrap, Foreground = Ui.Res("Muted"), FontSize = 12.5, Margin = new Thickness(0, 12, 0, 4), Visibility = Visibility.Collapsed,
+        Text = "Доступ к серверу ещё не сохранён. Пароль от сервера спросим один раз — когда вы нажмёте кнопку установки; после этого форма больше не появится.",
+    };
+
     ServerInfo? server;
-    bool useSaved, forceManual;
-    readonly bool lockHost, showRemember;
+    bool useSaved, forceManual, revealed;
+    readonly bool lockHost, showRemember, deferForm;
 
     // Показывать ли галочку «запомнить»: в окне «Сервер» не нужна — там сама кнопка «Проверить и сохранить доступ».
-    public AccessBox(string? host, bool lockHost = false, bool showRemember = true)
+    public AccessBox(string? host, bool lockHost = false, bool showRemember = true, bool deferForm = false)
     {
-        this.lockHost = lockHost; this.showRemember = showRemember;
+        this.lockHost = lockHost; this.showRemember = showRemember; this.deferForm = deferForm;
         Children.Add(Ui.Label("Адрес сервера (IP, например 203.0.113.5)"));
         hostRow.Children.Add(hostBox);
         Children.Add(hostRow);
         Children.Add(firstTime);
+        Children.Add(deferNote);
         var portCol = new StackPanel { Margin = new Thickness(0, 0, 18, 0) };
         portCol.Children.Add(Ui.Label("Порт SSH")); portCol.Children.Add(portBox);
         var userCol = new StackPanel();
@@ -52,6 +61,7 @@ sealed class AccessBox : StackPanel
         manual.Children.Add(rb);
         passPanel.Children.Add(Ui.Label("Пароль от сервера (его прислал хостер)"));
         passPanel.Children.Add(passBox);
+        if (deferForm) passPanel.Children.Add(Ui.Note("Не помните пароль от сервера? Его присылает хостер при заказе сервера (письмо); в панели хостера обычно есть «Сбросить пароль root» — после сброса введите новый. Можно и совсем без пароля в этой программе: в главном окне нажмите «Скопировать скрипт GSP для сервера», вставьте его в консоль сервера (она есть в панели хостера) и добавьте напечатанный конфиг кнопкой «＋ Добавить конфиг…».", 11.5));
         var pick = new StackPanel { Orientation = Orientation.Horizontal };
         pick.Children.Add(keyFileBox);
         pick.Children.Add(Ui.Btn("Выбрать…", null, PickKey));
@@ -77,7 +87,7 @@ sealed class AccessBox : StackPanel
         Children.Add(manual);
 
         hostBox.IsReadOnly = lockHost;
-        hostBox.LostFocus += (_, _) => { forceManual = false; Refresh(); };
+        hostBox.LostFocus += (_, _) => { forceManual = false; revealed = false; Refresh(); };
         if (!string.IsNullOrWhiteSpace(host)) hostBox.Text = host.Trim();
         Refresh();
     }
@@ -108,9 +118,11 @@ sealed class AccessBox : StackPanel
             portBox.Text = server!.SshPort.ToString(); userBox.Text = server.SshUser;
             savedText.Text = Servers.SavedSentence(server, sa!);
         }
-        firstTime.Visibility = !useSaved && showRemember && server != null ? Visibility.Visible : Visibility.Collapsed;
+        var deferred = !useSaved && deferForm && server != null && !revealed && !forceManual;
+        deferNote.Visibility = deferred ? Visibility.Visible : Visibility.Collapsed;
+        firstTime.Visibility = !useSaved && !deferred && showRemember && server != null ? Visibility.Visible : Visibility.Collapsed;
         savedPanel.Visibility = useSaved ? Visibility.Visible : Visibility.Collapsed;
-        manual.Visibility = useSaved ? Visibility.Collapsed : Visibility.Visible;
+        manual.Visibility = useSaved || deferred ? Visibility.Collapsed : Visibility.Visible;
     }
 
     // После отказа сервера принять сохранённые данные (поменяли пароль): показываем поля.
@@ -123,6 +135,13 @@ sealed class AccessBox : StackPanel
     public SshTarget? Build(out string? error)
     {
         error = null;
+        // Форма была спрятана: человек нажал установку, а доступа нет — показываем форму (один раз) и просим ввести.
+        if (!useSaved && deferForm && server != null && !revealed && !forceManual)
+        {
+            revealed = true; Refresh();
+            error = "Введите пароль от сервера (один раз) и нажмите кнопку ещё раз.";
+            return null;
+        }
         if (useSaved && server != null)
         {
             var saved = Servers.Target(server, out var problem);
