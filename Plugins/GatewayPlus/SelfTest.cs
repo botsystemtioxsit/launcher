@@ -201,6 +201,16 @@ static class SelfTest
             Check("доступ: данные для входа собираются (адрес, порт, логин, пароль)", tgt is { Host: h1, Port: 22, User: "root", Password: "S3cret-пароль" } && problem == null);
             Check("доступ: в словах — без самого пароля", !Servers.SavedSentence(Servers.Find(h1)!, back!).Contains("S3cret") && Servers.SavedSentence(Servers.Find(h1)!, back!).Contains("root"));
 
+            // вошли на НОВЫЙ сервер (профиля ещё нет), установка не удалась: доступ помним 3 дня, потом забываем
+            var orphan = Servers.Remember("192.0.2.77", "192.0.2.77", 22, "root", "");
+            Servers.SaveAccess(orphan.Id, new SavedAccess { Password = "novyj" });
+            Servers.List();
+            Check("новый сервер без профиля: доступ не пропал после повторного чтения списка", Servers.Find("192.0.2.77") is { HasAccess: true } && Servers.LoadAccess(orphan.Id)?.Password == "novyj");
+            Check("новый сервер без профиля: в списке карточек его нет", Servers.List().All(r => r.Info.Host != "192.0.2.77"));
+            Servers.AgeForTest(orphan.Id, 4 * 24 * 3600);
+            Servers.List();
+            Check("новый сервер без профиля: через 4 дня забыт вместе с доступом", Servers.Find("192.0.2.77") == null && Servers.LoadAccess(orphan.Id) == null);
+
             // запомнить другой адрес для входа по SSH и порт; подпись не затирается
             Servers.Rename(de.Info.Id, "  Герм\u202eания\n ");
             var rem = Servers.Remember(h1, "de.example.com", 2222, "admin", "другое");

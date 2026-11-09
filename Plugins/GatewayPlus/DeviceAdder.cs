@@ -41,6 +41,7 @@ static class DeviceAdder
             log($"Подключаюсь к {t.Host}:{t.Port} как {t.User}…");
             ct.ThrowIfCancellationRequested();
             ssh.Connect();
+            t.LoggedIn();
             result.Fingerprint = st.Fingerprint;
             log("Вход выполнен.");
 
