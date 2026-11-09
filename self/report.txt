@@ -1,0 +1,7 @@
+ОШИБКА: System.Net.Http.HttpRequestException: Response status code does not indicate success: 504 (Gateway Time-out).
+   at System.Net.Http.HttpResponseMessage.EnsureSuccessStatusCode()
+   at BattleLauncher.Net.GetText(String url, CancellationToken ct)
+   at BattleLauncher.BrowserInstaller.GetTextRetry(String url, CancellationToken ct)
+   at BattleLauncher.BrowserInstaller.Latest(BrowserPluginDef d, Boolean force, CancellationToken ct)
+   at BattleLauncher.BrowserInstaller.SelfTest(String outDir)
+ИТОГО: проблем 1
