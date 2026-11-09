@@ -21,7 +21,7 @@ sealed class AccessBox : StackPanel
     readonly TextBlock firstTime = new()
     {
         TextWrapping = TextWrapping.Wrap, Foreground = Ui.Res("Yellow"), FontSize = 12.5, Margin = new Thickness(0, 12, 0, 4), Visibility = Visibility.Collapsed,
-        Text = "Пароль нужен один раз. Чтобы сделать что-то на самом сервере (поставить второй протокол, добавить телефон, ускорить), приложению нужно зайти на него по SSH — без пароля или ключа это невозможно. Для этого сервера доступ раньше не сохраняли. Введите его ниже и оставьте галочку «Запомнить доступ» — в следующий раз пароль не спросят. А переключаться между протоколами, которые уже стоят на сервере, пароль не нужно вообще: это кнопки в карточке сервера.",
+        Text = "Это НЕ пароль от вашего аккаунта Gateway Plus (в аккаунт вы уже вошли) — это пароль от самого сервера, его прислал хостер (обычно пользователь root). Он нужен один раз: чтобы поставить на сервер второй протокол, приложению нужно зайти на него по SSH. Введите его ниже и оставьте галочку «Запомнить доступ» — дальше его не спросят ни для протоколов, ни для телефона. А переключаться между протоколами, которые уже стоят на сервере, можно вообще без пароля: это кнопки в карточке сервера.",
     };
     readonly TextBlock savedText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Ui.Res("Green"), Margin = new Thickness(0, 8, 0, 4) };
     readonly StackPanel passPanel = new(), keyPanel = new() { Visibility = Visibility.Collapsed };
@@ -50,7 +50,7 @@ sealed class AccessBox : StackPanel
         var rb = new StackPanel { Orientation = Orientation.Horizontal };
         rb.Children.Add(rbPass); rb.Children.Add(rbKey);
         manual.Children.Add(rb);
-        passPanel.Children.Add(Ui.Label("Пароль"));
+        passPanel.Children.Add(Ui.Label("Пароль от сервера (его прислал хостер)"));
         passPanel.Children.Add(passBox);
         var pick = new StackPanel { Orientation = Orientation.Horizontal };
         pick.Children.Add(keyFileBox);
