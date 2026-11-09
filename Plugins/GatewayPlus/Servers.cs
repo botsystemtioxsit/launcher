@@ -19,6 +19,7 @@ sealed class ServerInfo
     public string SshUser { get; set; } = "root";
     public string Name { get; set; } = "";      // подпись в списке; пусто — показываем адрес
     public bool HasAccess { get; set; }         // доступ сохранён (сам он лежит отдельно, зашифрованный)
+    public long Touched { get; set; }           // когда последний раз заходили на сервер (секунды Unix); нужен, чтобы недолго помнить сервер без профилей
 
     public string SshAddress => SshHost.Length > 0 ? SshHost : Host;
 }
@@ -114,7 +115,12 @@ static class Servers
             rows.Add(row);
         }
 
-        // серверы, у которых не осталось профилей, забываем вместе с сохранённым доступом
+        // Сервер без профилей, но с сохранённым доступом, недолго (3 дня) помним: человек вошёл на новый сервер, установка не удалась,
+        // профиля ещё нет — повторная попытка не должна снова просить пароль. В список он не попадает (строк для него нет).
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        foreach (var orphan in model.Servers.Where(s => s.HasAccess && !keep.Any(k => k.Id == s.Id) && s.Touched > 0 && now - s.Touched < OrphanKeepSeconds && s.Host.Length > 0))
+            keep.Add(orphan);
+        // остальные серверы, у которых не осталось профилей, забываем вместе с сохранённым доступом
         foreach (var gone in model.Servers.Where(s => !keep.Any(k => k.Id == s.Id)))
             DeleteAccessFile(gone.Id);
         if (model.Servers.Count != keep.Count || keep.Any(k => !model.Servers.Any(s => s.Id == k.Id)))
@@ -123,6 +129,18 @@ static class Servers
             Write(model);
         }
         return rows.OrderBy(r => Label(r.Info), StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    const long OrphanKeepSeconds = 3 * 24 * 3600;
+
+    // Только для проверок: «состарить» сервер, чтобы проверить забывание.
+    internal static void AgeForTest(string id, long secondsAgo)
+    {
+        var m = Read();
+        var s = m.Servers.FirstOrDefault(x => x.Id == id);
+        if (s == null) return;
+        s.Touched = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - secondsAgo;
+        Write(m);
     }
 
     static string NewId() => "s-" + Convert.ToHexString(RandomNumberGenerator.GetBytes(4)).ToLowerInvariant();
@@ -145,6 +163,7 @@ static class Servers
         s.SshPort = sshPort is >= 1 and <= 65535 ? sshPort : 22;
         s.SshUser = string.IsNullOrWhiteSpace(sshUser) ? "root" : sshUser;
         if (s.Name.Length == 0 && !string.IsNullOrWhiteSpace(suggestedName)) s.Name = CleanName(suggestedName);
+        s.Touched = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         Write(m);
         return s;
     }

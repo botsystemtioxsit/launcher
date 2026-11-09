@@ -73,6 +73,7 @@ sealed class DeviceWindow : Window
         msg.Foreground = Ui.Res("Accent2"); msg.Text = "";
         var t = access.Build(out var bad);
         if (t == null) { msg.Text = bad ?? "Проверьте данные для входа на сервер."; return; }
+        t.OnLoggedIn = () => { var m = Dispatcher.Invoke(() => access.EarlyMessage(t, host)); if (m != null) Log(m); };
         running = true; go.IsEnabled = false; tuneBtn.IsEnabled = false; logBox.Clear();
         cts = new CancellationTokenSource();
         try
@@ -107,6 +108,7 @@ sealed class DeviceWindow : Window
         var t = access.Build(out var bad);
         if (t == null) { msg.Text = bad ?? "Проверьте данные для входа на сервер."; return; }
         if (!DeviceAdder.ValidName(name)) { msg.Text = "Название устройства: латиницей, цифры, «-» и «_», до 20 знаков."; return; }
+        t.OnLoggedIn = () => { var m = Dispatcher.Invoke(() => access.EarlyMessage(t, host)); if (m != null) Log(m); };
         running = true; go.IsEnabled = false; logBox.Clear();
         cts = new CancellationTokenSource();
         try

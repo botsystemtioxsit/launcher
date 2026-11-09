@@ -21,8 +21,10 @@ Say($"Gateway Plus SSH-проверка · {host}:{port} · пользовате
 // 1. недоступный порт
 {
     var log = new List<string>();
-    var r = Run(new SshTarget { Host = "127.0.0.1", Port = 1, User = user, Password = "x" }, _ => true, _ => true, log);
+    int li = 0;
+    var r = Run(new SshTarget { Host = "127.0.0.1", Port = 1, User = user, Password = "x", OnLoggedIn = () => li++ }, _ => true, _ => true, log);
     Check("недоступный порт: понятная ошибка", !r.Ok && r.Error.Contains("связаться"), r.Error);
+    Check("недоступный порт: «вошли» не сообщалось", li == 0);
 }
 
 // 2. неверный пароль (и первое знакомство с сервером: отпечаток спрашивается, запоминается)
@@ -30,8 +32,10 @@ ForgetHosts();
 HostKeyQuestion? firstQ = null; int asked = 0;
 {
     var log = new List<string>();
-    var r = Run(new SshTarget { Host = host, Port = port, User = user, Password = "definitely-wrong" }, q => { asked++; firstQ = q; return true; }, _ => true, log);
+    int li = 0;
+    var r = Run(new SshTarget { Host = host, Port = port, User = user, Password = "definitely-wrong", OnLoggedIn = () => li++ }, q => { asked++; firstQ = q; return true; }, _ => true, log);
     Check("неверный пароль: понятная ошибка про вход", !r.Ok && r.Error.Contains("не принял вход"), r.Error);
+    Check("неверный пароль: «вошли» не сообщалось (пароль не запоминается)", li == 0);
     Check("первое подключение: отпечаток спросили один раз", asked == 1 && firstQ != null && !firstQ.Known && !firstQ.Changed);
     Check("отпечаток совпал с настоящим (ssh-keygen -lf)", firstQ != null && fps.Contains(firstQ.Fingerprint), firstQ?.Fingerprint ?? "—");
     Check("отпечаток запомнен в known-hosts", File.Exists(Provisioner.KnownHostsFile) && File.ReadAllText(Provisioner.KnownHostsFile).Contains("SHA256:"));
@@ -67,7 +71,9 @@ string clientPriv = "";
 {
     var log = new List<string>();
     int replaceAsked = 0;
-    var r = Run(new SshTarget { Host = host, Port = port, User = user, KeyFile = key }, _ => true, _ => { replaceAsked++; return true; }, log);
+    int li = 0;
+    var r = Run(new SshTarget { Host = host, Port = port, User = user, KeyFile = key, OnLoggedIn = () => li++ }, _ => true, _ => { replaceAsked++; return true; }, log);
+    Check("установка по ключу: «вошли» сообщено ровно один раз", li == 1, li.ToString());
     Say("--- журнал мастера ---"); foreach (var l in log) Say("  " + l); Say("--- конец журнала ---");
     Check("установка по ключу: успех", r.Ok, r.Error);
     if (r.Ok)
@@ -87,15 +93,19 @@ string clientPriv = "";
 // 7. повторный запуск на уже настроенном сервере — спрашивает, отказ ничего не трогает
 {
     var log = new List<string>(); int replaceAsked = 0;
-    var r = Run(new SshTarget { Host = host, Port = port, User = user, KeyFile = key }, _ => true, m => { replaceAsked++; return false; }, log);
+    int li = 0;
+    var r = Run(new SshTarget { Host = host, Port = port, User = user, KeyFile = key, OnLoggedIn = () => li++ }, _ => true, m => { replaceAsked++; return false; }, log);
     Check("уже настроенный сервер: спросили про перенастройку, отказ — «Отменено»", replaceAsked == 1 && !r.Ok && r.Error.Contains("Отменено"), r.Error);
+    Check("операция отменена после входа, а «вошли» сообщено (доступ успевает запомниться)", li == 1, li.ToString());
 }
 
 // 8. «ещё одно устройство» (телефон): отдельный ключ на том же сервере, первый конфиг остаётся рабочим
 {
     var log = new List<string>();
-    var t = new SshTarget { Host = host, Port = port, User = user, KeyFile = key };
+    int li = 0;
+    var t = new SshTarget { Host = host, Port = port, User = user, KeyFile = key, OnLoggedIn = () => li++ };
     var r = DeviceAdder.RunAsync(t, "phone", _ => true, l => { lock (log) log.Add(l); }).GetAwaiter().GetResult();
+    Check("второе устройство: «вошли» сообщено один раз", li == 1, li.ToString());
     Say("--- журнал «ещё одно устройство» ---"); foreach (var l in log) Say("  " + l); Say("--- конец журнала ---");
     Check("второе устройство: успех", r.Ok, r.Error);
     if (r.Ok)

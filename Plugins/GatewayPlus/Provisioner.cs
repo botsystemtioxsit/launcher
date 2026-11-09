@@ -21,6 +21,10 @@ sealed class SshTarget
     public string Protocol { get; set; } = "wg";      // "wg" — WireGuard, "gsp" — свой протокол GSP
     public bool Update { get; set; }                  // только GSP: не настраивать заново, а обновить программу на сервере (ключи и настройки остаются)
     public string? ScriptEnv { get; set; }            // только для проверок: «GSP_BIN=/путь GSP_PUBIP=1.2.3.4» (читается скриптом сервера)
+    // Вызывается СРАЗУ после успешного входа на сервер, ещё до конца операции: окно запоминает доступ (если человек так выбрал),
+    // чтобы обрыв установки уже после входа не заставлял вводить пароль заново. Сбой обработчика операцию не прерывает.
+    public Action? OnLoggedIn { get; set; }
+    internal void LoggedIn() { try { OnLoggedIn?.Invoke(); } catch { } }
 }
 
 sealed class HostKeyQuestion
@@ -171,6 +175,7 @@ static class Provisioner
             log($"Подключаюсь к {t.Host}:{t.Port} как {t.User}…");
             ct.ThrowIfCancellationRequested();
             ssh.Connect();
+            t.LoggedIn();
             result.Fingerprint = st.Fingerprint;
             log("Вход выполнен.");
             string Exec(string cmd)
@@ -214,6 +219,7 @@ static class Provisioner
             log($"Подключаюсь к {t.Host}:{t.Port} как {t.User}…");
             ct.ThrowIfCancellationRequested();
             ssh.Connect();
+            t.LoggedIn();
             result.Fingerprint = st.Fingerprint;
             log("Вход выполнен.");
 

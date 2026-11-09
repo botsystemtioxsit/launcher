@@ -21,7 +21,7 @@ sealed class AccessBox : StackPanel
     readonly TextBlock firstTime = new()
     {
         TextWrapping = TextWrapping.Wrap, Foreground = Ui.Res("Yellow"), FontSize = 12.5, Margin = new Thickness(0, 12, 0, 4), Visibility = Visibility.Collapsed,
-        Text = "Пароль нужен один раз. Чтобы сделать что-то на самом сервере (поставить второй протокол, добавить телефон, ускорить), приложению нужно зайти на него по SSH — без пароля или ключа это невозможно. Для этого сервера доступ раньше не сохраняли. Введите его ниже и оставьте галочку «Запомнить доступ» — в следующий раз пароль не спросят. А переключаться между протоколами, которые уже стоят на сервере, пароль не нужно вообще: это кнопки в карточке сервера.",
+        Text = "Это НЕ пароль от вашего аккаунта Gateway Plus (в аккаунт вы уже вошли) — это пароль от самого сервера, его прислал хостер (обычно пользователь root). Он нужен один раз: чтобы поставить на сервер второй протокол, приложению нужно зайти на него по SSH. Введите его ниже и оставьте галочку «Запомнить доступ» — дальше его не спросят ни для протоколов, ни для телефона. А переключаться между протоколами, которые уже стоят на сервере, можно вообще без пароля: это кнопки в карточке сервера.",
     };
     readonly TextBlock savedText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Ui.Res("Green"), Margin = new Thickness(0, 8, 0, 4) };
     readonly StackPanel passPanel = new(), keyPanel = new() { Visibility = Visibility.Collapsed };
@@ -50,7 +50,7 @@ sealed class AccessBox : StackPanel
         var rb = new StackPanel { Orientation = Orientation.Horizontal };
         rb.Children.Add(rbPass); rb.Children.Add(rbKey);
         manual.Children.Add(rb);
-        passPanel.Children.Add(Ui.Label("Пароль"));
+        passPanel.Children.Add(Ui.Label("Пароль от сервера (его прислал хостер)"));
         passPanel.Children.Add(passBox);
         var pick = new StackPanel { Orientation = Orientation.Horizontal };
         pick.Children.Add(keyFileBox);
@@ -140,7 +140,7 @@ sealed class AccessBox : StackPanel
     public ServerInfo? Persist(SshTarget used, string endpointHost, string suggestedName, bool force = false)
     {
         if (endpointHost.Length == 0) return null;
-        if (useSaved && server != null) return server;
+        if (useSaved && server != null && string.Equals(server.Host, endpointHost, StringComparison.OrdinalIgnoreCase)) return server;
         var s = Servers.Remember(endpointHost, used.Host, used.Port, used.User, suggestedName);
         if (force || (showRemember && remember.IsChecked == true))
         {
@@ -153,6 +153,32 @@ sealed class AccessBox : StackPanel
         }
         server = s;
         return s;
+    }
+
+    // Вызывается из окна СРАЗУ после успешного входа на сервер (см. SshTarget.OnLoggedIn), до конца операции: если дальше что-то не вышло,
+    // повторная попытка уже не просит пароль. Возвращает null при успехе (или если запоминать не нужно), иначе — причину.
+    // Вызывать в потоке окна. endpointHost — адрес сервера из профилей (для нового сервера — адрес, по которому заходим).
+    public string? PersistEarly(SshTarget used, string endpointHost)
+    {
+        if (useSaved || !showRemember || remember.IsChecked != true || endpointHost.Length == 0) return null;
+        try
+        {
+            var s = Servers.Remember(endpointHost, used.Host, used.Port, used.User, "");
+            Servers.SaveAccess(s.Id, new SavedAccess { Password = used.Password, KeyFile = used.KeyFile, KeyPass = used.KeyPass });
+            s.HasAccess = true;
+            server = s; forceManual = false;
+            Refresh();
+            return null;
+        }
+        catch (Exception ex) { return ex.Message; }
+    }
+
+    // Что сказать в журнале окна после ранней записи доступа (null — ничего не говорить).
+    public string? EarlyMessage(SshTarget used, string endpointHost)
+    {
+        var err = PersistEarly(used, endpointHost);
+        if (err != null) return "Не удалось сохранить доступ: " + err;
+        return useSaved ? "Доступ к серверу сохранён — пароль больше спрашивать не будем." : null;
     }
 
     public void ClearSecrets() { passBox.Clear(); keyPassBox.Clear(); }

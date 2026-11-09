@@ -88,6 +88,8 @@ sealed class WizardWindow : Window
         var t = access.Build(out var bad);
         if (t == null) { msg.Text = bad ?? "Проверьте данные для входа на сервер."; return; }
         t.Protocol = rbGsp.IsChecked == true ? "gsp" : "wg";
+        var early = access.Server?.Host ?? t.Host;
+        t.OnLoggedIn = () => { var m = Dispatcher.Invoke(() => access.EarlyMessage(t, early)); if (m != null) Log(m); };
         var name = UniqueName(Store.SafeName(nameBox.Text));
         running = true; go.IsEnabled = false; logBox.Clear();
         cts = new CancellationTokenSource();
