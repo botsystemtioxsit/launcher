@@ -61,6 +61,7 @@ sealed class AccessBox : StackPanel
         manual.Children.Add(rb);
         passPanel.Children.Add(Ui.Label("Пароль от сервера (его прислал хостер)"));
         passPanel.Children.Add(passBox);
+        if (deferForm) passPanel.Children.Add(Ui.Note("Не помните пароль от сервера? Его присылает хостер при заказе сервера (письмо); в панели хостера обычно есть «Сбросить пароль root» — после сброса введите новый. Можно и совсем без пароля в этой программе: в главном окне нажмите «Скопировать скрипт GSP для сервера», вставьте его в консоль сервера (она есть в панели хостера) и добавьте напечатанный конфиг кнопкой «＋ Добавить конфиг…».", 11.5));
         var pick = new StackPanel { Orientation = Orientation.Horizontal };
         pick.Children.Add(keyFileBox);
         pick.Children.Add(Ui.Btn("Выбрать…", null, PickKey));
