@@ -216,3 +216,38 @@ def build_phone(code, number):
     if not (6 <= len(n) <= 12):
         raise ScriptError('номер без кода страны: от 6 до 12 цифр')
     return '+' + c + n
+
+
+# ---------- разбор того, что вставили из буфера обмена ----------
+def extract_code(text):
+    """Код входа из текста вида «Login code: 12345» или просто «12345» (5–6 цифр)."""
+    m = re.search(r'(?<!\d)(\d{5,6})(?!\d)', str(text or '').replace('-', '').replace(' ', ''))
+    return m.group(1) if m else ''
+
+
+def extract_api(text):
+    """Из вставленного текста достаёт api_id (5–10 цифр) и api_hash (32 hex). Пустая строка — не нашлось."""
+    t = str(text or '')
+    h = re.search(r'(?<![0-9a-fA-F])([0-9a-fA-F]{32})(?![0-9a-fA-F])', t)
+    api_hash = h.group(1).lower() if h else ''
+    rest = t.replace(api_hash, ' ') if api_hash else t
+    i = re.search(r'(?:api[_ ]?id\D{0,6})?(?<!\d)(\d{5,10})(?!\d)', rest, re.I)
+    return (i.group(1) if i else ''), api_hash
+
+
+def split_phone(text):
+    """Вставленный номер ('+4915123456789', '8 912 345-67-89', ...) → (код страны, номер) или ('', цифры)."""
+    t = str(text or '').strip()
+    digits = re.sub(r'\D', '', t)
+    if not digits:
+        return '', ''
+    if t.startswith('+') or t.startswith('00'):
+        if t.startswith('00'):
+            digits = digits[2:]
+        for n in (3, 2, 1):
+            if digits[:n] in {c for _, c in COUNTRY_CODES} and len(digits) - n >= 6:
+                return digits[:n], digits[n:]
+        return '', digits
+    if digits.startswith('8') and len(digits) == 11:
+        return '7', digits[1:]
+    return '', digits

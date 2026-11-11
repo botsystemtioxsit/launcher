@@ -74,6 +74,18 @@ class T(unittest.TestCase):
         self.assertEqual(rules.build_phone('1', '2025550123'), '+12025550123')
         for c, n in (('', '123456789'), ('7', '12'), ('abcd', '123456789')):
             with self.assertRaises(rules.ScriptError): rules.build_phone(c, n)
+    def test_paste_parsers(self):
+        self.assertEqual(rules.extract_code('Login code: 12345. Do not give this code'), '12345')
+        self.assertEqual(rules.extract_code(' 123 456 '), '123456')
+        self.assertEqual(rules.extract_code('нет кода'), '')
+        self.assertEqual(rules.extract_api('api_id: 1234567\napi_hash: 0123456789abcdef0123456789ABCDEF'), ('1234567', '0123456789abcdef0123456789abcdef'))
+        self.assertEqual(rules.extract_api('12345678 0123456789abcdef0123456789abcdef'), ('12345678', '0123456789abcdef0123456789abcdef'))
+        self.assertEqual(rules.extract_api('ничего'), ('', ''))
+        self.assertEqual(rules.split_phone('+4915123456789'), ('49', '15123456789'))
+        self.assertEqual(rules.split_phone('+7 (912) 345-67-89'), ('7', '9123456789'))
+        self.assertEqual(rules.split_phone('8 912 345-67-89'), ('7', '9123456789'))
+        self.assertEqual(rules.split_phone('0049 151 2345678'), ('49', '1512345678'))
+        self.assertEqual(rules.split_phone('151 2345678'), ('', '1512345678'))
     def test_fill(self):
         self.assertEqual(rules.fill('Привет, {name}!', 'Аня‮'), 'Привет, Аня!')
     def test_store_roundtrip(self):

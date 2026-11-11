@@ -1,11 +1,13 @@
 """Ghost Shell · Chat Accounts — окно программы (tkinter). Логика — в rules.py и engine.py."""
+import logging
+import os
 import queue
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
 import rules
 import store
-from engine import Engine
+from engine import Engine, explain
 
 VERSION = '1.0.0'
 NOT_DOING = ('Чего программа НЕ делает (зашито, не настраивается): не собирает списки участников, не пишет людям в личку, '
@@ -13,13 +15,24 @@ NOT_DOING = ('Чего программа НЕ делает (зашито, не 
 BG, FG, ACC = '#0b0716', '#eaf8ff', '#00f0ff'
 
 
+def _setup_log():
+    try:
+        os.makedirs(store.DIR, exist_ok=True)
+        logging.basicConfig(filename=os.path.join(store.DIR, 'app.log'), level=logging.INFO,
+                            format='%(asctime)s %(levelname)s %(message)s', encoding='utf-8')
+    except OSError:
+        pass
+
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
+        _setup_log()
         self.title(f'Ghost Shell · Chat Accounts {VERSION}')
         self.geometry('900x720')
         self.configure(bg=BG)
-        self.q = queue.Queue()
+        self.q = queue.Queue()      # строки журнала
+        self.uiq = queue.Queue()    # действия для окна из фоновых потоков
         self.engine = Engine(lambda t: self.q.put(t))
         self.scripts = store.load_json('scripts.json', [])
         self.chat_map = {}          # номер -> название (для выбранного аккаунта)
@@ -47,7 +60,8 @@ class App(tk.Tk):
         self._build_accounts()
         self._build_scripts()
         self._build_run()
-        self.after(300, self._pump)
+        self.after(100, self._pump)
+        self.bind_all('<Control-KeyPress>', self._ctrl_any_layout)
         self.protocol('WM_DELETE_WINDOW', self._close)
 
     # ---------- общие ----------
@@ -62,16 +76,52 @@ class App(tk.Tk):
         return t
 
     def _bg(self, fut, ok, err=None):
+        """Результат фоновой задачи возвращается в окно через очередь (Tk нельзя трогать из чужого потока)."""
         def done(f):
             try:
                 r = f.result()
-                self.after(0, lambda: ok(r))
-            except Exception as e:
-                msg = str(e) or type(e).__name__
-                self.after(0, lambda: (err or (lambda m: messagebox.showerror('Не вышло', m)))(msg))
+                self.uiq.put(lambda: ok(r))
+            except BaseException as e:      # noqa: BLE001 — ошибка обязательно должна дойти до экрана
+                msg = explain(e)
+                logging.getLogger('gs').error('операция не вышла: %r', e, exc_info=e)
+                self.uiq.put(lambda: (err or self._show_error)(msg))
         fut.add_done_callback(done)
 
+    def _show_error(self, msg):
+        self.status(msg, bad=True)
+        messagebox.showerror('Не вышло', msg)
+
+    def status(self, text, bad=False):
+        self.a_status.configure(text=text, foreground='#ff5c7a' if bad else '#3cff9a')
+
+    def _ctrl_any_layout(self, ev):
+        # Ctrl+V/C/X/A по физической клавише: на русской раскладке в tkinter они иначе не работают
+        if ev.keysym.lower() in ('v', 'c', 'x', 'a'):
+            return None                     # латинская раскладка: tkinter справляется сам, дубль не нужен
+        w = ev.widget
+        act = {86: '<<Paste>>', 67: '<<Copy>>', 88: '<<Cut>>'}.get(ev.keycode)
+        if act and isinstance(w, (tk.Entry, ttk.Entry, tk.Text, ttk.Combobox)):
+            w.event_generate(act)
+            return 'break'
+        if ev.keycode == 65 and isinstance(w, (tk.Entry, ttk.Entry)):
+            w.select_range(0, 'end'); w.icursor('end'); return 'break'
+
+    def _clip(self):
+        try:
+            return self.clipboard_get()
+        except tk.TclError:
+            return ''
+
     def _pump(self):
+        try:
+            while True:
+                job = self.uiq.get_nowait()
+                try:
+                    job()
+                except Exception as e:      # noqa: BLE001 — сбой одного действия не должен остановить окно
+                    logging.getLogger('gs').error('сбой в окне: %r', e, exc_info=e)
+        except queue.Empty:
+            pass
         try:
             while True:
                 t = self.q.get_nowait()
@@ -81,33 +131,86 @@ class App(tk.Tk):
                 self.log.configure(state='disabled')
         except queue.Empty:
             pass
-        self.after(300, self._pump)
+        self.after(100, self._pump)
 
     # ---------- аккаунты ----------
     def _build_accounts(self):
         f = self.t_acc
-        ttk.Label(f, text='Подключайте только СВОИ аккаунты. Данные api_id и api_hash вы получаете на my.telegram.org → API development tools '
-                          '(это ваши ключи приложения, не пароль).', style='Dim.TLabel', wraplength=840, justify='left').grid(row=0, column=0, columnspan=2, sticky='w', padx=6, pady=6)
-        self.a_name = self._field(f, 'Имя (для себя)', 1)
-        self.a_id = self._field(f, 'api_id', 2)
-        self.a_hash = self._field(f, 'api_hash', 3, show='•')
-        ttk.Label(f, text='Страна и номер').grid(row=4, column=0, sticky='w', padx=6, pady=3)
-        ph = ttk.Frame(f); ph.grid(row=4, column=1, sticky='w', padx=6, pady=3)
-        self.a_cc = ttk.Combobox(ph, width=24, values=[f'{n} +{c}' for n, c in rules.COUNTRY_CODES])
+        ttk.Label(f, text='Подключайте только СВОИ аккаунты. api_id и api_hash берутся на my.telegram.org → API development tools '
+                          '(это ключи приложения, не пароль). Всё можно вставлять из буфера обмена кнопками «Вставить».',
+                  style='Dim.TLabel', wraplength=840, justify='left').grid(row=0, column=0, columnspan=4, sticky='w', padx=6, pady=6)
+        ttk.Button(f, text='⎘ Вставить всё из буфера (api_id, api_hash, номер)', command=self._paste_all).grid(row=1, column=1, columnspan=3, sticky='w', padx=6, pady=4)
+
+        def row(r, label, show=None, width=36):
+            ttk.Label(f, text=label).grid(row=r, column=0, sticky='w', padx=6, pady=3)
+            v = tk.StringVar()
+            e = ttk.Entry(f, textvariable=v, width=width, show=show)
+            e.grid(row=r, column=1, sticky='w', padx=6, pady=3)
+            return v, e
+
+        self.a_name, _ = row(2, 'Имя (для себя)')
+        self.a_id, _ = row(3, 'api_id')
+        ttk.Button(f, text='Вставить', command=lambda: self._paste_one(self.a_id, rules.extract_api, 0)).grid(row=3, column=2, padx=4)
+        self.a_hash, self.a_hash_e = row(4, 'api_hash')
+        ttk.Button(f, text='Вставить', command=lambda: self._paste_one(self.a_hash, rules.extract_api, 1)).grid(row=4, column=2, padx=4)
+        self.a_show = tk.BooleanVar(value=False)
+        ttk.Checkbutton(f, text='показать', variable=self.a_show, command=lambda: self.a_hash_e.configure(show='' if self.a_show.get() else '•')).grid(row=4, column=3, sticky='w')
+        self.a_hash_e.configure(show='•')
+        ttk.Label(f, text='Страна и номер').grid(row=5, column=0, sticky='w', padx=6, pady=3)
+        ph = ttk.Frame(f); ph.grid(row=5, column=1, sticky='w', padx=6, pady=3)
+        self.a_cc = ttk.Combobox(ph, width=22, values=[f'{n} +{c}' for n, c in rules.COUNTRY_CODES])
         self.a_cc.set('Россия +7'); self.a_cc.pack(side='left')
-        self.a_num = tk.StringVar(); ttk.Entry(ph, textvariable=self.a_num, width=18).pack(side='left', padx=6)
-        ttk.Label(ph, text='номер без кода страны', style='Dim.TLabel').pack(side='left')
-        ttk.Button(f, text='Отправить код в Telegram', command=self._acc_code).grid(row=5, column=1, sticky='w', padx=6, pady=4)
-        self.a_code = self._field(f, 'Код из Telegram', 6)
-        self.a_pw = self._field(f, 'Пароль 2FA (если есть)', 7, show='•')
-        ttk.Button(f, text='Подтвердить и сохранить', command=self._acc_confirm).grid(row=8, column=1, sticky='w', padx=6, pady=4)
-        ttk.Label(f, text='Подключённые аккаунты:').grid(row=9, column=0, sticky='w', padx=6, pady=(14, 2))
-        self.acc_list = tk.Listbox(f, height=5, bg='#1a1030', fg=FG, relief='flat', exportselection=False)
-        self.acc_list.grid(row=10, column=0, columnspan=2, sticky='we', padx=6)
-        ttk.Button(f, text='Забыть выбранный аккаунт', command=self._acc_forget).grid(row=11, column=1, sticky='w', padx=6, pady=6)
-        ttk.Label(f, text='Вход хранится на этом компьютере в зашифрованном виде (Windows DPAPI, только для вашей учётной записи Windows) и никуда не отправляется.',
-                  style='Dim.TLabel', wraplength=840, justify='left').grid(row=12, column=0, columnspan=2, sticky='w', padx=6)
+        self.a_num = tk.StringVar(); ttk.Entry(ph, textvariable=self.a_num, width=16).pack(side='left', padx=6)
+        ttk.Button(f, text='Вставить номер', command=self._paste_phone).grid(row=5, column=2, padx=4)
+        ttk.Button(f, text='Отправить код в Telegram', command=self._acc_code).grid(row=6, column=1, sticky='w', padx=6, pady=6)
+        self.a_code, _ = row(7, 'Код из Telegram')
+        ttk.Button(f, text='Вставить код', command=self._paste_code).grid(row=7, column=2, padx=4)
+        self.a_pw, _ = row(8, 'Пароль 2FA (если есть)', show='•')
+        ttk.Button(f, text='Подтвердить и сохранить', command=self._acc_confirm).grid(row=9, column=1, sticky='w', padx=6, pady=6)
+        self.a_status = ttk.Label(f, text='', wraplength=840, justify='left')
+        self.a_status.grid(row=10, column=0, columnspan=4, sticky='w', padx=6, pady=4)
+        ttk.Label(f, text='Подключённые аккаунты:').grid(row=11, column=0, sticky='w', padx=6, pady=(10, 2))
+        self.acc_list = tk.Listbox(f, height=4, bg='#1a1030', fg=FG, relief='flat', exportselection=False)
+        self.acc_list.grid(row=12, column=0, columnspan=3, sticky='we', padx=6)
+        ttk.Button(f, text='Забыть выбранный аккаунт', command=self._acc_forget).grid(row=13, column=1, sticky='w', padx=6, pady=6)
+        ttk.Label(f, text='Вход хранится на этом компьютере в зашифрованном виде (Windows DPAPI, только для вашей учётной записи Windows) и никуда не отправляется. '
+                          'Журнал ошибок: ' + os.path.join(store.DIR, 'app.log'), style='Dim.TLabel', wraplength=840, justify='left').grid(row=14, column=0, columnspan=4, sticky='w', padx=6)
         self._refresh_accounts()
+
+    # --- вставка из буфера ---
+    def _paste_one(self, var, parser, idx):
+        v = parser(self._clip())[idx]
+        if not v:
+            self.status('В буфере обмена не нашёл подходящего значения. Скопируйте его с my.telegram.org и нажмите ещё раз.', bad=True); return
+        var.set(v); self.status('Вставлено.')
+
+    def _paste_all(self):
+        t = self._clip()
+        api_id, api_hash = rules.extract_api(t)
+        cc, num = rules.split_phone(t) if t.strip().startswith('+') else ('', '')
+        got = []
+        if api_id: self.a_id.set(api_id); got.append('api_id')
+        if api_hash: self.a_hash.set(api_hash); got.append('api_hash')
+        if num: self._set_phone(cc, num); got.append('номер')
+        self.status('Вставлено: ' + ', '.join(got) if got else 'В буфере обмена ничего подходящего. Скопируйте текст со страницы my.telegram.org.', bad=not got)
+
+    def _set_phone(self, cc, num):
+        if cc:
+            hit = next((f'{n} +{c}' for n, c in rules.COUNTRY_CODES if c == cc), f'+{cc}')
+            self.a_cc.set(hit)
+        self.a_num.set(num)
+
+    def _paste_phone(self):
+        cc, num = rules.split_phone(self._clip())
+        if not num:
+            self.status('В буфере обмена нет номера телефона.', bad=True); return
+        self._set_phone(cc, num); self.status('Номер вставлен.')
+
+    def _paste_code(self):
+        code = rules.extract_code(self._clip())
+        if not code:
+            self.status('В буфере обмена нет кода (5–6 цифр). Скопируйте сообщение с кодом из Telegram.', bad=True); return
+        self.a_code.set(code); self.status('Код вставлен. Нажмите «Подтвердить и сохранить».')
 
     def _refresh_accounts(self):
         self.acc_list.delete(0, 'end')
@@ -119,28 +222,35 @@ class App(tk.Tk):
 
     def _acc_code(self):
         name = self.a_name.get().strip()
-        try:
-            if not store.ACC_RE.match(name):
-                raise ValueError('имя: 1–40 знаков — буквы, цифры, пробел, точка, дефис')
-            api_id = int(self.a_id.get().strip())
-        except ValueError as e:
-            messagebox.showerror('Проверьте поля', str(e) if 'имя' in str(e) else 'api_id — число'); return
+        api_id, api_hash = self.a_id.get().strip(), self.a_hash.get().strip()
+        if not store.ACC_RE.match(name):
+            self.status('Имя: 1–40 знаков — буквы, цифры, пробел, точка, дефис.', bad=True); return
+        if not api_id.isdigit():
+            self.status('api_id — число. Нажмите «Вставить» рядом с полем.', bad=True); return
+        if len(api_hash) != 32:
+            self.status('api_hash — 32 символа. Скопируйте его с my.telegram.org и нажмите «Вставить».', bad=True); return
         try:
             phone = rules.build_phone(self.a_cc.get().rsplit('+', 1)[-1], self.a_num.get())
         except rules.ScriptError as e:
-            messagebox.showerror('Телефон', str(e)); return
-        self._bg(self.engine.submit(self.engine.login_send_code(name, api_id, self.a_hash.get().strip(), phone)),
-                 lambda _: messagebox.showinfo('Код отправлен', 'Telegram прислал код в приложение (или SMS). Введите его ниже.'))
+            self.status(str(e), bad=True); return
+        self.status(f'Отправляю код на {phone}… (до {45} секунд)')
+        where = {'SentCodeTypeApp': 'в приложение Telegram (на другом вашем устройстве)', 'SentCodeTypeSms': 'по SMS',
+                 'SentCodeTypeCall': 'звонком', 'SentCodeTypeFlashCall': 'звонком'}
+        self._bg(self.engine.submit(self.engine.login_send_code(name, int(api_id), api_hash, phone)),
+                 lambda t: self.status('Код отправлен ' + where.get(t, 'Telegram') + '. Скопируйте его и нажмите «Вставить код».'))
 
     def _acc_confirm(self):
         name = self.a_name.get().strip()
+        code = rules.extract_code(self.a_code.get()) or self.a_code.get().strip()
         def ok(r):
             if r == 'password':
-                messagebox.showinfo('Нужен пароль', 'У аккаунта включён пароль 2FA — введите его в поле и нажмите ещё раз.'); return
+                self.status('У аккаунта включён пароль 2FA — введите его в поле и нажмите «Подтвердить» ещё раз.', bad=True); return
             self.a_code.set(''); self.a_pw.set(''); self.a_hash.set('')
             self._refresh_accounts()
+            self.status('Готово: аккаунт подключён — ' + r[3:])
             messagebox.showinfo('Готово', 'Аккаунт подключён: ' + r[3:])
-        self._bg(self.engine.submit(self.engine.login_confirm(name, self.a_code.get().strip(), self.a_pw.get() or None)), ok)
+        self.status('Проверяю код…')
+        self._bg(self.engine.submit(self.engine.login_confirm(name, code, self.a_pw.get() or None)), ok)
 
     def _acc_forget(self):
         s = self.acc_list.curselection()

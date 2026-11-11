@@ -19,6 +19,31 @@ from telethon.tl.types import User
 import rules
 import store
 
+LOGIN_TIMEOUT_S = 45
+
+
+def explain(exc):
+    """Понятная причина по-русски вместо технической ошибки."""
+    n = type(exc).__name__
+    table = {
+        'ApiIdInvalidError': 'api_id или api_hash неверные. Проверьте их на my.telegram.org → API development tools.',
+        'PhoneNumberInvalidError': 'Номер телефона неверный. Проверьте код страны и цифры.',
+        'PhoneNumberBannedError': 'Этот номер заблокирован Telegram.',
+        'PhoneNumberFloodError': 'Слишком много попыток для этого номера. Подождите несколько часов.',
+        'PhoneNumberUnoccupiedError': 'На этот номер не зарегистрирован Telegram.',
+        'PhoneCodeInvalidError': 'Код неверный. Скопируйте код из Telegram заново.',
+        'PhoneCodeExpiredError': 'Код устарел. Нажмите «Отправить код» ещё раз и введите новый.',
+        'PasswordHashInvalidError': 'Пароль 2FA неверный.',
+        'SessionPasswordNeededError': 'Нужен пароль 2FA.',
+        'TimeoutError': 'Нет ответа от Telegram за ' + str(LOGIN_TIMEOUT_S) + ' секунд. Проверьте интернет; если Telegram у вас блокируется, включите VPN.',
+        'ConnectionError': 'Нет соединения с Telegram. Проверьте интернет или VPN.',
+        'OSError': 'Нет соединения с Telegram. Проверьте интернет или VPN.',
+    }
+    if n == 'FloodWaitError':
+        return f'Telegram просит подождать {getattr(exc, "seconds", "?")} с. Попробуйте позже.'
+    return table.get(n) or (f'{n}: {exc}' if str(exc) else n)
+
+
 ACCOUNT_GAP_S = 4          # минимум между двумя сообщениями одного аккаунта
 
 
@@ -48,22 +73,39 @@ class Engine:
 
     # ---------- вход в аккаунт ----------
     async def login_send_code(self, name, api_id, api_hash, phone):
+        old = self.pending.pop(name, None)
+        if old:
+            try:
+                await old[0].disconnect()
+            except Exception:
+                pass
         c = TelegramClient(StringSession(), int(api_id), api_hash)
-        await c.connect()
-        await c.send_code_request(phone)
+        try:
+            await asyncio.wait_for(c.connect(), LOGIN_TIMEOUT_S)
+            sent = await asyncio.wait_for(c.send_code_request(phone), LOGIN_TIMEOUT_S)
+        except BaseException:
+            try:
+                await c.disconnect()
+            except Exception:
+                pass
+            raise
         self.pending[name] = (c, phone, int(api_id), api_hash)
+        # куда Telegram отправил код — подсказка человеку (приложение Telegram, SMS, звонок)
+        return type(getattr(sent, 'type', None)).__name__
 
     async def login_confirm(self, name, code, password=None):
+        if name not in self.pending:
+            raise RuntimeError('Сначала нажмите «Отправить код в Telegram».')
         c, phone, api_id, api_hash = self.pending[name]
         try:
             if password and not code:
-                await c.sign_in(password=password)
+                await asyncio.wait_for(c.sign_in(password=password), LOGIN_TIMEOUT_S)
             else:
-                await c.sign_in(phone, code)
+                await asyncio.wait_for(c.sign_in(phone, code), LOGIN_TIMEOUT_S)
         except errors.SessionPasswordNeededError:
             if not password:
                 return 'password'
-            await c.sign_in(password=password)
+            await asyncio.wait_for(c.sign_in(password=password), LOGIN_TIMEOUT_S)
         store.save_account(name, api_id, api_hash, phone, c.session.save())
         me = await c.get_me()
         await c.disconnect()
