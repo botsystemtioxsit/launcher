@@ -91,7 +91,12 @@ class App(tk.Tk):
         self.a_name = self._field(f, 'Имя (для себя)', 1)
         self.a_id = self._field(f, 'api_id', 2)
         self.a_hash = self._field(f, 'api_hash', 3, show='•')
-        self.a_phone = self._field(f, 'Телефон (+7…)', 4)
+        ttk.Label(f, text='Страна и номер').grid(row=4, column=0, sticky='w', padx=6, pady=3)
+        ph = ttk.Frame(f); ph.grid(row=4, column=1, sticky='w', padx=6, pady=3)
+        self.a_cc = ttk.Combobox(ph, width=24, values=[f'{n} +{c}' for n, c in rules.COUNTRY_CODES])
+        self.a_cc.set('Россия +7'); self.a_cc.pack(side='left')
+        self.a_num = tk.StringVar(); ttk.Entry(ph, textvariable=self.a_num, width=18).pack(side='left', padx=6)
+        ttk.Label(ph, text='номер без кода страны', style='Dim.TLabel').pack(side='left')
         ttk.Button(f, text='Отправить код в Telegram', command=self._acc_code).grid(row=5, column=1, sticky='w', padx=6, pady=4)
         self.a_code = self._field(f, 'Код из Telegram', 6)
         self.a_pw = self._field(f, 'Пароль 2FA (если есть)', 7, show='•')
@@ -120,7 +125,11 @@ class App(tk.Tk):
             api_id = int(self.a_id.get().strip())
         except ValueError as e:
             messagebox.showerror('Проверьте поля', str(e) if 'имя' in str(e) else 'api_id — число'); return
-        self._bg(self.engine.submit(self.engine.login_send_code(name, api_id, self.a_hash.get().strip(), self.a_phone.get().strip())),
+        try:
+            phone = rules.build_phone(self.a_cc.get().rsplit('+', 1)[-1], self.a_num.get())
+        except rules.ScriptError as e:
+            messagebox.showerror('Телефон', str(e)); return
+        self._bg(self.engine.submit(self.engine.login_send_code(name, api_id, self.a_hash.get().strip(), phone)),
                  lambda _: messagebox.showinfo('Код отправлен', 'Telegram прислал код в приложение (или SMS). Введите его ниже.'))
 
     def _acc_confirm(self):

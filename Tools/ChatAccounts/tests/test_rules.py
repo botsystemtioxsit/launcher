@@ -67,6 +67,13 @@ class T(unittest.TestCase):
         b['post']['image'] = 'run.exe'
         with self.assertRaises(rules.ScriptError): rules.validate(b)
         self.assertNotIn('welcome', rules.validate(base(welcome={'enabled': True, 'text': 'x'})))
+    def test_phone(self):
+        self.assertEqual(rules.build_phone('7', '(912) 345-67-89'), '+79123456789')
+        self.assertEqual(rules.build_phone('+49', '151 2345 6789'), '+4915123456789')
+        self.assertEqual(rules.build_phone('380', '380501234567'), '+380501234567')   # код уже в номере
+        self.assertEqual(rules.build_phone('1', '2025550123'), '+12025550123')
+        for c, n in (('', '123456789'), ('7', '12'), ('abcd', '123456789')):
+            with self.assertRaises(rules.ScriptError): rules.build_phone(c, n)
     def test_fill(self):
         self.assertEqual(rules.fill('Привет, {name}!', 'Аня‮'), 'Привет, Аня!')
     def test_store_roundtrip(self):
