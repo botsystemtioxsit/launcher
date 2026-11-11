@@ -15,8 +15,6 @@ MAX_TEXT = 2000
 MAX_REPLIES = 30
 REPLY_COOLDOWN_S = 60       # ответ по ключевому слову — не чаще раза в минуту в чате
 REPLY_MAX_PER_DAY = 30
-WELCOME_GAP_S = 20          # приветствия — не чаще одного в 20 секунд на чат
-WELCOME_MAX_PER_DAY = 100
 CHAT_ID_RE = re.compile(r'^-?\d{5,20}$')
 NAME_RE = re.compile(r'^[\w .\-]{1,40}$', re.UNICODE)
 _CTRL = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f​-‏‪-‮⁦-⁩﻿]')
@@ -41,11 +39,22 @@ def _int(v, lo, hi, name):
     return n
 
 
+IMAGE_EXT = ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4')
+
+
+def _image(v):
+    v = clean_text(v, 260)
+    if not v:
+        return ''
+    if not v.lower().endswith(IMAGE_EXT):
+        raise ScriptError('картинка: файл .jpg .png .gif .webp или .mp4')
+    return v
+
+
 def default_script():
     return {'name': '', 'account': '', 'chats': [], 'enabled': True,
             'post': {'enabled': False, 'variants': [], 'order': 'random', 'everyMin': 60, 'perDay': 12,
-                     'from': 9, 'to': 23, 'tz': 3},
-            'welcome': {'enabled': False, 'text': ''},
+                     'from': 9, 'to': 23, 'tz': 3, 'image': ''},
             'replies': []}
 
 
@@ -90,13 +99,8 @@ def validate(raw):
                      'perDay': _int(p.get('perDay', 12), 1, MAX_PER_DAY, 'сообщений в сутки'),
                      'from': _int(p.get('from', 9), 0, 23, 'начало часов'),
                      'to': _int(p.get('to', 23), 0, 24, 'конец часов'),
-                     'tz': _int(p.get('tz', 3), -12, 14, 'часовой пояс')}
-    w = raw.get('welcome') if isinstance(raw.get('welcome'), dict) else {}
-    if w.get('enabled'):
-        t = clean_text(w.get('text'))
-        if not t:
-            raise ScriptError('введите текст приветствия')
-        s['welcome'] = {'enabled': True, 'text': t}
+                     'tz': _int(p.get('tz', 3), -12, 14, 'часовой пояс'),
+                     'image': _image(p.get('image'))}
     reps = raw.get('replies') or []
     if not isinstance(reps, list):
         raise ScriptError('ответы по ключевым словам — список')
@@ -111,8 +115,8 @@ def validate(raw):
         if not kws or not txt:
             raise ScriptError('в правиле ответа нужны ключевые слова (от 2 знаков) и текст')
         s['replies'].append({'keywords': kws[:10], 'text': txt})
-    if not (s['post']['enabled'] or s['welcome']['enabled'] or s['replies']):
-        raise ScriptError('включите хотя бы одно действие: рассылку, приветствие или ответы')
+    if not (s['post']['enabled'] or s['replies']):
+        raise ScriptError('включите хотя бы одно действие: сообщения по расписанию или ответы по словам')
     return s
 
 

@@ -1,7 +1,7 @@
 """Ghost Shell · Chat Accounts — окно программы (tkinter). Логика — в rules.py и engine.py."""
 import queue
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 
 import rules
 import store
@@ -150,7 +150,10 @@ class App(tk.Tk):
         self.scr_list.pack()
         self.scr_list.bind('<<ListboxSelect>>', lambda _e: self._scr_pick())
         ttk.Button(left, text='Новый скрипт', command=self._scr_new).pack(fill='x', pady=3)
-        ttk.Button(left, text='Удалить', command=self._scr_delete).pack(fill='x')
+        ttk.Button(left, text='Копировать', command=self._scr_copy).pack(fill='x')
+        ttk.Button(left, text='Добавить из файла…', command=self._scr_import).pack(fill='x', pady=3)
+        ttk.Button(left, text='Сохранить в файл…', command=self._scr_export).pack(fill='x')
+        ttk.Button(left, text='Удалить', command=self._scr_delete).pack(fill='x', pady=3)
         right = ttk.Frame(f); right.pack(side='left', fill='both', expand=True, padx=6, pady=6)
         r = 0
         self.s_name = self._field(right, 'Название', r); r += 1
@@ -172,9 +175,8 @@ class App(tk.Tk):
         for lab, var, w in (('каждые, мин', self.s_every, 5), ('в сутки ≤', self.s_perday, 4), ('с часа', self.s_from, 3), ('до', self.s_to, 3), ('пояс UTC+', self.s_tz, 3)):
             ttk.Label(row, text=lab).pack(side='left'); ttk.Entry(row, textvariable=var, width=w).pack(side='left', padx=(2, 8))
         ttk.Combobox(row, textvariable=self.s_order, state='readonly', width=9, values=['random', 'cycle']).pack(side='left'); r += 1
-        self.v_welcome = tk.BooleanVar()
-        ttk.Checkbutton(right, text='Приветствовать новичков (в самом чате, не в личке). {name} — имя', variable=self.v_welcome).grid(row=r, column=0, columnspan=2, sticky='w', padx=6, pady=(8, 0)); r += 1
-        self.s_wtext = self._text(right, 2); self.s_wtext.grid(row=r, column=1, padx=6); r += 1
+        self.s_image = self._field(right, 'Картинка к сообщению (файл, необязательно)', r, width=48)
+        ttk.Button(right, text='Выбрать…', command=lambda: self.s_image.set(filedialog.askopenfilename(filetypes=[('Картинки и видео', '*.jpg *.jpeg *.png *.gif *.webp *.mp4')]) or self.s_image.get())).grid(row=r, column=2, padx=4); r += 1
         ttk.Label(right, text='Ответы по словам\n(слово1, слово2 => ответ)').grid(row=r, column=0, sticky='nw', padx=6, pady=(8, 0))
         self.s_replies = self._text(right, 4); self.s_replies.grid(row=r, column=1, padx=6, pady=(8, 0)); r += 1
         ttk.Button(right, text='Сохранить скрипт', command=self._scr_save).grid(row=r, column=1, sticky='w', padx=6, pady=8)
@@ -202,7 +204,7 @@ class App(tk.Tk):
         p = s['post']
         self.s_variants.delete('1.0', 'end'); self.s_variants.insert('1.0', '\n'.join(p['variants']))
         self.s_every.set(p['everyMin']); self.s_perday.set(p['perDay']); self.s_from.set(p['from']); self.s_to.set(p['to']); self.s_tz.set(p['tz']); self.s_order.set(p['order'])
-        self.v_welcome.set(s['welcome']['enabled']); self.s_wtext.delete('1.0', 'end'); self.s_wtext.insert('1.0', s['welcome']['text'])
+        self.s_image.set(p.get('image', ''))
         self.s_replies.delete('1.0', 'end')
         self.s_replies.insert('1.0', '\n'.join(', '.join(r['keywords']) + ' => ' + r['text'] for r in s['replies']))
 
@@ -238,8 +240,8 @@ class App(tk.Tk):
         return {'name': self.s_name.get().strip(), 'account': self.s_acc.get(), 'enabled': self.v_enabled.get(),
                 'chats': [self._chat_id(self.s_chats.get(i)) for i in self.s_chats.curselection()],
                 'post': {'enabled': self.v_post.get(), 'variants': self.s_variants.get('1.0', 'end').splitlines(), 'order': self.s_order.get(),
-                         'everyMin': self.s_every.get(), 'perDay': self.s_perday.get(), 'from': self.s_from.get(), 'to': self.s_to.get(), 'tz': self.s_tz.get()},
-                'welcome': {'enabled': self.v_welcome.get(), 'text': self.s_wtext.get('1.0', 'end')}, 'replies': replies}
+                         'everyMin': self.s_every.get(), 'perDay': self.s_perday.get(), 'from': self.s_from.get(), 'to': self.s_to.get(), 'tz': self.s_tz.get(), 'image': self.s_image.get().strip()},
+                'replies': replies}
 
     def _scr_save(self):
         try:
@@ -253,6 +255,38 @@ class App(tk.Tk):
         store.save_json('scripts.json', self.scripts)
         self._scr_refresh()
         messagebox.showinfo('Сохранено', 'Скрипт сохранён. Чтобы он заработал, нажмите «Запустить» на вкладке «Запуск».')
+
+    def _scr_copy(self):
+        if self.sel is None:
+            return
+        import copy
+        s = copy.deepcopy(self.scripts[self.sel]); s['name'] = (s['name'] + ' копия')[:40]
+        self.scripts.append(s); store.save_json('scripts.json', self.scripts); self._scr_refresh()
+
+    def _scr_export(self):
+        if self.sel is None:
+            return
+        p = filedialog.asksaveasfilename(defaultextension='.json', initialfile=self.scripts[self.sel]['name'] + '.json', filetypes=[('Скрипт', '*.json')])
+        if p:
+            import json
+            with open(p, 'w', encoding='utf-8') as f:
+                json.dump(self.scripts[self.sel], f, ensure_ascii=False, indent=1)
+
+    def _scr_import(self):
+        # файл скрипта — только настройки: всё лишнее выбрасывается, лимиты применяются так же, как при ручном вводе
+        import json
+        p = filedialog.askopenfilename(filetypes=[('Скрипт', '*.json')])
+        if not p:
+            return
+        try:
+            with open(p, 'rb') as f:
+                raw = f.read(200_000)
+            s = rules.validate(json.loads(raw.decode('utf-8')))
+        except (OSError, ValueError) as e:
+            messagebox.showerror('Не вышло добавить', f'Файл не подошёл: {e}'); return
+        if s['account'] not in store.list_accounts():
+            messagebox.showinfo('Аккаунт', f'В скрипте указан аккаунт «{s["account"]}», его здесь нет. Откройте скрипт и выберите свой аккаунт и чаты.')
+        self.scripts.append(s); store.save_json('scripts.json', self.scripts); self._scr_refresh()
 
     def _scr_delete(self):
         if self.sel is not None and messagebox.askyesno('Удалить', 'Удалить выбранный скрипт?'):

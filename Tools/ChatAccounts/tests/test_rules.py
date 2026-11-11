@@ -61,6 +61,12 @@ class T(unittest.TestCase):
         self.assertEqual(s['replies'][0]['keywords'], ['цена'])
         self.assertEqual(rules.reply_for(s['replies'], 'А какая ЦЕНА?'), 'ответ')
         self.assertIsNone(rules.reply_for(s['replies'], 'привет'))
+    def test_image_and_welcome(self):
+        b = base(); b['post']['image'] = 'C:/pics/a.PNG'
+        self.assertEqual(rules.validate(b)['post']['image'], 'C:/pics/a.PNG')
+        b['post']['image'] = 'run.exe'
+        with self.assertRaises(rules.ScriptError): rules.validate(b)
+        self.assertNotIn('welcome', rules.validate(base(welcome={'enabled': True, 'text': 'x'})))
     def test_fill(self):
         self.assertEqual(rules.fill('Привет, {name}!', 'Аня‮'), 'Привет, Аня!')
     def test_store_roundtrip(self):

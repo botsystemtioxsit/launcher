@@ -7,6 +7,7 @@
  • FloodWait и запрет писать → пауза или отключение чата, а не упорство.
 """
 import asyncio
+import os
 import random
 import threading
 from datetime import datetime, timezone
@@ -139,7 +140,7 @@ class Engine:
         self.log('Остановлено.')
 
     # ---------- общая отправка с предохранителями ----------
-    async def _send(self, name, s, chat_id, text, reply_to=None):
+    async def _send(self, name, s, chat_id, text, reply_to=None, file=None):
         key = (s['name'], chat_id)
         if key in self.dead:
             return False
@@ -155,7 +156,10 @@ class Engine:
                     self.dead.add(key)
                     self.log(f'«{s["name"]}»: {chat_id} — это не чат, пропускаю навсегда.')
                     return False
-                await c.send_message(ent, text, reply_to=reply_to)
+                if file:
+                    await c.send_file(ent, file, caption=text, reply_to=reply_to)
+                else:
+                    await c.send_message(ent, text, reply_to=reply_to)
                 lock[1] = asyncio.get_event_loop().time()
                 return True
             except errors.FloodWaitError as e:
@@ -178,8 +182,6 @@ class Engine:
         chats = [int(x) for x in s['chats']]
         if s['post']['enabled']:
             self.tasks.append(self.loop.create_task(self._post_loop(name, s)))
-        if s['welcome']['enabled']:
-            client.add_event_handler(self._welcome_handler(name, s), events.ChatAction(chats=chats))
         if s['replies']:
             client.add_event_handler(self._reply_handler(name, s), events.NewMessage(chats=chats, incoming=True))
 
@@ -195,7 +197,11 @@ class Engine:
                         continue
                     await asyncio.sleep(random.uniform(1, 45))
                     text, st = rules.pick_variant(cfg['variants'], cfg['order'], st)
-                    if await self._send(name, s, chat, rules.fill(text, '', ''), None):
+                    img = cfg.get('image') or None
+                    if img and not os.path.isfile(img):
+                        self.log(f'«{s["name"]}»: файл картинки не найден ({img}) — отправляю без неё.')
+                        img = None
+                    if await self._send(name, s, chat, rules.fill(text, '', ''), None, img):
                         self.state[k] = rules.after_post(st, cfg, datetime.now(timezone.utc))
                         self._save_state()
                         self.log(f'«{s["name"]}»: отправлено в {chat}.')
@@ -205,25 +211,6 @@ class Engine:
             except Exception as e:
                 self.log(f'«{s["name"]}»: сбой цикла — {e}')
                 await asyncio.sleep(60)
-
-    def _welcome_handler(self, name, s):
-        async def h(ev):
-            try:
-                if not (ev.user_joined or ev.user_added) or not self.running:
-                    return
-                u = await ev.get_user()
-                if not u or getattr(u, 'bot', False) or getattr(u, 'is_self', False):
-                    return
-                k = f'welcome|{s["name"]}|{ev.chat_id}'
-                ok, self.state[k] = rules.gate(self.state.get(k, {}), datetime.now(timezone.utc), rules.WELCOME_GAP_S, rules.WELCOME_MAX_PER_DAY)
-                if not ok:
-                    return
-                await asyncio.sleep(random.uniform(4, 12))
-                if await self._send(name, s, str(ev.chat_id), rules.fill(s['welcome']['text'], u.first_name or '', ''), None):
-                    self.log(f'«{s["name"]}»: приветствие в {ev.chat_id}.')
-            except Exception as e:
-                self.log(f'«{s["name"]}»: приветствие не вышло — {e}')
-        return h
 
     def _reply_handler(self, name, s):
         async def h(ev):
