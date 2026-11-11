@@ -1,0 +1,56 @@
+name: Build Chat Accounts (Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['Tools/ChatAccounts/**', '.github/workflows/build-chat-accounts.yml']
+  pull_request:
+    paths: ['Tools/ChatAccounts/**', '.github/workflows/build-chat-accounts.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Tools/ChatAccounts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - name: Tests
+        run: python -m unittest discover -s tests -v
+      - name: GUI smoke test
+        shell: pwsh
+        env:
+          GS_ALLOW_PLAIN: '1'
+        run: |
+          $env:APPDATA = Join-Path $env:RUNNER_TEMP 'appdata'
+          New-Item -ItemType Directory -Force $env:APPDATA | Out-Null
+          python -c "import app, rules; a = app.App(); a.update(); a.s_name.set('t'); a.update(); a._scr_collect(); a.destroy(); print('GUI ok')"
+      - name: Build exe
+        run: pyinstaller --noconfirm --onefile --windowed --name GhostShellChatAccounts app.py
+      - name: Checksum
+        shell: pwsh
+        run: |
+          $h = (Get-FileHash dist\GhostShellChatAccounts.exe -Algorithm SHA256).Hash.ToLower()
+          "$h" | Out-File -Encoding ascii dist\GhostShellChatAccounts.exe.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GhostShellChatAccounts
+          path: Tools/ChatAccounts/dist/GhostShellChatAccounts.exe*
+      - name: Publish release (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: chat-accounts-latest
+          name: Chat Accounts (latest)
+          prerelease: true
+          files: |
+            Tools/ChatAccounts/dist/GhostShellChatAccounts.exe
+            Tools/ChatAccounts/dist/GhostShellChatAccounts.exe.sha256

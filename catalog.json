@@ -218,6 +218,18 @@
         "asset": "SkinLoader.exe",
         "name": "Skin Loader"
       }
+    },
+    {
+      "id": "chat-accounts",
+      "category": "net",
+      "name": "Chat Accounts",
+      "desc": "Ваши аккаунты Telegram работают по скриптам: сообщения в ваши чаты по расписанию (несколько текстов, картинка, лимиты, тихие часы) и ответы по ключевым словам. Только свои аккаунты и чаты; не собирает участников, не пишет в личку, не вступает в чужие чаты. Работает на вашем компьютере, пока открыта.",
+      "desktop": {
+        "repo": "launcher",
+        "tag": "chat-accounts-latest",
+        "asset": "GhostShellChatAccounts.exe",
+        "name": "Chat Accounts"
+      }
     }
   ],
   "browserPlugins": [
