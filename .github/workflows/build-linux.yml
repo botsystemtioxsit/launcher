@@ -1,0 +1,79 @@
+name: Build Linux launcher
+
+# Ghost Shell Launcher для Linux (Linux/ghost-shell-launcher.py): проверки на «поддельном GitHub», снимки окна на виртуальном экране,
+# затем сборка архива и публикация в релиз с фиксированным тегом linux-latest (prerelease — «последним» остаётся релиз Windows-лаунчера).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Linux/**'
+      - 'tests/linux/**'
+      - '.github/workflows/build-linux.yml'
+  pull_request:
+    paths:
+      - 'Linux/**'
+      - 'tests/linux/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install GTK and virtual display
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gir1.2-gtk-3.0 python3-gi xvfb
+
+      - name: Checks (fake GitHub on localhost)
+        run: python3 -W ignore -m unittest discover -s tests/linux -v
+
+      - name: Window screenshots (xvfb)
+        run: |
+          mkdir -p linux-shots
+          xvfb-run -a -s "-screen 0 800x600x24" /usr/bin/python3 tests/linux/gui_shot.py linux-shots
+          ls -la linux-shots
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-launcher-screenshots
+          path: linux-shots
+
+      - name: Package
+        run: |
+          VERSION=$(grep -m1 '^VERSION = ' Linux/ghost-shell-launcher.py | cut -d'"' -f2)
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          mkdir -p dist
+          cp Linux/ghost-shell-launcher.py dist/
+          cp -r Linux/icons dist/icons
+          cp Linux/install.sh dist/install.sh
+          printf '%s' "$VERSION" > dist/VERSION
+          # одинаковый результат при одинаковых файлах: сортировка, фиксированные даты и владелец
+          tar --sort=name --mtime='2026-01-01 00:00:00' --owner=0 --group=0 --numeric-owner -C dist -czf dist/GhostShellLauncher-linux.tar.gz ghost-shell-launcher.py icons
+          (cd dist && sha256sum GhostShellLauncher-linux.tar.gz > GhostShellLauncher-linux.tar.gz.sha256)
+          ls -la dist
+
+      - name: Publish release (main only)
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: linux-latest
+          name: Ghost Shell Launcher для Linux — последняя сборка
+          prerelease: true
+          make_latest: false
+          files: |
+            dist/GhostShellLauncher-linux.tar.gz
+            dist/GhostShellLauncher-linux.tar.gz.sha256
+            dist/VERSION
+            dist/install.sh
+          body: |
+            Версия ${{ env.VERSION }}, сборка ${{ github.run_number }}, из коммита ${{ github.sha }}.
+            Установка одной командой (права администратора не нужны):
+
+                curl -fsSL https://github.com/botsystemtioxsit/launcher/releases/download/linux-latest/install.sh | sh
+
+            Этот релиз всегда переиспользуется под фиксированным тегом `linux-latest`.
