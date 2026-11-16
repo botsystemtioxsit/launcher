@@ -42,7 +42,7 @@ jobs:
       - name: Publish
         run: >
           dotnet publish Launcher/Launcher.csproj -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:TieredPGO=false -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out
 
       - name: Checksum
@@ -55,7 +55,7 @@ jobs:
       - name: Publish Terminal
         run: >
           dotnet publish Terminal/Terminal.csproj -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:TieredPGO=false -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-terminal
 
       - name: Checksum Terminal
@@ -69,7 +69,7 @@ jobs:
       - name: Publish Taskbar Plus
         run: >
           dotnet publish Plugins/TaskbarPlus/TaskbarPlus.csproj -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:TieredPGO=false -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-taskbarplus
 
       # Проверка: движок действительно вложен в TaskbarPlus.exe (иначе «Новый движок» в плагине был бы пустой кнопкой)
@@ -93,7 +93,7 @@ jobs:
       - name: Publish Color Plus
         run: >
           dotnet publish Plugins/ColorPlus/ColorPlus.csproj -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:TieredPGO=false -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-colorplus
 
       - name: Checksum Color Plus
@@ -107,7 +107,7 @@ jobs:
       - name: Publish Icon Plus
         run: >
           dotnet publish Plugins/IconPlus/IconPlus.csproj -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:TieredPGO=false -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-iconplus
 
       - name: Checksum Icon Plus
@@ -121,7 +121,7 @@ jobs:
       - name: Publish Wallpaper Plus
         run: >
           dotnet publish Plugins/WallpaperPlus/WallpaperPlus.csproj -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:TieredPGO=false -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-wallpaperplus
 
       - name: Checksum Wallpaper Plus
@@ -135,7 +135,7 @@ jobs:
       - name: Publish Cursor Plus
         run: >
           dotnet publish Plugins/CursorPlus/CursorPlus.csproj -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:TieredPGO=false -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-cursorplus
 
       - name: Checksum Cursor Plus
@@ -149,7 +149,7 @@ jobs:
       - name: Publish DNS Plus
         run: >
           dotnet publish Plugins/DnsPlus/DnsPlus.csproj -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:TieredPGO=false -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-dnsplus
 
       - name: Checksum DNS Plus
@@ -201,7 +201,7 @@ jobs:
       - name: Publish Gateway Plus
         run: >
           dotnet publish Plugins/GatewayPlus/GatewayPlus.csproj -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:TieredPGO=false -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-gatewayplus
 
       - name: Checksum Gateway Plus
@@ -215,7 +215,7 @@ jobs:
       - name: Publish Skin Loader
         run: >
           dotnet publish Plugins/SkinLoader/SkinLoader.csproj -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:TieredPGO=false -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-skinloader
 
       - name: Checksum Skin Loader
