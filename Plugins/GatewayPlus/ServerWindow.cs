@@ -167,6 +167,7 @@ sealed class ServerWindow : Window
                     var pc = Store.Load(pn);
                     if (pc == null || !Gsp.IsGsp(pc)) continue;
                     var withKey = Store.WithInterfaceValue(pc, "BetaKey", res.BetaKey);
+                    if (res.KemPub.Length > 0) withKey = Store.WithInterfaceValue(withKey, "KemPub", res.KemPub);
                     if (Store.Validate(withKey) == null) { Store.Save(pn, withKey); Result = Outcome.Changed; }
                 }
             msg.Foreground = Ui.Res("Green");

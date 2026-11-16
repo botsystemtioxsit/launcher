@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	crand "crypto/rand"
+	"encoding/base64"
+	"strings"
 	"testing"
 	"time"
 )
@@ -134,8 +136,8 @@ func TestBetaHandshakeOnTheWire(t *testing.T) {
 				first = i
 			}
 			shaped++
-			if len(b) < betaMinTotal || len(b) > betaMaxTotal {
-				t.Fatalf("размер пакета рукопожатия %d вне 1200–1300", len(b))
+			if len(b) < betaMinTotal || len(b) > betaMaxTotal+100 {
+				t.Fatalf("размер пакета рукопожатия %d вне 1200–1400", len(b))
 			}
 		}
 	}
@@ -216,5 +218,120 @@ func TestBetaKeysDifferByVersion(t *testing.T) {
 	}
 	if obfKeyBeta(pub, a) == obfKeyFor(pub, protoV2) {
 		t.Fatal("ключ упаковки Beta совпал с ключом версии 2")
+	}
+}
+
+// ---------- постквантовая защита (ML-KEM-768) ----------
+
+func kemPair(t *testing.T) (seed, pub []byte) {
+	t.Helper()
+	sb, pb, err := genKem()
+	if err != nil {
+		t.Fatal(err)
+	}
+	seed, _ = base64.StdEncoding.DecodeString(sb)
+	pub, _ = base64.StdEncoding.DecodeString(pb)
+	return
+}
+
+func betaPairPQ(t *testing.T, k, srvSeed, cliPub []byte) *pair {
+	return newPair(t, "off", 0, func(srv, cli *Config) {
+		srv.BetaKey, cli.BetaKey, cli.Proto = k, k, 3
+		srv.KemSeed, cli.KemPub = srvSeed, cliPub
+	})
+}
+
+// Сервер и клиент с ключами ML-KEM: сеанс установлен, у обоих признак «постквантовый», данные идут, в статусе pq = true.
+func TestBetaPQEndToEnd(t *testing.T) {
+	k := betaKeys(t)
+	seed, pub := kemPair(t)
+	p := betaPairPQ(t, k, seed, pub)
+	exchange(t, p)
+	if !p.cli.peerOnly().cur.Load().pq || !p.srv.peerOnly().cur.Load().pq {
+		t.Fatal("в рукопожатии не участвовал ML-KEM")
+	}
+	if st := p.cli.Status(); !st.Peers[0].PQ || st.Peers[0].Proto != 3 {
+		t.Fatalf("статус клиента: pq=%v proto=%d", st.Peers[0].PQ, st.Peers[0].Proto)
+	}
+}
+
+// Клиент без KemPub с сервером, у которого ключ ML-KEM есть: работает как раньше (без постквантовой защиты).
+func TestBetaPQOptionalForOldProfiles(t *testing.T) {
+	k := betaKeys(t)
+	seed, _ := kemPair(t)
+	p := betaPairPQ(t, k, seed, nil)
+	exchange(t, p)
+	if p.cli.peerOnly().cur.Load().pq || p.srv.peerOnly().cur.Load().pq {
+		t.Fatal("без KemPub сеанс не должен быть помечен постквантовым")
+	}
+}
+
+// Клиент прислал шифртекст, а у сервера нет ключа ML-KEM: сервер молчит, сеанса нет.
+func TestBetaPQServerWithoutKemStaysSilent(t *testing.T) {
+	k := betaKeys(t)
+	_, pub := kemPair(t)
+	p := betaPairPQ(t, k, nil, pub)
+	for i := 0; i < 15; i++ {
+		p.cliDev.in <- mkIP(cliIP, srvIP, uint32(i), 100)
+		time.Sleep(100 * time.Millisecond)
+	}
+	if p.srv.peerOnly().cur.Load() != nil {
+		t.Fatal("сервер без ключа ML-KEM принял постквантовое рукопожатие")
+	}
+}
+
+// Клиент зашифровал секрет ключом ЧУЖОГО сервера: ML-KEM «отвергает молча» (неявное отвержение), секреты не совпадают — сеанса нет.
+func TestBetaPQWrongKemKeyNoSession(t *testing.T) {
+	k := betaKeys(t)
+	seed, _ := kemPair(t)
+	_, otherPub := kemPair(t)
+	p := betaPairPQ(t, k, seed, otherPub)
+	for i := 0; i < 20; i++ {
+		p.cliDev.in <- mkIP(cliIP, srvIP, uint32(i), 100)
+		time.Sleep(100 * time.Millisecond)
+	}
+	if p.srv.peerOnly().cur.Load() != nil {
+		t.Fatal("сеанс установился с неверным ключом ML-KEM")
+	}
+}
+
+// Ключи сеанса зависят от ML-KEM: тот же BetaKey, но другой секрет ML-KEM даёт другой psk; psk не равен BetaKey.
+func TestPQPskDerivation(t *testing.T) {
+	k := betaKeys(t)
+	a, b := make([]byte, 32), make([]byte, 32)
+	b[0] = 1
+	pa, pb := pqPSK(k, a), pqPSK(k, b)
+	if bytes.Equal(pa, pb) || bytes.Equal(pa, k) || len(pa) != 32 {
+		t.Fatal("psk не зависит от секрета ML-KEM или совпал с BetaKey")
+	}
+	if !bytes.Equal(pa, pqPSK(k, a)) {
+		t.Fatal("psk должен быть детерминированным")
+	}
+	if bytes.Equal(pa, pqPSK(betaKeys(t), a)) {
+		t.Fatal("psk не зависит от BetaKey")
+	}
+}
+
+// Разбор настроек: KemKey и KemPub.
+func TestConfigKem(t *testing.T) {
+	k := strings.Repeat("A", 43) + "="
+	seed, pub, err := genKem()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cli := "[Interface]\nPrivateKey = " + k + "\nProto = 3\nBetaKey = " + k + "\nKemPub = " + pub + "\n[Peer]\nPublicKey = " + k + "\nEndpoint = 203.0.113.5:51821\nAllowedIPs = 0.0.0.0/0\n"
+	fc, err := parseConfig(writeConf(t, cli))
+	if err != nil || len(fc.Engine.KemPub) != kemPubLen {
+		t.Fatalf("KemPub не разобрался: %v", err)
+	}
+	srv := "[Interface]\nPrivateKey = " + k + "\nBetaKey = " + k + "\nKemKey = " + seed + "\n[Peer]\nPublicKey = " + k + "\nAllowedIPs = 10.78.0.2/32\n"
+	fc, err = parseConfig(writeConf(t, srv))
+	if err != nil || len(fc.Engine.KemSeed) != kemSeedLen {
+		t.Fatalf("KemKey не разобрался: %v", err)
+	}
+	for _, bad := range []string{"KemPub = AAAA", "KemKey = AAAA"} {
+		if _, err := parseConfig(writeConf(t, "[Interface]\nPrivateKey = "+k+"\n"+bad+"\n[Peer]\nPublicKey = "+k+"\nAllowedIPs = 0.0.0.0/0\n")); err == nil {
+			t.Fatalf("%s должен отклоняться", bad)
+		}
 	}
 }

@@ -47,6 +47,7 @@ sealed class ProvisionResult
     public string Fingerprint { get; set; } = "";
     public string Protocol { get; set; } = "wg";
     public bool AuthFailed { get; set; }           // сервер не принял логин/пароль/ключ (нужно, чтобы окно могло предложить ввести доступ заново)
+    public string KemPub { get; set; } = "";         // обновление GSP: открытый ключ ML-KEM сервера (постквантовая защита GSP Beta)
     public string BetaKey { get; set; } = "";        // обновление GSP: секрет профиля GSP Beta, который сервер сообщил (создаётся, если его не было)
     public string Ipv6Prefix { get; set; } = "";   // «Проверить и ускорить сервер»: сервер включил IPv6 в туннеле — профиль на компьютере нужно дополнить
 }
@@ -299,6 +300,8 @@ static class Provisioner
                 if (!full.ToString().Contains("обновлён")) { result.Error = "Скрипт отработал, но не сообщил об обновлении."; return result; }
                 var bk = Regex.Match(full.ToString(), @"(?m)^GS_BETA_KEY=([A-Za-z0-9+/]{43}=)\s*$");
                 if (bk.Success) result.BetaKey = bk.Groups[1].Value;
+                var kp = Regex.Match(full.ToString(), @"(?m)^GS_KEM_PUB=([A-Za-z0-9+/]{1579}=)\s*$");
+                if (kp.Success) result.KemPub = kp.Groups[1].Value;
                 result.Ok = true;
                 log("Готово: сервер GSP обновлён.");
                 return result;
