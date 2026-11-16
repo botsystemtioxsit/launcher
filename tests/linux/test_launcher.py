@@ -1,6 +1,6 @@
 # Проверки Linux-лаунчера без настоящего GitHub: локальный сервер изображает релизы.
 # Запуск: python3 -m unittest discover -s tests/linux -v
-import base64, hashlib, http.server, importlib.util, io, os, shutil, socketserver, sys, tarfile, tempfile, threading, unittest
+import base64, hashlib, http.server, importlib.util, io, json, os, shutil, socketserver, sys, tarfile, tempfile, threading, unittest, zipfile
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 SRC = os.path.join(ROOT, "Linux", "ghost-shell-launcher.py")
@@ -16,6 +16,7 @@ class Fake:
     launcher_tar = b""
     launcher_sha = ""
     corrupt_app = False
+    files = {}      # путь → байты: произвольные файлы «релизов» и каталога для проверок программ и расширений
 
 
 def yml():
@@ -54,6 +55,8 @@ class H(http.server.BaseHTTPRequestHandler):
             return self.send(200, (Fake.launcher_sha + "  GhostShellLauncher-linux.tar.gz\n").encode())
         if p == "/botsystemtioxsit/launcher/releases/download/linux-latest/GhostShellLauncher-linux.tar.gz":
             return self.send(200, Fake.launcher_tar)
+        if p in Fake.files:
+            return self.send(200, Fake.files[p])
         self.send(404, b"no")
 
 
@@ -87,7 +90,7 @@ class T(unittest.TestCase):
                     "GSL_APPLICATIONS": os.path.join(self.tmp, "apps"), "GSL_ICONS": os.path.join(self.tmp, "icons")}
         self.m = load(self.env)
         Fake.version = "1.0.7"; Fake.app_bytes = b"#!/bin/sh\necho fake-terminal \"$@\"\n"; Fake.yml_override = None
-        Fake.redirect_to = None; Fake.corrupt_app = False
+        Fake.redirect_to = None; Fake.corrupt_app = False; Fake.files = {}
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -230,6 +233,103 @@ class T(unittest.TestCase):
         self.assertEqual(self.m.cli(["status"]), 0)
         self.assertEqual(self.m.cli(["run"]), 1)       # не установлено — понятная ошибка, а не трассировка
         self.assertEqual(self.m.cli(["nope"]), 2)
+
+    # --- программы и расширения для Linux
+    def _zip(self, files):
+        b = io.BytesIO()
+        with zipfile.ZipFile(b, "w") as z:
+            for n, d in files.items():
+                z.writestr(n, d)
+        return b.getvalue()
+
+    def _tar(self, files):
+        b = io.BytesIO()
+        with tarfile.open(fileobj=b, mode="w:gz") as tf:
+            for n, d in files.items():
+                ti = tarfile.TarInfo(n); ti.size = len(d); tf.addfile(ti, io.BytesIO(d))
+        return b.getvalue()
+
+    def _publish(self, repo, asset, data, with_sum=True, bad_sum=False):
+        Fake.files["/botsystemtioxsit/%s/releases/latest/download/%s" % (repo, asset)] = data
+        if with_sum:
+            s = hashlib.sha256(data).hexdigest()
+            Fake.files["/botsystemtioxsit/%s/releases/latest/download/%s.sha256" % (repo, asset)] = (("0" * 64 if bad_sum else s) + "  " + asset + "\n").encode()
+
+    def test_extras_catalog_filters_and_cleans(self):
+        Fake.files["/botsystemtioxsit/launcher/main/catalog.json"] = json.dumps({
+            "downloads": [
+                {"id": "solitaire-linux", "name": "Косынка", "desc": "Пасьянс", "repo": "game-linux", "tag": "latest", "asset": "solitaire-linux.deb", "os": ["linux"]},
+                {"id": "win-only", "name": "Только Windows", "desc": "x", "repo": "r", "tag": "latest", "asset": "a.zip", "os": ["windows"]},
+                {"id": "evil", "name": "Плохой", "desc": "x", "repo": "../../x", "tag": "latest", "asset": "a.zip", "os": ["linux"]},
+                {"id": "noext", "name": "Без типа", "desc": "x", "repo": "r", "tag": "latest", "asset": "a.exe", "os": ["linux"]}],
+            "browserPlugins": [{"id": "mask-plus", "name": "Mask Plus", "desc": "d", "zip": {"repo": "launcher", "tag": "latest", "asset": "MaskPlus-extension.zip"}}]}).encode()
+        ids = [i["id"] for i in self.m.extras_catalog()]
+        self.assertEqual(ids, ["solitaire-linux", "mask-plus"])
+
+    def test_extras_catalog_fallback(self):
+        ids = [i["id"] for i in self.m.extras_catalog()]   # каталога нет (404) — запасной список
+        self.assertEqual(ids, ["solitaire-linux", "phonecast", "tab-unloader", "mask-plus"])
+
+    def _item(self, id_):
+        return next(i for i in self.m.extras_catalog() if i["id"] == id_)
+
+    def test_deb_download_and_hint(self):
+        self._publish("game-linux", "solitaire-linux.deb", b"deb-bytes")
+        r = self.m.install_extra(self._item("solitaire-linux"))
+        self.assertTrue(r["verified"]); self.assertTrue(os.path.isfile(r["path"])); self.assertIn("sudo apt install", r["hint"])
+        self.assertTrue(self.m.remove_extra(self._item("solitaire-linux"))); self.assertFalse(os.path.exists(r["path"]))
+
+    def test_bad_checksum_refused_and_nothing_left(self):
+        self._publish("game-linux", "solitaire-linux.deb", b"deb-bytes", bad_sum=True)
+        with self.assertRaises(self.m.LauncherError):
+            self.m.install_extra(self._item("solitaire-linux"))
+        self.assertIsNone(self.m.extra_state(self._item("solitaire-linux")))
+        self.assertEqual(os.listdir(os.path.join(self.m.data_dir(), "tmp")), [])
+
+    def test_missing_checksum_is_allowed_but_reported(self):
+        self._publish("game-linux", "solitaire-linux.deb", b"deb-bytes", with_sum=False)
+        self.assertFalse(self.m.install_extra(self._item("solitaire-linux"))["verified"])
+
+    def test_tar_program(self):
+        self._publish("Remote", "phonecast-linux.tar.gz", self._tar({"phonecast/install.sh": b"#!/bin/sh\n", "phonecast/app.py": b"x"}))
+        r = self.m.install_extra(self._item("phonecast"))
+        self.assertIn("install.sh", r["hint"]); self.assertTrue(os.path.isfile(os.path.join(r["path"], "phonecast", "install.sh")))
+
+    def test_tar_traversal_refused(self):
+        self._publish("Remote", "phonecast-linux.tar.gz", self._tar({"../evil.sh": b"x"}))
+        with self.assertRaises(self.m.LauncherError):
+            self.m.install_extra(self._item("phonecast"))
+        self.assertIsNone(self.m.extra_state(self._item("phonecast")))
+
+    def test_extension_zip_and_flatten(self):
+        self._publish("sstr", "tab-unloader.zip", self._zip({"manifest.json": b"{}", "bg.js": b"1"}))
+        r = self.m.install_extra(self._item("tab-unloader"))
+        self.assertTrue(os.path.isfile(os.path.join(r["path"], "manifest.json"))); self.assertIn("chrome://extensions", r["hint"])
+        self._publish("sstr", "tab-unloader.zip", self._zip({"tab-unloader/manifest.json": b"{}", "tab-unloader/bg.js": b"1"}))
+        r = self.m.install_extra(self._item("tab-unloader"))
+        self.assertTrue(os.path.isfile(os.path.join(r["path"], "manifest.json")))   # вложенная папка поднята наверх
+
+    def test_extension_zip_refusals(self):
+        for files in ({"manifest.json": b"{}", "run.sh": b"x"}, {"manifest.json": b"{}", "../x.js": b"x"}, {"a.js": b"x"}):
+            self._publish("sstr", "tab-unloader.zip", self._zip(files))
+            with self.assertRaises(self.m.LauncherError):
+                self.m.install_extra(self._item("tab-unloader"))
+            self.assertIsNone(self.m.extra_state(self._item("tab-unloader")))
+
+    def test_reinstall_replaces_folder(self):
+        self._publish("sstr", "tab-unloader.zip", self._zip({"manifest.json": b"{}", "old.js": b"1"}))
+        self.m.install_extra(self._item("tab-unloader"))
+        self._publish("sstr", "tab-unloader.zip", self._zip({"manifest.json": b"{}", "new.js": b"2"}))
+        r = self.m.install_extra(self._item("tab-unloader"))
+        self.assertTrue(os.path.isfile(os.path.join(r["path"], "new.js"))); self.assertFalse(os.path.exists(os.path.join(r["path"], "old.js")))
+
+    def test_cli_list_get_drop(self):
+        self._publish("sstr", "tab-unloader.zip", self._zip({"manifest.json": b"{}"}))
+        self.assertEqual(self.m.cli(["list"]), 0)
+        self.assertEqual(self.m.cli(["get", "tab-unloader"]), 0)
+        self.assertEqual(self.m.cli(["get", "нет-такого"]), 2)
+        self.assertEqual(self.m.cli(["drop", "tab-unloader"]), 0)
+        self.assertIsNone(self.m.extra_state(self._item("tab-unloader")))
 
 
 if __name__ == "__main__":

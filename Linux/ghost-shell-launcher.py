@@ -27,12 +27,13 @@ import sys
 import tarfile
 import tempfile
 import threading
+import zipfile
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 APP = {
     "id": "terminal",
@@ -48,6 +49,8 @@ LAUNCHER_TAG = "linux-latest"
 # Адрес GitHub можно подменить ТОЛЬКО для проверок (локальный сервер вместо github.com).
 _TEST_BASE = os.environ.get("GSL_TEST_BASE", "").rstrip("/")
 GITHUB = _TEST_BASE or "https://github.com"
+RAW = _TEST_BASE or "https://raw.githubusercontent.com"
+OWNER = "botsystemtioxsit"
 _TEST_HOST = urllib.parse.urlparse(_TEST_BASE).netloc if _TEST_BASE else ""
 
 
@@ -560,12 +563,12 @@ def self_update(note=None):
     return ver
 
 
-def safe_extract(tgz, dest):
+def safe_extract(tgz, dest, max_files=200, max_file=5 * 1024 * 1024):
     """Распаковка без выхода за папку: только обычные файлы и папки, без ссылок и абсолютных путей."""
     dest = os.path.realpath(dest)
     with tarfile.open(tgz, "r:gz") as t:
         members = t.getmembers()
-        if len(members) > 200:
+        if len(members) > max_files:
             raise LauncherError("В архиве слишком много файлов.")
         for m in members:
             if not (m.isfile() or m.isdir()):
@@ -573,7 +576,7 @@ def safe_extract(tgz, dest):
             target = os.path.realpath(os.path.join(dest, m.name))
             if not (target == dest or target.startswith(dest + os.sep)):
                 raise LauncherError("Архив пытается выйти за свою папку — не распаковываю.")
-            if m.isfile() and m.size > 5 * 1024 * 1024:
+            if m.isfile() and m.size > max_file:
                 raise LauncherError("В архиве слишком большой файл.")
         for m in members:
             m.mode = 0o755 if (m.isdir() or m.name.endswith(".py")) else 0o644
@@ -581,6 +584,241 @@ def safe_extract(tgz, dest):
             t.extractall(dest, members=members, filter="data")  # Python 3.12+
         except TypeError:
             t.extractall(dest, members=members)
+
+
+# ---------------------------------------------------------------- программы и расширения для Linux
+# Лаунчер сам их не запускает и в систему не ставит: скачивает файл, проверяет сумму (если она есть в релизе) и раскладывает так, как
+# для этого вида принято, а дальше говорит человеку точный следующий шаг (.deb ставится командой с sudo, расширение подключает сам браузер).
+
+# Запасной список (если не удалось прочитать catalog.json): те же записи, что в catalog.json → downloads / browserPlugins.
+EXTRAS_DEFAULT = [
+    {"id": "solitaire-linux", "name": "Косынка", "desc": "Пасьянс «Косынка» (пакет .deb: Debian, Ubuntu, Linux Mint).", "repo": "game-linux", "tag": "latest", "asset": "solitaire-linux.deb"},
+    {"id": "phonecast", "name": "Phonecast", "desc": "Экран Android-телефона на ноутбуке по USB, с управлением мышью и клавиатурой.", "repo": "Remote", "tag": "latest", "asset": "phonecast-linux.tar.gz"},
+    {"id": "tab-unloader", "name": "Tab Unloader", "desc": "Расширение для Chrome: выгружает неактивные вкладки, когда мало памяти.", "repo": "sstr", "tag": "latest", "asset": "tab-unloader.zip"},
+    {"id": "mask-plus", "name": "Mask Plus", "desc": "Расширение для Chrome, Edge, Brave: подменяет часовой пояс, язык и местоположение под выбранную страну, закрывает утечку адреса через WebRTC. IP не меняет.", "repo": "launcher", "tag": "latest", "asset": "MaskPlus-extension.zip"},
+]
+_NAME_RE = re.compile(r"^[A-Za-z0-9._-]{1,120}$")
+_ID_RE = re.compile(r"^[a-z0-9-]{1,40}$")
+
+
+def extra_kind(asset):
+    a = asset.lower()
+    if a.endswith(".deb"):
+        return "deb"
+    if a.endswith(".tar.gz") or a.endswith(".tgz"):
+        return "tar"
+    if a.endswith(".zip"):
+        return "ext"
+    return None
+
+
+def _clean_extra(d, extra_zip=None):
+    """Одна запись каталога → проверенный словарь или None. Всё из сети проверяется по шаблонам."""
+    try:
+        src = extra_zip or d
+        item = {"id": str(d.get("id", "")), "name": str(d.get("name", ""))[:60], "desc": re.sub(r"\s+", " ", str(d.get("desc", ""))).strip()[:300],
+                "repo": str(src.get("repo", "")), "tag": str(src.get("tag", "latest")), "asset": str(src.get("asset", ""))}
+    except AttributeError:
+        return None
+    if not (_ID_RE.match(item["id"]) and item["name"] and all(_NAME_RE.match(item[k]) for k in ("repo", "tag", "asset"))):
+        return None
+    item["kind"] = extra_kind(item["asset"])
+    return item if item["kind"] else None
+
+
+def extras_catalog():
+    """Список программ для Linux: из catalog.json (его читаем прямым адресом raw), при неудаче — запасной список."""
+    items = []
+    try:
+        data = json.loads(http_get(RAW + "/" + OWNER + "/launcher/main/catalog.json", max_bytes=512 * 1024).decode("utf-8"))
+        for d in data.get("downloads", []):
+            if isinstance(d, dict) and "linux" in (d.get("os") or []):
+                it = _clean_extra(d)
+                if it:
+                    items.append(it)
+        for d in data.get("browserPlugins", []):
+            if isinstance(d, dict) and isinstance(d.get("zip"), dict):
+                it = _clean_extra(d, d["zip"])
+                if it:
+                    items.append(it)
+    except Exception:
+        items = []
+    return items or [dict(i, kind=extra_kind(i["asset"])) for i in EXTRAS_DEFAULT]
+
+
+def extra_url(item, suffix=""):
+    if item["tag"] == "latest":
+        return "%s/%s/%s/releases/latest/download/%s%s" % (GITHUB, OWNER, item["repo"], item["asset"], suffix)
+    return "%s/%s/%s/releases/download/%s/%s%s" % (GITHUB, OWNER, item["repo"], item["tag"], item["asset"], suffix)
+
+
+def extra_dir(item):
+    sub = "browser" if item["kind"] == "ext" else "apps"
+    return os.path.join(data_dir(), sub, item["id"])
+
+
+def downloads_dir():
+    d = os.path.expanduser("~/Downloads")
+    if os.environ.get("GSL_HOME"):
+        d = os.path.join(data_dir(), "downloads")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def extra_state(item):
+    """Что уже скачано: путь (папка для архивов и расширений, файл для .deb) или None."""
+    p = os.path.join(downloads_dir(), item["asset"]) if item["kind"] == "deb" else extra_dir(item)
+    return p if os.path.exists(p) else None
+
+
+def _download_plain(url, dest, progress=None, max_bytes=300 * 1024 * 1024):
+    if not _host_ok(url):
+        raise LauncherError("Адрес не из GitHub — не качаю.")
+    h = hashlib.sha256()
+    req = urllib.request.Request(url, headers=_ua())
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            if not _host_ok(r.geturl()):
+                raise LauncherError("GitHub перенаправил на чужой адрес — не качаю.")
+            total = int(r.headers.get("Content-Length") or 0)
+            got = 0
+            with open(dest, "wb") as f:
+                while True:
+                    chunk = r.read(256 * 1024)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    h.update(chunk)
+                    got += len(chunk)
+                    if got > max_bytes:
+                        raise LauncherError("Файл слишком большой — остановил.")
+                    if progress and total:
+                        progress(min(99, int(got * 100 / total)))
+    except BaseException:
+        try:
+            os.remove(dest)
+        except OSError:
+            pass
+        raise
+    return h.hexdigest()
+
+
+_EXT_ALLOWED = (".js", ".json", ".html", ".css", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".txt", ".md", ".woff", ".woff2")
+
+
+def safe_extract_zip(zpath, dest):
+    """Распаковка расширения: только разрешённые типы файлов, без выхода за папку, с лимитами."""
+    dest = os.path.realpath(dest)
+    with zipfile.ZipFile(zpath) as z:
+        infos = z.infolist()
+        if len(infos) > 3000:
+            raise LauncherError("В архиве слишком много файлов.")
+        total = 0
+        for i in infos:
+            if i.is_dir():
+                continue
+            name = i.filename
+            if name.startswith("/") or ".." in name.replace("\\", "/").split("/") or not name.lower().endswith(_EXT_ALLOWED):
+                raise LauncherError("В архиве расширения лишнее (%s) — не распаковываю." % name[:60])
+            if i.file_size > 20 * 1024 * 1024:
+                raise LauncherError("В архиве слишком большой файл.")
+            total += i.file_size
+            target = os.path.realpath(os.path.join(dest, name))
+            if not target.startswith(dest + os.sep):
+                raise LauncherError("Архив пытается выйти за свою папку — не распаковываю.")
+        if total > 80 * 1024 * 1024:
+            raise LauncherError("Архив слишком большой.")
+        for i in infos:
+            if i.is_dir():
+                continue
+            target = os.path.join(dest, i.filename)
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            with z.open(i) as src, open(target, "wb") as out:
+                shutil.copyfileobj(src, out)
+            os.chmod(target, 0o644)
+
+
+def install_extra(item, progress=None, note=None):
+    """Скачать и разложить. Возвращает { path, hint, verified }."""
+    say = note or (lambda *_: None)
+    os.makedirs(os.path.join(data_dir(), "tmp"), exist_ok=True)
+    tmp = os.path.join(data_dir(), "tmp", item["id"] + "-" + str(os.getpid()) + ".part")
+    say("Скачиваю %s…" % item["name"])
+    digest = _download_plain(extra_url(item), tmp, progress)
+    verified = False
+    try:
+        want = http_get(extra_url(item, ".sha256"), max_bytes=4096).decode("utf-8", "replace").split()
+        if want:
+            if want[0].lower() != digest:
+                raise LauncherError("Контрольная сумма скачанного файла не совпала — файл не принят.")
+            verified = True
+    except urllib.error.HTTPError as e:
+        if e.code not in (403, 404):
+            os.remove(tmp)
+            raise
+    except LauncherError:
+        os.remove(tmp)
+        raise
+    except Exception:
+        pass  # суммы в релизе нет или не прочиталась — это сообщим человеку, но не мешаем
+    try:
+        kind = item["kind"]
+        if kind == "deb":
+            dest = os.path.join(downloads_dir(), item["asset"])
+            shutil.move(tmp, dest)
+            return {"path": dest, "verified": verified, "hint": "Установить (нужен пароль администратора):\n  sudo apt install %s" % _sh_quote(dest)}
+        target = extra_dir(item)
+        stage = target + ".new"
+        shutil.rmtree(stage, ignore_errors=True)
+        os.makedirs(stage)
+        say("Распаковываю…")
+        try:
+            if kind == "tar":
+                safe_extract(tmp, stage, max_files=2000, max_file=200 * 1024 * 1024)
+            else:
+                safe_extract_zip(tmp, stage)
+                if not os.path.isfile(os.path.join(stage, "manifest.json")):
+                    subs = [d for d in os.listdir(stage) if os.path.isdir(os.path.join(stage, d))]
+                    if len(subs) == 1 and os.path.isfile(os.path.join(stage, subs[0], "manifest.json")):
+                        inner = os.path.join(stage, subs[0])
+                        for n in os.listdir(inner):
+                            shutil.move(os.path.join(inner, n), os.path.join(stage, n))
+                        os.rmdir(inner)
+                    else:
+                        raise LauncherError("В архиве нет файла manifest.json — это не расширение.")
+        except BaseException:
+            shutil.rmtree(stage, ignore_errors=True)
+            raise
+        shutil.rmtree(target, ignore_errors=True)
+        os.replace(stage, target)
+        if kind == "tar":
+            inst = next((os.path.join(r, "install.sh") for r, _, fs in os.walk(target) if "install.sh" in fs), None)
+            hint = ("Установить:\n  cd %s && sh ./install.sh" % _sh_quote(os.path.dirname(inst))) if inst else "Папка с программой: " + target
+        else:
+            hint = ("Подключить в браузере: откройте chrome://extensions, включите «Режим разработчика», нажмите «Загрузить распакованное расширение» "
+                    "и выберите папку:\n  %s\nПосле обновления нажмите круглую стрелку у расширения." % target)
+        return {"path": target, "verified": verified, "hint": hint}
+    finally:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+
+
+def remove_extra(item):
+    p = extra_state(item)
+    if not p:
+        return False
+    if os.path.isdir(p):
+        shutil.rmtree(p, ignore_errors=True)
+    else:
+        os.remove(p)
+    return True
+
+
+def find_extra(cat, key):
+    key = (key or "").lower()
+    return next((i for i in cat if i["id"] == key), None)
 
 
 # ---------------------------------------------------------------- текстовый режим
@@ -612,6 +850,21 @@ def cli(argv):
         elif cmd == "check":
             cur, newer, rel = check_update()
             say("Установлена: %s · вышла: %s%s" % (cur or "нет", rel["version"], " — есть обновление" if newer and cur else ""))
+        elif cmd == "list":
+            for it in extras_catalog():
+                st = extra_state(it)
+                say("%-16s %-14s %s%s" % (it["id"], it["name"], {"deb": "пакет .deb", "tar": "программа", "ext": "расширение для браузера"}[it["kind"]], " — скачано" if st else ""))
+        elif cmd == "get":
+            it = find_extra(extras_catalog(), argv[1] if len(argv) > 1 else "")
+            if not it:
+                say("Нет такой программы. Список: ghost-shell-launcher list")
+                return 2
+            r = install_extra(it, bar, say)
+            say("Готово: " + r["path"] + ("" if r["verified"] else "\n(контрольной суммы в релизе нет — файл не сверялся)"))
+            say(r["hint"])
+        elif cmd == "drop":
+            it = find_extra(extras_catalog(), argv[1] if len(argv) > 1 else "")
+            say("Удалено." if it and remove_extra(it) else "Нечего удалять.")
         elif cmd == "run":
             run_terminal()
         elif cmd in ("remove", "uninstall"):
@@ -649,6 +902,9 @@ USAGE = """Ghost Shell Launcher %s (Linux)
   ghost-shell-launcher check      узнать, что вышло
   ghost-shell-launcher run        запустить
   ghost-shell-launcher remove     удалить приложение (лаунчер остаётся)
+  ghost-shell-launcher list       программы и расширения для Linux (Косынка, Phonecast, Tab Unloader, Mask Plus)
+  ghost-shell-launcher get <имя>  скачать и разложить (имя — из списка), в конце подскажет, что делать дальше
+  ghost-shell-launcher drop <имя> убрать скачанное
   ghost-shell-launcher install-self   поставить сам лаунчер (команда + ярлык в меню)
   ghost-shell-launcher self-update    обновить сам лаунчер
 """ % VERSION
@@ -685,8 +941,8 @@ def run_gui(on_ready=None):
     class Win(Gtk.Window):
         def __init__(self):
             super().__init__(title="Ghost Shell Launcher")
-            self.set_default_size(560, 380)
-            self.set_resizable(False)
+            self.set_default_size(600, 700)
+            self.set_resizable(True)
             self.set_border_width(0)
             self.busy = False
             self.release = None
@@ -716,7 +972,7 @@ def run_gui(on_ready=None):
 
             card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
             card.get_style_context().add_class("card")
-            outer.pack_start(card, True, True, 0)
+            outer.pack_start(card, False, False, 0)
             ip = next((os.path.join(d, "ghost-shell-terminal.png") for d in _icon_sources() if os.path.isfile(os.path.join(d, "ghost-shell-terminal.png"))), None)
             if ip:
                 try:
@@ -755,6 +1011,19 @@ def run_gui(on_ready=None):
             for b in (self.b_main, self.b_run, self.b_del):
                 btns.pack_start(b, False, False, 0)
 
+            eh = Gtk.Label(label="Программы и расширения для Linux")
+            eh.get_style_context().add_class("name")
+            eh.set_xalign(0)
+            outer.pack_start(eh, False, False, 0)
+            self.extras_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            sw = Gtk.ScrolledWindow()
+            sw.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            sw.set_min_content_height(230)
+            sw.add(self.extras_box)
+            outer.pack_start(sw, True, True, 0)
+            self.extras_box.pack_start(self._muted("Загружаю список…"), False, False, 0)
+            self.extra_rows = {}
+
             foot = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
             outer.pack_start(foot, False, False, 0)
             self.foot_lbl = Gtk.Label(label="Лаунчер %s" % VERSION)
@@ -767,6 +1036,111 @@ def run_gui(on_ready=None):
 
             self.connect("destroy", Gtk.main_quit)
             self.refresh_state(check_net=True)
+            self.load_extras()
+
+        # --- программы и расширения (скачать и разложить; ничего не запускается и не ставится в систему без вашего шага)
+        def _muted(self, text):
+            l = Gtk.Label(label=text)
+            l.get_style_context().add_class("muted")
+            l.set_xalign(0)
+            l.set_line_wrap(True)
+            return l
+
+        def load_extras(self, catalog=None):
+            def work():
+                cat = catalog if catalog is not None else extras_catalog()
+                GLib.idle_add(lambda: (self.build_extras(cat), False)[1])
+            threading.Thread(target=work, daemon=True).start()
+
+        def build_extras(self, cat):
+            for c in self.extras_box.get_children():
+                self.extras_box.remove(c)
+            self.extra_rows = {}
+            for it in cat:
+                row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+                row.get_style_context().add_class("card")
+                col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+                row.pack_start(col, True, True, 0)
+                nm = Gtk.Label(label=it["name"] + "  ·  " + {"deb": "пакет .deb", "tar": "программа", "ext": "расширение для браузера"}[it["kind"]])
+                nm.get_style_context().add_class("name")
+                nm.set_xalign(0)
+                nm.set_line_wrap(True)
+                col.pack_start(nm, False, False, 0)
+                col.pack_start(self._muted(it["desc"]), False, False, 0)
+                st = Gtk.Label(label="")
+                st.set_xalign(0)
+                st.set_line_wrap(True)
+                st.set_selectable(True)
+                col.pack_start(st, False, False, 2)
+                btns = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+                b_get = Gtk.Button(label="Скачать")
+                b_get.get_style_context().add_class("primary")
+                b_open = Gtk.Button(label="Открыть папку")
+                b_del = Gtk.Button(label="Убрать")
+                for b in (b_get, b_open, b_del):
+                    btns.pack_start(b, False, False, 0)
+                row.pack_end(btns, False, False, 0)
+                b_get.connect("clicked", lambda _b, it=it: self.on_extra_get(it))
+                b_open.connect("clicked", lambda _b, it=it: self.on_extra_open(it))
+                b_del.connect("clicked", lambda _b, it=it: self.on_extra_drop(it))
+                self.extra_rows[it["id"]] = {"st": st, "get": b_get, "open": b_open, "del": b_del}
+                self.extras_box.pack_start(row, False, False, 0)
+                self.refresh_extra(it)
+            self.extras_box.show_all()
+            for it in cat:
+                self.refresh_extra(it)
+
+        def refresh_extra(self, it, text=None, cls=None):
+            r = self.extra_rows.get(it["id"])
+            if not r:
+                return
+            have = extra_state(it)
+            ctx = r["st"].get_style_context()
+            for c in ("ok", "warn", "bad"):
+                ctx.remove_class(c)
+            if cls:
+                ctx.add_class(cls)
+            r["st"].set_text(text if text is not None else ("Скачано: " + have if have else ""))
+            r["get"].set_label("Скачать заново" if have else "Скачать")
+            r["open"].set_visible(bool(have))
+            r["open"].set_no_show_all(not have)
+            r["del"].set_visible(bool(have))
+            r["del"].set_no_show_all(not have)
+
+        def on_extra_get(self, it):
+            rw = self.extra_rows[it["id"]]
+            rw["get"].set_sensitive(False)
+
+            def work():
+                return install_extra(it, None, lambda m: GLib.idle_add(lambda: (self.refresh_extra(it, m), False)[1]))
+
+            def run():
+                try:
+                    res, err = work(), None
+                except Exception as e:
+                    res, err = None, e
+
+                def done():
+                    rw["get"].set_sensitive(True)
+                    if err:
+                        self.refresh_extra(it, "Не вышло: " + explain(err), "bad")
+                    else:
+                        self.refresh_extra(it, res["hint"] + ("" if res["verified"] else "\n(контрольной суммы в релизе нет — файл не сверялся)"), "ok")
+                    return False
+                GLib.idle_add(done)
+            threading.Thread(target=run, daemon=True).start()
+
+        def on_extra_open(self, it):
+            p = extra_state(it)
+            if p:
+                try:
+                    subprocess.Popen(["xdg-open", p if os.path.isdir(p) else os.path.dirname(p)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                except OSError:
+                    self.refresh_extra(it, "Не получилось открыть папку: " + p, "warn")
+
+        def on_extra_drop(self, it):
+            remove_extra(it)
+            self.refresh_extra(it, "Убрано.", None)
 
         # --- помощники
         def say(self, text, cls=None):
