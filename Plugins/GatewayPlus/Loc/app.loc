@@ -456,3 +456,7 @@ GSP Beta — создать (тест) ⇒ GSP Beta — create (test) ⇒ GSP Be
 
 Тестовый протокол Ghost Shell: своя схема рукопожатия с секретом профиля, пакеты по форме как начало QUIC, мусорные пакеты. Новый профиль берёт ключи профиля «{}». ⇒ Ghost Shell test protocol: its own handshake scheme with a profile secret, packets shaped like the start of QUIC, junk packets. The new profile takes the keys of the profile "{0}". ⇒ Ghost-Shell-Testprotokoll: eigenes Handshake-Schema mit Profilgeheimnis, Pakete in der Form eines QUIC-Anfangs, Müllpakete. Das neue Profil übernimmt die Schlüssel des Profils „{0}“.
 Профилю «{}» не хватает секрета для GSP Beta. Откройте «Сервер…» и нажмите «Обновить GSP на сервере» — секрет появится сам. ⇒ Profile "{0}" lacks the secret for GSP Beta. Open "Server…" and press "Update GSP on the server" — the secret appears by itself. ⇒ Dem Profil „{0}“ fehlt das Geheimnis für GSP Beta. Öffne „Server…“ und klicke auf „GSP auf dem Server aktualisieren“ – das Geheimnis erscheint von selbst.
+Отправить отчёт разработчику ⇒ Send a report to the developer ⇒ Bericht an den Entwickler senden
+Отправляю отчёт… ⇒ Sending the report… ⇒ Bericht wird gesendet…
+Отчёт отправлен разработчику. Спасибо! ⇒ The report was sent to the developer. Thank you! ⇒ Der Bericht wurde an den Entwickler gesendet. Danke!
+Отчёт не отправился:  ⇒ The report was not sent:  ⇒ Der Bericht wurde nicht gesendet: 
