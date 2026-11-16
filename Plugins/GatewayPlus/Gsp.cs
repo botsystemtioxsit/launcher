@@ -69,7 +69,7 @@ static class Gsp
                     case "mtu": if (!int.TryParse(v, out var m) || m < 1200 || m > 1500) return "MTU: число от 1200 до 1500."; break;
                     case "fec": if (!FecRe.IsMatch(v)) return "FEC: off, auto или два числа через плюс (например 8+3)."; break;
                     case "pad": if (!int.TryParse(v, out var pd) || pd < 0 || pd > 255) return "Pad: число от 0 до 255."; break;
-                    case "proto": if (v != "1" && v != "2") return "Proto: 1 или 2."; break;
+                    case "proto": if (v != "1" && v != "2" && v != "3") return "Proto: 1, 2 или 3 (3 — GSP Beta)."; break;
                     case "killswitch": if (!KillRe.IsMatch(v)) return "KillSwitch: auto, on или off."; break;
                     case "name": if (!NameRe.IsMatch(v)) return "Name: латиница, цифры, пробел, «_ - .», до 40 знаков."; break;
                     case "dns": if (!v.Split(',').All(x => IPAddress.TryParse(x.Trim(), out _))) return "DNS: список IP-адресов через запятую."; break;
@@ -106,7 +106,11 @@ static class Gsp
     }
 
     // Версия протокола профиля: 2 — стандартные конструкции (ChaCha20-защита заголовка, HKDF), без строки Proto — 1 (прежняя; сервер понимает обе).
-    public static int ProtoOf(string conf) => Store.InterfaceValue(conf, "Proto").Trim() == "2" ? 2 : 1;
+    public static int ProtoOf(string conf) => Store.InterfaceValue(conf, "Proto").Trim() switch { "3" => 3, "2" => 2, _ => 1 };
+
+    // «GSP Beta» (Proto = 3) — тестовая версия протокола с маскировкой рукопожатия (Protocols/Gsp/beta.go). Показывается в интерфейсе отдельным названием.
+    public static bool IsBeta(string conf) => IsGsp(conf) && ProtoOf(conf) == 3;
+    public static string Label(string conf) => IsBeta(conf) ? "GSP Beta" : "GSP";
 
     public static string WithName(string conf, string adapterName) => Store.WithInterfaceValue(conf, "Name", adapterName);
 

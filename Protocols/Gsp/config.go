@@ -22,7 +22,7 @@ import (
 //	FEC        = auto | off | 10+2
 //	Pad        = 0            (случайная набивка пакетов до N байт, для маскировки размеров)
 //	Name       = gsp0
-//	Proto      = 1 | 2      (версия протокола у клиента; без строки — 1, чтобы прежние профили работали; новые профили — 2; сервер понимает обе)
+//	Proto      = 1 | 2 | 3      (версия протокола у клиента; без строки — 1, чтобы прежние профили работали; новые профили — 2; сервер понимает обе)
 //	KillSwitch = auto | on | off   (Windows: «защита от утечек» — пока шлюз работает, весь трафик вне туннеля заблокирован;
 //	                                auto: включена, когда в туннель идёт весь интернет, то есть в AllowedIPs есть 0.0.0.0/0)
 //	[Peer]
@@ -129,8 +129,8 @@ func parseConfig(path string) (*FileConfig, error) {
 				fc.Name = v
 			case "proto":
 				fc.Engine.Proto, err = strconv.Atoi(v)
-				if err == nil && fc.Engine.Proto != 1 && fc.Engine.Proto != 2 {
-					err = errors.New("Proto: 1 или 2")
+				if err == nil && fc.Engine.Proto < 1 || fc.Engine.Proto > 3 {
+					err = errors.New("Proto: 1, 2 или 3 (3 — GSP Beta)")
 				}
 			case "killswitch":
 				switch strings.ToLower(v) {

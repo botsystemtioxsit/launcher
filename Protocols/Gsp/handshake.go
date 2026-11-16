@@ -17,7 +17,10 @@ import (
 
 // Пролог Noise входит в итоговый хеш рукопожатия: у версий он разный, поэтому участники разных версий ключей не получат.
 func prologueFor(ver int) []byte {
-	if ver == protoV2 {
+	switch ver {
+	case protoV3:
+		return []byte("ghostshell-gsp-v3")
+	case protoV2:
 		return []byte("ghostshell-gsp-v2")
 	}
 	return []byte("ghostshell-gsp-v1")

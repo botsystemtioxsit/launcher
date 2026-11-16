@@ -36,7 +36,7 @@ type Config struct {
 	Peers      []PeerConfig
 	FEC        string // "off" | "auto" | "10+2"
 	PadMax     int    // случайная набивка до N байт
-	Proto      int    // версия протокола у клиента: 1 (по умолчанию) или 2; сервер принимает обе
+	Proto      int    // версия протокола у клиента: 1 (по умолчанию), 2 или 3 (GSP Beta); сервер принимает все
 	Debug      bool
 	// Для тестов и сравнений: искусственные потери исходящих пакетов (доля 0..1).
 	DebugDropTx float64
@@ -76,7 +76,7 @@ type peer struct {
 type Engine struct {
 	cfg     Config
 	static  noise.DHKey
-	myObf   [3][32]byte // ключ упаковки рукопожатий по версиям протокола (индекс — версия)
+	myObf   [4][32]byte // ключ упаковки рукопожатий по версиям протокола (индекс — версия)
 	dev     Device
 	conn    *net.UDPConn
 	pc      batchIO
@@ -116,6 +116,7 @@ func NewEngine(cfg Config, dev Device) (*Engine, error) {
 	}
 	e.myObf[protoV1] = obfKeyFor(pub, protoV1)
 	e.myObf[protoV2] = obfKeyFor(pub, protoV2)
+	e.myObf[protoV3] = obfKeyFor(pub, protoV3)
 	e.pool.New = func() any { b := make([]byte, bufSize); return &b }
 	switch cfg.FEC {
 	case "", "auto":
@@ -139,8 +140,10 @@ func NewEngine(cfg Config, dev Device) (*Engine, error) {
 		case 0, protoV1:
 		case protoV2:
 			p.ver = protoV2
+		case protoV3:
+			p.ver = protoV3
 		default:
-			return nil, errors.New("Proto: поддерживаются версии 1 и 2")
+			return nil, errors.New("Proto: поддерживаются версии 1, 2 и 3")
 		}
 		p.obf = obfKeyFor(pc.PublicKey, p.ver)
 		if pc.Endpoint.IsValid() {
@@ -461,8 +464,12 @@ func (e *Engine) sendIP(p *peer, s *session, tx *txBatch, buf []byte, sz int) {
 	p.fmu.Unlock()
 
 	pad := 0
-	if e.cfg.PadMax > 0 {
-		pad = randByte() % (e.cfg.PadMax + 1)
+	padMax := e.cfg.PadMax
+	if padMax == 0 && s.ver == protoV3 {
+		padMax = betaPad // в GSP Beta набивка есть по умолчанию
+	}
+	if padMax > 0 {
+		pad = randByte() % (padMax + 1)
 	}
 	end := bodyOff + sz
 	if fecOn {
@@ -764,7 +771,13 @@ func (e *Engine) kickHandshake(p *peer) {
 	p.pending = pend
 	to := p.endpoint.Load()
 	p.mu.Unlock()
-	pkt := sealHandshake(&p.obf, msg)
+	var pkt []byte
+	if p.ver == protoV3 {
+		sendBetaJunk(e.conn, to)
+		pkt = wrapBeta(sealHandshakePad(&p.obf, msg, betaPadFor(len(msg))))
+	} else {
+		pkt = sealHandshake(&p.obf, msg)
+	}
 	_, _ = e.conn.WriteToUDP(pkt, to)
 	e.Log("рукопожатие → %v", to)
 }
@@ -778,7 +791,15 @@ func (e *Engine) handleHandshake(pk []byte, src netip.AddrPort, ua *net.UDPAddr)
 		if pend == nil {
 			continue
 		}
-		msg, err := openHandshake(&p.obf, pk)
+		body := pk
+		if p.ver == protoV3 {
+			b, ok := unwrapBeta(pk)
+			if !ok {
+				continue
+			}
+			body = b
+		}
+		msg, err := openHandshake(&p.obf, body)
 		if err != nil {
 			continue
 		}
@@ -803,10 +824,17 @@ func (e *Engine) handleHandshake(pk []byte, src netip.AddrPort, ua *net.UDPAddr)
 	// сервер понимает обе версии: смотрим, чьим ключом упаковано рукопожатие
 	var msg []byte
 	var hver int
-	for _, v := range [2]int{protoV2, protoV1} {
-		if m, err := openHandshake(&e.myObf[v], pk); err == nil {
-			msg, hver = m, v
-			break
+	if b, ok := unwrapBeta(pk); ok {
+		if m, err := openHandshake(&e.myObf[protoV3], b); err == nil {
+			msg, hver = m, protoV3
+		}
+	}
+	if hver == 0 {
+		for _, v := range [2]int{protoV2, protoV1} {
+			if m, err := openHandshake(&e.myObf[v], pk); err == nil {
+				msg, hver = m, v
+				break
+			}
 		}
 	}
 	if hver == 0 {
@@ -844,7 +872,12 @@ func (e *Engine) handleHandshake(pk []byte, src netip.AddrPort, ua *net.UDPAddr)
 	s := newSession(hver, srvIdx, info.clientIdx, send, recv, shp, rhp, p)
 	e.install(p, s)
 	p.setEndpoint(src)
-	pkt := sealHandshake(&e.myObf[hver], rmsg)
+	var pkt []byte
+	if hver == protoV3 {
+		pkt = wrapBeta(sealHandshakePad(&e.myObf[hver], rmsg, betaPadFor(len(rmsg))))
+	} else {
+		pkt = sealHandshake(&e.myObf[hver], rmsg)
+	}
 	_, _ = e.conn.WriteToUDP(pkt, ua)
 	e.Log("новый сеанс от %v", src)
 }
