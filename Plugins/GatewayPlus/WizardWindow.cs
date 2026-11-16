@@ -16,7 +16,7 @@ sealed class WizardWindow : Window
     readonly TextBox nameBox = new() { Text = "germany", Width = 220, HorizontalAlignment = HorizontalAlignment.Left, MaxLength = 32 };
     readonly RadioButton rbWg = new() { Content = "WireGuard — стандарт: быстрый, проверенный годами", IsChecked = true, Margin = new Thickness(0, 0, 0, 4), GroupName = "proto" };
     readonly RadioButton rbGsp = new() { Content = "GSP — наш протокол: лучше переносит потери связи (мобильная сеть, Wi-Fi, далёкий сервер)", GroupName = "proto" };
-    readonly RadioButton rbBeta = new() { Content = "GSP Beta (тест) — GSP с маскировкой рукопожатия под QUIC, против блокировок по сигнатурам", GroupName = "proto" };
+    readonly RadioButton rbBeta = new() { Content = "GSP Beta (тест) — свой протокол Ghost Shell: другая схема рукопожатия, секрет профиля, маскировка под QUIC", GroupName = "proto" };
     readonly TextBox logBox = new() { IsReadOnly = true, FontFamily = (FontFamily)Application.Current.FindResource("Mono"), FontSize = 12, TextWrapping = TextWrapping.NoWrap, Height = 180, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(8) };
     readonly TextBlock msg = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
     Button go = null!;
@@ -48,7 +48,7 @@ sealed class WizardWindow : Window
 
         page.Children.Add(Ui.Label("Протокол"));
         page.Children.Add(rbWg); page.Children.Add(rbGsp); page.Children.Add(rbBeta);
-        page.Children.Add(Ui.Note("WireGuard — выбор по умолчанию. GSP — молодой протокол Ghost Shell: когда связь теряет пакеты, он восстанавливает их сам, и скорость падает заметно меньше (на хорошей связи он не быстрее WireGuard). Оба ставятся на ваш сервер по SSH, можно поставить оба — они не мешают друг другу. GSP Beta — тестовая версия GSP для сетей, где блокируют по сигнатурам (она работает на том же сервере и порту, что и GSP); работоспособность в таких сетях пока не проверена.", 11.5));
+        page.Children.Add(Ui.Note("WireGuard — выбор по умолчанию. GSP — молодой протокол Ghost Shell: когда связь теряет пакеты, он восстанавливает их сам, и скорость падает заметно меньше (на хорошей связи он не быстрее WireGuard). Оба ставятся на ваш сервер по SSH, можно поставить оба — они не мешают друг другу. GSP Beta — тестовый протокол Ghost Shell для сетей, где блокируют по сигнатурам: своя схема рукопожатия, сервер молчит для тех, у кого нет секрета профиля (он работает на том же сервере и порту, что и GSP); работоспособность в таких сетях пока не проверена.", 11.5));
 
         page.Children.Add(Ui.Label("Название профиля (латиницей)"));
         page.Children.Add(nameBox);

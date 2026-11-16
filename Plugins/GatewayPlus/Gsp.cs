@@ -32,7 +32,7 @@ static class Gsp
     static readonly Regex KillRe = new(@"^(auto|on|off)$", RegexOptions.IgnoreCase);
     static readonly Regex NameRe = new(@"^[A-Za-z0-9 _\-.]{1,40}$");
 
-    static readonly HashSet<string> IfaceKeys = new(StringComparer.OrdinalIgnoreCase) { "PrivateKey", "Address", "ListenPort", "MTU", "FEC", "Pad", "Name", "DNS", "KillSwitch", "Proto" };
+    static readonly HashSet<string> IfaceKeys = new(StringComparer.OrdinalIgnoreCase) { "PrivateKey", "Address", "ListenPort", "MTU", "FEC", "Pad", "Name", "DNS", "KillSwitch", "Proto", "BetaKey" };
     static readonly HashSet<string> PeerKeys = new(StringComparer.OrdinalIgnoreCase) { "PublicKey", "Endpoint", "AllowedIPs", "PersistentKeepalive" };
 
     static bool Cidrs(string v) => v.Split(',').Select(x => x.Trim()).All(x => x.Length > 0 && (Cidr4.IsMatch(x) || Cidr6.IsMatch(x)) && int.TryParse(x[(x.IndexOf('/') + 1)..], out var b) && b <= (x.Contains(':') ? 128 : 32));
@@ -70,6 +70,7 @@ static class Gsp
                     case "fec": if (!FecRe.IsMatch(v)) return "FEC: off, auto или два числа через плюс (например 8+3)."; break;
                     case "pad": if (!int.TryParse(v, out var pd) || pd < 0 || pd > 255) return "Pad: число от 0 до 255."; break;
                     case "proto": if (v != "1" && v != "2" && v != "3") return "Proto: 1, 2 или 3 (3 — GSP Beta)."; break;
+                    case "betakey": if (!KeyRe.IsMatch(v)) return "BetaKey: секрет профиля GSP Beta, 44 знака (base64)."; break;
                     case "killswitch": if (!KillRe.IsMatch(v)) return "KillSwitch: auto, on или off."; break;
                     case "name": if (!NameRe.IsMatch(v)) return "Name: латиница, цифры, пробел, «_ - .», до 40 знаков."; break;
                     case "dns": if (!v.Split(',').All(x => IPAddress.TryParse(x.Trim(), out _))) return "DNS: список IP-адресов через запятую."; break;
@@ -95,6 +96,7 @@ static class Gsp
         if (!priv) return "В конфиге нет PrivateKey.";
         if (!pub) return "В конфиге нет PublicKey сервера.";
         if (!ep) return "В конфиге нет Endpoint (адрес сервера).";
+        if (ProtoOf(conf) == 3 && !KeyRe.IsMatch(Store.InterfaceValue(conf, "BetaKey").Trim())) return "Для GSP Beta (Proto = 3) нужен BetaKey — секрет профиля; его выдаёт сервер при установке или обновлении GSP.";
         return null;
     }
 
@@ -110,6 +112,7 @@ static class Gsp
 
     // «GSP Beta» (Proto = 3) — тестовая версия протокола с маскировкой рукопожатия (Protocols/Gsp/beta.go). Показывается в интерфейсе отдельным названием.
     public static bool IsBeta(string conf) => IsGsp(conf) && ProtoOf(conf) == 3;
+    public static bool HasBetaKey(string conf) => KeyRe.IsMatch(Store.InterfaceValue(conf, "BetaKey").Trim());
     public static string Label(string conf) => IsBeta(conf) ? "GSP Beta" : "GSP";
 
     public static string WithName(string conf, string adapterName) => Store.WithInterfaceValue(conf, "Name", adapterName);

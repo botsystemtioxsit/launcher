@@ -386,8 +386,12 @@ sealed class MainWindow : Window
     {
         if (r.Gsp == null || r.All.Any(IsBetaProfile)) return null;
         var src = r.Gsp;
-        var b = new Button { Content = "GSP Beta — создать (тест)", Padding = new Thickness(16, 8, 16, 8), Margin = new Thickness(0, 0, 8, 8) };
-        b.ToolTip = "Тестовая версия протокола: рукопожатие замаскировано под начало QUIC, перед ним идут мусорные пакеты. Нужен сервер, обновлённый кнопкой «Сервер… → Обновить GSP». Новый профиль берёт те же ключи, что и «" + src + "».";
+        var srcConf = Store.Load(src);
+        var hasKey = srcConf != null && Gsp.HasBetaKey(srcConf);
+        var b = new Button { Content = "GSP Beta — создать (тест)", Padding = new Thickness(16, 8, 16, 8), Margin = new Thickness(0, 0, 8, 8), IsEnabled = hasKey };
+        b.ToolTip = hasKey
+            ? "Тестовый протокол Ghost Shell: своя схема рукопожатия с секретом профиля, пакеты по форме как начало QUIC, мусорные пакеты. Новый профиль берёт ключи профиля «" + src + "»."
+            : "Профилю «" + src + "» не хватает секрета для GSP Beta. Откройте «Сервер…» и нажмите «Обновить GSP на сервере» — секрет появится сам.";
         b.Click += (_, _) =>
         {
             var conf = Store.Load(src);

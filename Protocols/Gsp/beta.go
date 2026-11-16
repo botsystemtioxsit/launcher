@@ -1,18 +1,27 @@
 package main
 
-// «GSP Beta» (версия протокола 3) — тестовая версия, нацеленная на сети с глубоким анализом трафика (в том числе ТСПУ).
+// «GSP Beta» (версия протокола 3) — тестовый протокол, нацеленный на сети с глубоким анализом трафика (в том числе ТСПУ).
+// Это НЕ WireGuard в другой обёртке: схема другая. Но шифры — только стандартные (ChaCha20-Poly1305, Curve25519, BLAKE2s, HKDF-SHA256, шаблон Noise):
+// придумывать собственные шифры нельзя — их почти всегда ломают, а проект защищает людей.
 //
-// Что меняется по сравнению с версией 2 (шифрование и обмен ключами — те же проверенные, своей криптографии нет):
-//  1. Рукопожатие больше не «просто случайные байты»: пакет начинается как длинный заголовок QUIC Initial
-//     (флаги, версия 1, идентификаторы соединения, длина) и добирается до 1200–1300 байт, как у настоящих QUIC-клиентов.
-//     Внутри — то же упакованное рукопожатие. Это ПОХОЖЕСТЬ ФОРМЫ, а не настоящий QUIC: тот, кто расшифрует «начальный пакет» по правилам QUIC, увидит, что это не QUIC.
-//  2. Перед первым рукопожатием клиент шлёт несколько «мусорных» пакетов случайной длины (сервер их молча отбрасывает), чтобы начало обмена не имело постоянной формы.
-//  3. К пакетам данных по умолчанию добавляется случайная набивка (до betaPad байт), чтобы размеры не выдавали содержимое.
+// Чем отличается от WireGuard и от прежних версий GSP:
+//  1. Другое рукопожатие: Noise XKpsk3, три сообщения (у WireGuard и GSP 1–2 — IKpsk2/IK, два). Личность клиента открывается только в третьем сообщении.
+//  2. Секрет профиля BetaKey (у каждого сервера свой): входит в рукопожатие и в ключ упаковки пакетов. Кто его не знает — не получает от сервера ни байта
+//     (пробы ТСПУ и сканеры видят молчащий UDP-порт), а перебрать ключ по записанным пакетам нельзя.
+//  3. Все три сообщения рукопожатия — в форме QUIC Initial (заголовок, размер 1200–1300 байт). Это ПОХОЖЕСТЬ ФОРМЫ, а не настоящий QUIC.
+//  4. Перед рукопожатием — 3–5 мусорных пакетов случайной длины; набивка пакетов данных по умолчанию; смена ключей и keepalive с разбросом по времени (нет постоянного ритма).
 //
 // Что НЕ сделано: запасной режим через TCP/443, смена портов, проверка на настоящем ТСПУ.
 
 import (
+	"crypto/hkdf"
+	"crypto/sha256"
+	"encoding/binary"
 	"net"
+	"sync"
+	"time"
+
+	"github.com/flynn/noise"
 )
 
 const (
@@ -62,16 +71,6 @@ func unwrapBeta(pk []byte) ([]byte, bool) {
 	return pk[betaHdrLen:], true
 }
 
-// betaPadFor — сколько набивки добавить в рукопожатие длиной msgLen, чтобы вся датаграмма вышла размером betaMinTotal..betaMaxTotal.
-func betaPadFor(msgLen int) int {
-	fixed := betaHdrLen + 24 + 2 + msgLen + tagLen
-	p := randIn(betaMinTotal, betaMaxTotal) - fixed
-	if p < 0 {
-		p = 0
-	}
-	return p
-}
-
 func fillRand(b []byte) {
 	for i := 0; i < len(b); i += 4 {
 		v := randU32()
@@ -89,4 +88,101 @@ func sendBetaJunk(c *net.UDPConn, to *net.UDPAddr) {
 		fillRand(b)
 		_, _ = c.WriteToUDP(b, to)
 	}
+}
+
+// Ключ упаковки рукопожатия Beta: из секрета профиля, «соль» — открытый ключ сервера (у каждого сервера свой).
+func obfKeyBeta(serverPub, betaKey []byte) [32]byte {
+	k, _ := hkdf.Key(sha256.New, betaKey, serverPub, "gsp beta v3 wire", 32)
+	var out [32]byte
+	copy(out[:], k)
+	return out
+}
+
+// Типы сообщений рукопожатия Beta.
+const (
+	bMsgInit = 1 // клиент → сервер: e, es
+	bMsgResp = 2 // сервер → клиент: e, ee
+	bMsgFin  = 3 // клиент → сервер: s, se (+ секрет профиля)
+)
+
+// sealBeta: QUIC-подобный заголовок + XChaCha20-Poly1305( тип(1) | индекс(4) | длина(2) | сообщение Noise | набивка до размера 1200–1300 ).
+func sealBeta(key *[32]byte, typ byte, idx uint32, msg []byte) []byte {
+	const inner = 1 + 4 + 2
+	fixed := betaHdrLen + 24 + inner + len(msg) + tagLen
+	pad := randIn(betaMinTotal, betaMaxTotal) - fixed
+	if pad < 0 {
+		pad = 0
+	}
+	plain := make([]byte, inner+len(msg)+pad)
+	plain[0] = typ
+	binary.BigEndian.PutUint32(plain[1:5], idx)
+	binary.BigEndian.PutUint16(plain[5:7], uint16(len(msg)))
+	copy(plain[inner:], msg)
+	fillRand(plain[inner+len(msg):])
+	return wrapBeta(sealRaw(key, plain))
+}
+
+// openBeta возвращает тип, индекс и сообщение Noise; ok=false — пакет не наш (молчим).
+func openBeta(key *[32]byte, pk []byte) (typ byte, idx uint32, msg []byte, ok bool) {
+	body, shaped := unwrapBeta(pk)
+	if !shaped {
+		return 0, 0, nil, false
+	}
+	plain, err := openRaw(key, body)
+	if err != nil || len(plain) < 7 {
+		return 0, 0, nil, false
+	}
+	n := int(binary.BigEndian.Uint16(plain[5:7]))
+	if 7+n > len(plain) {
+		return 0, 0, nil, false
+	}
+	return plain[0], binary.BigEndian.Uint32(plain[1:5]), plain[7 : 7+n], true
+}
+
+// Состояние сервера между первым и третьим сообщением рукопожатия.
+type betaPend struct {
+	hs        *noise.HandshakeState
+	clientIdx uint32
+	ts        [12]byte
+	created   time.Time
+}
+
+type betaTable struct {
+	mu sync.Mutex
+	m  map[uint32]*betaPend
+}
+
+const (
+	betaPendMax = 512
+	betaPendTTL = 15 * time.Second
+)
+
+func (t *betaTable) put(idx uint32, p *betaPend) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.m == nil {
+		t.m = map[uint32]*betaPend{}
+	}
+	now := time.Now()
+	for k, v := range t.m {
+		if now.Sub(v.created) > betaPendTTL {
+			delete(t.m, k)
+		}
+	}
+	if len(t.m) >= betaPendMax {
+		return false
+	}
+	t.m[idx] = p
+	return true
+}
+
+func (t *betaTable) take(idx uint32) *betaPend {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	p := t.m[idx]
+	delete(t.m, idx)
+	if p != nil && time.Since(p.created) > betaPendTTL {
+		return nil
+	}
+	return p
 }
