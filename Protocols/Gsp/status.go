@@ -15,7 +15,8 @@ type PeerStatus struct {
 	Recovered    uint64  `json:"recovered"`
 	LossPct      float64 `json:"lossPct"`
 	FEC          string  `json:"fec"`
-	Proto        int     `json:"proto"` // версия протокола текущего сеанса (1 или 2)
+	Proto        int     `json:"proto"` // версия протокола текущего сеанса (1, 2 или 3)
+	PQ           bool    `json:"pq"`    // в рукопожатии сеанса участвовал ML-KEM (постквантовая защита, GSP Beta)
 }
 
 type Status struct {
@@ -38,6 +39,7 @@ func (e *Engine) Status() Status {
 		if s := p.cur.Load(); s != nil {
 			ps.Connected = true
 			ps.Proto = s.ver
+			ps.PQ = s.pq
 			ps.SessionAgeS = int(now.Sub(s.created).Seconds())
 		}
 		if lr := p.lastRecv.Load(); lr > 0 {

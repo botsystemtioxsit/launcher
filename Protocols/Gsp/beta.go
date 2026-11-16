@@ -100,43 +100,60 @@ func obfKeyBeta(serverPub, betaKey []byte) [32]byte {
 
 // Типы сообщений рукопожатия Beta.
 const (
-	bMsgInit = 1 // клиент → сервер: e, es
-	bMsgResp = 2 // сервер → клиент: e, ee
-	bMsgFin  = 3 // клиент → сервер: s, se (+ секрет профиля)
+	bMsgInit   = 1 // клиент → сервер: e, es
+	bMsgResp   = 2 // сервер → клиент: e, ee
+	bMsgFin    = 3 // клиент → сервер: s, se (+ секрет профиля)
+	bMsgInitPQ = 4 // как bMsgInit, но после сообщения Noise идёт ML-KEM-шифртекст (kemCtLen байт): постквантовая защита
 )
 
 // sealBeta: QUIC-подобный заголовок + XChaCha20-Poly1305( тип(1) | индекс(4) | длина(2) | сообщение Noise | набивка до размера 1200–1300 ).
 func sealBeta(key *[32]byte, typ byte, idx uint32, msg []byte) []byte {
+	return sealBetaExtra(key, typ, idx, msg, nil)
+}
+
+// sealBetaExtra: то же, но после сообщения Noise кладёт ещё extra (ML-KEM-шифртекст). Размер пакета: 1200–1300 байт, а если одно содержимое длиннее — на 0–100 байт больше него.
+func sealBetaExtra(key *[32]byte, typ byte, idx uint32, msg, extra []byte) []byte {
 	const inner = 1 + 4 + 2
-	fixed := betaHdrLen + 24 + inner + len(msg) + tagLen
-	pad := randIn(betaMinTotal, betaMaxTotal) - fixed
+	fixed := betaHdrLen + 24 + inner + len(msg) + len(extra) + tagLen
+	lo, hi := betaMinTotal, betaMaxTotal
+	if fixed > lo {
+		lo, hi = fixed, fixed+100
+	}
+	pad := randIn(lo, hi) - fixed
 	if pad < 0 {
 		pad = 0
 	}
-	plain := make([]byte, inner+len(msg)+pad)
+	plain := make([]byte, inner+len(msg)+len(extra)+pad)
 	plain[0] = typ
 	binary.BigEndian.PutUint32(plain[1:5], idx)
 	binary.BigEndian.PutUint16(plain[5:7], uint16(len(msg)))
 	copy(plain[inner:], msg)
-	fillRand(plain[inner+len(msg):])
+	copy(plain[inner+len(msg):], extra)
+	fillRand(plain[inner+len(msg)+len(extra):])
 	return wrapBeta(sealRaw(key, plain))
 }
 
 // openBeta возвращает тип, индекс и сообщение Noise; ok=false — пакет не наш (молчим).
 func openBeta(key *[32]byte, pk []byte) (typ byte, idx uint32, msg []byte, ok bool) {
+	typ, idx, msg, _, ok = openBetaExtra(key, pk)
+	return
+}
+
+// openBetaExtra: то же, плюс «хвост» после сообщения Noise (набивка и, у bMsgInitPQ, ML-KEM-шифртекст в начале хвоста).
+func openBetaExtra(key *[32]byte, pk []byte) (typ byte, idx uint32, msg, rest []byte, ok bool) {
 	body, shaped := unwrapBeta(pk)
 	if !shaped {
-		return 0, 0, nil, false
+		return 0, 0, nil, nil, false
 	}
 	plain, err := openRaw(key, body)
 	if err != nil || len(plain) < 7 {
-		return 0, 0, nil, false
+		return 0, 0, nil, nil, false
 	}
 	n := int(binary.BigEndian.Uint16(plain[5:7]))
 	if 7+n > len(plain) {
-		return 0, 0, nil, false
+		return 0, 0, nil, nil, false
 	}
-	return plain[0], binary.BigEndian.Uint32(plain[1:5]), plain[7 : 7+n], true
+	return plain[0], binary.BigEndian.Uint32(plain[1:5]), plain[7 : 7+n], plain[7+n:], true
 }
 
 // Состояние сервера между первым и третьим сообщением рукопожатия.
@@ -144,6 +161,7 @@ type betaPend struct {
 	hs        *noise.HandshakeState
 	clientIdx uint32
 	ts        [12]byte
+	pq        bool
 	created   time.Time
 }
 

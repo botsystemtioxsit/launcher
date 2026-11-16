@@ -234,6 +234,7 @@ func (w *replayWin) mark(c uint64) {
 // Сеанс: один набор ключей между двумя узлами.
 type session struct {
 	ver            int    // версия протокола (protoV1/protoV2)
+	pq             bool   // в рукопожатии участвовал ML-KEM (постквантовая защита, только GSP Beta)
 	id, peerID     uint32 // наш индекс (по нему нас находят) и индекс собеседника (его мы пишем в пакеты)
 	send, recv     cipher.AEAD
 	sendHP, recvHP [32]byte

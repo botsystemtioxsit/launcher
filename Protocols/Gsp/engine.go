@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/mlkem"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -38,6 +39,8 @@ type Config struct {
 	PadMax     int    // случайная набивка до N байт
 	Proto      int    // версия протокола у клиента: 1 (по умолчанию), 2 или 3 (GSP Beta); сервер принимает все
 	BetaKey    []byte // секрет профиля GSP Beta (32 байта): у сервера включает версию 3, у клиента с Proto = 3 обязателен
+	KemSeed    []byte // сервер: «семя» ключа ML-KEM-768 (постквантовая защита GSP Beta, необязательно)
+	KemPub     []byte // клиент: открытый ключ ML-KEM-768 сервера (если задан — GSP Beta добавляет постквантовую защиту)
 	Debug      bool
 	// Для тестов и сравнений: искусственные потери исходящих пакетов (доля 0..1).
 	DebugDropTx float64
@@ -92,10 +95,12 @@ type Engine struct {
 	fecK    int
 	fecM    int
 	fecAuto bool
-	hsLimit *hsLimiter    // ограничитель рукопожатий (сервер)
-	hsDrop  atomic.Uint64 // сколько рукопожатий отброшено ограничителем
-	betaOn  bool          // сервер принимает GSP Beta (задан BetaKey)
-	betaTab betaTable     // рукопожатия Beta, ожидающие третьего сообщения
+	hsLimit *hsLimiter                 // ограничитель рукопожатий (сервер)
+	hsDrop  atomic.Uint64              // сколько рукопожатий отброшено ограничителем
+	betaOn  bool                       // сервер принимает GSP Beta (задан BetaKey)
+	kemDK   *mlkem.DecapsulationKey768 // сервер: закрытый ключ ML-KEM (nil — постквантовых рукопожатий не принимает)
+	kemEK   *mlkem.EncapsulationKey768 // клиент: открытый ключ ML-KEM сервера (nil — без постквантовой защиты)
+	betaTab betaTable                  // рукопожатия Beta, ожидающие третьего сообщения
 	Log     func(format string, a ...any)
 }
 
@@ -116,6 +121,20 @@ func NewEngine(cfg Config, dev Device) (*Engine, error) {
 		byIdx:   map[uint32]*session{},
 		hsLimit: newHSLimiter(),
 		Log:     func(string, ...any) {},
+	}
+	if len(cfg.KemSeed) != 0 {
+		dk, err := mlkem.NewDecapsulationKey768(cfg.KemSeed)
+		if err != nil {
+			return nil, errors.New("KemKey: ключ ML-KEM не разбирается")
+		}
+		e.kemDK = dk
+	}
+	if len(cfg.KemPub) != 0 {
+		ek, err := mlkem.NewEncapsulationKey768(cfg.KemPub)
+		if err != nil {
+			return nil, errors.New("KemPub: ключ ML-KEM не разбирается")
+		}
+		e.kemEK = ek
 	}
 	e.myObf[protoV1] = obfKeyFor(pub, protoV1)
 	e.myObf[protoV2] = obfKeyFor(pub, protoV2)
@@ -782,8 +801,14 @@ func (e *Engine) kickHandshake(p *peer) {
 	var pend *pendingHS
 	var msg []byte
 	var err error
+	var extraCT []byte
 	if p.ver == protoV3 {
-		pend, msg, err = buildInitBeta(e.static, p.pub[:], e.cfg.BetaKey, idx)
+		var ct []byte
+		pend, msg, ct, err = buildInitBeta(e.static, p.pub[:], e.cfg.BetaKey, e.kemEK, idx)
+		if err == nil && ct != nil {
+			pend.pq = true
+			extraCT = ct
+		}
 	} else {
 		pend, msg, err = buildInit(e.static, p.pub[:], idx, p.ver)
 	}
@@ -797,7 +822,11 @@ func (e *Engine) kickHandshake(p *peer) {
 	var pkt []byte
 	if p.ver == protoV3 {
 		sendBetaJunk(e.conn, to)
-		pkt = sealBeta(&p.obf, bMsgInit, idx, msg)
+		if extraCT != nil {
+			pkt = sealBetaExtra(&p.obf, bMsgInitPQ, idx, msg, extraCT)
+		} else {
+			pkt = sealBeta(&p.obf, bMsgInit, idx, msg)
+		}
 	} else {
 		pkt = sealHandshake(&p.obf, msg)
 	}
@@ -1031,10 +1060,19 @@ func randFloat() float64 { return float64(randU32()) / 4294967296.0 }
 
 // ---------- GSP Beta: три сообщения ----------
 
-func buildInitBeta(static noise.DHKey, serverPub, psk []byte, myIdx uint32) (*pendingHS, []byte, error) {
+// buildInitBeta: первое сообщение GSP Beta. Если у клиента есть открытый ключ ML-KEM сервера (ek), к нему «шифруется» случайный секрет:
+// он идёт в psk Noise (через HKDF), а шифртекст возвращается третьим значением — его кладут в пакет после сообщения Noise.
+func buildInitBeta(static noise.DHKey, serverPub, betaKey []byte, ek *mlkem.EncapsulationKey768, myIdx uint32) (*pendingHS, []byte, []byte, error) {
+	psk := betaKey
+	var ct []byte
+	if ek != nil {
+		var ss []byte
+		ss, ct = ek.Encapsulate()
+		psk = pqPSK(betaKey, ss)
+	}
 	hs, err := newHSBeta(true, static, serverPub, psk)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	var pl [18]byte
 	ts := timestamp12()
@@ -1043,9 +1081,9 @@ func buildInitBeta(static noise.DHKey, serverPub, psk []byte, myIdx uint32) (*pe
 	binary.BigEndian.PutUint16(pl[16:18], capFEC)
 	msg, _, _, err := hs.WriteMessage(nil, pl[:])
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return &pendingHS{hs: hs, idx: myIdx, sent: time.Now(), ver: protoV3}, msg, nil
+	return &pendingHS{hs: hs, idx: myIdx, sent: time.Now(), ver: protoV3}, msg, ct, nil
 }
 
 func (e *Engine) handleBeta(pk []byte, src netip.AddrPort, ua *net.UDPAddr) {
@@ -1075,6 +1113,7 @@ func (e *Engine) handleBeta(pk []byte, src netip.AddrPort, ua *net.UDPAddr) {
 		}
 		send, recv, shp, rhp := deriveKeys(protoV3, cs1, cs2, true)
 		s := newSession(protoV3, pend.idx, srvIdx, send, recv, shp, rhp, p)
+		s.pq = pend.pq
 		e.install(p, s)
 		p.mu.Lock()
 		p.pending = nil
@@ -1094,17 +1133,30 @@ func (e *Engine) handleBeta(pk []byte, src netip.AddrPort, ua *net.UDPAddr) {
 	if !e.betaOn {
 		return // сервер без BetaKey версию 3 не знает: молчим
 	}
-	typ, idx, msg, ok := openBeta(&e.myObf[protoV3], pk)
+	typ, idx, msg, rest, ok := openBetaExtra(&e.myObf[protoV3], pk)
 	if !ok {
 		return // нет секрета профиля или битый пакет: никакого ответа
 	}
 	switch typ {
-	case bMsgInit:
+	case bMsgInit, bMsgInitPQ:
 		if !e.hsLimit.allow(src.Addr(), time.Now()) {
 			e.hsDrop.Add(1)
 			return
 		}
-		hs, err := newHSBeta(false, e.static, nil, e.cfg.BetaKey)
+		psk := e.cfg.BetaKey
+		usedPQ := false
+		if typ == bMsgInitPQ {
+			if e.kemDK == nil || len(rest) < kemCtLen {
+				return // у сервера нет ключа ML-KEM (старая настройка): молчим, клиент не договорится
+			}
+			ss, err := e.kemDK.Decapsulate(rest[:kemCtLen])
+			if err != nil {
+				return
+			}
+			psk = pqPSK(e.cfg.BetaKey, ss)
+			usedPQ = true
+		}
+		hs, err := newHSBeta(false, e.static, nil, psk)
 		if err != nil {
 			return
 		}
@@ -1112,7 +1164,7 @@ func (e *Engine) handleBeta(pk []byte, src netip.AddrPort, ua *net.UDPAddr) {
 		if err != nil || len(pl) < 18 {
 			return
 		}
-		bp := &betaPend{hs: hs, clientIdx: binary.BigEndian.Uint32(pl[12:16]), created: time.Now()}
+		bp := &betaPend{hs: hs, clientIdx: binary.BigEndian.Uint32(pl[12:16]), created: time.Now(), pq: usedPQ}
 		copy(bp.ts[:], pl[0:12])
 		srvIdx := randU32()
 		var rp [6]byte
@@ -1149,6 +1201,7 @@ func (e *Engine) handleBeta(pk []byte, src netip.AddrPort, ua *net.UDPAddr) {
 		p.mu.Unlock()
 		send, recv, shp, rhp := deriveKeys(protoV3, cs1, cs2, false)
 		s := newSession(protoV3, idx, bp.clientIdx, send, recv, shp, rhp, p)
+		s.pq = bp.pq
 		e.install(p, s)
 		p.setEndpoint(src)
 		e.sendControl(p, s, frKeep, nil) // подтверждение клиенту: ключи у нас

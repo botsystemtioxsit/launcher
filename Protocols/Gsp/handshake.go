@@ -31,6 +31,7 @@ type pendingHS struct {
 	idx  uint32
 	sent time.Time
 	ver  int
+	pq   bool // в первом сообщении ушёл ML-KEM-шифртекст
 }
 
 func newHS(ver int, initiator bool, static noise.DHKey, peerStatic []byte) (*noise.HandshakeState, error) {

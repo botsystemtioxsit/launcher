@@ -458,7 +458,7 @@ sealed class MainWindow : Window
             var c = Store.Load(n);
             if (c == null) { sb.AppendLine($"Профиль «{n}»: не читается"); continue; }
             var isG = Gsp.IsGsp(c);
-            sb.AppendLine($"Профиль «{n}»: {(isG ? Gsp.Label(c) + ", протокол v" + Gsp.ProtoOf(c) + ", BetaKey: " + (Gsp.HasBetaKey(c) ? "есть" : "нет") : "WireGuard")} · сервер {MaskHost(Store.EndpointOf(c))} · MTU {Store.MtuOf(c)}");
+            sb.AppendLine($"Профиль «{n}»: {(isG ? Gsp.Label(c) + ", протокол v" + Gsp.ProtoOf(c) + ", BetaKey: " + (Gsp.HasBetaKey(c) ? "есть" : "нет") + ", ML-KEM: " + (Gsp.HasKemPub(c) ? "есть" : "нет") : "WireGuard")} · сервер {MaskHost(Store.EndpointOf(c))} · MTU {Store.MtuOf(c)}");
         }
         var active = Store.Active;
         var conf = active.Length > 0 ? Store.Load(active) : null;
