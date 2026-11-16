@@ -107,6 +107,11 @@ static class Servers
             {
                 var list = profiles.Where(x => x.Gsp == gsp).Select(x => x.Name).ToList();
                 if (list.Count == 0) return null;
+                if (gsp)
+                {   // в основное место «GSP» не ставим профиль GSP Beta (он показывается отдельно), пока есть обычный
+                    var plain = list.Where(n => { var c = Store.Load(n); return c == null || !Gsp.IsBeta(c); }).ToList();
+                    if (plain.Count > 0) list = plain;
+                }
                 var a = list.FirstOrDefault(x => x.Equals(active, StringComparison.Ordinal));
                 return a ?? list[0];
             }

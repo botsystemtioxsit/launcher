@@ -16,7 +16,7 @@ import (
 	"golang.zx2c4.com/wireguard/tun"
 )
 
-const version = "0.3.0"
+const version = "0.4.0-beta"
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `gsp — Ghost Shell Protocol `+version+`

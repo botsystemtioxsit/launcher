@@ -158,8 +158,17 @@ sealed class ServerWindow : Window
                 return;
             }
             var conf = Store.Load(row.Gsp);
-            var upgraded = conf == null ? null : Store.WithInterfaceValue(conf, "Proto", "2");
+            var upgraded = conf == null ? null : (Gsp.ProtoOf(conf) < 2 ? Store.WithInterfaceValue(conf, "Proto", "2") : conf);
             if (conf != null && upgraded != null && Store.Validate(upgraded) == null) { Store.Save(row.Gsp, upgraded); Result = Outcome.Changed; }
+            // секрет GSP Beta: сервер создал его при обновлении (или сообщил прежний) — записываем во все профили GSP этого сервера
+            if (res.BetaKey.Length > 0)
+                foreach (var pn in row.All)
+                {
+                    var pc = Store.Load(pn);
+                    if (pc == null || !Gsp.IsGsp(pc)) continue;
+                    var withKey = Store.WithInterfaceValue(pc, "BetaKey", res.BetaKey);
+                    if (Store.Validate(withKey) == null) { Store.Save(pn, withKey); Result = Outcome.Changed; }
+                }
             msg.Foreground = Ui.Res("Green");
             msg.Text = "Сервер GSP обновлён, профиль «" + row.Gsp + "» переведён на версию 2. Если шлюз был включён — отключите и подключите снова.";
         }

@@ -36,7 +36,8 @@ type Config struct {
 	Peers      []PeerConfig
 	FEC        string // "off" | "auto" | "10+2"
 	PadMax     int    // случайная набивка до N байт
-	Proto      int    // версия протокола у клиента: 1 (по умолчанию) или 2; сервер принимает обе
+	Proto      int    // версия протокола у клиента: 1 (по умолчанию), 2 или 3 (GSP Beta); сервер принимает все
+	BetaKey    []byte // секрет профиля GSP Beta (32 байта): у сервера включает версию 3, у клиента с Proto = 3 обязателен
 	Debug      bool
 	// Для тестов и сравнений: искусственные потери исходящих пакетов (доля 0..1).
 	DebugDropTx float64
@@ -76,7 +77,7 @@ type peer struct {
 type Engine struct {
 	cfg     Config
 	static  noise.DHKey
-	myObf   [3][32]byte // ключ упаковки рукопожатий по версиям протокола (индекс — версия)
+	myObf   [4][32]byte // ключ упаковки рукопожатий по версиям протокола (индекс — версия)
 	dev     Device
 	conn    *net.UDPConn
 	pc      batchIO
@@ -93,6 +94,8 @@ type Engine struct {
 	fecAuto bool
 	hsLimit *hsLimiter    // ограничитель рукопожатий (сервер)
 	hsDrop  atomic.Uint64 // сколько рукопожатий отброшено ограничителем
+	betaOn  bool          // сервер принимает GSP Beta (задан BetaKey)
+	betaTab betaTable     // рукопожатия Beta, ожидающие третьего сообщения
 	Log     func(format string, a ...any)
 }
 
@@ -116,6 +119,13 @@ func NewEngine(cfg Config, dev Device) (*Engine, error) {
 	}
 	e.myObf[protoV1] = obfKeyFor(pub, protoV1)
 	e.myObf[protoV2] = obfKeyFor(pub, protoV2)
+	if len(cfg.BetaKey) != 0 {
+		if len(cfg.BetaKey) != 32 {
+			return nil, errors.New("BetaKey должен быть 32 байта в base64")
+		}
+		e.myObf[protoV3] = obfKeyBeta(pub, cfg.BetaKey)
+		e.betaOn = true
+	}
 	e.pool.New = func() any { b := make([]byte, bufSize); return &b }
 	switch cfg.FEC {
 	case "", "auto":
@@ -139,10 +149,19 @@ func NewEngine(cfg Config, dev Device) (*Engine, error) {
 		case 0, protoV1:
 		case protoV2:
 			p.ver = protoV2
+		case protoV3:
+			p.ver = protoV3
 		default:
-			return nil, errors.New("Proto: поддерживаются версии 1 и 2")
+			return nil, errors.New("Proto: поддерживаются версии 1, 2 и 3")
 		}
-		p.obf = obfKeyFor(pc.PublicKey, p.ver)
+		if p.ver == protoV3 {
+			if len(cfg.BetaKey) != 32 {
+				return nil, errors.New("для GSP Beta (Proto = 3) нужен BetaKey — секрет профиля; его выдаёт сервер при установке или обновлении GSP")
+			}
+			p.obf = obfKeyBeta(pc.PublicKey, cfg.BetaKey)
+		} else {
+			p.obf = obfKeyFor(pc.PublicKey, p.ver)
+		}
 		if pc.Endpoint.IsValid() {
 			if !pc.Endpoint.Addr().Unmap().Is4() {
 				return nil, errors.New("пока поддерживается только IPv4-адрес сервера (внутри туннеля IPv6 уже можно)")
@@ -461,8 +480,12 @@ func (e *Engine) sendIP(p *peer, s *session, tx *txBatch, buf []byte, sz int) {
 	p.fmu.Unlock()
 
 	pad := 0
-	if e.cfg.PadMax > 0 {
-		pad = randByte() % (e.cfg.PadMax + 1)
+	padMax := e.cfg.PadMax
+	if padMax == 0 && s.ver == protoV3 {
+		padMax = betaPad // в GSP Beta набивка есть по умолчанию
+	}
+	if padMax > 0 {
+		pad = randByte() % (padMax + 1)
 	}
 	end := bodyOff + sz
 	if fecOn {
@@ -756,7 +779,14 @@ func (e *Engine) kickHandshake(p *peer) {
 	}
 	p.lastHS = time.Now()
 	idx := randU32()
-	pend, msg, err := buildInit(e.static, p.pub[:], idx, p.ver)
+	var pend *pendingHS
+	var msg []byte
+	var err error
+	if p.ver == protoV3 {
+		pend, msg, err = buildInitBeta(e.static, p.pub[:], e.cfg.BetaKey, idx)
+	} else {
+		pend, msg, err = buildInit(e.static, p.pub[:], idx, p.ver)
+	}
 	if err != nil {
 		p.mu.Unlock()
 		return
@@ -764,18 +794,31 @@ func (e *Engine) kickHandshake(p *peer) {
 	p.pending = pend
 	to := p.endpoint.Load()
 	p.mu.Unlock()
-	pkt := sealHandshake(&p.obf, msg)
+	var pkt []byte
+	if p.ver == protoV3 {
+		sendBetaJunk(e.conn, to)
+		pkt = sealBeta(&p.obf, bMsgInit, idx, msg)
+	} else {
+		pkt = sealHandshake(&p.obf, msg)
+	}
 	_, _ = e.conn.WriteToUDP(pkt, to)
 	e.Log("рукопожатие → %v", to)
 }
 
 func (e *Engine) handleHandshake(pk []byte, src netip.AddrPort, ua *net.UDPAddr) {
+	if _, shaped := unwrapBeta(pk); shaped {
+		e.handleBeta(pk, src, ua)
+		return
+	}
 	// 1) ответ на наш init (мы клиент)
 	for _, p := range e.snapshotPeers() {
 		p.mu.Lock()
 		pend := p.pending
 		p.mu.Unlock()
 		if pend == nil {
+			continue
+		}
+		if p.ver == protoV3 {
 			continue
 		}
 		msg, err := openHandshake(&p.obf, pk)
@@ -943,11 +986,23 @@ func (e *Engine) tick() {
 		// плановая смена ключей и «связь пропала»
 		if isClient {
 			stale := now.Sub(time.Unix(0, p.lastRecv.Load())) > 30*time.Second && p.lastSend.Load() > p.lastRecv.Load()
-			if now.Sub(s.created) > 120*time.Second || stale {
+			rekey := 120 * time.Second
+			if s.ver == protoV3 {
+				rekey = time.Duration(100+int(s.id%41)) * time.Second // у Beta смена ключей без постоянного ритма
+				// третье сообщение рукопожатия могло потеряться: сервер ничего не прислал — начинаем заново
+				if now.Sub(s.created) > 4*time.Second && time.Unix(0, p.lastRecv.Load()).Before(s.created) {
+					stale = true
+				}
+			}
+			if now.Sub(s.created) > rekey || stale {
 				e.kickHandshake(p)
 			}
 		}
-		if p.keepalive > 0 && now.Sub(time.Unix(0, p.lastSend.Load())) >= p.keepalive {
+		ka := p.keepalive
+		if s.ver == protoV3 && ka > 0 {
+			ka = ka * time.Duration(80+int(s.id%41)) / 100
+		}
+		if p.keepalive > 0 && now.Sub(time.Unix(0, p.lastSend.Load())) >= ka {
 			e.sendControl(p, s, frKeep, nil)
 		}
 		// отчёт о потерях
@@ -973,3 +1028,130 @@ func (e *Engine) tick() {
 func (p *peer) configuredEndpoint() bool { return p.fixedEP }
 
 func randFloat() float64 { return float64(randU32()) / 4294967296.0 }
+
+// ---------- GSP Beta: три сообщения ----------
+
+func buildInitBeta(static noise.DHKey, serverPub, psk []byte, myIdx uint32) (*pendingHS, []byte, error) {
+	hs, err := newHSBeta(true, static, serverPub, psk)
+	if err != nil {
+		return nil, nil, err
+	}
+	var pl [18]byte
+	ts := timestamp12()
+	copy(pl[0:12], ts[:])
+	binary.BigEndian.PutUint32(pl[12:16], myIdx)
+	binary.BigEndian.PutUint16(pl[16:18], capFEC)
+	msg, _, _, err := hs.WriteMessage(nil, pl[:])
+	if err != nil {
+		return nil, nil, err
+	}
+	return &pendingHS{hs: hs, idx: myIdx, sent: time.Now(), ver: protoV3}, msg, nil
+}
+
+func (e *Engine) handleBeta(pk []byte, src netip.AddrPort, ua *net.UDPAddr) {
+	// ответ сервера на наш init (мы клиент)
+	for _, p := range e.snapshotPeers() {
+		if p.ver != protoV3 {
+			continue
+		}
+		p.mu.Lock()
+		pend := p.pending
+		p.mu.Unlock()
+		if pend == nil || pend.ver != protoV3 {
+			continue
+		}
+		typ, idx, msg, ok := openBeta(&p.obf, pk)
+		if !ok || typ != bMsgResp || idx != pend.idx {
+			continue
+		}
+		pl, _, _, err := pend.hs.ReadMessage(nil, msg)
+		if err != nil || len(pl) < 6 {
+			continue
+		}
+		srvIdx := binary.BigEndian.Uint32(pl[0:4])
+		fin, cs1, cs2, err := pend.hs.WriteMessage(nil, nil)
+		if err != nil || cs1 == nil || cs2 == nil {
+			continue
+		}
+		send, recv, shp, rhp := deriveKeys(protoV3, cs1, cs2, true)
+		s := newSession(protoV3, pend.idx, srvIdx, send, recv, shp, rhp, p)
+		e.install(p, s)
+		p.mu.Lock()
+		p.pending = nil
+		p.mu.Unlock()
+		if cur := p.endpoint.Load(); cur == nil || cur.AddrPort() != src {
+			p.setEndpoint(src)
+		}
+		// lastRecv не трогаем: пока от сервера не пришло подтверждение (он шлёт «я жив» сразу после третьего сообщения), tick считает рукопожатие неподтверждённым
+		to := p.endpoint.Load()
+		for i := 0; i < 2; i++ { // третье сообщение отправляем дважды: потеря его дорого стоит (повтор сервер молча отбросит)
+			_, _ = e.conn.WriteToUDP(sealBeta(&p.obf, bMsgFin, srvIdx, fin), to)
+		}
+		e.sendControl(p, s, frKeep, nil)
+		e.Log("сеанс GSP Beta установлен с %v", src)
+		return
+	}
+	if !e.betaOn {
+		return // сервер без BetaKey версию 3 не знает: молчим
+	}
+	typ, idx, msg, ok := openBeta(&e.myObf[protoV3], pk)
+	if !ok {
+		return // нет секрета профиля или битый пакет: никакого ответа
+	}
+	switch typ {
+	case bMsgInit:
+		if !e.hsLimit.allow(src.Addr(), time.Now()) {
+			e.hsDrop.Add(1)
+			return
+		}
+		hs, err := newHSBeta(false, e.static, nil, e.cfg.BetaKey)
+		if err != nil {
+			return
+		}
+		pl, _, _, err := hs.ReadMessage(nil, msg)
+		if err != nil || len(pl) < 18 {
+			return
+		}
+		bp := &betaPend{hs: hs, clientIdx: binary.BigEndian.Uint32(pl[12:16]), created: time.Now()}
+		copy(bp.ts[:], pl[0:12])
+		srvIdx := randU32()
+		var rp [6]byte
+		binary.BigEndian.PutUint32(rp[0:4], srvIdx)
+		binary.BigEndian.PutUint16(rp[4:6], capFEC)
+		rmsg, _, _, err := hs.WriteMessage(nil, rp[:])
+		if err != nil || !e.betaTab.put(srvIdx, bp) {
+			return
+		}
+		_, _ = e.conn.WriteToUDP(sealBeta(&e.myObf[protoV3], bMsgResp, bp.clientIdx, rmsg), ua)
+	case bMsgFin:
+		bp := e.betaTab.take(idx)
+		if bp == nil {
+			return // повтор третьего сообщения или чужой индекс
+		}
+		_, cs1, cs2, err := bp.hs.ReadMessage(nil, msg)
+		if err != nil || cs1 == nil || cs2 == nil {
+			return
+		}
+		var key [32]byte
+		copy(key[:], bp.hs.PeerStatic())
+		e.mu.RLock()
+		p := e.peers[key]
+		e.mu.RUnlock()
+		if p == nil {
+			return // неизвестный ключ клиента
+		}
+		p.mu.Lock()
+		if !tsLess(p.lastTS, bp.ts) {
+			p.mu.Unlock()
+			return // повтор старого рукопожатия
+		}
+		p.lastTS = bp.ts
+		p.mu.Unlock()
+		send, recv, shp, rhp := deriveKeys(protoV3, cs1, cs2, false)
+		s := newSession(protoV3, idx, bp.clientIdx, send, recv, shp, rhp, p)
+		e.install(p, s)
+		p.setEndpoint(src)
+		e.sendControl(p, s, frKeep, nil) // подтверждение клиенту: ключи у нас
+		e.Log("новый сеанс GSP Beta от %v", src)
+	}
+}

@@ -37,6 +37,19 @@ sealed class MainWindow : Window
         return c != null && Gsp.IsGsp(c);
     }
 
+    // Подпись протокола профиля: WireGuard / GSP / GSP Beta.
+    static string ProfileProto(string name)
+    {
+        var c = Store.Load(name);
+        return c != null && Gsp.IsGsp(c) ? Gsp.Label(c) : "WireGuard";
+    }
+
+    static bool IsBetaProfile(string name)
+    {
+        var c = Store.Load(name);
+        return c != null && Gsp.IsBeta(c);
+    }
+
     static bool RunningNow(string name) => name.Length > 0 && (IsGspProfile(name) ? GspClient.IsRunning(name) : Wg.IsRunning(name));
 
     public MainWindow(GwDemo demo = GwDemo.None)
@@ -331,7 +344,7 @@ sealed class MainWindow : Window
         col.Children.Add(title);
 
         string state; Brush stateCol;
-        if (isActive && connected) { state = "Сейчас работает: " + (IsGspProfile(active) ? "GSP" : "WireGuard"); stateCol = Res("Green"); }
+        if (isActive && connected) { state = "Сейчас работает: " + ProfileProto(active); stateCol = Res("Green"); }
         else if (isActive) { state = "Выбран · шлюз выключен"; stateCol = Res("Accent2"); }
         else { state = "Не выбран"; stateCol = Res("Muted"); }
         col.Children.Add(new TextBlock { Text = state, Foreground = stateCol, FontSize = 12.5, Margin = new Thickness(0, 2, 0, 8) });
@@ -342,11 +355,13 @@ sealed class MainWindow : Window
         foreach (var extra in r.Extra)
         {
             var name = extra;
-            var b = new Button { Content = name + (IsGspProfile(name) ? " · GSP" : ""), Padding = new Thickness(12, 8, 12, 8), Margin = new Thickness(0, 0, 8, 8) };
+            var b = new Button { Content = name + (IsGspProfile(name) ? " · " + ProfileProto(name) : ""), Padding = new Thickness(12, 8, 12, 8), Margin = new Thickness(0, 0, 8, 8) };
             if (name == active) b.Style = (Style)FindResource("Primary");
             b.Click += (_, _) => SelectProfile(name);
             protos.Children.Add(b);
         }
+        var beta = BetaBtn(r);
+        if (beta != null) protos.Children.Add(beta);
         col.Children.Add(protos);
 
         var foot = new WrapPanel { Margin = new Thickness(0, 2, 0, 0) };
@@ -364,6 +379,31 @@ sealed class MainWindow : Window
             Background = Res("Panel2"), BorderBrush = isActive ? Res("Accent") : Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3),
             Padding = new Thickness(16, 12, 16, 10), Margin = new Thickness(0, 6, 0, 4), Child = col,
         };
+    }
+
+    // «GSP Beta (тест)»: тот же ключ и сервер, что у профиля GSP, но Proto = 3. Появляется, когда у сервера есть обычный профиль GSP и Beta ещё нет.
+    Button? BetaBtn(ServerRow r)
+    {
+        if (r.Gsp == null || r.All.Any(IsBetaProfile)) return null;
+        var src = r.Gsp;
+        var srcConf = Store.Load(src);
+        var hasKey = srcConf != null && Gsp.HasBetaKey(srcConf);
+        var b = new Button { Content = "GSP Beta — создать (тест)", Padding = new Thickness(16, 8, 16, 8), Margin = new Thickness(0, 0, 8, 8), IsEnabled = hasKey };
+        b.ToolTip = hasKey
+            ? "Тестовый протокол Ghost Shell: своя схема рукопожатия с секретом профиля, пакеты по форме как начало QUIC, мусорные пакеты. Новый профиль берёт ключи профиля «" + src + "»."
+            : "Профилю «" + src + "» не хватает секрета для GSP Beta. Откройте «Сервер…» и нажмите «Обновить GSP на сервере» — секрет появится сам.";
+        b.Click += (_, _) =>
+        {
+            var conf = Store.Load(src);
+            if (conf == null) return;
+            var existing = Store.List();
+            var baseName = Store.SafeName(Servers.SuggestName(src) + "-beta");
+            var name = baseName;
+            for (var i = 2; existing.Contains(name, StringComparer.OrdinalIgnoreCase); i++) name = Store.SafeName(baseName + i);
+            Store.Save(name, Store.WithInterfaceValue(conf, "Proto", "3"));
+            SelectProfile(name);
+        };
+        return b;
     }
 
     Button ProtoBtn(ServerRow r, bool gsp, string? profile, string active)
@@ -390,7 +430,7 @@ sealed class MainWindow : Window
     {
         if (connected) { status.Text = "Сначала отключите шлюз."; return; }
         Store.Active = name;
-        status.Text = "Выбран профиль «" + name + "» (" + (IsGspProfile(name) ? "GSP" : "WireGuard") + "). Нажмите «Подключить».";
+        status.Text = "Выбран профиль «" + name + "» (" + ProfileProto(name) + "). Нажмите «Подключить».";
         BuildPage();
     }
 
@@ -479,7 +519,7 @@ sealed class MainWindow : Window
         {
             case ProfileWindow.Outcome.Use:
                 Store.Active = w.ResultName;
-                status.Text = "Выбран профиль «" + w.ResultName + "» (" + (IsGspProfile(w.ResultName) ? "GSP" : "WireGuard") + "). Нажмите «Подключить».";
+                status.Text = "Выбран профиль «" + w.ResultName + "» (" + ProfileProto(w.ResultName) + "). Нажмите «Подключить».";
                 BuildPage();
                 break;
             case ProfileWindow.Outcome.Saved:

@@ -17,7 +17,10 @@ import (
 
 // Пролог Noise входит в итоговый хеш рукопожатия: у версий он разный, поэтому участники разных версий ключей не получат.
 func prologueFor(ver int) []byte {
-	if ver == protoV2 {
+	switch ver {
+	case protoV3:
+		return []byte("ghostshell-gsp-v3")
+	case protoV2:
 		return []byte("ghostshell-gsp-v2")
 	}
 	return []byte("ghostshell-gsp-v1")
@@ -147,4 +150,26 @@ func deriveKeys(ver int, cs1, cs2 *noise.CipherState, initiator bool) (send, rec
 		return k1, k2, hpKeyFor(ver, k1), hpKeyFor(ver, k2)
 	}
 	return k2, k1, hpKeyFor(ver, k2), hpKeyFor(ver, k1)
+}
+
+// ---------- GSP Beta (версия 3): Noise XKpsk3 ----------
+//
+//	<- s                       (клиент заранее знает открытый ключ сервера)
+//	-> e, es          + {время, индекс клиента, возможности}
+//	<- e, ee          + {индекс сервера, возможности}
+//	-> s, se, psk     (личность клиента открывается только в третьем сообщении и только тому, кто ответил правильно)
+//
+// Секрет профиля (BetaKey) входит и в хеш рукопожатия (psk3), и в ключ упаковки пакетов (obfKeyBeta): без него сервер не отвечает вообще ничем.
+func newHSBeta(initiator bool, static noise.DHKey, peerStatic, psk []byte) (*noise.HandshakeState, error) {
+	return noise.NewHandshakeState(noise.Config{
+		CipherSuite:           noiseSuite,
+		Random:                crand.Reader,
+		Pattern:               noise.HandshakeXK,
+		Initiator:             initiator,
+		Prologue:              prologueFor(protoV3),
+		StaticKeypair:         static,
+		PeerStatic:            peerStatic,
+		PresharedKey:          psk,
+		PresharedKeyPlacement: 3,
+	})
 }
