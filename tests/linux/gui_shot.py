@@ -24,7 +24,9 @@ def ready(w, Gtk, GLib, Gdk):
            (9000, lambda: shot("3-update.png")),
            (9100, lambda: (w.on_run(), False)[1]),
            (11500, lambda: shot("4-run.png")),
-           (11600, lambda: (Gtk.main_quit(), False)[1])]
+           (11600, lambda: (w.get_window() and None, False)[1]),
+           (12500, lambda: shot("5-extras.png")),
+           (13000, lambda: (Gtk.main_quit(), False)[1])]
     for t, f in seq:
         GLib.timeout_add(t, f)
 
