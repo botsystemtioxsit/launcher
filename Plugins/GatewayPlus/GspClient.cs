@@ -88,7 +88,7 @@ static class GspClient
         var fec = s.Fec == "off" ? "защита от потерь выключена (включится сама, если понадобится)" : "защита от потерь " + s.Fec;
         var rec = s.Recovered > 0 ? " · восстановлено пакетов: " + s.Recovered : "";
         var ks = s.KillSwitch ? " · защита от утечек включена" : "";
-        var ver = s.Proto == 2 ? " · протокол версии 2" : "";
+        var ver = s.Proto == 3 ? (s.Pq ? " · GSP Beta, постквантовая защита (ML-KEM) включена" : " · GSP Beta, без постквантовой защиты") : s.Proto == 2 ? " · протокол версии 2" : "";
         return "GSP · " + loss + " · " + fec + rec + ks + ver;
     }
 }

@@ -56,3 +56,20 @@ func TestConfigRejectsBad(t *testing.T) {
 		t.Fatalf("ожидался отказ из-за IPv6-адреса сервера, получено %v", err)
 	}
 }
+
+func TestConfigProtoBeta(t *testing.T) {
+	k := strings.Repeat("A", 43) + "="
+	for proto, want := range map[string]int{"1": 1, "2": 2, "3": 3, "4": -1, "0": -1} {
+		conf := "[Interface]\nPrivateKey = " + k + "\nProto = " + proto + "\n[Peer]\nPublicKey = " + k + "\nEndpoint = 203.0.113.5:51821\nAllowedIPs = 0.0.0.0/0\n"
+		fc, err := parseConfig(writeConf(t, conf))
+		if want < 0 {
+			if err == nil {
+				t.Fatalf("Proto = %s должен отклоняться", proto)
+			}
+			continue
+		}
+		if err != nil || fc.Engine.Proto != want {
+			t.Fatalf("Proto = %s должен приниматься как %d: %v", proto, want, err)
+		}
+	}
+}

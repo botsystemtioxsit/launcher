@@ -14,6 +14,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -38,12 +39,15 @@ const (
 //	1 — GSP 0.2: маска заголовка = BLAKE2s(ключ ‖ образец), ключи заголовков и ключ маскировки рукопожатия — BLAKE2s от ключа с «солью»-строкой.
 //	2 — GSP 0.3: только стандартные конструкции — защита заголовка на ChaCha20 как в QUIC (RFC 9001, §5.4.4) и ключи через HKDF-SHA256 (RFC 5869);
 //	    в прологе Noise другая строка, поэтому клиент версии 2 и сервер версии 1 (и наоборот) друг с другом не договорятся.
+//	3 — GSP Beta (тест): ДРУГАЯ схема, а не обёртка: рукопожатие из трёх сообщений (Noise XK с общим секретом профиля), без секрета сервер молчит на любые пробы,
+//	    пакеты рукопожатия в форме QUIC Initial, мусорные пакеты, разброс таймеров — см. beta.go. Примитивы только стандартные.
 //
 // Сервер принимает обе версии (смотрит, чьим ключом упаковано рукопожатие), клиент говорит ровно на той версии, что указана в его настройках
 // (`Proto`, по умолчанию 1 — чтобы прежние профили продолжали работать). Новые профили, которые выдаёт скрипт сервера, — версии 2.
 const (
 	protoV1 = 1
 	protoV2 = 2
+	protoV3 = 3 // «GSP Beta»: собственная схема рукопожатия (Noise XK + секрет профиля), см. beta.go; тестовая версия
 )
 
 // Типы кадров внутри шифртекста.
@@ -85,8 +89,8 @@ func keyFromB64(s string) ([]byte, error) {
 // а посторонний не может даже получить ответ — пакет без правильной подписи молча отбрасывается.
 // Это маскировка, а не секрет: открытый ключ сервера не тайна.
 func obfKeyFor(serverPub []byte, ver int) [32]byte {
-	if ver == protoV2 {
-		k, _ := hkdf.Key(sha256.New, serverPub, nil, "gsp v2 handshake obfuscation", 32)
+	if ver >= protoV2 {
+		k, _ := hkdf.Key(sha256.New, serverPub, nil, fmt.Sprintf("gsp v%d handshake obfuscation", ver), 32) // для версии 3 ключ считается иначе: obfKeyBeta
 		var out [32]byte
 		copy(out[:], k)
 		return out
@@ -96,7 +100,7 @@ func obfKeyFor(serverPub []byte, ver int) [32]byte {
 
 // Ключ защиты заголовка выводится из ключа данных (ключ — случайные 256 бит из Noise, поэтому HKDF-Expand без «извлечения» уместен).
 func hpKeyFor(ver int, dataKey [32]byte) [32]byte {
-	if ver == protoV2 {
+	if ver >= protoV2 {
 		k, _ := hkdf.Expand(sha256.New, dataKey[:], "gsp v2 header protection", 32)
 		var out [32]byte
 		copy(out[:], k)
@@ -119,9 +123,11 @@ func randByte() int {
 
 // sealHandshake: nonce(24) || XChaCha20-Poly1305( len(2) || сообщение Noise || случайная набивка ).
 // Весь пакет выглядит как случайные байты, длина разная.
-func sealHandshake(key *[32]byte, msg []byte) []byte {
+func sealHandshake(key *[32]byte, msg []byte) []byte { return sealHandshakePad(key, msg, randByte()) }
+
+// То же, но с заданной длиной случайной набивки (версия 3 добирает пакет до размера, привычного для QUIC).
+func sealHandshakePad(key *[32]byte, msg []byte, pad int) []byte {
 	aead, _ := chacha20poly1305.NewX(key[:])
-	pad := randByte() // 0..255
 	plain := make([]byte, 2+len(msg)+pad)
 	binary.BigEndian.PutUint16(plain, uint16(len(msg)))
 	copy(plain[2:], msg)
@@ -129,6 +135,26 @@ func sealHandshake(key *[32]byte, msg []byte) []byte {
 	out := make([]byte, chacha20poly1305.NonceSizeX, chacha20poly1305.NonceSizeX+len(plain)+tagLen)
 	_, _ = crand.Read(out)
 	return aead.Seal(out, out[:chacha20poly1305.NonceSizeX], plain, nil)
+}
+
+// sealRaw/openRaw: nonce(24) || XChaCha20-Poly1305(plain). Разметку и набивку делает вызывающий.
+func sealRaw(key *[32]byte, plain []byte) []byte {
+	aead, _ := chacha20poly1305.NewX(key[:])
+	out := make([]byte, chacha20poly1305.NonceSizeX, chacha20poly1305.NonceSizeX+len(plain)+tagLen)
+	_, _ = crand.Read(out)
+	return aead.Seal(out, out[:chacha20poly1305.NonceSizeX], plain, nil)
+}
+
+func openRaw(key *[32]byte, pkt []byte) ([]byte, error) {
+	if len(pkt) < chacha20poly1305.NonceSizeX+tagLen {
+		return nil, errShort
+	}
+	aead, _ := chacha20poly1305.NewX(key[:])
+	plain, err := aead.Open(nil, pkt[:chacha20poly1305.NonceSizeX], pkt[chacha20poly1305.NonceSizeX:], nil)
+	if err != nil {
+		return nil, errAuth
+	}
+	return plain, nil
 }
 
 func openHandshake(key *[32]byte, pkt []byte) ([]byte, error) {
@@ -153,7 +179,7 @@ func openHandshake(key *[32]byte, pkt []byte) ([]byte, error) {
 // и nonce (12 байт), маска — первые байты потока ChaCha20 по ключу защиты заголовка (у QUIC берут 5 байт, у нас 12 из того же блока).
 // Версия 1 (прежняя) — BLAKE2s(ключ ‖ образец).
 func hpMask(ver int, hp *[32]byte, sample []byte) (m [hdrLen]byte) {
-	if ver == protoV2 {
+	if ver >= protoV2 {
 		c, err := chacha20.NewUnauthenticatedCipher(hp[:], sample[4:16])
 		if err != nil {
 			return
@@ -208,6 +234,7 @@ func (w *replayWin) mark(c uint64) {
 // Сеанс: один набор ключей между двумя узлами.
 type session struct {
 	ver            int    // версия протокола (protoV1/protoV2)
+	pq             bool   // в рукопожатии участвовал ML-KEM (постквантовая защита, только GSP Beta)
 	id, peerID     uint32 // наш индекс (по нему нас находят) и индекс собеседника (его мы пишем в пакеты)
 	send, recv     cipher.AEAD
 	sendHP, recvHP [32]byte

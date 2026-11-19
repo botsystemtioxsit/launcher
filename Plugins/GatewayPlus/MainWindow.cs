@@ -37,6 +37,19 @@ sealed class MainWindow : Window
         return c != null && Gsp.IsGsp(c);
     }
 
+    // Подпись протокола профиля: WireGuard / GSP / GSP Beta.
+    static string ProfileProto(string name)
+    {
+        var c = Store.Load(name);
+        return c != null && Gsp.IsGsp(c) ? Gsp.Label(c) : "WireGuard";
+    }
+
+    static bool IsBetaProfile(string name)
+    {
+        var c = Store.Load(name);
+        return c != null && Gsp.IsBeta(c);
+    }
+
     static bool RunningNow(string name) => name.Length > 0 && (IsGspProfile(name) ? GspClient.IsRunning(name) : Wg.IsRunning(name));
 
     public MainWindow(GwDemo demo = GwDemo.None)
@@ -314,6 +327,7 @@ sealed class MainWindow : Window
         var last = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
         last.Children.Add(Btn("Вернуть как было", "Danger", RevertAll, first: true));
         last.Children.Add(Btn("Скопировать сведения для поддержки", null, CopyDiagnostics));
+        last.Children.Add(Btn("Отправить отчёт разработчику", null, SendDiagnostics));
         page.Children.Add(last);
         page.Children.Add(status);
         page.Children.Add(Note("«Вернуть как было» выключает шлюз и убирает его следы (службу и файл конфига в ProgramData). Ваши сохранённые профили остаются."));
@@ -331,7 +345,7 @@ sealed class MainWindow : Window
         col.Children.Add(title);
 
         string state; Brush stateCol;
-        if (isActive && connected) { state = "Сейчас работает: " + (IsGspProfile(active) ? "GSP" : "WireGuard"); stateCol = Res("Green"); }
+        if (isActive && connected) { state = "Сейчас работает: " + ProfileProto(active); stateCol = Res("Green"); }
         else if (isActive) { state = "Выбран · шлюз выключен"; stateCol = Res("Accent2"); }
         else { state = "Не выбран"; stateCol = Res("Muted"); }
         col.Children.Add(new TextBlock { Text = state, Foreground = stateCol, FontSize = 12.5, Margin = new Thickness(0, 2, 0, 8) });
@@ -342,11 +356,13 @@ sealed class MainWindow : Window
         foreach (var extra in r.Extra)
         {
             var name = extra;
-            var b = new Button { Content = name + (IsGspProfile(name) ? " · GSP" : ""), Padding = new Thickness(12, 8, 12, 8), Margin = new Thickness(0, 0, 8, 8) };
+            var b = new Button { Content = name + (IsGspProfile(name) ? " · " + ProfileProto(name) : ""), Padding = new Thickness(12, 8, 12, 8), Margin = new Thickness(0, 0, 8, 8) };
             if (name == active) b.Style = (Style)FindResource("Primary");
             b.Click += (_, _) => SelectProfile(name);
             protos.Children.Add(b);
         }
+        var beta = BetaBtn(r);
+        if (beta != null) protos.Children.Add(beta);
         col.Children.Add(protos);
 
         var foot = new WrapPanel { Margin = new Thickness(0, 2, 0, 0) };
@@ -364,6 +380,31 @@ sealed class MainWindow : Window
             Background = Res("Panel2"), BorderBrush = isActive ? Res("Accent") : Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3),
             Padding = new Thickness(16, 12, 16, 10), Margin = new Thickness(0, 6, 0, 4), Child = col,
         };
+    }
+
+    // «GSP Beta (тест)»: тот же ключ и сервер, что у профиля GSP, но Proto = 3. Появляется, когда у сервера есть обычный профиль GSP и Beta ещё нет.
+    Button? BetaBtn(ServerRow r)
+    {
+        if (r.Gsp == null || r.All.Any(IsBetaProfile)) return null;
+        var src = r.Gsp;
+        var srcConf = Store.Load(src);
+        var hasKey = srcConf != null && Gsp.HasBetaKey(srcConf);
+        var b = new Button { Content = "GSP Beta — создать (тест)", Padding = new Thickness(16, 8, 16, 8), Margin = new Thickness(0, 0, 8, 8), IsEnabled = hasKey };
+        b.ToolTip = hasKey
+            ? "Тестовый протокол Ghost Shell: своя схема рукопожатия с секретом профиля, пакеты по форме как начало QUIC, мусорные пакеты. Новый профиль берёт ключи профиля «" + src + "»."
+            : "Профилю «" + src + "» не хватает секрета для GSP Beta. Откройте «Сервер…» и нажмите «Обновить GSP на сервере» — секрет появится сам.";
+        b.Click += (_, _) =>
+        {
+            var conf = Store.Load(src);
+            if (conf == null) return;
+            var existing = Store.List();
+            var baseName = Store.SafeName(Servers.SuggestName(src) + "-beta");
+            var name = baseName;
+            for (var i = 2; existing.Contains(name, StringComparer.OrdinalIgnoreCase); i++) name = Store.SafeName(baseName + i);
+            Store.Save(name, Store.WithInterfaceValue(conf, "Proto", "3"));
+            SelectProfile(name);
+        };
+        return b;
     }
 
     Button ProtoBtn(ServerRow r, bool gsp, string? profile, string active)
@@ -390,7 +431,7 @@ sealed class MainWindow : Window
     {
         if (connected) { status.Text = "Сначала отключите шлюз."; return; }
         Store.Active = name;
-        status.Text = "Выбран профиль «" + name + "» (" + (IsGspProfile(name) ? "GSP" : "WireGuard") + "). Нажмите «Подключить».";
+        status.Text = "Выбран профиль «" + name + "» (" + ProfileProto(name) + "). Нажмите «Подключить».";
         BuildPage();
     }
 
@@ -402,36 +443,61 @@ sealed class MainWindow : Window
         BuildPage();
     }
 
-    // Сведения для поддержки: версии, настройки выбранного профиля и состояние шлюза — БЕЗ ключей, паролей и полного адреса сервера.
+    // Сведения для поддержки: версии, настройки профилей и состояние шлюза — БЕЗ ключей, паролей и полного адреса сервера.
+    static string MaskHost(string ep) => System.Text.RegularExpressions.Regex.Replace(ep, @"(\d+\.\d+\.\d+)\.\d+(:\d+)?$", "$1.x");
+
+    string BuildDiagnostics()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"Gateway Plus {Ui.Version} · Windows {Environment.OSVersion.Version} · администратор: {Helper.IsAdmin()}");
+        var rows = Servers.List();
+        sb.AppendLine($"Серверов: {rows.Count}; WhatsApp мимо шлюза: {(Store.Bypass.Contains("whatsapp") ? "да" : "нет")}; WireGuard установлен: {(Wg.ExePath() != null ? "да" : "нет")}; программа GSP в плагине: {(GspClient.Available ? "да" : "нет")}");
+        // все профили: протокол, версия, есть ли секрет GSP Beta (сам секрет не выводится), сервер без последнего числа адреса
+        foreach (var n in Store.List())
+        {
+            var c = Store.Load(n);
+            if (c == null) { sb.AppendLine($"Профиль «{n}»: не читается"); continue; }
+            var isG = Gsp.IsGsp(c);
+            sb.AppendLine($"Профиль «{n}»: {(isG ? Gsp.Label(c) + ", протокол v" + Gsp.ProtoOf(c) + ", BetaKey: " + (Gsp.HasBetaKey(c) ? "есть" : "нет") + ", ML-KEM: " + (Gsp.HasKemPub(c) ? "есть" : "нет") : "WireGuard")} · сервер {MaskHost(Store.EndpointOf(c))} · MTU {Store.MtuOf(c)}");
+        }
+        var active = Store.Active;
+        var conf = active.Length > 0 ? Store.Load(active) : null;
+        if (conf == null) sb.AppendLine("Выбранный профиль: нет");
+        else
+        {
+            var gsp = Gsp.IsGsp(conf);
+            sb.AppendLine($"Выбранный профиль: «{active}» · {(gsp ? Gsp.Label(conf) + ", версия протокола " + Gsp.ProtoOf(conf) : "WireGuard")}");
+            if (gsp) sb.AppendLine($"FEC: {(Store.InterfaceValue(conf, "FEC").Length > 0 ? Store.InterfaceValue(conf, "FEC") : "auto")} · защита от утечек: {Gsp.KillSwitchOf(conf)}");
+            sb.AppendLine($"Шлюз сейчас: {(RunningNow(active) ? "включён" : "выключен")}");
+            if (gsp)
+            {
+                var st = GspClient.ReadStatus(active);
+                sb.AppendLine("Состояние GSP: " + GspClient.Describe(st));
+            }
+        }
+        return sb.ToString();
+    }
+
     void CopyDiagnostics()
     {
         try
         {
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine($"Gateway Plus {Ui.Version} · Windows {Environment.OSVersion.Version} · администратор: {Helper.IsAdmin()}");
-            var rows = Servers.List();
-            sb.AppendLine($"Серверов: {rows.Count}; WhatsApp мимо шлюза: {(Store.Bypass.Contains("whatsapp") ? "да" : "нет")}; WireGuard установлен: {(Wg.ExePath() != null ? "да" : "нет")}; программа GSP в плагине: {(GspClient.Available ? "да" : "нет")}");
-            var active = Store.Active;
-            var conf = active.Length > 0 ? Store.Load(active) : null;
-            if (conf == null) sb.AppendLine("Выбранный профиль: нет");
-            else
-            {
-                var gsp = Gsp.IsGsp(conf);
-                var ep = Store.EndpointOf(conf);
-                var masked = System.Text.RegularExpressions.Regex.Replace(ep, @"(\d+\.\d+\.\d+)\.\d+$", "$1.x");
-                sb.AppendLine($"Выбранный профиль: «{active}» · {(gsp ? "GSP, версия протокола " + Gsp.ProtoOf(conf) : "WireGuard")} · сервер {masked} · MTU {Store.MtuOf(conf)}");
-                if (gsp) sb.AppendLine($"FEC: {(Store.InterfaceValue(conf, "FEC").Length > 0 ? Store.InterfaceValue(conf, "FEC") : "auto")} · защита от утечек: {Gsp.KillSwitchOf(conf)}");
-                sb.AppendLine($"Шлюз сейчас: {(RunningNow(active) ? "включён" : "выключен")}");
-                if (gsp)
-                {
-                    var st = GspClient.ReadStatus(active);
-                    sb.AppendLine("Состояние GSP: " + GspClient.Describe(st));
-                }
-            }
-            Clipboard.SetText(sb.ToString());
+            Clipboard.SetText(BuildDiagnostics());
             status.Text = "Сведения скопированы (без ключей, паролей и полного адреса сервера). Их можно вставить в сообщение.";
         }
         catch (Exception ex) { status.Text = "Не удалось скопировать: " + ex.Message; }
+    }
+
+    // Отправка тех же сведений разработчику (общая база проекта, узел pluginReports — как у Taskbar Plus и Icon Plus).
+    async void SendDiagnostics()
+    {
+        try
+        {
+            status.Text = "Отправляю отчёт…";
+            var text = BuildDiagnostics();
+            status.Text = await SupportReport.UploadAsync(text);
+        }
+        catch (Exception ex) { status.Text = "Отчёт не отправился: " + ex.Message; }
     }
 
     // ---------- действия ----------
@@ -479,7 +545,7 @@ sealed class MainWindow : Window
         {
             case ProfileWindow.Outcome.Use:
                 Store.Active = w.ResultName;
-                status.Text = "Выбран профиль «" + w.ResultName + "» (" + (IsGspProfile(w.ResultName) ? "GSP" : "WireGuard") + "). Нажмите «Подключить».";
+                status.Text = "Выбран профиль «" + w.ResultName + "» (" + ProfileProto(w.ResultName) + "). Нажмите «Подключить».";
                 BuildPage();
                 break;
             case ProfileWindow.Outcome.Saved:

@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"crypto/mlkem"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -16,11 +18,13 @@ import (
 	"golang.zx2c4.com/wireguard/tun"
 )
 
-const version = "0.3.0"
+const version = "0.4.0-beta"
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `gsp — Ghost Shell Protocol `+version+`
   gsp genkey                                  новый закрытый ключ
+  gsp kempub                                  открытый ключ ML-KEM по «семени» KemKey (читает со входа)
+  gsp genkem                                  пара ключей ML-KEM для постквантовой защиты GSP Beta (две строки: KemKey для сервера, KemPub для клиентов)
   gsp pubkey                                  открытый ключ по закрытому (читает со входа)
   gsp run -c файл [-status файл] [-v]         запустить (сервер или клиент — по настройкам)
   gsp echo-server -key К -peer К -allowed Сеть  сервер-ответчик на ping (для проверок, без сетевой карты)
@@ -45,6 +49,24 @@ func main() {
 			fatal(err)
 		}
 		fmt.Println(keyToB64(k.Private))
+	case "genkem":
+		seed, pub, err := genKem()
+		if err != nil {
+			fatal(err)
+		}
+		fmt.Println(seed)
+		fmt.Println(pub)
+	case "kempub":
+		line, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+		seed, err := kemSeedFromB64(strings.TrimSpace(line))
+		if err != nil {
+			fatal(err)
+		}
+		dk, err := mlkem.NewDecapsulationKey768(seed)
+		if err != nil {
+			fatal(err)
+		}
+		fmt.Println(base64.StdEncoding.EncodeToString(dk.EncapsulationKey().Bytes()))
 	case "pubkey":
 		line, _ := bufio.NewReader(os.Stdin).ReadString('\n')
 		priv, err := keyFromB64(strings.TrimSpace(line))

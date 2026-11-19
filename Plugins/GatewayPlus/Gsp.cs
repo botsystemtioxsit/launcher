@@ -24,6 +24,7 @@ static class Gsp
         return Regex.IsMatch(conf, @"(?im)^\s*FEC\s*=");
     }
 
+    static readonly Regex KemPubRe = new(@"^[A-Za-z0-9+/]{1579}=$");
     static readonly Regex KeyRe = new(@"^[A-Za-z0-9+/]{43}=$");
     static readonly Regex Cidr4 = new(@"^\d{1,3}(\.\d{1,3}){3}/\d{1,2}$");
     static readonly Regex Cidr6 = new(@"^[0-9a-fA-F:]{2,39}/\d{1,3}$");
@@ -32,7 +33,7 @@ static class Gsp
     static readonly Regex KillRe = new(@"^(auto|on|off)$", RegexOptions.IgnoreCase);
     static readonly Regex NameRe = new(@"^[A-Za-z0-9 _\-.]{1,40}$");
 
-    static readonly HashSet<string> IfaceKeys = new(StringComparer.OrdinalIgnoreCase) { "PrivateKey", "Address", "ListenPort", "MTU", "FEC", "Pad", "Name", "DNS", "KillSwitch", "Proto" };
+    static readonly HashSet<string> IfaceKeys = new(StringComparer.OrdinalIgnoreCase) { "PrivateKey", "Address", "ListenPort", "MTU", "FEC", "Pad", "Name", "DNS", "KillSwitch", "Proto", "BetaKey", "KemPub" };
     static readonly HashSet<string> PeerKeys = new(StringComparer.OrdinalIgnoreCase) { "PublicKey", "Endpoint", "AllowedIPs", "PersistentKeepalive" };
 
     static bool Cidrs(string v) => v.Split(',').Select(x => x.Trim()).All(x => x.Length > 0 && (Cidr4.IsMatch(x) || Cidr6.IsMatch(x)) && int.TryParse(x[(x.IndexOf('/') + 1)..], out var b) && b <= (x.Contains(':') ? 128 : 32));
@@ -69,7 +70,9 @@ static class Gsp
                     case "mtu": if (!int.TryParse(v, out var m) || m < 1200 || m > 1500) return "MTU: число от 1200 до 1500."; break;
                     case "fec": if (!FecRe.IsMatch(v)) return "FEC: off, auto или два числа через плюс (например 8+3)."; break;
                     case "pad": if (!int.TryParse(v, out var pd) || pd < 0 || pd > 255) return "Pad: число от 0 до 255."; break;
-                    case "proto": if (v != "1" && v != "2") return "Proto: 1 или 2."; break;
+                    case "proto": if (v != "1" && v != "2" && v != "3") return "Proto: 1, 2 или 3 (3 — GSP Beta)."; break;
+                    case "kempub": if (!KemPubRe.IsMatch(v)) return "KemPub: открытый ключ ML-KEM сервера (постквантовая защита GSP Beta), 1580 знаков (base64)."; break;
+                    case "betakey": if (!KeyRe.IsMatch(v)) return "BetaKey: секрет профиля GSP Beta, 44 знака (base64)."; break;
                     case "killswitch": if (!KillRe.IsMatch(v)) return "KillSwitch: auto, on или off."; break;
                     case "name": if (!NameRe.IsMatch(v)) return "Name: латиница, цифры, пробел, «_ - .», до 40 знаков."; break;
                     case "dns": if (!v.Split(',').All(x => IPAddress.TryParse(x.Trim(), out _))) return "DNS: список IP-адресов через запятую."; break;
@@ -95,6 +98,7 @@ static class Gsp
         if (!priv) return "В конфиге нет PrivateKey.";
         if (!pub) return "В конфиге нет PublicKey сервера.";
         if (!ep) return "В конфиге нет Endpoint (адрес сервера).";
+        if (ProtoOf(conf) == 3 && !KeyRe.IsMatch(Store.InterfaceValue(conf, "BetaKey").Trim())) return "Для GSP Beta (Proto = 3) нужен BetaKey — секрет профиля; его выдаёт сервер при установке или обновлении GSP.";
         return null;
     }
 
@@ -106,7 +110,14 @@ static class Gsp
     }
 
     // Версия протокола профиля: 2 — стандартные конструкции (ChaCha20-защита заголовка, HKDF), без строки Proto — 1 (прежняя; сервер понимает обе).
-    public static int ProtoOf(string conf) => Store.InterfaceValue(conf, "Proto").Trim() == "2" ? 2 : 1;
+    public static int ProtoOf(string conf) => Store.InterfaceValue(conf, "Proto").Trim() switch { "3" => 3, "2" => 2, _ => 1 };
+
+    // «GSP Beta» (Proto = 3) — тестовая версия протокола с маскировкой рукопожатия (Protocols/Gsp/beta.go). Показывается в интерфейсе отдельным названием.
+    public static bool IsBeta(string conf) => IsGsp(conf) && ProtoOf(conf) == 3;
+    public static bool HasBetaKey(string conf) => KeyRe.IsMatch(Store.InterfaceValue(conf, "BetaKey").Trim());
+    public static bool HasKemPub(string conf) => KemPubRe.IsMatch(Store.InterfaceValue(conf, "KemPub").Trim());   // есть открытый ключ ML-KEM сервера → GSP Beta добавляет постквантовую защиту
+    public static bool IsKemPub(string s) => KemPubRe.IsMatch(s ?? "");
+    public static string Label(string conf) => IsBeta(conf) ? "GSP Beta" : "GSP";
 
     public static string WithName(string conf, string adapterName) => Store.WithInterfaceValue(conf, "Name", adapterName);
 
@@ -122,7 +133,8 @@ static class Gsp
         public int SessionAgeS { get; set; }
         public int LastRecvAgoS { get; set; }
         public bool KillSwitch { get; set; }     // защита от утечек (Windows) сейчас включена
-        public int Proto { get; set; }           // версия протокола текущего сеанса (1 или 2; 0 — неизвестно)
+        public int Proto { get; set; }           // версия протокола текущего сеанса (1, 2 или 3; 0 — неизвестно)
+        public bool Pq { get; set; }             // в рукопожатии сеанса участвовал ML-KEM (постквантовая защита, GSP Beta)
         public string Error { get; set; } = "";
     }
 
@@ -143,6 +155,7 @@ static class Gsp
             s.LossPct = p.TryGetProperty("lossPct", out var lp) && lp.ValueKind == JsonValueKind.Number ? lp.GetDouble() : 0;
             s.Fec = p.TryGetProperty("fec", out var f) && f.ValueKind == JsonValueKind.String ? (f.GetString() ?? "off") : "off";
             s.Recovered = L("recovered"); s.TxBytes = L("txBytes"); s.RxBytes = L("rxBytes");
+            s.Pq = p.TryGetProperty("pq", out var pqv) && pqv.ValueKind == JsonValueKind.True;
             s.SessionAgeS = (int)L("sessionAgeS"); s.LastRecvAgoS = (int)L("lastRecvAgoS"); s.Proto = (int)L("proto");
             return s;
         }

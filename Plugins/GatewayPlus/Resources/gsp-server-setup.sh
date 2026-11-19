@@ -71,6 +71,19 @@ if [ "${GSP_UPDATE:-}" = "1" ]; then
     exit 2
   fi
   install -m 755 "$TMP/gsp" /usr/local/bin/gsp
+  # секрет профиля GSP Beta: у серверов, настроенных до GSP Beta, его ещё нет — создаём (остальное в настройках не трогаем)
+  BK="$(sed -n 's/^BetaKey *= *//p' /etc/gsp/gsp0.conf | head -n1 | tr -d ' \r')"
+  if [ -z "$BK" ]; then
+    BK="$(/usr/local/bin/gsp genkey)"
+    sed -i "/^ListenPort/a BetaKey = ${BK}" /etc/gsp/gsp0.conf
+  fi
+  # постквантовая защита GSP Beta (ML-KEM): у серверов, настроенных раньше, ключа ещё нет — создаём; открытую часть печатаем для профилей
+  KS="$(sed -n 's/^KemKey *= *//p' /etc/gsp/gsp0.conf | head -n1 | tr -d ' \r')"
+  if [ -z "$KS" ]; then
+    KS="$(/usr/local/bin/gsp genkem | sed -n 1p)"
+    sed -i "/^BetaKey/a KemKey = ${KS}" /etc/gsp/gsp0.conf
+  fi
+  KP="$(printf '%s\n' "$KS" | /usr/local/bin/gsp kempub)"
   systemctl restart gsp
   OK=0
   for _ in $(seq 1 20); do
@@ -82,7 +95,9 @@ if [ "${GSP_UPDATE:-}" = "1" ]; then
     journalctl -u gsp -n 15 --no-pager >&2 || true
     exit 1
   fi
-  echo "Сервер GSP обновлён: $(/usr/local/bin/gsp version). Ключи и настройки не менялись."
+  echo "GS_BETA_KEY=${BK}"
+  echo "GS_KEM_PUB=${KP}"
+  echo "Сервер GSP обновлён: $(/usr/local/bin/gsp version). Ключи и настройки не менялись (добавлен только секрет для GSP Beta, если его не было)."
   exit 0
 fi
 
@@ -94,12 +109,17 @@ umask 077
 mkdir -p /etc/gsp
 SK="$(/usr/local/bin/gsp genkey)"; SP="$(printf '%s\n' "$SK" | /usr/local/bin/gsp pubkey)"
 CK="$(/usr/local/bin/gsp genkey)"; CP="$(printf '%s\n' "$CK" | /usr/local/bin/gsp pubkey)"
+BK="$(/usr/local/bin/gsp genkey)"   # секрет профиля GSP Beta (общий для сервера и его клиентов)
+KEM="$(/usr/local/bin/gsp genkem)"  # пара ключей ML-KEM (постквантовая защита GSP Beta): «семя» остаётся на сервере, открытая часть идёт в профили
+KS="$(printf '%s\n' "$KEM" | sed -n 1p)"; KP="$(printf '%s\n' "$KEM" | sed -n 2p)"
 
 cat > /etc/gsp/gsp0.conf <<CONF
 [Interface]
 PrivateKey = ${SK}
 Address = ${SUBNET}.1/24
 ListenPort = ${PORT}
+BetaKey = ${BK}
+KemKey = ${KS}
 MTU = 1380
 FEC = auto
 Name = gsp0
@@ -197,6 +217,8 @@ MTU = 1380
 DNS = 1.1.1.1, 9.9.9.9
 FEC = auto
 Proto = 2
+BetaKey = ${BK}
+KemPub = ${KP}
 
 [Peer]
 PublicKey = ${SP}

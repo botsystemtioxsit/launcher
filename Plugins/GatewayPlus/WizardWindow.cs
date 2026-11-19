@@ -16,6 +16,7 @@ sealed class WizardWindow : Window
     readonly TextBox nameBox = new() { Text = "germany", Width = 220, HorizontalAlignment = HorizontalAlignment.Left, MaxLength = 32 };
     readonly RadioButton rbWg = new() { Content = "WireGuard — стандарт: быстрый, проверенный годами", IsChecked = true, Margin = new Thickness(0, 0, 0, 4), GroupName = "proto" };
     readonly RadioButton rbGsp = new() { Content = "GSP — наш протокол: лучше переносит потери связи (мобильная сеть, Wi-Fi, далёкий сервер)", GroupName = "proto" };
+    readonly RadioButton rbBeta = new() { Content = "GSP Beta (тест) — свой протокол Ghost Shell: другая схема рукопожатия, секрет профиля, маскировка под QUIC", GroupName = "proto" };
     readonly TextBox logBox = new() { IsReadOnly = true, FontFamily = (FontFamily)Application.Current.FindResource("Mono"), FontSize = 12, TextWrapping = TextWrapping.NoWrap, Height = 180, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(8) };
     readonly TextBlock msg = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
     Button go = null!;
@@ -46,8 +47,8 @@ sealed class WizardWindow : Window
         page.Children.Add(access);
 
         page.Children.Add(Ui.Label("Протокол"));
-        page.Children.Add(rbWg); page.Children.Add(rbGsp);
-        page.Children.Add(Ui.Note("WireGuard — выбор по умолчанию. GSP — молодой протокол Ghost Shell: когда связь теряет пакеты, он восстанавливает их сам, и скорость падает заметно меньше (на хорошей связи он не быстрее WireGuard). Оба ставятся на ваш сервер по SSH, можно поставить оба — они не мешают друг другу.", 11.5));
+        page.Children.Add(rbWg); page.Children.Add(rbGsp); page.Children.Add(rbBeta);
+        page.Children.Add(Ui.Note("WireGuard — выбор по умолчанию. GSP — молодой протокол Ghost Shell: когда связь теряет пакеты, он восстанавливает их сам, и скорость падает заметно меньше (на хорошей связи он не быстрее WireGuard). Оба ставятся на ваш сервер по SSH, можно поставить оба — они не мешают друг другу. GSP Beta — тестовый протокол Ghost Shell для сетей, где блокируют по сигнатурам: своя схема рукопожатия, сервер молчит для тех, у кого нет секрета профиля (он работает на том же сервере и порту, что и GSP); работоспособность в таких сетях пока не проверена.", 11.5));
 
         page.Children.Add(Ui.Label("Название профиля (латиницей)"));
         page.Children.Add(nameBox);
@@ -87,7 +88,8 @@ sealed class WizardWindow : Window
         msg.Foreground = Ui.Res("Accent2"); msg.Text = "";
         var t = access.Build(out var bad);
         if (t == null) { msg.Text = bad ?? "Проверьте данные для входа на сервер."; return; }
-        t.Protocol = rbGsp.IsChecked == true ? "gsp" : "wg";
+        var beta = rbBeta.IsChecked == true;
+        t.Protocol = rbGsp.IsChecked == true || beta ? "gsp" : "wg";
         var early = access.Server?.Host ?? t.Host;
         t.OnLoggedIn = () => { var m = Dispatcher.Invoke(() => access.EarlyMessage(t, early)); if (m != null) Log(m); };
         var name = UniqueName(Store.SafeName(nameBox.Text));
@@ -103,12 +105,12 @@ sealed class WizardWindow : Window
                 else msg.Text = res.Error;
                 return;
             }
-            Store.Save(name, res.Conf);
+            Store.Save(name, beta ? Store.WithInterfaceValue(res.Conf, "Proto", "3") : res.Conf);
             Store.Active = name;
             access.Persist(t, res.Endpoint, Servers.SuggestName(name));
             SavedName = name;
             msg.Foreground = Ui.Res("Green");
-            msg.Text = $"Готово! Профиль «{name}» сохранён (сервер {res.Endpoint}, протокол {(res.Protocol == "gsp" ? "GSP" : "WireGuard")}). Закройте окно и нажмите «Подключить». Если не подключается — в панели хостинга откройте порт {(res.Protocol == "gsp" ? "51821" : "51820")} по протоколу UDP.";
+            msg.Text = $"Готово! Профиль «{name}» сохранён (сервер {res.Endpoint}, протокол {(beta ? "GSP Beta" : res.Protocol == "gsp" ? "GSP" : "WireGuard")}). Закройте окно и нажмите «Подключить». Если не подключается — в панели хостинга откройте порт {(res.Protocol == "gsp" ? "51821" : "51820")} по протоколу UDP.";
             if (access.Server is { HasAccess: true }) msg.Text += " Доступ к серверу сохранён: второй протокол на нём ставится без ввода пароля.";
             done = true; go.Content = "Закрыть";
         }
