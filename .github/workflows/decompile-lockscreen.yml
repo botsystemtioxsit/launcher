@@ -1,7 +1,7 @@
 name: Decompile Lock Screen Custom Plus
 
-# Разовая задача: разобрать старый APK «Lock Screen Custom Plus» (лежит в ветке lockscreen-import) декомпилятором jadx
-# и положить читаемые исходники рядом (LockScreenPlus/decompiled). Запускается вручную и только на ветке lockscreen-import.
+# Разовая задача: разобрать старый APK «Lock Screen Custom Plus» (лежит в ветке ccr-03b67940-mzxakd) декомпилятором jadx
+# и положить читаемые исходники рядом (LockScreenPlus/decompiled). Запускается вручную и только на ветке ccr-03b67940-mzxakd.
 on:
   workflow_dispatch:
 
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   decompile:
-    if: github.ref_name == 'lockscreen-import'
+    if: github.ref_name == 'ccr-03b67940-mzxakd'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -48,4 +48,4 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add LockScreenPlus/decompiled
           git commit -m "Исходники Lock Screen Custom Plus (jadx)" || echo "нечего коммитить"
-          git push origin HEAD:lockscreen-import
+          git push origin HEAD:ccr-03b67940-mzxakd
