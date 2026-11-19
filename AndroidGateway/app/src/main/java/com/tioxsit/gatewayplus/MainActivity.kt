@@ -117,12 +117,32 @@ class MainActivity : ComponentActivity() {
             ui.heading("Вход"),
             ui.note("Придумайте ник и пароль — это и есть ваш аккаунт: без почты и без телефона. Ник и пароль нигде не хранятся: из них считается номер аккаунта, и тот же ник и пароль на другом телефоне откроют тот же аккаунт. Забыли пароль — просто создайте новый аккаунт: ваши серверы лежат на телефоне и на сервере, в аккаунте их нет."),
             nickBox, pwBox,
-            ui.button(if (busy) "Подождите…" else "Войти или создать аккаунт", "primary") { if (!busy) login() },
+            ui.button(if (busy) "Подождите…" else if (resetMode) "Создать аккаунт с новым паролем" else "Войти или создать аккаунт", "primary") { if (!busy) login() },
+            if (resetMode) ui.button("Отмена") { resetMode = false; status = ""; lastNick = nickBox.text.toString().trim(); render() }
+            else ui.button("Забыл пароль") { forgotPassword() },
             ui.note("Нужен для того, чтобы действовали правила проекта: только личное использование, без коммерции. Владелец проекта может закрыть доступ тем, кто их нарушает."),
         ))
     }
 
     private var lastNick = ""
+    private var resetMode = false
+
+    // Пароль нигде не хранится (из ника и пароля считается номер аккаунта), поэтому «сбросить» его нельзя — но можно
+    // за секунды завести аккаунт заново с тем же ником и новым паролем: серверы и профили лежат на телефоне и сервере,
+    // они не привязаны к аккаунту и не пропадут.
+    private fun forgotPassword() {
+        AlertDialog.Builder(this)
+            .setTitle("Забыли пароль?")
+            .setMessage("Пароль нигде не хранится, поэтому его нельзя прислать или сбросить, как на сайтах. Зато можно создать аккаунт заново: тот же ник и новый пароль.\n\nВаши серверы и профили лежат на телефоне и на самом сервере — они не пропадут и не привязаны к аккаунту. Старый аккаунт просто перестанет использоваться.")
+            .setPositiveButton("Задать новый пароль") { _, _ ->
+                lastNick = nickBox.text.toString().trim()
+                resetMode = true
+                status = "Введите ник и НОВЫЙ пароль (от 8 знаков) и нажмите «Создать аккаунт с новым паролем»."
+                render()
+            }
+            .setNegativeButton("Назад", null)
+            .show()
+    }
 
     private fun mainScreen() {
         val a = acct!!
@@ -255,7 +275,7 @@ class MainActivity : ComponentActivity() {
             main.post {
                 busy = false
                 when {
-                    remote == null -> askCreate(nick, key)
+                    remote == null -> if (resetMode) showTerms(readOnly = false) { createAccount(nick, key) } else askCreate(nick, key)
                     remote < Terms.VERSION -> showTerms(readOnly = false) { finishLogin(nick, key, remote, accept = true) }
                     else -> finishLogin(nick, key, remote, accept = false)
                 }
@@ -291,6 +311,7 @@ class MainActivity : ComponentActivity() {
         acct = a
         status = ""
         lastNick = ""
+        resetMode = false
         render()
         thread {
             if (accept) Cloud.acceptTerms(a.id, store.deviceHash(), version, store.profileNames().size, a.nick)
