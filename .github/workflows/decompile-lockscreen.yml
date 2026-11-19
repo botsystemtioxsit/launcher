@@ -29,7 +29,7 @@ jobs:
           echo "APK: $APK"
           rm -rf LockScreenPlus/decompiled
           # jadx возвращает ошибку, если часть методов не удалось восстановить; результат при этом сохраняется
-          jadx/jadx/bin/jadx -e --show-bad-code -d LockScreenPlus/decompiled "$APK" || echo "jadx закончил с предупреждениями (это нормально)"
+          jadx/bin/jadx -e --show-bad-code -d LockScreenPlus/decompiled "$APK" || echo "jadx закончил с предупреждениями (это нормально)"
           ls LockScreenPlus/decompiled
       - name: Keep only the app code
         run: |
