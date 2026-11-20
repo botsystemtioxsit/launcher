@@ -30,6 +30,7 @@ import java.util.Random;
 
 /* loaded from: classes3.dex */
 final class Renderer {
+    private float B = 1080.0f;
     private ColorMatrixColorFilter colorFilter;
     private SimpleDateFormat fDate;
     private SimpleDateFormat fH;
@@ -83,6 +84,7 @@ final class Renderer {
         Design design;
         Design design2;
         this.hits.clear();
+        this.B = Math.min(W, H);
         prepareFormats(d);
         updateColorFilter(d);
         Date date = new Date(now);
@@ -248,8 +250,8 @@ final class Renderer {
         }
         float dt = live ? Math.min(0.1f, Math.max(0.0f, (now - this.pLast) / 1000.0f)) * (d.pSpeed / 100.0f) : 0.0f;
         this.pLast = now;
-        float u = (W / 1080.0f) * (d.pSize / 100.0f);
-        float su = W / 1080.0f;
+        float u = (B / 1080.0f) * (d.pSize / 100.0f);
+        float su = B / 1080.0f;
         float t = now / 1000.0f;
         float alpha = d.pAlpha / 100.0f;
         this.shapePaint.clearShadowLayer();
@@ -361,7 +363,7 @@ final class Renderer {
     }
 
     private void drawStacked(Canvas c, int W, float cx, float cy, Design d, Date date) {
-        float S = W * 0.0042f * d.clockSize;
+        float S = B * 0.0042f * d.clockSize;
         prepareClockPaint(d, S);
         String hh = this.fH.format(date);
         String mm = this.fM.format(date);
@@ -382,7 +384,7 @@ final class Renderer {
     }
 
     private void drawLine(Canvas c, int W, float cx, float cy, Design d, Date date) {
-        float S = W * 0.0028f * d.clockSize;
+        float S = B * 0.0028f * d.clockSize;
         prepareClockPaint(d, S);
         String a = this.fH.format(date);
         String b = this.fM.format(date);
@@ -450,7 +452,7 @@ final class Renderer {
     }
 
     private void drawAnalog(Canvas c, int W, float cx, float cy, Design d, Date date) {
-        float R = W * 0.0022f * d.clockSize;
+        float R = B * 0.0022f * d.clockSize;
         this.cal.setTime(date);
         float hour = (this.cal.get(10) + (this.cal.get(12) / 60.0f)) * 30.0f;
         float min = this.cal.get(12) * 6.0f;
@@ -504,8 +506,8 @@ final class Renderer {
         if (d.dateShow) {
             this.textPaint.setTypeface(Fonts.get(d.dateFont));
             this.textPaint.setColor(d.textCol());
-            this.textPaint.setShadowLayer(W * 0.006f, 0.0f, W * 0.003f, -1728053248);
-            this.textPaint.setTextSize(((W * 0.05f) * d.dateSize) / 100.0f);
+            this.textPaint.setShadowLayer(B * 0.006f, 0.0f, B * 0.003f, -1728053248);
+            this.textPaint.setTextSize(((B * 0.05f) * d.dateSize) / 100.0f);
             String s = this.fDate.format(date);
             if (!s.isEmpty()) {
                 s = s.substring(0, 1).toUpperCase(Locale.getDefault()) + s.substring(1);
@@ -515,8 +517,8 @@ final class Renderer {
         if (d.batShow && battery != null && !battery.isEmpty()) {
             this.textPaint.setTypeface(Fonts.get(d.dateFont));
             this.textPaint.setColor(d.textCol());
-            this.textPaint.setShadowLayer(W * 0.006f, 0.0f, W * 0.003f, -1728053248);
-            this.textPaint.setTextSize(((W * 0.04f) * d.batSize) / 100.0f);
+            this.textPaint.setShadowLayer(B * 0.006f, 0.0f, B * 0.003f, -1728053248);
+            this.textPaint.setTextSize(((B * 0.04f) * d.batSize) / 100.0f);
             drawLabel(c, "bat", battery, (W * d.batX) + dx, (H * d.batY) + dy, d.batXf, W);
         }
         int blockW2 = (int) (W * 0.8f);
@@ -527,7 +529,7 @@ final class Renderer {
             if (text2.isEmpty()) {
                 blockW = blockW2;
             } else {
-                float S = ((W * 0.045f) * l.size) / 100.0f;
+                float S = ((B * 0.045f) * l.size) / 100.0f;
                 int color = l.color != 0 ? l.color : d.textCol();
                 String id = "tl" + i;
                 String key = text2 + "|" + blockW2 + "|" + S + "|" + color + "|" + l.font.id + "|" + l.font.variation();
@@ -564,7 +566,7 @@ final class Renderer {
         this.textPaint.setColor(-1);
         for (int i2 = 0; i2 < d.stickers.size(); i2++) {
             Design.Sticker s2 = d.stickers.get(i2);
-            float S2 = ((W * 0.14f) * s2.size) / 100.0f;
+            float S2 = ((B * 0.14f) * s2.size) / 100.0f;
             this.textPaint.setTextSize(S2);
             float cx2 = W * s2.x;
             float cy2 = H * s2.y;
