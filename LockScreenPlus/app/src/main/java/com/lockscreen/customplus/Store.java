@@ -316,45 +316,32 @@ final class Store {
     }
 
     private static int exifRotation(Context c, Uri uri) {
-        InputStream in;
+        InputStream in = null;
         try {
             in = c.getContentResolver().openInputStream(uri);
-        } catch (Exception e) {
-        }
-        if (in == null) {
-            if (in != null) {
-                in.close();
+            if (in == null) {
+                return 0;
             }
-            return 0;
-        }
-        try {
-            int o = new ExifInterface(in).getAttributeInt(androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION, 1);
+            int o = new ExifInterface(in).getAttributeInt(ExifInterface.TAG_ORIENTATION, 1);
             if (o == 6) {
-                if (in == null) {
-                    return 90;
-                }
-                in.close();
                 return 90;
             }
             if (o == 3) {
-                if (in == null) {
-                    return 180;
-                }
-                in.close();
                 return 180;
             }
-            if (o != 8) {
-                if (in != null) {
-                    in.close();
-                }
-                return 0;
-            }
-            if (in == null) {
+            if (o == 8) {
                 return 270;
             }
-            in.close();
-            return 270;
+            return 0;
+        } catch (Exception e) {
+            return 0;
         } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e2) {
+                }
+            }
         }
     }
 
