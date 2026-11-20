@@ -69,8 +69,8 @@ public class MainActivity extends Activity {
     private static final String[] TAB_ICONS = {"🖼", "🕒", "🎨", "🧩", "✨", "💾", "🔄"};
     private static final String[] TAB_NAMES = {"Фон", "Часы", "Цвета", "Элементы", "Эффекты", "Мои", "Режимы"};
     private static final String[] COLOR_TARGETS = {"Часы", "Минуты", "Надписи", "Градиент 1", "Градиент 2"};
-    private static final int[] PALETTE = {-1, -5317, -16718337, -49023, -9834322, -28416, -1754827, ViewCompat.MEASURED_STATE_MASK};
-    private static final int[] GRADIENT_COLORS = {-14997707, -11830879, -7459358, -44753, -15623794, -13045891, -244117, -12624133, -551138, ViewCompat.MEASURED_STATE_MASK};
+    private static final int[] PALETTE = {-1, -5317, -16718337, -49023, -9834322, -28416, -1754827, 0xFF000000};
+    private static final int[] GRADIENT_COLORS = {-14997707, -11830879, -7459358, -44753, -15623794, -13045891, -244117, -12624133, -551138, 0xFF000000};
     private static final String[] EMOJI = {"😀", "😎", "🔥", "❤️", "⭐", "🌙", "⚡", "🎵", "🚀", "🌸", "👑", "💎"};
     private static final String[] PARTICLE_NAMES = {"Нет", "Снег", "Дождь", "Звёзды", "Пузыри", "Сакура"};
     private static final Set<String> FLEX_FONTS = new HashSet(Arrays.asList("asset:RobotoFlex.ttf"));
@@ -530,7 +530,7 @@ public class MainActivity extends Activity {
                 MainActivity.this.lambda$buildBackgroundTab$14(i);
             }
         }));
-        k.addView(this.ui.slider("Насыщенность", 0, MlKitException.CODE_SCANNER_UNAVAILABLE, this.design.sat, "%", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda59
+        k.addView(this.ui.slider("Насыщенность", 0, 200, this.design.sat, "%", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda59
             @Override // java.util.function.IntConsumer
             public final void accept(int i) {
                 MainActivity.this.lambda$buildBackgroundTab$15(i);
@@ -685,7 +685,7 @@ public class MainActivity extends Activity {
             this.content.addView(row);
         }
         LinearLayout o = this.ui.card(this.content, "Цифры");
-        o.addView(this.ui.slider("Размер", 40, MlKitException.CODE_SCANNER_UNAVAILABLE, this.design.clockSize, "", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda102
+        o.addView(this.ui.slider("Размер", 40, 200, this.design.clockSize, "", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda102
             @Override // java.util.function.IntConsumer
             public final void accept(int i2) {
                 MainActivity.this.lambda$buildClockTab$19(i2);
@@ -1267,13 +1267,13 @@ public class MainActivity extends Activity {
                 MainActivity.this.lambda$buildElementsTab$54(xf, i2);
             }
         }));
-        sel.addView(this.ui.slider("Растянуть по ширине", 30, MlKitException.LOW_LIGHT_AUTO_EXPOSURE_COMPUTATION_FAILURE, xf.sx, "%", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda25
+        sel.addView(this.ui.slider("Растянуть по ширине", 30, 300, xf.sx, "%", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda25
             @Override // java.util.function.IntConsumer
             public final void accept(int i2) {
                 MainActivity.this.lambda$buildElementsTab$55(xf, i2);
             }
         }));
-        sel.addView(this.ui.slider("Растянуть по высоте", 30, MlKitException.LOW_LIGHT_AUTO_EXPOSURE_COMPUTATION_FAILURE, xf.sy, "%", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda26
+        sel.addView(this.ui.slider("Растянуть по высоте", 30, 300, xf.sy, "%", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda26
             @Override // java.util.function.IntConsumer
             public final void accept(int i2) {
                 MainActivity.this.lambda$buildElementsTab$56(xf, i2);
@@ -1755,19 +1755,19 @@ public class MainActivity extends Activity {
                 MainActivity.this.lambda$buildEffectsTab$80(i);
             }
         }));
-        f.addView(this.ui.slider("Количество", 10, MlKitException.CODE_SCANNER_UNAVAILABLE, this.design.particleCount, "", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda46
+        f.addView(this.ui.slider("Количество", 10, 200, this.design.particleCount, "", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda46
             @Override // java.util.function.IntConsumer
             public final void accept(int i) {
                 MainActivity.this.lambda$buildEffectsTab$81(i);
             }
         }));
-        f.addView(this.ui.slider("Скорость", 20, MlKitException.LOW_LIGHT_AUTO_EXPOSURE_COMPUTATION_FAILURE, this.design.pSpeed, "%", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda47
+        f.addView(this.ui.slider("Скорость", 20, 300, this.design.pSpeed, "%", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda47
             @Override // java.util.function.IntConsumer
             public final void accept(int i) {
                 MainActivity.this.lambda$buildEffectsTab$82(i);
             }
         }));
-        f.addView(this.ui.slider("Размер", 30, MlKitException.LOW_LIGHT_AUTO_EXPOSURE_COMPUTATION_FAILURE, this.design.pSize, "%", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda48
+        f.addView(this.ui.slider("Размер", 30, 300, this.design.pSize, "%", new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda48
             @Override // java.util.function.IntConsumer
             public final void accept(int i) {
                 MainActivity.this.lambda$buildEffectsTab$83(i);

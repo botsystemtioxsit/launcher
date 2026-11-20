@@ -21,10 +21,16 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Download tools
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          curl -fsSL -o dex2jar.zip https://github.com/pxb4/dex2jar/releases/download/v2.4/dex-tools-v2.4.zip
+          D2J_URL=$(gh api repos/pxb4/dex2jar/releases/latest --jq '.assets[] | select(.name | test("dex-tool")) | .browser_download_url' | head -1)
+          CFR_URL=$(gh api repos/leibnitz27/cfr/releases/latest --jq '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -1)
+          echo "dex2jar: $D2J_URL"
+          echo "cfr: $CFR_URL"
+          curl -fsSL -o dex2jar.zip "$D2J_URL"
           unzip -q dex2jar.zip -d tools
-          curl -fsSL -o cfr.jar https://github.com/leibnitz27/cfr/releases/download/0.152/cfr-0.152.jar
+          curl -fsSL -o cfr.jar "$CFR_URL"
           ls tools
       - name: APK to jar to Java
         run: |

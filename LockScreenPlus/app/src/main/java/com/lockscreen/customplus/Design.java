@@ -34,7 +34,7 @@ final class Design {
     int gradAngle = 90;
     boolean stroke = false;
     int strokeW = 6;
-    int strokeColor = ViewCompat.MEASURED_STATE_MASK;
+    int strokeColor = 0xFF000000;
     boolean shadow = true;
     int clockColor = -1;
     int clockColor2 = -1754827;
@@ -568,65 +568,31 @@ final class Design {
         }
     }
 
-    /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
     void setPos(String id, float x, float y) {
-        char c;
         if (id == null) {
+            return;
         }
-        switch (id.hashCode()) {
-            case 97301:
-                if (id.equals("bat")) {
-                    c = 2;
-                    break;
-                }
-                c = 65535;
-                break;
-            case 3076014:
-                if (id.equals("date")) {
-                    c = 1;
-                    break;
-                }
-                c = 65535;
-                break;
-            case 94755854:
-                if (id.equals("clock")) {
-                    c = 0;
-                    break;
-                }
-                c = 65535;
-                break;
-            default:
-                c = 65535;
-                break;
-        }
-        switch (c) {
-            case 0:
-                this.clockX = x;
-                this.clockY = y;
-                break;
-            case 1:
-                this.dateX = x;
-                this.dateY = y;
-                break;
-            case 2:
-                this.batX = x;
-                this.batY = y;
-                break;
-            default:
-                Layer l = layer(id);
-                if (l != null) {
-                    l.x = x;
-                    l.y = y;
-                    break;
-                } else {
-                    Sticker s = sticker(id);
-                    if (s != null) {
-                        s.x = x;
-                        s.y = y;
-                        break;
-                    }
-                }
-                break;
+        if (id.equals("clock")) {
+            this.clockX = x;
+            this.clockY = y;
+        } else if (id.equals("date")) {
+            this.dateX = x;
+            this.dateY = y;
+        } else if (id.equals("bat")) {
+            this.batX = x;
+            this.batY = y;
+        } else {
+            Layer l = layer(id);
+            if (l != null) {
+                l.x = x;
+                l.y = y;
+                return;
+            }
+            Sticker st = sticker(id);
+            if (st != null) {
+                st.x = x;
+                st.y = y;
+            }
         }
     }
 
@@ -735,67 +701,31 @@ final class Design {
     }
 
     int[] sizeRange(String id) {
-        return "clock".equals(id) ? new int[]{40, MlKitException.CODE_SCANNER_UNAVAILABLE} : (id == null || !id.startsWith("st")) ? new int[]{40, MlKitException.LOW_LIGHT_AUTO_EXPOSURE_COMPUTATION_FAILURE} : new int[]{30, 400};
+        return "clock".equals(id) ? new int[]{40, 200} : (id == null || !id.startsWith("st")) ? new int[]{40, 300} : new int[]{30, 400};
     }
 
-    /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
-    /* JADX WARN: Code restructure failed: missing block: B:7:0x0023, code lost:
-    
-        if (r6.equals("clock") != false) goto L17;
-     */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     void setSize(String id, int v) {
         if (id == null) {
+            return;
         }
         int[] r = sizeRange(id);
-        char c = 0;
         int v2 = Math.max(r[0], Math.min(r[1], v));
-        switch (id.hashCode()) {
-            case 97301:
-                if (id.equals("bat")) {
-                    c = 2;
-                    break;
-                }
-                c = 65535;
-                break;
-            case 3076014:
-                if (id.equals("date")) {
-                    c = 1;
-                    break;
-                }
-                c = 65535;
-                break;
-            case 94755854:
-                break;
-            default:
-                c = 65535;
-                break;
-        }
-        switch (c) {
-            case 0:
-                this.clockSize = v2;
-                break;
-            case 1:
-                this.dateSize = v2;
-                break;
-            case 2:
-                this.batSize = v2;
-                break;
-            default:
-                Layer l = layer(id);
-                if (l != null) {
-                    l.size = v2;
-                    break;
-                } else {
-                    Sticker s = sticker(id);
-                    if (s != null) {
-                        s.size = v2;
-                        break;
-                    }
-                }
-                break;
+        if (id.equals("clock")) {
+            this.clockSize = v2;
+        } else if (id.equals("date")) {
+            this.dateSize = v2;
+        } else if (id.equals("bat")) {
+            this.batSize = v2;
+        } else {
+            Layer l = layer(id);
+            if (l != null) {
+                l.size = v2;
+                return;
+            }
+            Sticker st = sticker(id);
+            if (st != null) {
+                st.size = v2;
+            }
         }
     }
 
@@ -950,7 +880,7 @@ final class Design {
         }
         JSONArray ls = new JSONArray();
         for (Layer l : this.layers) {
-            ls.put(new JSONObject().put("web", l.web).put("text", l.text).put(ImagesContract.URL, l.url).put("refreshMin", l.refreshMin).put("x", l.x).put("y", l.y).put("size", l.size).put("color", l.color).put("font", l.font.toJson()).put("xf", l.xf.toJson()));
+            ls.put(new JSONObject().put("web", l.web).put("text", l.text).put("url", l.url).put("refreshMin", l.refreshMin).put("x", l.x).put("y", l.y).put("size", l.size).put("color", l.color).put("font", l.font.toJson()).put("xf", l.xf.toJson()));
         }
         o.put("layers", ls);
         JSONArray a = new JSONArray();
@@ -1041,7 +971,7 @@ final class Design {
         }
         JSONArray ls2 = o.optJSONArray("layers");
         String str4 = "refreshMin";
-        String str5 = ImagesContract.URL;
+        String str5 = "url";
         String str6 = "";
         if (ls2 == null) {
             if (!o.optString("text", "").isEmpty()) {
@@ -1052,10 +982,10 @@ final class Design {
                 l.size = o.optInt("textSize", 100);
                 d.layers.add(l);
             }
-            if (!o.optString(ImagesContract.URL, "").isEmpty()) {
+            if (!o.optString("url", "").isEmpty()) {
                 Layer l2 = new Layer();
                 l2.web = true;
-                l2.url = o.optString(ImagesContract.URL, "");
+                l2.url = o.optString("url", "");
                 l2.refreshMin = Math.max(1, o.optInt("refreshMin", 30));
                 l2.x = (float) o.optDouble("webX", 0.5d);
                 l2.y = (float) o.optDouble("webY", 0.72d);

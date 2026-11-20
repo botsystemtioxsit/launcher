@@ -97,7 +97,7 @@ final class Renderer {
             tdy = tdy2;
         }
         if (d.bgMode == 0 && bg != null) {
-            c.drawColor(ViewCompat.MEASURED_STATE_MASK);
+            c.drawColor(0xFF000000);
             drawCover(c, bg, W, H, maxShift, maxShift * 0.5f * tiltX, 0.5f * maxShift * tiltY);
         } else {
             drawGradient(c, W, H, d, now);

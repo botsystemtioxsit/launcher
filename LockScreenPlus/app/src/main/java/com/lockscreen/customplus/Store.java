@@ -418,37 +418,23 @@ final class Store {
         }
     }
 
-    /* JADX WARN: Removed duplicated region for block: B:24:0x005b  */
-    /* JADX WARN: Removed duplicated region for block: B:26:0x005e  */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     static synchronized String batteryText(Context c) {
-        boolean charging;
-        synchronized (Store.class) {
-            long now = System.currentTimeMillis();
-            if (now - batteryAt < 30000 && !batteryCache.isEmpty()) {
-                return batteryCache;
-            }
-            batteryAt = now;
-            Intent i = c.getApplicationContext().registerReceiver(null, new IntentFilter("android.intent.action.BATTERY_CHANGED"));
-            if (i != null) {
-                int level = i.getIntExtra("level", -1);
-                int scale = i.getIntExtra("scale", 100);
-                int status = i.getIntExtra(NotificationCompat.CATEGORY_STATUS, -1);
-                if (status != 2 && status != 5) {
-                    charging = false;
-                    if (level >= 0 && scale > 0) {
-                        batteryCache = (!charging ? "⚡ " : "") + ((level * 100) / scale) + "%";
-                    }
-                }
-                charging = true;
-                if (level >= 0) {
-                    batteryCache = (!charging ? "⚡ " : "") + ((level * 100) / scale) + "%";
-                }
-            }
+        long now = System.currentTimeMillis();
+        if (now - batteryAt < 30000 && !batteryCache.isEmpty()) {
             return batteryCache;
         }
+        batteryAt = now;
+        Intent i = c.getApplicationContext().registerReceiver(null, new IntentFilter("android.intent.action.BATTERY_CHANGED"));
+        if (i != null) {
+            int level = i.getIntExtra("level", -1);
+            int scale = i.getIntExtra("scale", 100);
+            int status = i.getIntExtra("status", -1);
+            boolean charging = status == 2 || status == 5; // заряжается или заряжен
+            if (level >= 0 && scale > 0) {
+                batteryCache = (charging ? "⚡ " : "") + ((level * 100) / scale) + "%";
+            }
+        }
+        return batteryCache;
     }
 
     static JSONArray presets(Context c) {
@@ -562,9 +548,9 @@ final class Store {
                 if (a > 128) {
                     found++;
                 }
-                px[i] = (px[i] & ViewCompat.MEASURED_SIZE_MASK) | (a << 24);
+                px[i] = (px[i] & 0x00FFFFFF) | (a << 24);
             }
-            if (found < px.length / MlKitException.CODE_SCANNER_UNAVAILABLE) {
+            if (found < px.length / 200) {
                 throw new IOException("человек на фото не найден");
             }
             Bitmap out = Bitmap.createBitmap(mw, mh, Bitmap.Config.ARGB_8888);
@@ -727,7 +713,7 @@ final class Store {
             }
             String s2 = s.replaceAll("\\s+", " ").trim();
             if (s2.length() > 300) {
-                s2 = s2.substring(0, MlKitException.LOW_LIGHT_AUTO_EXPOSURE_COMPUTATION_FAILURE).trim() + "…";
+                s2 = s2.substring(0, 300).trim() + "…";
             }
             if (s2.isEmpty()) {
                 throw new IOException("По ссылке нет текста");
