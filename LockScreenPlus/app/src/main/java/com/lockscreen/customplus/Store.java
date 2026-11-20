@@ -542,7 +542,7 @@ final class Store {
             int[] px = new int[mw * mh];
             scaled.getPixels(px, 0, mw, 0, 0, mw, mh);
             int found = 0;
-            for (int i = 0; i < found; i++) {
+            for (int i = 0; i < px.length; i++) {
                 float conf = buf.getFloat();
                 int a = Math.max(0, Math.min(255, Math.round(((conf - 0.25f) / 0.5f) * 255.0f)));
                 if (a > 128) {

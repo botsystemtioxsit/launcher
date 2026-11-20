@@ -64,3 +64,8 @@ dependencies {
     implementation 'com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1'
     implementation 'com.google.android.gms:play-services-base:18.5.0'
 }
+
+// Показывать ошибки анализа потока выполнения по ВСЕМ классам за один запуск (код восстановлен из APK, таких мест много)
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-XDshould-stop.ifError=FLOW']
+}
