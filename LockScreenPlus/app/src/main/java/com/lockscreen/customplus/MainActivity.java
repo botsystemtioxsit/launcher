@@ -960,43 +960,43 @@ public class MainActivity extends Activity {
         parent.addView(axis("Толщина", 100, 1000, 400, spec.wght, new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda29
             @Override // java.util.function.IntConsumer
             public final void accept(int i) {
-                Design.FontSpec.this.wght = i;
+                spec.wght = i;
             }
         }));
         parent.addView(axis("Ширина (сплюснуть — растянуть)", 25, 151, 100, spec.wdth, new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda40
             @Override // java.util.function.IntConsumer
             public final void accept(int i) {
-                Design.FontSpec.this.wdth = i;
+                spec.wdth = i;
             }
         }));
         parent.addView(axis("Наклон", -10, 0, 0, spec.slnt, new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda51
             @Override // java.util.function.IntConsumer
             public final void accept(int i) {
-                Design.FontSpec.this.slnt = i;
+                spec.slnt = i;
             }
         }));
         parent.addView(axis("Высота цифр", 560, 788, 738, spec.hgt, new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda62
             @Override // java.util.function.IntConsumer
             public final void accept(int i) {
-                Design.FontSpec.this.hgt = i;
+                spec.hgt = i;
             }
         }));
         parent.addView(axis("Толщина вертикальных штрихов", 27, 175, 96, spec.stem, new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda73
             @Override // java.util.function.IntConsumer
             public final void accept(int i) {
-                Design.FontSpec.this.stem = i;
+                spec.stem = i;
             }
         }));
         parent.addView(axis("Толщина горизонтальных штрихов", 25, 135, 79, spec.hstem, new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda84
             @Override // java.util.function.IntConsumer
             public final void accept(int i) {
-                Design.FontSpec.this.hstem = i;
+                spec.hstem = i;
             }
         }));
         parent.addView(axis("Ширина внутри цифры", 323, 603, 468, spec.cnt, new IntConsumer() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda95
             @Override // java.util.function.IntConsumer
             public final void accept(int i) {
-                Design.FontSpec.this.cnt = i;
+                spec.cnt = i;
             }
         }));
         LinearLayout r = this.ui.hrow();
@@ -2012,7 +2012,7 @@ public class MainActivity extends Activity {
 
     /* JADX INFO: Access modifiers changed from: private */
     public /* synthetic */ void lambda$buildMineTab$93() {
-        new AlertDialog.Builder(this, android.R.style.Theme.Material.Dialog.Alert).setMessage("Вернуть все настройки к стандартным? Фото и вырез останутся.").setPositiveButton("Вернуть", new DialogInterface.OnClickListener() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda9
+        new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert).setMessage("Вернуть все настройки к стандартным? Фото и вырез останутся.").setPositiveButton("Вернуть", new DialogInterface.OnClickListener() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda9
             @Override // android.content.DialogInterface.OnClickListener
             public final void onClick(DialogInterface dialogInterface, int i) {
                 MainActivity.this.lambda$buildMineTab$92(dialogInterface, i);
@@ -2029,7 +2029,7 @@ public class MainActivity extends Activity {
     public void savePresetDialog() {
         final EditText et = this.ui.edit("Название стиля", false);
         et.setText("Стиль " + (Store.presets(this).length() + 1));
-        new AlertDialog.Builder(this, android.R.style.Theme.Material.Dialog.Alert).setTitle("Сохранить стиль").setView(et).setPositiveButton("Сохранить", new DialogInterface.OnClickListener() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda78
+        new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert).setTitle("Сохранить стиль").setView(et).setPositiveButton("Сохранить", new DialogInterface.OnClickListener() { // from class: com.lockscreen.customplus.MainActivity$$ExternalSyntheticLambda78
             @Override // android.content.DialogInterface.OnClickListener
             public final void onClick(DialogInterface dialogInterface, int i) {
                 MainActivity.this.lambda$savePresetDialog$94(et, dialogInterface, i);
@@ -2248,7 +2248,7 @@ public class MainActivity extends Activity {
     }
 
     private void showError(String title, String message) {
-        new AlertDialog.Builder(this, android.R.style.Theme.Material.Dialog.Alert).setTitle(title).setMessage(message).setPositiveButton("Понятно", (DialogInterface.OnClickListener) null).show();
+        new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert).setTitle(title).setMessage(message).setPositiveButton("Понятно", (DialogInterface.OnClickListener) null).show();
     }
 
     private void toast(String s) {

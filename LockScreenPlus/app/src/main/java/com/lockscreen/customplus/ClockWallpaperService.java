@@ -66,7 +66,7 @@ public class ClockWallpaperService extends WallpaperService {
         private boolean usbMode;
 
         private ClockEngine() {
-            super(ClockWallpaperService.this);
+            super();
             this.handler = new Handler(Looper.getMainLooper());
             this.renderer = new Renderer();
             this.design = new Design();

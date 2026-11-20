@@ -31,20 +31,22 @@ final class Dashboard {
     private final Path path = new Path();
     private final Typeface display;
     private final Typeface mono;
+    private final Typeface label;
     private final SimpleDateFormat fHm = new SimpleDateFormat("HH:mm", Locale.getDefault());
     private final SimpleDateFormat fDate = new SimpleDateFormat("EEEE, d MMMM", Locale.getDefault());
     private final SimpleDateFormat fSec = new SimpleDateFormat("ss", Locale.getDefault());
 
     Dashboard() {
         Typeface d = null;
-        Typeface m = null;
+        Typeface l = null;
         try {
-            d = Fonts.get("asset:Orbitron.ttf");
-            m = Fonts.get("asset:ShareTechMono.ttf");
+            d = Fonts.get("asset:Orbitron.ttf");   // цифры (латиница и цифры)
+            l = Fonts.get("asset:RussoOne.ttf");   // подписи (есть кириллица)
         } catch (Throwable t) {
         }
         display = d != null ? d : Typeface.DEFAULT_BOLD;
-        mono = m != null ? m : Typeface.MONOSPACE;
+        label = l != null ? l : Typeface.DEFAULT_BOLD;
+        mono = Typeface.MONOSPACE;                  // журнал
     }
 
     void render(Canvas c, int W, int H, StatsHub.Snap s, long now) {
@@ -63,8 +65,8 @@ final class Dashboard {
             drawClockBlock(c, left, 9.5f * u, colW, H - m, u, date, s, now);
             drawTiles(c, new RectF(mid, 9.5f * u, mid + colW, 9.5f * u + (H - 9.5f * u - m) * 0.52f), u, s);
             float midTop = 9.5f * u + (H - 9.5f * u - m) * 0.52f + m * 0.6f;
-            drawBars(c, new RectF(mid, midTop, mid + colW, midTop + 14f * u), u, s);
-            drawSpark(c, new RectF(mid, midTop + 14f * u + m * 0.6f, mid + colW, H - m), u);
+            drawBars(c, new RectF(mid, midTop, mid + colW, midTop + 18f * u), u, s);
+            drawSpark(c, new RectF(mid, midTop + 18f * u + m * 0.6f, mid + colW, H - m), u);
             drawLog(c, new RectF(right, 9.5f * u, W - m, H - m), u);
         } else {
             float w = W - 2 * m;
@@ -76,8 +78,8 @@ final class Dashboard {
             float tilesH = 30f * u;
             drawTiles(c, new RectF(m, y, m + w, y + tilesH), u, s);
             y += tilesH + m * 0.5f;
-            drawBars(c, new RectF(m, y, m + w, y + 14f * u), u, s);
-            y += 14f * u + m * 0.5f;
+            drawBars(c, new RectF(m, y, m + w, y + 18f * u), u, s);
+            y += 18f * u + m * 0.5f;
             float sparkH = 13f * u;
             drawSpark(c, new RectF(m, y, m + w, y + sparkH), u);
             y += sparkH + m * 0.5f;
@@ -109,16 +111,16 @@ final class Dashboard {
         p.setColor(s.usbData ? (pulse ? GREEN : 0xFF1E7A4E) : (pulse ? YELLOW : 0xFF7A7410));
         c.drawCircle(x + u * 1.3f, y + u * 2f, u * 1.1f, p);
         String t = s.usbData ? "USB · ПОДКЛЮЧЕНО К КОМПЬЮТЕРУ" : "USB · ПИТАНИЕ";
-        text(c, t, x + u * 3.4f, y + u * 3.1f, u * 2.9f, CYAN, mono, Paint.Align.LEFT);
+        text(c, t, x + u * 3.4f, y + u * 3.1f, u * 2.9f, CYAN, label, Paint.Align.LEFT);
     }
 
     private void drawClockBlock(Canvas c, float x, float y, float w, float bottom, float u, Date date, StatsHub.Snap s, long now) {
         float cx = x + w / 2f;
         String hm = fHm.format(date);
         text(c, hm, cx, y + u * 13f, u * 15f, TEXT, display, Paint.Align.CENTER);
-        text(c, fSec.format(date), cx, y + u * 18.5f, u * 3.6f, PINK, mono, Paint.Align.CENTER);
+        text(c, fSec.format(date), cx, y + u * 18.5f, u * 3.6f, PINK, label, Paint.Align.CENTER);
         String d = fDate.format(date);
-        text(c, d.substring(0, 1).toUpperCase(Locale.getDefault()) + d.substring(1), cx, y + u * 23.8f, u * 3.3f, MUTED, mono, Paint.Align.CENTER);
+        text(c, d.substring(0, 1).toUpperCase(Locale.getDefault()) + d.substring(1), cx, y + u * 23.8f, u * 3.3f, MUTED, label, Paint.Align.CENTER);
         // кольцо заряда
         float r = Math.min(w * 0.34f, (bottom - y - u * 27f) * 0.38f);
         float ry = y + u * 27f + r + u * 2f;
@@ -138,13 +140,13 @@ final class Dashboard {
         c.drawArc(rf, 135, 270f * level / 100f, false, p);
         p.setStrokeCap(Paint.Cap.BUTT);
         text(c, s.level >= 0 ? level + "%" : "—", cx, ry + u * 1.8f, u * 7.4f, TEXT, display, Paint.Align.CENTER);
-        text(c, s.charging ? "ЗАРЯДКА" : "БАТАРЕЯ", cx, ry + u * 6.6f, u * 2.5f, col, mono, Paint.Align.CENTER);
+        text(c, s.charging ? "ЗАРЯДКА" : "БАТАРЕЯ", cx, ry + u * 6.6f, u * 2.5f, col, label, Paint.Align.CENTER);
         String eta = s.status;
         if (s.charging && s.etaMs > 0) {
             long min = s.etaMs / 60000;
             eta = "до полной ~" + (min >= 60 ? (min / 60) + " ч " + (min % 60) + " мин" : min + " мин");
         }
-        text(c, eta, cx, ry + r + u * 4.4f, u * 2.9f, MUTED, mono, Paint.Align.CENTER);
+        text(c, eta, cx, ry + r + u * 4.4f, u * 2.9f, MUTED, label, Paint.Align.CENTER);
     }
 
     private void drawTiles(Canvas c, RectF area, float u, StatsHub.Snap s) {
@@ -164,9 +166,9 @@ final class Dashboard {
             float y = area.top + (i / 2) * (th + gap);
             rf.set(x, y, x + tw, y + th);
             card(c, rf, cols[i]);
-            text(c, items[i][0], x + u * 2f, y + u * 3.6f, u * 2.2f, MUTED, mono, Paint.Align.LEFT);
+            text(c, items[i][0], x + u * 2f, y + u * 3.6f, u * 2.2f, MUTED, label, Paint.Align.LEFT);
             text(c, items[i][1], x + u * 2f, y + th - u * 4.4f, u * 7.2f, TEXT, display, Paint.Align.LEFT);
-            text(c, items[i][2], x + u * 2f, y + th - u * 1.3f, u * 2.6f, cols[i], mono, Paint.Align.LEFT);
+            text(c, items[i][2], x + u * 2f, y + th - u * 1.3f, u * 2.6f, cols[i], label, Paint.Align.LEFT);
         }
     }
 
@@ -180,12 +182,12 @@ final class Dashboard {
         rf.set(x, y, x + w, y + h);
         card(c, rf, col);
         float frac = total > 0 ? Math.min(1f, (float) used / total) : 0f;
-        text(c, name, x + u * 2f, y + h * 0.5f + u * 1f, u * 2.4f, MUTED, mono, Paint.Align.LEFT);
+        text(c, name, x + u * 2f, y + h * 0.5f, u * 2.4f, MUTED, label, Paint.Align.LEFT);
         String v = gb(used) + " / " + gb(total) + " ГБ";
-        text(c, v, x + w - u * 2f, y + h * 0.5f + u * 1f, u * 2.4f, TEXT, mono, Paint.Align.RIGHT);
+        text(c, v, x + w - u * 2f, y + h * 0.5f, u * 2.4f, TEXT, mono, Paint.Align.RIGHT);
         float bx = x + u * 2f;
         float bw = w - u * 4f;
-        float by = y + h - u * 2.2f;
+        float by = y + h - u * 1.7f;
         p.setStyle(Paint.Style.FILL);
         p.setColor(0x33A259FF);
         rf.set(bx, by, bx + bw, by + u * 0.9f);
@@ -197,10 +199,10 @@ final class Dashboard {
 
     private void drawSpark(Canvas c, RectF area, float u) {
         card(c, area, YELLOW);
-        text(c, "ЗАРЯД И ТЕМПЕРАТУРА", area.left + u * 2f, area.top + u * 3.2f, u * 2.1f, MUTED, mono, Paint.Align.LEFT);
+        text(c, "ЗАРЯД И ТЕМПЕРАТУРА", area.left + u * 2f, area.top + u * 3.2f, u * 2.1f, MUTED, label, Paint.Align.LEFT);
         int n = Math.min(StatsHub.histN, StatsHub.HIST);
         if (n < 2) {
-            text(c, "копится…", area.centerX(), area.centerY() + u, u * 2.6f, MUTED, mono, Paint.Align.CENTER);
+            text(c, "копится…", area.centerX(), area.centerY() + u, u * 2.6f, MUTED, label, Paint.Align.CENTER);
             return;
         }
         float gx = area.left + u * 2f;
@@ -244,20 +246,16 @@ final class Dashboard {
 
     private void drawLog(Canvas c, RectF area, float u) {
         card(c, area, GREEN);
-        text(c, "ЖУРНАЛ", area.left + u * 2f, area.top + u * 3.6f, u * 2.2f, MUTED, mono, Paint.Align.LEFT);
+        text(c, "ЖУРНАЛ", area.left + u * 2f, area.top + u * 3.6f, u * 2.2f, MUTED, label, Paint.Align.LEFT);
         float size = u * 2.45f;
         float lineH = size * 1.55f;
-        int max = (int) ((area.height() - u * 6f) / lineH);
+        int max = (int) ((area.height() - u * 7f) / lineH);
         List<String> lines = StatsHub.lines(Math.max(1, max));
-        float y = area.bottom - u * 2.2f;
-        for (int i = lines.size() - 1; i >= 0; i--) {
-            String l = lines.get(i);
+        float y = area.top + u * 7.2f;
+        for (int i = 0; i < lines.size(); i++) {
             int col = i == lines.size() - 1 ? TEXT : GREEN;
-            text(c, fit(l, area.width() - u * 4f, size), area.left + u * 2f, y, size, col, mono, Paint.Align.LEFT);
-            y -= lineH;
-            if (y < area.top + u * 5.5f) {
-                break;
-            }
+            text(c, fit(lines.get(i), area.width() - u * 4f, size), area.left + u * 2f, y, size, col, mono, Paint.Align.LEFT);
+            y += lineH;
         }
     }
 
@@ -277,7 +275,7 @@ final class Dashboard {
         p.setColor(CARD);
         c.drawRoundRect(r, rad, rad, p);
         p.setStyle(Paint.Style.STROKE);
-        p.setStrokeWidth(Math.max(1.5f, r.height() * 0.012f));
+        p.setStrokeWidth(Math.max(1.5f, Math.min(6f, Math.min(r.width(), r.height()) * 0.012f)));
         p.setColor(LINE);
         c.drawRoundRect(r, rad, rad, p);
         // яркий угол — как у кнопок Ghost Shell
