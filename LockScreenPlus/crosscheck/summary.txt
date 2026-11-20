@@ -1,0 +1,39 @@
+Summary for app.jar
+Decompiled with CFR 0.152
+
+
+com.lockscreen.customplus.ClockWallpaperService
+----------------------------
+
+draw()
+  Loose catch block
+
+
+com.lockscreen.customplus.Fonts
+----------------------------
+
+importFont(android.content.Context android.net.Uri java.lang.String )
+  Unable to fully structure code
+
+
+com.lockscreen.customplus.MainActivity
+----------------------------
+
+displayName(android.net.Uri )
+  Unable to fully structure code
+
+
+com.lockscreen.customplus.Store
+----------------------------
+
+copyToCache(android.content.Context android.net.Uri )
+  Loose catch block
+exifRotation(android.content.Context android.net.Uri )
+  Loose catch block
+fetchText(java.lang.String )
+  Exception : org.benf.cfr.reader.util.ConfusedCFRException: Started 2 blocks at once
+httpGet(java.lang.String int )
+  Exception : org.benf.cfr.reader.util.ConfusedCFRException: Tried to end blocks [8[CATCHBLOCK], 9[CATCHBLOCK]], but top level block is 7[TRYBLOCK]
+savePng(android.graphics.Bitmap java.io.File boolean )
+  Unable to fully structure code
+  Could not resolve type clashes

@@ -1,0 +1,22 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
+package com.lockscreen.customplus;
+
+import com.lockscreen.customplus.MainActivity;
+import java.util.function.IntConsumer;
+
+public final class MainActivity$$ExternalSyntheticLambda69
+implements IntConsumer {
+    public final MainActivity f$0;
+
+    public /* synthetic */ MainActivity$$ExternalSyntheticLambda69(MainActivity mainActivity) {
+        this.f$0 = mainActivity;
+    }
+
+    @Override
+    public final void accept(int n) {
+        MainActivity.$r8$lambda$qR9yfNqcsc0r4v9n7OsR4LEwErQ(this.f$0, n);
+    }
+}
+
