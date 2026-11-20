@@ -5,72 +5,55 @@ final class Align {
     private Align() {
     }
 
+    /**
+     * Находит, где на фото лежит вырез (PNG того же снимка, но меньше или равного размера): ищет смещение, при котором
+     * яркость выреза лучше всего совпадает с фото. Сначала грубо на уменьшенных копиях, потом уточняет рядом с пятью лучшими местами.
+     * Возвращает {x, y, ошибка 0..255} или null, если вырез больше фото или в нём нечего сравнивать.
+     */
     static int[] find(int[] bg, int bw, int bh, int[] cut, int cw, int ch) {
-        int sch;
-        int ny;
-        int y0;
-        int[] cutSmall;
-        int d;
-        int[] idx;
-        int i = ch;
-        if (cw > bw || i > bh || cw < 1 || i < 1) {
+        if (cw > bw || ch > bh || cw < 1 || ch < 1) {
             return null;
         }
-        int d2 = Math.max(1, Math.min(Math.max(1, (Math.max(bw, bh) + 319) / 320), Math.min(cw, ch) / 8));
-        int sbw = bw / d2;
-        int sbh = bh / d2;
-        int scw = cw / d2;
-        int sch2 = i / d2;
-        int[] bgSmall = lumDown(bg, bw, bh, d2, null);
-        int[] alphaSmall = new int[scw * sch2];
-        int[] cutSmall2 = lumDown(cut, cw, i, d2, alphaSmall);
-        int[] idx2 = maskIndexes(alphaSmall, 250, 4000);
-        if (idx2.length == 0) {
+        int d = Math.max(1, Math.min(Math.max(1, (Math.max(bw, bh) + 319) / 320), Math.min(cw, ch) / 8));
+        int sbw = bw / d;
+        int sbh = bh / d;
+        int scw = cw / d;
+        int sch = ch / d;
+        int[] bgSmall = lumDown(bg, bw, bh, d, null);
+        int[] alphaSmall = new int[scw * sch];
+        int[] cutSmall = lumDown(cut, cw, ch, d, alphaSmall);
+        int[] idx = maskIndexes(alphaSmall, 250, 4000);
+        if (idx.length == 0) {
             return null;
         }
-        int nx = (sbw - scw) + 1;
-        int ny2 = (sbh - sch2) + 1;
-        long[] sums = new long[nx * ny2];
+        int nx = sbw - scw + 1;
+        int ny = sbh - sch + 1;
+        long[] sums = new long[nx * ny];
         long best = Long.MAX_VALUE;
-        for (int y = 0; y < ny2; y++) {
-            int x = 0;
-            while (x < nx) {
+        for (int y = 0; y < ny; y++) {
+            for (int x = 0; x < nx; x++) {
                 long sum = 0;
-                int k = 0;
-                while (true) {
-                    d = d2;
-                    if (k >= idx2.length) {
-                        idx = idx2;
-                        break;
-                    }
-                    int i2 = idx2[k];
-                    int px = i2 % scw;
-                    int py = i2 / scw;
-                    idx = idx2;
-                    sum += Math.abs(bgSmall[((y + py) * sbw) + (x + px)] - cutSmall2[i2]);
+                for (int k = 0; k < idx.length; k++) {
+                    int i = idx[k];
+                    int px = i % scw;
+                    int py = i / scw;
+                    sum += Math.abs(bgSmall[((y + py) * sbw) + (x + px)] - cutSmall[i]);
                     if (sum > 3 * best) {
                         break;
                     }
-                    k++;
-                    d2 = d;
-                    idx2 = idx;
                 }
-                int k2 = y * nx;
-                sums[k2 + x] = sum;
+                sums[(y * nx) + x] = sum;
                 if (sum < best) {
                     best = sum;
                 }
-                x++;
-                d2 = d;
-                idx2 = idx;
             }
         }
-        int d3 = d2;
+        // уточнение на настоящих размерах рядом с лучшими местами грубого поиска
         int[] bgL = lum(bg);
         int[] cutL = lum(cut);
-        int[] cutA = new int[cw * i];
-        for (int i3 = 0; i3 < cutA.length; i3++) {
-            cutA[i3] = cut[i3] >>> 24;
+        int[] cutA = new int[cw * ch];
+        for (int i = 0; i < cutA.length; i++) {
+            cutA[i] = cut[i] >>> 24;
         }
         int[] fidx = maskIndexes(cutA, 250, 6000);
         if (fidx.length == 0) {
@@ -78,114 +61,47 @@ final class Align {
         }
         long fbest = Long.MAX_VALUE;
         int fx = 0;
-        int minGap = Math.max(2, Math.min(scw, sch2) / 4);
         int fy = 0;
-        int round = 0;
-        while (true) {
-            int sbw2 = sbw;
-            if (round >= 5) {
-                break;
-            }
+        int minGap = Math.max(2, Math.min(scw, sch) / 4);
+        for (int round = 0; round < 5; round++) {
             long m = Long.MAX_VALUE;
             int mi = -1;
-            int scw2 = scw;
-            int scw3 = 0;
-            while (true) {
-                sch = sch2;
-                if (scw3 >= sums.length) {
-                    break;
+            for (int k = 0; k < sums.length; k++) {
+                if (sums[k] < m) {
+                    m = sums[k];
+                    mi = k;
                 }
-                if (sums[scw3] < m) {
-                    m = sums[scw3];
-                    mi = scw3;
-                }
-                scw3++;
-                sch2 = sch;
             }
-            if (mi >= 0 && m != Long.MAX_VALUE) {
-                int sx = mi % nx;
-                int sy = mi / nx;
-                int mi2 = sy - minGap;
-                int[] bgSmall2 = bgSmall;
-                int y2 = Math.max(0, mi2);
-                while (true) {
-                    ny = ny2;
-                    if (y2 > Math.min(ny2 - 1, sy + minGap)) {
-                        break;
-                    }
-                    int x2 = Math.max(0, sx - minGap);
-                    while (true) {
-                        cutSmall = cutSmall2;
-                        if (x2 <= Math.min(nx - 1, sx + minGap)) {
-                            sums[(y2 * nx) + x2] = Long.MAX_VALUE;
-                            x2++;
-                            cutSmall2 = cutSmall;
-                        }
-                    }
-                    y2++;
-                    ny2 = ny;
-                    cutSmall2 = cutSmall;
+            if (mi < 0 || m == Long.MAX_VALUE) {
+                break;
+            }
+            int sx = mi % nx;
+            int sy = mi / nx;
+            // это место и соседние больше не берём
+            for (int yy = Math.max(0, sy - minGap); yy <= Math.min(ny - 1, sy + minGap); yy++) {
+                for (int xx = Math.max(0, sx - minGap); xx <= Math.min(nx - 1, sx + minGap); xx++) {
+                    sums[(yy * nx) + xx] = Long.MAX_VALUE;
                 }
-                int[] cutSmall3 = cutSmall2;
-                int y3 = sx * d3;
-                int cy = sy * d3;
-                int x0 = Math.max(0, (y3 - d3) - 2);
-                int minGap2 = minGap;
-                int minGap3 = y3 + d3 + 2;
-                int x1 = Math.min(bw - cw, minGap3);
-                int nx2 = nx;
-                int y02 = Math.max(0, (cy - d3) - 2);
-                int y1 = Math.min(bh - i, cy + d3 + 2);
-                int y4 = y02;
-                while (y4 <= y1) {
-                    int y12 = y1;
-                    int y13 = x0;
-                    while (y13 <= x1) {
-                        long sum2 = 0;
-                        int x12 = x1;
-                        int x13 = 0;
-                        while (true) {
-                            y0 = y02;
-                            if (x13 >= fidx.length || sum2 >= fbest) {
-                                break;
-                            }
-                            int i4 = fidx[x13];
-                            int px2 = i4 % cw;
-                            int py2 = i4 / cw;
-                            sum2 += Math.abs(bgL[((y4 + py2) * bw) + (y13 + px2)] - cutL[i4]);
-                            x13++;
-                            y02 = y0;
-                            cutL = cutL;
-                            bgL = bgL;
-                        }
-                        int[] bgL2 = bgL;
-                        int[] cutL2 = cutL;
-                        if (sum2 < fbest) {
-                            long fbest2 = sum2;
-                            int fx2 = y13;
-                            fbest = fbest2;
-                            fx = fx2;
-                            fy = y4;
-                        }
-                        y13++;
-                        y02 = y0;
-                        x1 = x12;
-                        cutL = cutL2;
-                        bgL = bgL2;
+            }
+            int cx = sx * d;
+            int cy = sy * d;
+            int x0 = Math.max(0, (cx - d) - 2);
+            int x1 = Math.min(bw - cw, cx + d + 2);
+            int y0 = Math.max(0, (cy - d) - 2);
+            int y1 = Math.min(bh - ch, cy + d + 2);
+            for (int yy = y0; yy <= y1; yy++) {
+                for (int xx = x0; xx <= x1; xx++) {
+                    long sum = 0;
+                    for (int k = 0; k < fidx.length && sum < fbest; k++) {
+                        int i = fidx[k];
+                        sum += Math.abs(bgL[((yy + (i / cw)) * bw) + (xx + (i % cw))] - cutL[i]);
                     }
-                    y4++;
-                    y1 = y12;
+                    if (sum < fbest) {
+                        fbest = sum;
+                        fx = xx;
+                        fy = yy;
+                    }
                 }
-                round++;
-                i = ch;
-                sbw = sbw2;
-                scw = scw2;
-                sch2 = sch;
-                bgSmall = bgSmall2;
-                ny2 = ny;
-                cutSmall2 = cutSmall3;
-                minGap = minGap2;
-                nx = nx2;
             }
         }
         int err = fbest == Long.MAX_VALUE ? 255 : (int) (fbest / fidx.length);
