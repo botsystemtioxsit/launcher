@@ -1,7 +1,8 @@
 name: Decompile Lock Screen Custom Plus
 
-# Разовая задача: разобрать старый APK «Lock Screen Custom Plus» (лежит в ветке ccr-03b67940-mzxakd) декомпилятором jadx
-# и положить читаемые исходники рядом (LockScreenPlus/decompiled). Запускается вручную и только на ветке ccr-03b67940-mzxakd.
+# Разовая сверка восстановленного кода: старый APK из LockScreenPlus/original разбирается ВТОРЫМ декомпилятором (CFR),
+# результат кладётся в LockScreenPlus/crosscheck — им сверяют места, которые первый декомпилятор (jadx) восстановил с искажениями.
+# Запускается вручную и только на рабочей ветке.
 on:
   workflow_dispatch:
 
@@ -9,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  decompile:
+  crosscheck:
     if: github.ref_name == 'ccr-03b67940-mzxakd'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -19,33 +20,25 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Download jadx
+      - name: Download tools
         run: |
-          curl -fsSL -o jadx.zip https://github.com/skylot/jadx/releases/download/v1.5.1/jadx-1.5.1.zip
-          unzip -q jadx.zip -d jadx
-      - name: Decompile
+          curl -fsSL -o dex2jar.zip https://github.com/pxb4/dex2jar/releases/download/v2.4/dex-tools-v2.4.zip
+          unzip -q dex2jar.zip -d tools
+          curl -fsSL -o cfr.jar https://github.com/leibnitz27/cfr/releases/download/0.152/cfr-0.152.jar
+          ls tools
+      - name: APK to jar to Java
         run: |
           APK=$(ls LockScreenPlus/original/*.apk | head -1)
-          echo "APK: $APK"
-          rm -rf LockScreenPlus/decompiled
-          # jadx возвращает ошибку, если часть методов не удалось восстановить; результат при этом сохраняется
-          jadx/bin/jadx -e --show-bad-code -d LockScreenPlus/decompiled "$APK" || echo "jadx закончил с предупреждениями (это нормально)"
-          ls LockScreenPlus/decompiled
-      - name: Keep only the app code
-        run: |
-          J=LockScreenPlus/decompiled/app/src/main/java
-          # из чужих библиотек (androidx, google, firebase…) оставляем только пакет приложения
-          if [ -d "$J" ]; then
-            find "$J" -mindepth 1 -maxdepth 1 ! -name com -exec rm -rf {} +
-            find "$J/com" -mindepth 1 -maxdepth 1 ! -name lockscreen -exec rm -rf {} +
-          fi
-          rm -rf LockScreenPlus/decompiled/app/src/main/jniLibs
-          du -sh LockScreenPlus/decompiled
-          find LockScreenPlus/decompiled -name '*.java' | wc -l
+          D2J=$(find tools -name d2j-dex2jar.sh | head -1)
+          chmod +x "$D2J" $(dirname "$D2J")/*.sh
+          "$D2J" -f -o app.jar "$APK" || echo "dex2jar закончил с предупреждениями"
+          rm -rf LockScreenPlus/crosscheck
+          java -jar cfr.jar app.jar --outputdir LockScreenPlus/crosscheck --jarfilter 'com\.lockscreen\.customplus\..*' --silent true || echo "cfr закончил с предупреждениями"
+          find LockScreenPlus/crosscheck -name '*.java' | wc -l
       - name: Commit result
         run: |
           git config user.name "github-actions"
           git config user.email "actions@users.noreply.github.com"
-          git add LockScreenPlus/decompiled
-          git commit -m "Исходники Lock Screen Custom Plus (jadx)" || echo "нечего коммитить"
+          git add LockScreenPlus/crosscheck
+          git commit -m "Lock Screen Custom Plus: сверочная декомпиляция (CFR)" || echo "нечего коммитить"
           git push origin HEAD:ccr-03b67940-mzxakd

@@ -171,68 +171,59 @@ final class Fonts {
     }
 
     static synchronized String importFont(Context c, Uri uri, String displayName) throws IOException {
-        String shown;
-        String str;
-        synchronized (Fonts.class) {
-            init(c);
-            String lower = displayName == null ? "" : displayName.toLowerCase(Locale.ROOT);
-            String ext = lower.endsWith(".otf") ? "otf" : lower.endsWith(".ttc") ? "ttc" : "ttf";
-            File dest = new File(userDir(), "f" + System.currentTimeMillis() + "." + ext);
-            InputStream in = c.getContentResolver().openInputStream(uri);
+        init(c);
+        String lower = displayName == null ? "" : displayName.toLowerCase(Locale.ROOT);
+        String ext = lower.endsWith(".otf") ? "otf" : lower.endsWith(".ttc") ? "ttc" : "ttf";
+        File dest = new File(userDir(), "f" + System.currentTimeMillis() + "." + ext);
+        InputStream in = c.getContentResolver().openInputStream(uri);
+        if (in == null) {
+            throw new IOException("Не удалось открыть файл");
+        }
+        try {
+            FileOutputStream out = new FileOutputStream(dest);
             try {
-                FileOutputStream out = new FileOutputStream(dest);
-                try {
-                    if (in == null) {
-                        throw new IOException("Не удалось открыть файл");
+                byte[] buf = new byte[16384];
+                long total = 0;
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    out.write(buf, 0, n);
+                    total += n;
+                    if (total > 31457280) { // 30 МБ
+                        out.close();
+                        dest.delete();
+                        throw new IOException("Файл слишком большой");
                     }
-                    byte[] buf = new byte[16384];
-                    long total = 0;
-                    do {
-                        int n = in.read(buf);
-                        if (n > 0) {
-                            out.write(buf, 0, n);
-                            total += n;
-                        } else {
-                            out.close();
-                            if (in != null) {
-                                in.close();
-                            }
-                            Typeface t = null;
-                            try {
-                                t = new Typeface.Builder(dest).build();
-                            } catch (Exception e) {
-                            }
-                            if (t == null) {
-                                dest.delete();
-                                throw new IOException("Это не шрифт, который понимает Android. Нужен файл TTF, OTF или TTC");
-                            }
-                            if (displayName != null) {
-                                try {
-                                    if (!displayName.isEmpty()) {
-                                        shown = displayName.replaceAll("\\.[A-Za-z0-9]+$", "");
-                                        JSONObject names = new JSONObject(Store.prefs(c).getString("userFonts", "{}"));
-                                        names.put(dest.getName(), shown);
-                                        Store.prefs(c).edit().putString("userFonts", names.toString()).apply();
-                                        str = "user:" + dest.getName();
-                                    }
-                                } catch (Exception e2) {
-                                    throw new IOException("Не удалось сохранить шрифт");
-                                }
-                            }
-                            shown = "Свой шрифт";
-                            JSONObject names2 = new JSONObject(Store.prefs(c).getString("userFonts", "{}"));
-                            names2.put(dest.getName(), shown);
-                            Store.prefs(c).edit().putString("userFonts", names2.toString()).apply();
-                            str = "user:" + dest.getName();
-                        }
-                    } while (total <= 31457280);
-                    throw new IOException("Файл слишком большой");
-                } finally {
                 }
             } finally {
+                try {
+                    out.close();
+                } catch (IOException e) {
+                }
+            }
+        } finally {
+            try {
+                in.close();
+            } catch (IOException e) {
             }
         }
-        return str;
+        Typeface t = null;
+        try {
+            t = new Typeface.Builder(dest).build();
+        } catch (Exception e) {
+        }
+        if (t == null) {
+            dest.delete();
+            throw new IOException("Это не шрифт, который понимает Android. Нужен файл TTF, OTF или TTC");
+        }
+        String shown = (displayName != null && !displayName.isEmpty()) ? displayName.replaceAll("\\.[A-Za-z0-9]+$", "") : "Свой шрифт";
+        try {
+            JSONObject names = new JSONObject(Store.prefs(c).getString("userFonts", "{}"));
+            names.put(dest.getName(), shown);
+            Store.prefs(c).edit().putString("userFonts", names.toString()).apply();
+        } catch (Exception e) {
+            throw new IOException("Не удалось сохранить шрифт");
+        }
+        return "user:" + dest.getName();
     }
 
     static synchronized void deleteUser(Context c, String id) {
