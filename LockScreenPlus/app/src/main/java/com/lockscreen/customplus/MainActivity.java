@@ -167,6 +167,10 @@ public class MainActivity extends Activity {
     @Override // android.app.Activity
     protected void onResume() {
         super.onResume();
+        try {
+            ClockModeService.apply(this);
+        } catch (Exception e) {
+        }
         if (this.preview == null) {
             return;
         }
@@ -358,6 +362,26 @@ public class MainActivity extends Activity {
             }
         }));
         l.addView(this.ui.label("Положите телефон на бок — на экране блокировки появятся часы на тёмном фоне, повёрнутые как надо. Этот экран настраивается отдельно (кнопка выше). Системные часы и значки Samsung остаются вертикальными: их можно скрыть в настройках экрана блокировки.", 13.0f, SUB, false));
+        LinearLayout k = this.ui.card(this.content, "Режим часов (поверх всего)");
+        k.addView(this.ui.sw("Открывать часы на весь экран, когда телефон лежит на боку", Store.clockModeOn(this), new Consumer<Boolean>() {
+            @Override
+            public void accept(Boolean v) {
+                MainActivity.this.sp.edit().putBoolean("clockMode", v.booleanValue()).apply();
+                if (v.booleanValue() && !android.provider.Settings.canDrawOverlays(MainActivity.this)) {
+                    Toast.makeText(MainActivity.this, "Разрешите «Поверх других окон» для этого приложения и вернитесь назад", Toast.LENGTH_LONG).show();
+                    startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:" + getPackageName())));
+                } else {
+                    ClockModeService.apply(MainActivity.this);
+                }
+            }
+        }));
+        k.addView(this.ui.label("Это отдельное окно приложения: оно закрывает экран блокировки Samsung целиком (без меню и значков), экран не гаснет. Нажмите на экран или поднимите телефон вертикально — часы закроются. Нужно разрешение «Поверх других окон»; в телефоне появится тихое уведомление «Режим часов включён».", 13.0f, SUB, false));
+        k.addView(this.ui.pill("Показать сейчас", false, new Runnable() {
+            @Override
+            public void run() {
+                startActivity(new Intent(MainActivity.this, ClockModeActivity.class));
+            }
+        }));
         LinearLayout u = this.ui.card(this.content, "Статистика по USB");
         u.addView(this.ui.sw("Показывать статистику, когда подключён кабель", Store.usbOn(this), new Consumer<Boolean>() {
             @Override
