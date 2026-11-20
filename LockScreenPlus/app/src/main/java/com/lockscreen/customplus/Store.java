@@ -66,6 +66,10 @@ final class Store {
         return prefs(c).getBoolean("landOn", true);
     }
 
+    static boolean clockModeOn(Context c) {
+        return prefs(c).getBoolean("clockMode", false);
+    }
+
     static boolean usbOn(Context c) {
         return prefs(c).getBoolean("usbOn", true);
     }
