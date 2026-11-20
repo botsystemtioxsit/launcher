@@ -1,0 +1,60 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    // Исходный пакет сохранён (код восстановлен из старого APK), а имя приложения для телефона — новое:
+    // новая версия ставится РЯДОМ со старой, настройки и ключ подписи у них разные.
+    namespace 'com.lockscreen.customplus'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.tioxsit.lockscreenplus"
+        minSdk 26
+        targetSdk 34
+        // Версию поднимать при каждом изменении
+        versionCode 1
+        versionName "2.0.0"
+    }
+
+    signingConfigs {
+        // Постоянный ключ подписи из секрета репозитория ANDROID_KEYSTORE_BASE64 (тот же, что у остальных Android-приложений проекта)
+        stable {
+            def ksFile = System.getenv('ANDROID_KEYSTORE_FILE')
+            if (ksFile) {
+                storeFile file(ksFile)
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            if (System.getenv('ANDROID_KEYSTORE_FILE')) {
+                signingConfig signingConfigs.stable
+            }
+        }
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.13.1'
+    // Вырез человека с фото: модель «человек» (входит в приложение) и модель «объект» (Google, скачивается через Play-сервисы)
+    implementation 'com.google.mlkit:segmentation-selfie:16.0.0-beta6'
+    implementation 'com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1'
+    implementation 'com.google.android.gms:play-services-base:18.5.0'
+}
