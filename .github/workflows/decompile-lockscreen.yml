@@ -24,8 +24,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          D2J_URL=$(gh api repos/pxb4/dex2jar/releases/latest --jq '.assets[] | select(.name | test("dex-tool")) | .browser_download_url' | head -1)
-          CFR_URL=$(gh api repos/leibnitz27/cfr/releases/latest --jq '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -1)
+          D2J_URL=$(gh api repos/ThexXTURBOXx/dex2jar/releases/latest --jq '.assets[] | select(.name | test("dex-tools.*zip$")) | .browser_download_url' | head -1)
+          CFR_URL=$(gh api repos/leibnitz27/cfr/releases/latest --jq '.assets[] | select(.name | test("^cfr-[0-9.]+\\.jar$")) | .browser_download_url' | head -1)
+          gh api repos/ThexXTURBOXx/dex2jar/releases/latest --jq '.assets[].name' || true
           echo "dex2jar: $D2J_URL"
           echo "cfr: $CFR_URL"
           curl -fsSL -o dex2jar.zip "$D2J_URL"
