@@ -16,7 +16,7 @@ internal static class Program
         Console.OutputEncoding = Encoding.UTF8;
         Console.Title = "Lock Screen PC Stats";
         Console.WriteLine("Lock Screen PC Stats — данные компьютера на экран телефона");
-        Console.WriteLine("Включите на телефоне «USB-модем» (Настройки → Подключения → Точка доступа и модем).");
+        Console.WriteLine("Телефон — кабелем. Либо включите на нём «USB-модем», либо «Отладку по USB» (Параметры разработчика).");
         Console.WriteLine("Закрыть программу — крестик окна или Ctrl+C.");
         Console.WriteLine();
 
@@ -43,42 +43,50 @@ internal static class Program
         using var udp = new UdpClient();
         string host = Sanitize(Environment.MachineName, 40);
         bool waitingShown = false;
-        string lastTarget = "";
+        string lastMode = "";
+        var adb = new Adb();
 
         while (true)
         {
             try
             {
+                var s = Read(pc);
+                byte[] b = Encoding.UTF8.GetBytes(ToJson(host, s));
                 var target = fixedTarget ?? FindPhone();
-                if (target == null)
+                string mode;
+                if (target != null)
+                {
+                    udp.Send(b, b.Length, new IPEndPoint(target, Port));
+                    mode = "USB-модем, " + target;
+                }
+                else if (adb.TrySend(b))
+                {
+                    mode = "отладка по USB";
+                }
+                else
                 {
                     if (!waitingShown)
                     {
-                        Console.WriteLine("Жду телефон: подключите кабель и включите «USB-модем»…");
+                        Console.WriteLine(adb.Status);
                         waitingShown = true;
                     }
+                    lastMode = "";
                     Thread.Sleep(2000);
                     continue;
                 }
                 waitingShown = false;
-
-                var s = Read(pc);
-                string json = ToJson(host, s);
-                byte[] b = Encoding.UTF8.GetBytes(json);
-                udp.Send(b, b.Length, new IPEndPoint(target, Port));
-
-                string line = $"{target}: ЦП {Fmt(s.CpuT)} °C / {Fmt(s.CpuL)} %, видеокарта {Fmt(s.GpuT)} °C, память {Fmt(s.RamU)}/{Fmt(s.RamT)} ГБ";
-                if (target.ToString() != lastTarget)
+                if (mode != lastMode)
                 {
-                    Console.WriteLine("Телефон найден: " + target);
-                    lastTarget = target.ToString();
+                    Console.WriteLine();
+                    Console.WriteLine("Телефон подключён: " + mode);
+                    lastMode = mode;
                 }
+                string line = $"ЦП {Fmt(s.CpuT)} °C / {Fmt(s.CpuL)} %, видеокарта {Fmt(s.GpuT)} °C, память {Fmt(s.RamU)}/{Fmt(s.RamT)} ГБ";
                 Console.Write("\r" + line.PadRight(Math.Max(Console.WindowWidth - 1, line.Length)));
             }
             catch (SocketException)
             {
-                // телефон отключили или сеть переключилась — ищем заново
-                lastTarget = "";
+                lastMode = "";
             }
             catch (Exception e)
             {
