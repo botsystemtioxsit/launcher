@@ -51,4 +51,17 @@ class AccountTest {
         assertFalse(a.contains("abcdef0123456789"))
         assertTrue(Regex("^[0-9a-f]{32}$").matches(Account.deviceHash("")))
     }
+
+    @Test fun keyFromComputerIsAccepted() {
+        val raw = "GXZINBNA3BUD7OT4DC7AVDMXN2QF35FY"
+        assertEquals(raw, Account.normalizeKey(raw))
+        assertEquals(raw, Account.normalizeKey("gw-gxzi-nbna-3bud-7ot4-dc7a-vdmx-n2qf-35fy"))
+        assertEquals(raw, Account.normalizeKey("  GW GXZINBNA3BUD7OT4DC7AVDMXN2QF35FY \n"))
+        assertEquals("GW-GXZI-NBNA-3BUD-7OT4-DC7A-VDMX-N2QF-35FY", Account.formatKey(raw))
+        assertNull(Account.normalizeKey("GW-XXXX"))
+        assertNull(Account.normalizeKey("1111111111111111111111111111111Z")) // 1 и Z-цифры вне алфавита
+        assertNull(Account.normalizeKey(null))
+        // тот же номер, что даёт плагин на компьютере для этого ключа
+        assertEquals("8332469a4198e109183e98a7", Account.idOf(raw))
+    }
 }

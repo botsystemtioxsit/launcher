@@ -73,6 +73,17 @@ object Account {
         return sb.toString()
     }
 
+    // Ключ, как его ввёл человек (GW-XXXX-…, с тире, пробелами, любым регистром) → 32 знака A-Z2-7 или null.
+    // Тот же вид, что у ключа в плагине Gateway Plus на компьютере: поэтому ключ с компьютера открывает тот же аккаунт.
+    fun normalizeKey(input: String?): String? {
+        var t = (input ?: "").uppercase(Locale.ROOT).filter { it.isLetterOrDigit() }
+        if (t.length == 34 && t.startsWith("GW")) t = t.substring(2)
+        return if (Regex("^[A-Z2-7]{32}$").matches(t)) t else null
+    }
+
+    // Для показа: GW-XXXX-XXXX-… (8 групп по 4 знака).
+    fun formatKey(raw: String): String = "GW-" + raw.chunked(4).joinToString("-")
+
     fun deriveKey(nick: String, password: String): String {
         val salt = ("ghostshell.gateway.acct.v1:" + normalizeNick(nick)).toByteArray(Charsets.UTF_8)
         return base32(pbkdf2(password.toByteArray(Charsets.UTF_8), salt, ITERATIONS, 20))
