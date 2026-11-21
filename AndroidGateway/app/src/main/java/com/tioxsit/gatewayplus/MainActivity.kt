@@ -122,6 +122,69 @@ class MainActivity : ComponentActivity() {
             else ui.button("Забыл пароль") { forgotPassword() },
             ui.note("Нужен для того, чтобы действовали правила проекта: только личное использование, без коммерции. Владелец проекта может закрыть доступ тем, кто их нарушает."),
         ))
+        keyBox = ui.input("Ключ GW-XXXX-XXXX-…")
+        page.addView(ui.card(
+            ui.heading("Войти по ключу"),
+            ui.note("Если у вас уже есть аккаунт Gateway Plus на компьютере: там нажмите «Показать ключ» и вставьте его сюда. Это тот же аккаунт, пароль не нужен. Ключ можно и скопировать с этого телефона на компьютер (в аккаунте — «Показать ключ»)."),
+            keyBox,
+            ui.button(if (busy) "Подождите…" else "Войти по ключу", "primary") { if (!busy) loginByKey() },
+            ui.button("Вставить ключ из буфера") { pasteKey() },
+        ))
+    }
+
+    private lateinit var keyBox: EditText
+
+    private fun pasteKey() {
+        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val t = cm.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString().orEmpty()
+        if (Account.normalizeKey(t) == null) {
+            say("В буфере нет ключа Gateway Plus (GW-XXXX-…).")
+            return
+        }
+        keyBox.setText(t)
+    }
+
+    // Вход по ключу: он же — «пароль». Ключ считается так же, как на компьютере, поэтому номер аккаунта тот же.
+    private fun loginByKey() {
+        val key = Account.normalizeKey(keyBox.text.toString())
+        if (key == null) { say("Это не похоже на ключ Gateway Plus: нужно GW-XXXX-XXXX-… (8 групп по 4 знака)."); return }
+        val id = Account.idOf(key)
+        val label = "Аккаунт ${id.take(6)}"
+        busy = true
+        say("Проверяю ключ…", Pal.MUTED)
+        thread {
+            val remote: Int? = try { Cloud.accountTermsVersion(id) } catch (e: Cloud.CloudException) {
+                main.post { busy = false; say("Не вышло: ${e.message}. Проверьте интернет и повторите.") }
+                return@thread
+            }
+            main.post {
+                busy = false
+                when {
+                    remote == null -> AlertDialog.Builder(this)
+                        .setTitle("Такого аккаунта нет")
+                        .setMessage("Аккаунта с этим ключом в базе нет (возможно, он удалён за неактивность). Создать его заново с этим же ключом?")
+                        .setPositiveButton("Создать") { _, _ -> showTerms(readOnly = false) { createAccount(label, key) } }
+                        .setNegativeButton("Назад", null)
+                        .show()
+                    remote < Terms.VERSION -> showTerms(readOnly = false) { finishLogin(label, key, remote, accept = true) }
+                    else -> finishLogin(label, key, remote, accept = false)
+                }
+            }
+        }
+    }
+
+    private fun showKey() {
+        val a = acct ?: return
+        val shown = Account.formatKey(a.key)
+        AlertDialog.Builder(this)
+            .setTitle("Ключ аккаунта")
+            .setMessage("$shown\n\nЭтим ключом можно войти в тот же аккаунт на компьютере (Gateway Plus → «У меня есть ключ») или на другом телефоне. Никому его не показывайте: по нему входят без пароля.")
+            .setPositiveButton("Скопировать") { _, _ ->
+                (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(android.content.ClipData.newPlainText("Gateway Plus", shown))
+                say("Ключ скопирован.", Pal.MUTED)
+            }
+            .setNegativeButton("Закрыть", null)
+            .show()
     }
 
     private var lastNick = ""
@@ -159,6 +222,7 @@ class MainActivity : ComponentActivity() {
             ui.text("${a.nick}  ·  номер ${a.id.take(8)}…", bold = true),
             ui.text(st, col, 13f),
             ui.row(
+                ui.button("Показать ключ") { showKey() },
                 ui.button("Правила") { showTerms(readOnly = true) {} },
                 ui.button("Выйти", "danger") { logout() },
             ),
