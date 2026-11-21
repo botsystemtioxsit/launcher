@@ -19,6 +19,21 @@
       }
     },
 
+    "gatewayProfiles": {
+      "$id": {
+        ".read": "$id.matches(/^[0-9a-f]{24}$/)",
+        "$name": {
+          ".write": "$id.matches(/^[0-9a-f]{24}$/) && $name.matches(/^[A-Za-z0-9_=+.-]{1,32}$/) && newData.exists()",
+          ".validate": "newData.hasChild('at') && ((newData.hasChildren(['n', 'c']) && !newData.hasChild('d')) || (newData.child('d').val() === 1 && !newData.hasChild('c')))",
+          "n": { ".validate": "newData.isString() && newData.val().length === 16" },
+          "c": { ".validate": "newData.isString() && newData.val().length >= 24 && newData.val().length <= 8000" },
+          "d": { ".validate": "newData.val() === 1" },
+          "at": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
+    },
+
     "gatewayBlocks": {
       "$id": { ".read": true }
     },

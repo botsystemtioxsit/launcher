@@ -35,6 +35,15 @@ static class SelfTest
             Check("профиль шифруется и читается обратно", Store.Load("citest-dpapi") == good && !File.ReadAllText(Path.Combine(Store.Dir, "profiles", "citest-dpapi.dat"), Encoding.Latin1).Contains("PrivateKey"));
             Store.Delete("citest-dpapi");
 
+            // 2б. серверы следуют за аккаунтом: шифрование совпадает с телефоном (контрольный пример посчитан отдельно, на Python)
+            {
+                const string rawKey = "GXZINBNA3BUD7OT4DC7AVDMXN2QF35FY";
+                var (vn, vc) = ProfileSync.Encrypt(rawKey, "de-wg", "[Interface]\nPrivateKey = AAAA\n", Enumerable.Range(0, 12).Select(i => (byte)i).ToArray());
+                Check("шифрование профиля для аккаунта совпадает с контрольным примером", vn == "AAECAwQFBgcICQoL" && vc == "VQLPRa69jg9ZKd1fI+w8UAfFRfqzmmuk39sW83BLDbMeh7rl5m2/iUTt/cYS5A==");
+                Check("расшифровка возвращает профиль", ProfileSync.Decrypt(rawKey, "de-wg", vn, vc) == "[Interface]\nPrivateKey = AAAA\n");
+                Check("чужое имя или чужой ключ не расшифровываются", ProfileSync.Decrypt(rawKey, "other", vn, vc) == null && ProfileSync.Decrypt("A" + rawKey[1..], "de-wg", vn, vc) == null);
+            }
+
             // 3. скрипт сервера
             var script = Store.ServerScript();
             Check("скрипт сервера вшит (" + script.Length + " знаков)", script.StartsWith("#!/usr/bin/env bash") && script.Contains("wg genkey") && !script.Contains('\r'));

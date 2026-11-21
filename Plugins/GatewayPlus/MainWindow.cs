@@ -106,6 +106,15 @@ sealed class MainWindow : Window
         lastAccessCheck = DateTime.UtcNow;
         var dev = Account.DeviceHash();
         access = await Cloud.CheckAccessAsync(account?.Id, dev);
+        if (account != null && !access.Blocked && demo == GwDemo.None)
+        {
+            try
+            {
+                var got = await ProfileSync.SyncAsync();   // серверы аккаунта: что есть в аккаунте, но нет у нас — подтягиваем
+                if (got > 0) { if (status != null) status.Text = $"Из аккаунта подтянуты серверы: {got}."; }
+            }
+            catch { /* нет связи — в следующий раз */ }
+        }
         if (heartbeat && account != null && !access.Blocked) _ = Cloud.HeartbeatAsync(account.Id, dev, Ui.Version, Store.List().Count, account.TermsV, account.Name);
         BuildPage();
     }

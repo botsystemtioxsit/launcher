@@ -84,14 +84,56 @@ class Store(private val ctx: Context) {
         return unprotect(f.takeIf { it.exists() }?.readText())
     }
 
-    fun saveProfile(name: String, conf: String) {
+    fun saveProfile(name: String, conf: String, sync: Boolean = true) {
         require(Profiles.validName(name)) { "плохое имя" }
         File(profilesDir, "$name.dat").writeText(protect(conf))
+        if (sync) syncPush(name, false)
     }
 
     fun deleteProfile(name: String) {
         if (Profiles.validName(name)) File(profilesDir, "$name.dat").delete()
         if (active == name) active = ""
+        if (Profiles.validName(name)) syncPush(name, true)
+    }
+
+    // ---------- серверы следуют за аккаунтом (шифруются на телефоне, см. ProfileSync) ----------
+    // Отправка в фоне; без связи — молча (отправим при следующей сверке).
+    private fun syncPush(name: String, deleted: Boolean) {
+        val a = account() ?: return
+        Thread { try { putRemote(a, name, deleted) } catch (_: Exception) { } }.start()
+    }
+
+    private fun putRemote(a: Acct, name: String, deleted: Boolean) {
+        val at = System.currentTimeMillis()
+        if (deleted) { Cloud.profilePut(a.id, name, org.json.JSONObject().put("d", 1).put("at", at)); return }
+        val conf = loadProfile(name) ?: return
+        val (n, c) = ProfileSync.encrypt(a.key, name, conf)
+        Cloud.profilePut(a.id, name, org.json.JSONObject().put("n", n).put("c", c).put("at", at))
+    }
+
+    // Сверка с аккаунтом (вызывать НЕ в главном потоке): чего нет у нас — забираем, чего нет в аккаунте — отправляем.
+    // Локальные профили не затираются и не удаляются. Возвращает, сколько серверов подтянуто.
+    fun syncPull(): Int {
+        val a = account() ?: return 0
+        val remote = Cloud.profilesGet(a.id)
+        val have = profileNames().toSet()
+        val remoteNames = HashSet<String>()
+        var imported = 0
+        if (remote != null) {
+            for (name in remote.keys()) {
+                if (!Profiles.validName(name)) continue
+                remoteNames.add(name)
+                if (name in have) continue
+                val e = remote.optJSONObject(name) ?: continue
+                if (e.has("d")) continue   // на другом устройстве удалили
+                val conf = ProfileSync.decrypt(a.key, name, e.optString("n"), e.optString("c")) ?: continue
+                if (Profiles.validate(conf) != null) continue
+                saveProfile(name, conf, sync = false)
+                imported++
+            }
+        }
+        for (name in have) if (name !in remoteNames) try { putRemote(a, name, false) } catch (_: Exception) { }
+        return imported
     }
 
     fun allProfiles(): Map<String, String> = profileNames().mapNotNull { n -> loadProfile(n)?.let { n to it } }.toMap()

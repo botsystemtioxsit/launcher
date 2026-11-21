@@ -20,6 +20,7 @@ public partial class App : Application
     {
         base.OnStartup(e);
         Loc.Start(e.Args);
+        Store.ProfileChanged = ProfileSync.Changed;   // серверы следуют за аккаунтом
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         // помощник с правами администратора: ставит и снимает службу туннеля
