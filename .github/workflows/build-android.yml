@@ -67,13 +67,17 @@ jobs:
           echo "Подпись: $SIGNING"
 
       - name: Rename APK
-        run: cp Android/app/build/outputs/apk/debug/app-debug.apk Android/TIOXSITLauncher.apk
+        run: |
+          cp Android/app/build/outputs/apk/debug/app-debug.apk Android/TIOXSITLauncher.apk
+          (cd Android && sha256sum TIOXSITLauncher.apk | cut -d' ' -f1 > TIOXSITLauncher.apk.sha256)
 
       - name: Upload APK as build artifact
         uses: actions/upload-artifact@v4
         with:
           name: apk
-          path: Android/TIOXSITLauncher.apk
+          path: |
+            Android/TIOXSITLauncher.apk
+            Android/TIOXSITLauncher.apk.sha256
           retention-days: 7
 
       - name: Read version
@@ -90,7 +94,9 @@ jobs:
           name: Ghost Shell Launcher (Android) — последняя сборка
           prerelease: true
           make_latest: false
-          files: Android/TIOXSITLauncher.apk
+          files: |
+            Android/TIOXSITLauncher.apk
+            Android/TIOXSITLauncher.apk.sha256
           body: |
             Версия ${{ steps.ver.outputs.version }}, сборка ${{ github.run_number }}, из коммита ${{ github.sha }}.
             Этот релиз всегда переиспользуется под фиксированным тегом `android-latest`.
