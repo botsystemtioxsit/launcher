@@ -61,7 +61,7 @@ internal sealed class Adb
 
     private bool Connect()
     {
-        exe ??= FindOrFetch();
+        Ensure();
         if (exe == null)
         {
             Status = "Не нашёл adb и не смог его скачать (нужен интернет на компьютере). Либо включите «USB-модем» на телефоне.";
@@ -99,18 +99,21 @@ internal sealed class Adb
         }
     }
 
-    private string Run(string args)
+    internal string? Ensure() => exe ??= FindOrFetch();
+
+    internal string Run(string args, int timeoutMs = 8000)
     {
         try
         {
-            var psi = new ProcessStartInfo(exe!, args) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
+            var psi = new ProcessStartInfo(Ensure()!, args) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
             using var p = Process.Start(psi)!;
-            string o = p.StandardOutput.ReadToEnd();
-            if (!p.WaitForExit(8000))
+            var err = p.StandardError.ReadToEndAsync();
+            var outp = p.StandardOutput.ReadToEndAsync();
+            if (!p.WaitForExit(timeoutMs))
             {
                 try { p.Kill(); } catch { }
             }
-            return o;
+            return outp.GetAwaiter().GetResult() + "\n" + err.GetAwaiter().GetResult();
         }
         catch
         {

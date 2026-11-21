@@ -382,6 +382,20 @@ public class MainActivity extends Activity {
                 startActivity(new Intent(MainActivity.this, ClockModeActivity.class));
             }
         }));
+        LinearLayout pcs = this.ui.card(this.content, "Данные компьютера: стиль");
+        pcs.addView(this.ui.label("Когда на компьютере запущена программа Lock Screen PC Stats, на экране телефона появляются данные компьютера. Выберите оформление:", 13.0f, SUB, false));
+        pcs.addView(this.ui.chips(PcStyles.NAMES, Store.pcStyle(this), new IntConsumer() {
+            @Override
+            public void accept(int i) {
+                MainActivity.this.sp.edit().putInt("pcStyle", i).apply();
+            }
+        }));
+        pcs.addView(this.ui.pill("Показать пример (нажмите на экран, чтобы закрыть)", false, new Runnable() {
+            @Override
+            public void run() {
+                startActivity(new Intent(MainActivity.this, ClockModeActivity.class).putExtra("demo", true));
+            }
+        }));
         LinearLayout u = this.ui.card(this.content, "Статистика по USB");
         u.addView(this.ui.sw("Показывать статистику, когда подключён кабель", Store.usbOn(this), new Consumer<Boolean>() {
             @Override

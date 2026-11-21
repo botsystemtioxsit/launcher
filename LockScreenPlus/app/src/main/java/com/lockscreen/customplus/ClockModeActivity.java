@@ -75,7 +75,7 @@ public class ClockModeActivity extends Activity implements SensorEventListener {
     protected void onResume() {
         super.onResume();
         view.start();
-        if (sensors != null) {
+        if (sensors != null && !getIntent().getBooleanExtra("demo", false)) {
             Sensor a = sensors.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             if (a != null) {
                 sensors.registerListener(this, a, SensorManager.SENSOR_DELAY_NORMAL);
@@ -123,6 +123,8 @@ public class ClockModeActivity extends Activity implements SensorEventListener {
         private final Renderer renderer = new Renderer();
         private final Dashboard dash = new Dashboard();
         private final PcDash pcDash = new PcDash();
+        private final PcStyles pcStyles = new PcStyles();
+        private boolean demo;
         private final Handler handler = new Handler(Looper.getMainLooper());
         private final Activity act;
         private Design design;
@@ -146,6 +148,7 @@ public class ClockModeActivity extends Activity implements SensorEventListener {
             super(a);
             act = a;
             design = Design.load(a, 1);
+            demo = a.getIntent() != null && a.getIntent().getBooleanExtra("demo", false);
             try {
                 if (Store.hasBackground(a)) {
                     bg = BitmapFactory.decodeFile(Store.bgFile(a).getPath());
@@ -186,9 +189,13 @@ public class ClockModeActivity extends Activity implements SensorEventListener {
             } else {
                 snap = null;
             }
-            PcLink.Data pc = PcLink.fresh();
+            PcLink.Data pc = demo ? PcLink.demo() : PcLink.fresh();
             if (pc != null) {
-                pcDash.render(c, w, h, pc, now);
+                if (w >= h * 1.3f) {
+                    pcStyles.render(c, w, h, pc, Store.pcStyle(act), now);
+                } else {
+                    pcDash.render(c, w, h, pc, now);
+                }
             } else if (snap != null && snap.usb) {
                 dash.render(c, w, h, snap, now);
             } else {
