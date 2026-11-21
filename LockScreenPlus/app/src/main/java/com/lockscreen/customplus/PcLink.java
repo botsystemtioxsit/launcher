@@ -1,7 +1,12 @@
 package com.lockscreen.customplus;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import org.json.JSONObject;
 
 /**
@@ -9,7 +14,8 @@ import org.json.JSONObject;
  * по UDP на этот телефон (через USB-модем), мы его только читаем и показываем. Ничего не отправляем и не сохраняем.
  */
 final class PcLink {
-    static final int PORT = 47821;
+    static final int PORT = 47821;      // UDP, через USB-модем
+    static final int TCP_PORT = 47822;  // TCP только на этом телефоне: сюда приходит дорожка «отладка по USB» (adb forward)
     static final int HIST = 90;
 
     static final class Data {
@@ -32,6 +38,7 @@ final class PcLink {
 
     private static volatile Data last;
     private static Thread thread;
+    private static Thread tcpThread;
     private static long histAt;
 
     private PcLink() {
@@ -49,6 +56,65 @@ final class PcLink {
         }, "pc-link");
         thread.setDaemon(true);
         thread.start();
+        if (tcpThread == null || !tcpThread.isAlive()) {
+            tcpThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    tcpLoop();
+                }
+            }, "pc-link-tcp");
+            tcpThread.setDaemon(true);
+            tcpThread.start();
+        }
+    }
+
+    /** Слушаем только адрес самого телефона (127.0.0.1): снаружи сюда не попасть, только через adb forward с компьютера. */
+    private static void tcpLoop() {
+        ServerSocket ss = null;
+        while (true) {
+            try {
+                if (ss == null || ss.isClosed()) {
+                    ss = new ServerSocket();
+                    ss.setReuseAddress(true);
+                    ss.bind(new java.net.InetSocketAddress(InetAddress.getByName("127.0.0.1"), TCP_PORT));
+                }
+                Socket c = ss.accept();
+                try {
+                    c.setSoTimeout(8000);
+                    BufferedReader r = new BufferedReader(new InputStreamReader(c.getInputStream(), "UTF-8"), 4096);
+                    String line;
+                    while ((line = r.readLine()) != null) {
+                        if (line.length() > 2000) {
+                            continue;
+                        }
+                        Data d = parse(line);
+                        if (d != null) {
+                            publish(d);
+                        }
+                    }
+                } catch (Exception e) {
+                    // потеряли соединение — ждём следующее
+                } finally {
+                    try {
+                        c.close();
+                    } catch (Exception ignored) {
+                    }
+                }
+            } catch (Exception e) {
+                try {
+                    if (ss != null) {
+                        ss.close();
+                    }
+                } catch (Exception ignored) {
+                }
+                ss = null;
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException ie) {
+                    return;
+                }
+            }
+        }
     }
 
     /** Свежие данные (не старше 6 секунд) или null, если компьютер не присылает. */
