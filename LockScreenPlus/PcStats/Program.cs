@@ -27,7 +27,7 @@ internal static class Program
             Console.WriteLine("Адрес телефона задан вручную: " + ip);
         }
 
-        var pc = new Computer { IsCpuEnabled = true, IsGpuEnabled = true, IsMemoryEnabled = true };
+        var pc = new Computer { IsCpuEnabled = true, IsGpuEnabled = true, IsMemoryEnabled = true, IsMotherboardEnabled = true, IsStorageEnabled = true };
         try
         {
             pc.Open();
@@ -40,17 +40,36 @@ internal static class Program
             return 1;
         }
 
+        var fpsMeter = new FpsMeter();
+        if (!fpsMeter.Start() && fpsMeter.Status.Length > 0)
+        {
+            Console.WriteLine(fpsMeter.Status);
+        }
+        var net = new NetMeter();
         using var udp = new UdpClient();
         string host = Sanitize(Environment.MachineName, 40);
         bool waitingShown = false;
         string lastMode = "";
         var adb = new Adb();
+        if (!args.Contains("--no-update"))
+        {
+            Task.Run(() => Updater.RunOnce(adb));
+        }
 
         while (true)
         {
             try
             {
                 var s = Read(pc);
+                s.Net = net.Sample();
+                var f = fpsMeter.Snapshot();
+                if (f != null)
+                {
+                    s.Fps = f.Value.Fps;
+                    s.Fps1 = f.Value.Low;
+                    s.Ft = f.Value.Ft;
+                    s.Game = f.Value.Game;
+                }
                 byte[] b = Encoding.UTF8.GetBytes(ToJson(host, s));
                 var target = fixedTarget ?? FindPhone();
                 string mode;
@@ -130,12 +149,18 @@ internal static class Program
     {
         public string CpuName = "", GpuName = "";
         public double? CpuT, CpuL, GpuT, GpuL, RamU, RamT, CpuW;
+        public double? CpuClk, GpuW, GpuClk, VramU, VramT, Fan, DiskT, DiskU, Fps, Fps1, Ft;
+        public (double Down, double Up)? Net;
+        public string Game = "";
     }
 
     private static Snap Read(Computer pc)
     {
         var s = new Snap();
         double? coreMax = null, coreAvg = null, pkg = null;
+        double clkSum = 0;
+        int clkN = 0;
+        double? fan = null;
         foreach (var hw in pc.Hardware)
         {
             hw.Update();
@@ -166,6 +191,11 @@ internal static class Program
                         {
                             s.CpuW = v;
                         }
+                        else if (x.SensorType == SensorType.Clock && n.StartsWith("Core #", StringComparison.OrdinalIgnoreCase) && v > 100)
+                        {
+                            clkSum += v;
+                            clkN++;
+                        }
                     }
                     break;
                 case HardwareType.GpuNvidia:
@@ -181,6 +211,33 @@ internal static class Program
                         if (x.SensorType == SensorType.Temperature && s.GpuT == null && x.Name.Contains("Core", StringComparison.OrdinalIgnoreCase)) s.GpuT = v;
                         else if (x.SensorType == SensorType.Temperature && s.GpuT == null) s.GpuT = v;
                         else if (x.SensorType == SensorType.Load && x.Name.Equals("GPU Core", StringComparison.OrdinalIgnoreCase)) s.GpuL = v;
+                        else if (x.SensorType == SensorType.Power && s.GpuW == null) s.GpuW = v;
+                        else if (x.SensorType == SensorType.Clock && x.Name.Equals("GPU Core", StringComparison.OrdinalIgnoreCase)) s.GpuClk = v;
+                        else if (x.SensorType == SensorType.SmallData && x.Name.Equals("GPU Memory Used", StringComparison.OrdinalIgnoreCase)) s.VramU = v / 1024.0;
+                        else if (x.SensorType == SensorType.SmallData && x.Name.Equals("GPU Memory Total", StringComparison.OrdinalIgnoreCase)) s.VramT = v / 1024.0;
+                        else if (x.SensorType == SensorType.Fan && fan == null && v > 0) fan = v;
+                    }
+                    break;
+                case HardwareType.Storage:
+                    if (s.DiskT == null)
+                    {
+                        foreach (var x in hw.Sensors)
+                        {
+                            if (x.SensorType == SensorType.Temperature && x.Value is float v && !float.IsNaN(v))
+                            {
+                                s.DiskT = v;
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                case HardwareType.Motherboard:
+                    foreach (var sub in hw.SubHardware)
+                    {
+                        foreach (var x in sub.Sensors)
+                        {
+                            if (x.SensorType == SensorType.Fan && fan == null && x.Value is float v && !float.IsNaN(v) && v > 0) fan = v;
+                        }
                     }
                     break;
                 case HardwareType.Memory:
@@ -200,6 +257,16 @@ internal static class Program
             }
         }
         s.CpuT = pkg ?? coreMax ?? coreAvg;
+        if (clkN > 0) s.CpuClk = clkSum / clkN;
+        s.Fan = fan;
+        try
+        {
+            var d = new DriveInfo(Path.GetPathRoot(Environment.SystemDirectory)!);
+            s.DiskU = 100.0 * (d.TotalSize - d.TotalFreeSpace) / d.TotalSize;
+        }
+        catch
+        {
+        }
         return s;
     }
 
@@ -212,6 +279,14 @@ internal static class Program
         Num(sb, "cpuT", s.CpuT); Num(sb, "cpuL", s.CpuL); Num(sb, "cpuW", s.CpuW);
         Num(sb, "gpuT", s.GpuT); Num(sb, "gpuL", s.GpuL);
         Num(sb, "ramU", s.RamU); Num(sb, "ramT", s.RamT);
+        Num(sb, "cpuClk", s.CpuClk); Num(sb, "gpuW", s.GpuW); Num(sb, "gpuClk", s.GpuClk);
+        Num(sb, "vramU", s.VramU); Num(sb, "vramT", s.VramT); Num(sb, "fan", s.Fan);
+        Num(sb, "diskT", s.DiskT); Num(sb, "diskU", s.DiskU);
+        if (s.Net != null) { Num(sb, "netD", s.Net.Value.Down); Num(sb, "netU", s.Net.Value.Up); }
+        Num(sb, "fps", s.Fps); Num(sb, "fps1", s.Fps1); Num(sb, "ft", s.Ft);
+        if (s.Game.Length > 0) sb.Append(",\"game\":\"").Append(Esc(Sanitize(s.Game, 40))).Append('"');
+        long up = Environment.TickCount64 / 60000;
+        sb.Append(",\"uptime\":\"").Append(up / 60).Append(" ч ").Append(up % 60).Append(" мин\"");
         return sb.Append('}').ToString();
     }
 
@@ -219,6 +294,41 @@ internal static class Program
     {
         if (v == null || double.IsNaN(v.Value)) return;
         sb.Append(",\"").Append(k).Append("\":").Append(v.Value.ToString("0.#", CultureInfo.InvariantCulture));
+    }
+
+    private sealed class NetMeter
+    {
+        private long lastIn, lastOut;
+        private DateTime lastAt = DateTime.MinValue;
+
+        public (double Down, double Up)? Sample()
+        {
+            long i = 0, o = 0;
+            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (nic.OperationalStatus != OperationalStatus.Up || nic.NetworkInterfaceType == NetworkInterfaceType.Loopback || nic.NetworkInterfaceType == NetworkInterfaceType.Tunnel) continue;
+                try
+                {
+                    var st = nic.GetIPv4Statistics();
+                    i += st.BytesReceived;
+                    o += st.BytesSent;
+                }
+                catch
+                {
+                }
+            }
+            var now = DateTime.UtcNow;
+            (double, double)? r = null;
+            if (lastAt != DateTime.MinValue && i >= lastIn && o >= lastOut)
+            {
+                double sec = Math.Max(0.2, (now - lastAt).TotalSeconds);
+                r = ((i - lastIn) * 8 / 1e6 / sec, (o - lastOut) * 8 / 1e6 / sec);
+            }
+            lastIn = i;
+            lastOut = o;
+            lastAt = now;
+            return r;
+        }
     }
 
     private static string Fmt(double? v) => v == null ? "—" : v.Value.ToString("0.#", CultureInfo.InvariantCulture);

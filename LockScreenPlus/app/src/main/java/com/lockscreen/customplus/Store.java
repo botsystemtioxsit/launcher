@@ -66,6 +66,12 @@ final class Store {
         return prefs(c).getBoolean("landOn", true);
     }
 
+    /** Номер стиля экрана «Компьютер» (0–9). */
+    static int pcStyle(Context c) {
+        int v = prefs(c).getInt("pcStyle", 0);
+        return v < 0 || v > 9 ? 0 : v;
+    }
+
     static boolean clockModeOn(Context c) {
         return prefs(c).getBoolean("clockMode", false);
     }

@@ -62,6 +62,7 @@ public class ClockWallpaperService extends WallpaperService {
         private boolean haveS;
         private Dashboard dash;
         private PcDash pcDash;
+        private PcStyles pcStyles;
         private StatsHub.Snap snap;
         private long lastPoll;
         private boolean usbMode;
@@ -95,6 +96,7 @@ public class ClockWallpaperService extends WallpaperService {
             this.accel = this.sensors != null ? this.sensors.getDefaultSensor(1) : null;
             this.dash = new Dashboard();
             this.pcDash = new PcDash();
+            this.pcStyles = new PcStyles();
             PcLink.start();
         }
 
@@ -412,7 +414,11 @@ public class ClockWallpaperService extends WallpaperService {
                     int rh = rotate ? w : h;
                     PcLink.Data pc = PcLink.fresh();
                     if (pc != null && this.pcDash != null && !isPreview()) {
-                        this.pcDash.render(c, rw, rh, pc, now);
+                        if (rw >= rh * 1.3f && this.pcStyles != null) {
+                            this.pcStyles.render(c, rw, rh, pc, Store.pcStyle(ClockWallpaperService.this), now);
+                        } else {
+                            this.pcDash.render(c, rw, rh, pc, now);
+                        }
                     } else if (this.usbMode && this.snap != null && this.dash != null) {
                         this.dash.render(c, rw, rh, this.snap, now);
                     } else if (useLand && this.landDesign != null) {
