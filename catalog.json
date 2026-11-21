@@ -120,6 +120,20 @@
       "os": [
         "android"
       ]
+    },
+    {
+      "id": "lockscreen-plus",
+      "name": "Lock Screen Plus (для телефона)",
+      "desc": "Android-приложение: живые обои для экрана блокировки, режим «на боку», «Режим часов» поверх экрана Samsung и вывод данных компьютера (вместе с плагином Lock Screen PC Stats). Скачать .apk и установить на телефоне.",
+      "platform": "Android",
+      "repo": "launcher",
+      "tag": "lockscreen-plus-latest",
+      "asset": "LockScreenPlus.apk",
+      "os": [
+        "windows",
+        "android",
+        "linux"
+      ]
     }
   ],
   "plugins": [
@@ -229,6 +243,18 @@
         "tag": "chat-accounts-latest",
         "asset": "GhostShellChatAccounts.exe",
         "name": "Chat Accounts"
+      }
+    },
+    {
+      "id": "lockscreen-pcstats",
+      "category": "style",
+      "name": "Lock Screen PC Stats",
+      "desc": "Показывает данные компьютера (температура и загрузка процессора и видеокарты, память) на экране Android-телефона по кабелю. Нужен Lock Screen Plus на телефоне; на телефоне включить «USB-модем». Запускается от администратора.",
+      "desktop": {
+        "repo": "launcher",
+        "tag": "pcstats-latest",
+        "asset": "LockScreenPcStats.exe",
+        "name": "Lock Screen PC Stats"
       }
     }
   ],
