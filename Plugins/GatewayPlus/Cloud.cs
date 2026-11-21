@@ -76,6 +76,19 @@ static class Cloud
 
     public sealed record Remote(string Name);
 
+    // Серверы аккаунта (зашифрованные на устройстве, см. ProfileSync): gatewayProfiles/<номер>/<имя>
+    public static async Task<JsonElement?> GetProfilesAsync(string id)
+    {
+        if (!IdRe.IsMatch(id)) throw new CloudException("плохой номер аккаунта");
+        return await GetAsync("gatewayProfiles/" + id);
+    }
+
+    public static async Task PutProfileAsync(string id, string name, object body)
+    {
+        if (!IdRe.IsMatch(id) || !Store.ValidName(name)) throw new CloudException("плохой номер или имя");
+        await SendAsync(HttpMethod.Put, $"gatewayProfiles/{id}/{name}", body);
+    }
+
     public static async Task<Remote?> GetAccountAsync(string id)
     {
         if (!IdRe.IsMatch(id)) throw new CloudException("плохой номер аккаунта");

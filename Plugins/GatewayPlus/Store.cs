@@ -41,12 +41,16 @@ static class Store
         catch { return new(); }
     }
 
-    public static void Save(string name, string conf)
+    // Кто-то хочет знать, что профиль сохранён/удалён (плагин подключает сюда отправку в аккаунт; в проверках пусто)
+    public static Action<string, bool>? ProfileChanged { get; set; }
+
+    public static void Save(string name, string conf, bool sync = true)
     {
         if (!ValidName(name)) throw new ArgumentException("плохое имя");
         Directory.CreateDirectory(ProfilesDir);
         var enc = ProtectedData.Protect(Encoding.UTF8.GetBytes(conf), Entropy, DataProtectionScope.CurrentUser);
         File.WriteAllBytes(Path.Combine(ProfilesDir, name + ".dat"), enc);
+        if (sync) ProfileChanged?.Invoke(name, false);
     }
 
     public static string? Load(string name)
@@ -65,6 +69,7 @@ static class Store
     {
         if (!ValidName(name)) return;
         try { File.Delete(Path.Combine(ProfilesDir, name + ".dat")); } catch { }
+        ProfileChanged?.Invoke(name, true);
     }
 
     public static string Active

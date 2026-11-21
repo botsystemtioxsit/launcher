@@ -109,6 +109,29 @@ object Cloud {
         }
     }
 
+    // Серверы аккаунта (зашифрованные на устройстве, см. ProfileSync): gatewayProfiles/<номер>/<имя>
+    fun profilesGet(id: String): JSONObject? {
+        if (!ID_RE.matches(id)) throw CloudException("плохой номер аккаунта")
+        try {
+            return get("gatewayProfiles/$id")
+        } catch (e: CloudException) {
+            throw e
+        } catch (e: IOException) {
+            throw CloudException("нет связи с базой")
+        }
+    }
+
+    fun profilePut(id: String, name: String, body: JSONObject) {
+        if (!ID_RE.matches(id) || !Profiles.validName(name)) throw CloudException("плохой номер или имя")
+        try {
+            send("PUT", "gatewayProfiles/$id/$name", body)
+        } catch (e: CloudException) {
+            throw e
+        } catch (e: IOException) {
+            throw CloudException("нет связи с базой")
+        }
+    }
+
     // Принятые правила: пишем в аккаунт новую версию (если у аккаунта их не было или правила обновились).
     fun acceptTerms(id: String, dev: String, ver: String, servers: Int, name: String? = null) = heartbeat(id, dev, ver, servers, Terms.VERSION, name)
 }

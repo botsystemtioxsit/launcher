@@ -70,6 +70,7 @@ class MainActivity : ComponentActivity() {
             val up = Tunnels.isUp(this)
             main.post { connected = up; render() }
             refreshAccess(force = false)
+            syncServers()
             refreshIp()
         }
     }
@@ -380,8 +381,17 @@ class MainActivity : ComponentActivity() {
         thread {
             if (accept) Cloud.acceptTerms(a.id, store.deviceHash(), version, store.profileNames().size, a.nick)
             refreshAccess(force = true)
+            syncServers()
             refreshIp()
         }
+    }
+
+    // Серверы аккаунта: подтягиваем недостающие (в фоне, без связи — молча)
+    private fun syncServers() {
+        try {
+            val n = store.syncPull()
+            if (n > 0) main.post { say("Из аккаунта подтянуты серверы: $n.", Pal.GREEN); render() }
+        } catch (_: Exception) { }
     }
 
     private fun logout() {
