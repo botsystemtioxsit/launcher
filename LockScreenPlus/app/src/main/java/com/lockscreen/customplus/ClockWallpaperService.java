@@ -61,6 +61,7 @@ public class ClockWallpaperService extends WallpaperService {
         private float sz;
         private boolean haveS;
         private Dashboard dash;
+        private PcDash pcDash;
         private StatsHub.Snap snap;
         private long lastPoll;
         private boolean usbMode;
@@ -93,6 +94,8 @@ public class ClockWallpaperService extends WallpaperService {
             this.sensors = (SensorManager) ClockWallpaperService.this.getSystemService("sensor");
             this.accel = this.sensors != null ? this.sensors.getDefaultSensor(1) : null;
             this.dash = new Dashboard();
+            this.pcDash = new PcDash();
+            PcLink.start();
         }
 
         @Override // android.service.wallpaper.WallpaperService.Engine
@@ -356,14 +359,14 @@ public class ClockWallpaperService extends WallpaperService {
             }
             Design active = (this.landOn && this.landMode != 0 && this.landDesign != null) ? this.landDesign : this.design;
             long next;
-            if (this.usbMode) {
+            if (this.usbMode || PcLink.fresh() != null) {
                 next = 250;
             } else if ((this.design.parallax && this.sensorOn && this.landMode == 0) || active.animated()) {
                 next = 33;
             } else {
                 next = (60000 - (System.currentTimeMillis() % 60000)) + 50;
             }
-            if (this.usbOn && !this.usbMode) {
+            if (!this.usbMode) {
                 next = Math.min(next, 3000); // следим, не подключили ли кабель
             }
             this.handler.postDelayed(this.tick, next);
@@ -407,7 +410,10 @@ public class ClockWallpaperService extends WallpaperService {
                     }
                     int rw = rotate ? h : w;
                     int rh = rotate ? w : h;
-                    if (this.usbMode && this.snap != null && this.dash != null) {
+                    PcLink.Data pc = PcLink.fresh();
+                    if (pc != null && this.pcDash != null && !isPreview()) {
+                        this.pcDash.render(c, rw, rh, pc, now);
+                    } else if (this.usbMode && this.snap != null && this.dash != null) {
                         this.dash.render(c, rw, rh, this.snap, now);
                     } else if (useLand && this.landDesign != null) {
                         this.renderer.render(c, rw, rh, this.landDesign, this.bg, null, 0.0f, 0.0f, now, this.fetchedText, Store.batteryText(ClockWallpaperService.this), true);

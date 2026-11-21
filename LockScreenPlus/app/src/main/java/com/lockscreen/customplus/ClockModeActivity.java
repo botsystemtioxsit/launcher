@@ -50,6 +50,7 @@ public class ClockModeActivity extends Activity implements SensorEventListener {
         }
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         Fonts.init(this);
+        PcLink.start();
         view = new ClockView(this);
         setContentView(view);
         hideBars();
@@ -121,6 +122,7 @@ public class ClockModeActivity extends Activity implements SensorEventListener {
     private static final class ClockView extends View {
         private final Renderer renderer = new Renderer();
         private final Dashboard dash = new Dashboard();
+        private final PcDash pcDash = new PcDash();
         private final Handler handler = new Handler(Looper.getMainLooper());
         private final Activity act;
         private Design design;
@@ -184,7 +186,10 @@ public class ClockModeActivity extends Activity implements SensorEventListener {
             } else {
                 snap = null;
             }
-            if (snap != null && snap.usb) {
+            PcLink.Data pc = PcLink.fresh();
+            if (pc != null) {
+                pcDash.render(c, w, h, pc, now);
+            } else if (snap != null && snap.usb) {
                 dash.render(c, w, h, snap, now);
             } else {
                 renderer.render(c, w, h, design, bg, null, 0.0f, 0.0f, now, "", Store.batteryText(act), true);
