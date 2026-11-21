@@ -113,7 +113,6 @@ internal static class Program
                 {
                     return gw.Address;
                 }
-                any ??= null;
             }
         }
         return any;
