@@ -1,0 +1,49 @@
+name: Build Lock Screen PC Stats (Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'LockScreenPlus/PcStats/**'
+      - '.github/workflows/build-pcstats.yml'
+  pull_request:
+    paths:
+      - 'LockScreenPlus/PcStats/**'
+      - '.github/workflows/build-pcstats.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Publish
+        working-directory: LockScreenPlus/PcStats
+        shell: pwsh
+        run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o out
+      - name: Checksum
+        shell: pwsh
+        run: |
+          Copy-Item LockScreenPlus/PcStats/out/LockScreenPcStats.exe LockScreenPcStats.exe
+          (Get-FileHash LockScreenPcStats.exe -Algorithm SHA256).Hash.ToLower() | Out-File -Encoding ascii LockScreenPcStats.exe.sha256
+          Get-Content LockScreenPcStats.exe.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pcstats-exe
+          path: |
+            LockScreenPcStats.exe
+            LockScreenPcStats.exe.sha256
+      - name: Publish release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view pcstats-latest >/dev/null 2>&1 || gh release create pcstats-latest --prerelease --title "Lock Screen PC Stats" --notes "Программа для Windows: показывает данные компьютера на экране телефона (Lock Screen Plus)."
+          gh release upload pcstats-latest LockScreenPcStats.exe LockScreenPcStats.exe.sha256 --clobber
