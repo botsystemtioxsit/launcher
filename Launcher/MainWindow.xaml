@@ -50,6 +50,7 @@
               <Button x:Name="NavNet" Content="Сеть и защита" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavNet_Click"/>
               <Button x:Name="NavExt" Content="Расширения" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavExt_Click"/>
               <Button x:Name="NavEnv" Content="Окружение" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavEnv_Click"/>
+              <Button x:Name="NavPhone" Content="Телефон" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavPhone_Click"/>
               <Button x:Name="NavFeedback" Content="Написать нам" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavFeedback_Click"/>
               <Button x:Name="NavAccount" Content="Аккаунт" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavAccount_Click"/>
             </StackPanel>
@@ -152,6 +153,11 @@
           <!-- Окружение: автозапуск и набор плагинов (содержимое строится в MainWindow.Environment.cs) -->
           <ScrollViewer x:Name="EnvView" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="EnvBody"/>
+          </ScrollViewer>
+
+          <!-- Телефон: установка и обновление Android-приложений по кабелю (содержимое строится в MainWindow.Phone.cs) -->
+          <ScrollViewer x:Name="PhoneView" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="PhoneBody"/>
           </ScrollViewer>
 
           <!-- Написать нам: ошибки и предложения владельцу (содержимое строится в MainWindow.Feedback.cs) -->
