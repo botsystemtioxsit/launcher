@@ -71,6 +71,7 @@ public partial class MainWindow : Window
         Render();
         _ = CheckSelfUpdateLoop();
         _ = CheckAppUpdatesLoop();
+        _ = PhoneWatchLoop();
     }
 
     // ---------- аккаунты ----------
@@ -418,6 +419,8 @@ public partial class MainWindow : Window
         PluginsView.Visibility = isPlug ? Visibility.Visible : Visibility.Collapsed;
         FeedbackView.Visibility = name == "feedback" ? Visibility.Visible : Visibility.Collapsed;
         EnvView.Visibility = name == "env" ? Visibility.Visible : Visibility.Collapsed;
+        PhoneView.Visibility = name == "phone" ? Visibility.Visible : Visibility.Collapsed;
+        NavPhone.Foreground = name == "phone" ? Res("Text") : Res("Muted");
         NavEnv.Foreground = name == "env" ? Res("Text") : Res("Muted");
         NavFeedback.Foreground = name == "feedback" ? Res("Text") : Res("Muted");
         // «Аккаунт»: без входа показываем форму входа, со входом — сведения об аккаунте
@@ -435,6 +438,7 @@ public partial class MainWindow : Window
         if (name == "ext") _ = LoadBrowserPlugins(false);
         if (name == "feedback") OpenFeedback();
         if (name == "env") OpenEnv();
+        if (name == "phone") OpenPhone();
     }
 
     // ---------- плагины ----------
@@ -785,6 +789,7 @@ public partial class MainWindow : Window
     void NavExt_Click(object sender, RoutedEventArgs e) => ShowView("ext");
     void NavAccount_Click(object sender, RoutedEventArgs e) => ShowView("account");
     void NavEnv_Click(object sender, RoutedEventArgs e) => ShowView("env");
+    void NavPhone_Click(object sender, RoutedEventArgs e) => ShowView("phone");
     void NavFeedback_Click(object sender, RoutedEventArgs e) => ShowView("feedback");
 
     void AddAccount_Click(object sender, RoutedEventArgs e) { store.ActiveId = null; store.Save(); Render(); }
