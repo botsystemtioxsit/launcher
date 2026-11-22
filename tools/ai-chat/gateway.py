@@ -9,6 +9,7 @@ import http.client
 import json
 import os
 import socket
+import ssl
 import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -88,35 +89,59 @@ class Handler(BaseHTTPRequestHandler):
             c.close()
 
 
+TLS_CTX = None
+
+
+class TLSHandler(Handler):
+    """То же самое, но соединение сначала «оборачивается» в TLS — в своём потоке, чтобы медленный клиент не держал приём новых."""
+    def setup(self):
+        self.request.settimeout(15)
+        self.request = TLS_CTX.wrap_socket(self.request, server_side=True)
+        self.request.settimeout(None)
+        super().setup()
+
+
 class V4Server(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
 
 def main():
-    global PAGE
+    global PAGE, OLLAMA, TLS_CTX
     ap = argparse.ArgumentParser()
     ap.add_argument("--bind", required=True, help="адреса через запятую (внутри VPN-туннеля)")
     ap.add_argument("--port", type=int, default=8080)
     ap.add_argument("--page", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "chat.html"))
     ap.add_argument("--ollama", default="127.0.0.1:11434")
+    ap.add_argument("--tls-port", type=int, default=0, help="порт https (для микрофона в браузере); 0 — не включать")
+    ap.add_argument("--tls-cert", default="")
+    ap.add_argument("--tls-key", default="")
     a = ap.parse_args()
     h, p = a.ollama.rsplit(":", 1)
-    global OLLAMA
     OLLAMA = (h, int(p))
     with open(a.page, "rb") as f:
         PAGE = f.read()
+    if a.tls_port:
+        TLS_CTX = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        TLS_CTX.minimum_version = ssl.TLSVersion.TLSv1_2
+        key = a.tls_key
+        if key.startswith("cred:"):   # ключ выдан службе systemd (LoadCredential): лежит в $CREDENTIALS_DIRECTORY
+            key = os.path.join(os.environ.get("CREDENTIALS_DIRECTORY", ""), key[5:])
+        TLS_CTX.load_cert_chain(a.tls_cert, key)
     servers = []
     for addr in [x.strip() for x in a.bind.split(",") if x.strip()]:
         if addr in ("0.0.0.0", "::", ""):
             sys.exit("Отказ: слушать все адреса нельзя — только адрес внутри VPN-туннеля.")
-        try:
-            s = V4Server((addr, a.port), Handler)
-        except OSError as e:
-            sys.stderr.write("не удалось занять %s:%d (%s)\n" % (addr, a.port, e))
-            continue
-        servers.append(s)
-        sys.stderr.write("слушаю http://%s:%d\n" % (addr, a.port))
+        for port, handler in ((a.port, Handler), (a.tls_port, TLSHandler)):
+            if not port or (handler is TLSHandler and TLS_CTX is None):
+                continue
+            try:
+                s = V4Server((addr, port), handler)
+            except OSError as e:
+                sys.stderr.write("не удалось занять %s:%d (%s)\n" % (addr, port, e))
+                continue
+            servers.append(s)
+            sys.stderr.write("слушаю %s://%s:%d\n" % ("https" if handler is TLSHandler else "http", addr, port))
     if not servers:
         sys.exit("Нет ни одного адреса для запуска.")
     for s in servers[1:]:
