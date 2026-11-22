@@ -69,6 +69,19 @@ curl -fsS http://127.0.0.1:11434/api/version >/dev/null 2>&1 || fail "Ollama н�
 echo "Скачиваю модель $MODEL (может занять несколько минут)…"
 ollama pull "$MODEL" || fail "не удалось скачать модель $MODEL"
 
+# модель, которая умеет смотреть картинки (фото и камера в звонке). AI_VISION=0 — не ставить; AI_VISION_MODEL=имя — своя
+if [ "${AI_VISION:-1}" != "0" ]; then
+  VM="${AI_VISION_MODEL:-}"
+  if [ -z "$VM" ]; then
+    if [ "$MEM_GB" -ge 24 ]; then VM="gemma3:12b"
+    elif [ "$MEM_GB" -ge 6 ]; then VM="gemma3:4b"
+    else VM="moondream"; fi
+  fi
+  case "$VM" in *[!A-Za-z0-9._:/-]*) fail "странное имя модели для картинок";; esac
+  echo "Скачиваю модель для картинок и камеры: $VM"
+  ollama pull "$VM" || echo "ПРЕДУПРЕЖДЕНИЕ: модель для картинок не скачалась — чат и звонок работают, но без фото и камеры (повторить: ollama pull $VM)."
+fi
+
 # 4. Страница чата и защитный шлюз (пускает к нейросети только нужные запросы)
 mkdir -p "$DIR"
 echo '@@GATEWAY_B64@@' | base64 -d > "$DIR/gateway.py"
@@ -125,4 +138,4 @@ fi
 echo
 echo "ГОТОВО."
 for a in ${ADDRS//,/ }; do echo "Чат: http://$a:$PORT   (откройте с включённым Gateway Plus; в приложении AI Plus — этот адрес)"; [ -n "$TLS_ARGS" ] && echo "Для микрофона в БРАУЗЕРЕ: https://$a:$TLS_PORT   (один раз подтвердите сертификат)"; done
-echo "Модель: $MODEL. Другие модели: ollama pull <имя>, они появятся в списке чата."
+echo "Модель: $MODEL${VM:+, для картинок: $VM}. Другие модели: ollama pull <имя>, они появятся в списке чата."
