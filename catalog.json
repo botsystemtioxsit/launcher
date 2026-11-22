@@ -134,6 +134,18 @@
         "android",
         "linux"
       ]
+    },
+    {
+      "id": "ai-plus",
+      "name": "AI Plus (чат с нейросетью на вашем сервере)",
+      "desc": "Android-приложение: чат с нейросетью, которую вы ставите на свой сервер (с настройкой имени, характера и своего промпта). Работает при включённом Gateway Plus. Сервер: команда установки — в описании релиза.",
+      "platform": "Android",
+      "repo": "launcher",
+      "tag": "ai-plus-latest",
+      "asset": "AiPlus.apk",
+      "os": [
+        "android"
+      ]
     }
   ],
   "plugins": [

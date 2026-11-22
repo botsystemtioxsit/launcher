@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# AI Plus — личная нейросеть на вашем сервере (Ubuntu 22.04/24.04, Debian 12; нужен root).
+# Ставит Ollama (запускает модели), выбирает модель под память сервера и включает страницу чата.
+# Чат слушает ТОЛЬКО адреса внутри вашего VPN-туннеля (WireGuard 10.66.66.1 и/или GSP 10.78.0.1) — из интернета его не видно:
+# открыть его можно с телефона или компьютера, на которых включён Gateway Plus.
+# Своё: AI_MODEL=qwen2.5:7b (другая модель), AI_PORT=8080 (порт), AI_REMOVE=1 (убрать чат; Ollama и модели остаются).
+set -euo pipefail
+
+fail() { echo "ОШИБКА: $*" >&2; exit 1; }
+[ "$(id -u)" = "0" ] || fail "запустите от root (sudo bash …)"
+
+PORT="${AI_PORT:-8080}"
+case "$PORT" in ''|*[!0-9]*) fail "порт должен быть числом";; esac
+DIR=/opt/ai-plus
+
+if [ "${AI_REMOVE:-}" = "1" ]; then
+  systemctl disable --now ai-plus 2>/dev/null || true
+  rm -f /etc/systemd/system/ai-plus.service
+  rm -rf "$DIR"
+  systemctl daemon-reload
+  echo "Чат AI Plus убран. Ollama и скачанные модели остались (убрать: ollama rm <модель>)."
+  exit 0
+fi
+
+# 1. Есть ли VPN-туннель: без него чат некуда «повесить» безопасно
+ADDRS=""
+for ifc in wg0 gsp0; do
+  for a in $(ip -4 -o addr show dev "$ifc" 2>/dev/null | awk '{print $4}' | cut -d/ -f1); do
+    ADDRS="${ADDRS:+$ADDRS,}$a"
+  done
+done
+if [ -z "$ADDRS" ]; then
+  # туннель может быть ещё не поднят — берём стандартные адреса наших скриптов
+  [ -f /etc/wireguard/wg0.conf ] && ADDRS="10.66.66.1"
+  [ -f /etc/gsp/gsp0.conf ] && ADDRS="${ADDRS:+$ADDRS,}10.78.0.1"
+fi
+[ -n "$ADDRS" ] || fail "на сервере нет VPN-туннеля (WireGuard или GSP). Сначала поставьте шлюз в Gateway Plus: чат открывается только через него."
+echo "Чат будет доступен внутри VPN: $ADDRS (порт $PORT)"
+
+# 2. Какая модель по силам серверу
+MEM_KB="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
+MEM_GB=$(( MEM_KB / 1024 / 1024 ))
+CPUS="$(nproc)"
+echo "Память сервера: ~${MEM_GB} ГБ, ядер: ${CPUS}"
+if [ -n "${AI_MODEL:-}" ]; then MODEL="$AI_MODEL"
+elif [ "$MEM_GB" -ge 24 ]; then MODEL="qwen2.5:14b"
+elif [ "$MEM_GB" -ge 9 ]; then MODEL="qwen2.5:7b"
+elif [ "$MEM_GB" -ge 5 ]; then MODEL="qwen2.5:3b"
+elif [ "$MEM_GB" -ge 3 ]; then MODEL="qwen2.5:1.5b"
+else MODEL="qwen2.5:0.5b"; echo "Памяти очень мало: будет совсем маленькая модель. Лучше сервер с 4+ ГБ."; fi
+case "$MODEL" in *[!A-Za-z0-9._:/-]*) fail "странное имя модели";; esac
+echo "Модель: $MODEL"
+
+# 3. Нужные программы и Ollama (официальный установщик ollama.com)
+export DEBIAN_FRONTEND=noninteractive
+if command -v apt-get >/dev/null 2>&1; then
+  apt-get update -qq || true
+  apt-get install -y -qq curl ca-certificates python3 zstd >/dev/null || fail "не удалось поставить curl/python3 (apt)"
+fi
+command -v python3 >/dev/null 2>&1 || fail "нужен python3"
+if ! command -v ollama >/dev/null 2>&1; then
+  echo "Ставлю Ollama (официальный установщик)…"
+  curl -fsSL https://ollama.com/install.sh | sh || fail "Ollama не установилась"
+fi
+systemctl enable --now ollama 2>/dev/null || true
+for i in $(seq 1 30); do curl -fsS http://127.0.0.1:11434/api/version >/dev/null 2>&1 && break; sleep 2; done
+curl -fsS http://127.0.0.1:11434/api/version >/dev/null 2>&1 || fail "Ollama не отвечает"
+echo "Скачиваю модель $MODEL (может занять несколько минут)…"
+ollama pull "$MODEL" || fail "не удалось скачать модель $MODEL"
+
+# 4. Страница чата и защитный шлюз (пускает к нейросети только нужные запросы)
+mkdir -p "$DIR"
+echo '@@GATEWAY_B64@@' | base64 -d > "$DIR/gateway.py"
+echo '@@CHAT_B64@@' | base64 -d > "$DIR/chat.html"
+chmod 755 "$DIR/gateway.py"
+python3 -m py_compile "$DIR/gateway.py" || fail "файл шлюза повреждён"
+
+cat > /etc/systemd/system/ai-plus.service <<UNIT
+[Unit]
+Description=AI Plus (чат с нейросетью внутри VPN)
+After=network-online.target ollama.service
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 $DIR/gateway.py --bind $ADDRS --port $PORT --page $DIR/chat.html
+Restart=always
+RestartSec=5
+DynamicUser=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+systemctl daemon-reload
+systemctl enable --now ai-plus
+sleep 3
+systemctl is-active --quiet ai-plus || fail "служба чата не запустилась (journalctl -u ai-plus)"
+
+# файрвол: пускаем порт только со стороны туннелей (из интернета порт и так не слушается)
+if command -v ufw >/dev/null 2>&1 && ufw status | grep -q "Status: active"; then
+  for ifc in wg0 gsp0; do ufw allow in on "$ifc" to any port "$PORT" proto tcp >/dev/null 2>&1 || true; done
+fi
+
+echo
+echo "ГОТОВО."
+for a in ${ADDRS//,/ }; do echo "Чат: http://$a:$PORT   (откройте с включённым Gateway Plus)"; done
+echo "Модель: $MODEL. Другие модели: ollama pull <имя>, они появятся в списке чата."

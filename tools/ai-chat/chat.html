@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AI Plus — чат</title>
+<style>
+:root{--bg:#070314;--panel:#120a2c;--panel2:#1a0f3d;--line:#3a1f86;--text:#eaf8ff;--muted:#a08fe0;--cyan:#00f0ff;--pink:#ff2a9d;--green:#3cff9a;--yellow:#fcee0a;--red:#ff3b5c}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;overflow:hidden}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+button:hover{border-color:var(--cyan)}
+button.primary{background:var(--cyan);color:#06050d;border-color:var(--cyan);font-weight:700}
+button.danger{color:var(--red);border-color:var(--red)}
+button:disabled{opacity:.5;cursor:default}
+select,input,textarea{background:#0b0620;border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+textarea{resize:vertical}
+label{display:block;color:var(--muted);font-size:13px;margin:12px 0 4px}
+#side{width:270px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;flex:none}
+#side h1{font:700 15px "Courier New",monospace;color:var(--cyan);margin:14px 14px 4px;letter-spacing:1px}
+#side .sub{color:var(--muted);font-size:12px;margin:0 14px 10px}
+#side .top{padding:0 12px 10px}
+#chats{flex:1;overflow:auto;padding:0 8px 8px}
+.chat{display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;cursor:pointer;margin-bottom:2px}
+.chat:hover{background:var(--panel2)}
+.chat.on{background:var(--panel2);outline:1px solid var(--line)}
+.chat .t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat .x{opacity:.5;padding:0 6px;border:0;background:none}
+.chat .x:hover{opacity:1;color:var(--red)}
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#bar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+#bar .who{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+#bar .av{font-size:26px}
+#bar .nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bar select{width:auto;max-width:190px}
+#menu{display:none}
+#msgs{flex:1;overflow:auto;padding:16px 14px;display:flex;flex-direction:column;gap:12px}
+.m{max-width:min(760px,92%);padding:10px 14px;border-radius:14px;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}
+.m.user{align-self:flex-end;background:#16345a;border:1px solid #1f5a96}
+.m.assistant{align-self:flex-start;background:var(--panel2);border:1px solid var(--line)}
+.m .who{font-size:12px;color:var(--muted);margin-bottom:4px}
+.m pre{background:#04010f;border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto;margin:8px 0;white-space:pre}
+.m code{font-family:ui-monospace,Consolas,monospace;font-size:13px}
+.m code.i{background:#04010f;padding:1px 5px;border-radius:4px}
+.m .act{margin-top:6px;display:flex;gap:6px}
+.m .act button{padding:2px 8px;font-size:12px;opacity:.7}
+.cursor::after{content:"▍";color:var(--cyan);animation:b 1s steps(2) infinite}
+@keyframes b{50%{opacity:0}}
+.empty{margin:auto;text-align:center;color:var(--muted);max-width:420px}
+.empty .big{font-size:56px}
+.err{align-self:center;color:var(--red);background:#2a0b18;border:1px solid var(--red);border-radius:10px;padding:8px 12px;max-width:90%}
+#form{display:flex;gap:8px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--panel)}
+#inp{flex:1;resize:none;max-height:180px;min-height:44px}
+#overlay{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:10;padding:12px}
+#overlay.on{display:flex}
+#modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;width:min(640px,100%);max-height:92vh;overflow:auto;padding:16px}
+#modal h2{margin:0 0 8px;font-size:18px;color:var(--cyan)}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.row.fix>.em{flex:none;width:76px}
+.plist{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+.plist button.on{border-color:var(--cyan);color:var(--cyan)}
+.hint{color:var(--muted);font-size:12px;margin-top:4px}
+pre.prev{background:#04010f;border:1px solid var(--line);border-radius:8px;padding:10px;white-space:pre-wrap;font-size:12px;color:var(--muted);max-height:140px;overflow:auto}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+@media(max-width:760px){
+ #side{position:fixed;inset:0 auto 0 0;z-index:5;transform:translateX(-100%);transition:transform .2s;width:82%}
+ #side.open{transform:none}
+ #menu{display:inline-block}
+ #bar select{max-width:120px}
+}
+</style>
+</head>
+<body>
+<aside id="side">
+  <h1>AI PLUS</h1>
+  <div class="sub">личная нейросеть на вашем сервере</div>
+  <div class="top"><button class="primary" id="newChat" style="width:100%">＋ Новый чат</button></div>
+  <div id="chats"></div>
+  <div class="top"><button id="personas" style="width:100%">🎭 Персонажи и характер</button></div>
+  <div class="top" id="appOnly" style="display:none"><button id="srv" style="width:100%">🔌 Адрес сервера</button></div>
+</aside>
+<section id="main">
+  <div id="bar">
+    <button id="menu">☰</button>
+    <div class="who"><span class="av" id="av">🤖</span><span class="nm" id="nm">—</span></div>
+    <select id="model" title="Модель"></select>
+    <button id="edit" title="Настроить персонажа">⚙</button>
+  </div>
+  <div id="msgs"></div>
+  <form id="form">
+    <textarea id="inp" rows="1" placeholder="Напишите сообщение… (Enter — отправить, Shift+Enter — новая строка)"></textarea>
+    <button class="primary" id="send" type="submit">Отправить</button>
+  </form>
+</section>
+
+<div id="overlay"><div id="modal">
+  <h2>Персонаж</h2>
+  <div class="plist" id="plist"></div>
+  <div class="row fix"><div class="em"><label>Значок</label><input id="pEmoji" maxlength="4"></div><div><label>Имя персонажа</label><input id="pName" maxlength="40"></div></div>
+  <label>Характер (кто он, как себя ведёт)</label>
+  <textarea id="pChar" rows="4" placeholder="Например: саркастичный, но добрый друг, любит шутки про кофе"></textarea>
+  <div class="row"><div><label>Как обращаться к вам</label><input id="pUser" maxlength="40" placeholder="имя или прозвище"></div>
+  <div><label>Язык ответов</label><select id="pLang"><option value="русском">русский</option><option value="английском">английский</option><option value="немецком">немецкий</option><option value="">как напишете вы</option></select></div></div>
+  <div class="row"><div><label>Длина ответов</label><select id="pLen"><option value="">обычная</option><option value="short">короткие</option><option value="long">подробные</option></select></div>
+  <div><label>Фантазия: <span id="tv">0.7</span></label><input id="pTemp" type="range" min="0" max="1.5" step="0.1"></div></div>
+  <label>Свои правила (необязательно)</label>
+  <textarea id="pRules" rows="3" placeholder="Например: никогда не извиняйся; в конце каждого ответа добавляй шутку"></textarea>
+  <label>Итоговый «системный промпт» (его получает нейросеть)</label>
+  <pre class="prev" id="pPrev"></pre>
+  <label><input type="checkbox" id="pRaw" style="width:auto"> Написать системный промпт самому (вместо сборки из полей выше)</label>
+  <textarea id="pRawText" rows="5" style="display:none"></textarea>
+  <div class="btns">
+    <button class="primary" id="pSave">Сохранить и выбрать</button>
+    <button id="pNew">＋ Новый персонаж</button>
+    <button id="pDup">Копия</button>
+    <button class="danger" id="pDel">Удалить</button>
+    <button id="pClose">Закрыть</button>
+  </div>
+  <div class="hint">Персонажи сохраняются в этом браузере/приложении. Смена персонажа действует на новые сообщения в текущем чате.</div>
+</div></div>
+
+<script>
+(function(){
+'use strict';
+var KEY='aiPlus.v1';
+var PRESETS=[
+ {id:'p-helper',emoji:'🤖',name:'Помощник',character:'Умный, вежливый и точный помощник. Объясняет просто и по делу.',user:'',lang:'русском',len:'',temp:0.5,rules:'',raw:false,rawText:''},
+ {id:'p-friend',emoji:'😎',name:'Друг',character:'Живой, остроумный друг: шутит, поддерживает, говорит неформально, но не грубит.',user:'',lang:'русском',len:'short',temp:0.9,rules:'',raw:false,rawText:''},
+ {id:'p-teacher',emoji:'🧑‍🏫',name:'Учитель',character:'Терпеливый учитель. Объясняет шаг за шагом, приводит примеры и в конце задаёт один проверочный вопрос.',user:'',lang:'русском',len:'long',temp:0.4,rules:'',raw:false,rawText:''},
+ {id:'p-coder',emoji:'👨‍💻',name:'Программист',character:'Опытный программист. Пишет рабочий код с короткими пояснениями, указывает на возможные ошибки.',user:'',lang:'русском',len:'',temp:0.3,rules:'Код всегда в блоках с указанием языка.',raw:false,rawText:''}
+];
+var S=load();
+function load(){try{var s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.personas&&s.chats)return s}catch(e){}
+ return {personas:JSON.parse(JSON.stringify(PRESETS)),chats:[],persona:'p-helper',chat:null,model:''}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function $(id){return document.getElementById(id)}
+function uid(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function persona(id){return S.personas.find(function(p){return p.id===(id||S.persona)})||S.personas[0]}
+function chat(){return S.chats.find(function(c){return c.id===S.chat})}
+
+function systemPrompt(p){
+ if(p.raw&&p.rawText.trim())return p.rawText.trim();
+ var t='Тебя зовут '+(p.name||'Ассистент')+'. ';
+ if(p.character.trim())t+=p.character.trim()+' ';
+ if(p.user.trim())t+='Собеседника зовут '+p.user.trim()+'. ';
+ if(p.lang)t+='Отвечай на '+p.lang+' языке. ';else t+='Отвечай на том языке, на котором написал собеседник. ';
+ if(p.len==='short')t+='Отвечай коротко. ';if(p.len==='long')t+='Отвечай подробно. ';
+ if(p.rules.trim())t+='Дополнительные правила: '+p.rules.trim();
+ return t.trim();
+}
+
+// ---------- отрисовка ----------
+function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function renderText(box,text){
+ box.textContent='';
+ var parts=text.split(/```/);
+ parts.forEach(function(part,i){
+  if(i%2===1){
+   var nl=part.indexOf('\n');var body=nl>=0?part.slice(nl+1):part;
+   var pre=el('pre');var code=el('code',null,body.replace(/\n$/,''));pre.appendChild(code);box.appendChild(pre);
+  }else{
+   var segs=part.split(/(`[^`\n]+`)/);
+   segs.forEach(function(sg){
+    if(sg.length>2&&sg[0]==='`'&&sg[sg.length-1]==='`')box.appendChild(el('code','i',sg.slice(1,-1)));
+    else box.appendChild(document.createTextNode(sg));
+   });
+  }
+ });
+}
+function renderBar(){var p=persona();$('av').textContent=p.emoji||'🤖';$('nm').textContent=p.name||'Ассистент'}
+function renderChats(){
+ var box=$('chats');box.textContent='';
+ S.chats.slice().sort(function(a,b){return b.at-a.at}).forEach(function(c){
+  var d=el('div','chat'+(c.id===S.chat?' on':''));
+  d.appendChild(el('span','t',c.title||'Новый чат'));
+  var x=el('button','x','✕');x.title='Удалить чат';
+  x.onclick=function(e){e.stopPropagation();if(confirm('Удалить этот чат?')){S.chats=S.chats.filter(function(k){return k.id!==c.id});if(S.chat===c.id)S.chat=null;save();renderAll()}};
+  d.appendChild(x);
+  d.onclick=function(){S.chat=c.id;if(c.persona&&S.personas.some(function(p){return p.id===c.persona}))S.persona=c.persona;save();renderAll();$('side').classList.remove('open')};
+  box.appendChild(d);
+ });
+}
+var streaming=null;
+function renderMsgs(){
+ var box=$('msgs');box.textContent='';
+ var c=chat();
+ if(!c||!c.messages.length){
+  var e=el('div','empty');e.appendChild(el('div','big',persona().emoji||'🤖'));
+  e.appendChild(el('h3',null,'Привет! Я '+(persona().name||'Ассистент')));
+  e.appendChild(el('p',null,'Напишите сообщение внизу. Характер, имя и стиль можно настроить кнопкой ⚙ вверху.'));
+  box.appendChild(e);return;
+ }
+ var pn=persona(c.persona);
+ c.messages.forEach(function(m,i){
+  var d=el('div','m '+m.role);
+  d.appendChild(el('div','who',m.role==='user'?(persona().user||'Вы'):((pn.emoji||'')+' '+(pn.name||'Ассистент'))));
+  var body=el('div');renderText(body,m.content);d.appendChild(body);
+  if(streaming&&streaming.index===i)d.classList.add('cursor');
+  if(m.role==='assistant'&&!(streaming&&streaming.index===i)){
+   var a=el('div','act');
+   var cp=el('button',null,'Копировать');cp.onclick=function(){navigator.clipboard&&navigator.clipboard.writeText(m.content)};a.appendChild(cp);
+   if(i===c.messages.length-1){var rg=el('button',null,'Ещё раз');rg.onclick=regenerate;a.appendChild(rg)}
+   d.appendChild(a);
+  }
+  box.appendChild(d);
+ });
+ box.scrollTop=box.scrollHeight;
+}
+function renderAll(){renderBar();renderChats();renderMsgs();$('model').value=S.model||$('model').value}
+
+// ---------- связь с сервером ----------
+function showErr(t){var box=$('msgs');var d=el('div','err',t);box.appendChild(d);box.scrollTop=box.scrollHeight}
+function loadModels(){
+ fetch('api/tags').then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(j){
+  var sel=$('model');sel.textContent='';
+  (j.models||[]).forEach(function(m){var o=el('option',null,m.name);o.value=m.name;sel.appendChild(o)});
+  if(!sel.options.length){sel.appendChild(el('option',null,'нет моделей'))}
+  else{if(!S.model||!Array.prototype.some.call(sel.options,function(o){return o.value===S.model}))S.model=sel.options[0].value;sel.value=S.model}
+ }).catch(function(){showErr('Нет связи с нейросетью. Включён ли VPN (Gateway Plus) и работает ли сервер?')});
+}
+$('model').onchange=function(){S.model=this.value;save()};
+
+var ctrl=null;
+function send(text){
+ if(streaming)return;
+ var c=chat();
+ if(!c){c={id:uid('c'),title:'',at:Date.now(),persona:S.persona,messages:[]};S.chats.push(c);S.chat=c.id}
+ c.persona=S.persona;
+ c.messages.push({role:'user',content:text});
+ if(!c.title)c.title=text.slice(0,40);
+ c.at=Date.now();
+ run(c);
+}
+function regenerate(){
+ var c=chat();if(!c||streaming)return;
+ while(c.messages.length&&c.messages[c.messages.length-1].role==='assistant')c.messages.pop();
+ if(c.messages.length)run(c);
+}
+function run(c){
+ var p=persona(c.persona);
+ var msgs=[{role:'system',content:systemPrompt(p)}].concat(c.messages.map(function(m){return{role:m.role,content:m.content}}));
+ var reply={role:'assistant',content:''};c.messages.push(reply);
+ streaming={index:c.messages.length-1};
+ ctrl=new AbortController();
+ $('send').textContent='Стоп';$('send').classList.remove('primary');
+ save();renderAll();
+ var body=JSON.stringify({model:S.model,messages:msgs,stream:true,options:{temperature:p.temp}});
+ fetch('api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:body,signal:ctrl.signal}).then(function(r){
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var rd=r.body.getReader(),dec=new TextDecoder(),buf='';
+  function pump(){return rd.read().then(function(x){
+   if(x.done)return;
+   buf+=dec.decode(x.value,{stream:true});
+   var lines=buf.split('\n');buf=lines.pop();
+   lines.forEach(function(ln){ln=ln.trim();if(!ln)return;try{var o=JSON.parse(ln);if(o.error)throw new Error(o.error);if(o.message&&o.message.content){reply.content+=o.message.content}}catch(e){if(e.message&&e.message!=='Unexpected end of JSON input')throw e}});
+   var box=$('msgs').lastElementChild;if(box&&box.classList.contains('assistant')){var b=box.children[1];if(b)renderText(b,reply.content)}
+   $('msgs').scrollTop=$('msgs').scrollHeight;
+   return pump();
+  })}
+  return pump();
+ }).catch(function(e){
+  if(e.name!=='AbortError')showErr('Не получилось: '+(e.message||e)+'. Проверьте VPN и сервер.');
+ }).then(function(){
+  if(!reply.content)c.messages.pop();
+  streaming=null;ctrl=null;$('send').textContent='Отправить';$('send').classList.add('primary');
+  c.at=Date.now();save();renderAll();
+ });
+}
+$('form').onsubmit=function(e){
+ e.preventDefault();
+ if(streaming){ctrl&&ctrl.abort();return}
+ var t=$('inp').value.trim();if(!t)return;$('inp').value='';autosize();send(t);
+};
+$('inp').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('form').requestSubmit()}});
+function autosize(){var t=$('inp');t.style.height='auto';t.style.height=Math.min(180,t.scrollHeight)+'px'}
+$('inp').addEventListener('input',autosize);
+$('newChat').onclick=function(){S.chat=null;save();renderAll();$('side').classList.remove('open');$('inp').focus()};
+$('menu').onclick=function(){$('side').classList.toggle('open')};
+
+// ---------- редактор персонажей ----------
+var editing=null;
+function openEditor(id){editing=JSON.parse(JSON.stringify(persona(id)));fillEditor();$('overlay').classList.add('on')}
+function fillEditor(){
+ var pl=$('plist');pl.textContent='';
+ S.personas.forEach(function(p){var b=el('button',p.id===editing.id?'on':'',(p.emoji||'')+' '+p.name);b.type='button';b.onclick=function(){editing=JSON.parse(JSON.stringify(p));fillEditor()};pl.appendChild(b)});
+ $('pEmoji').value=editing.emoji||'';$('pName').value=editing.name||'';$('pChar').value=editing.character||'';
+ $('pUser').value=editing.user||'';$('pLang').value=editing.lang;$('pLen').value=editing.len||'';
+ $('pTemp').value=editing.temp;$('tv').textContent=editing.temp;$('pRules').value=editing.rules||'';
+ $('pRaw').checked=!!editing.raw;$('pRawText').value=editing.rawText||'';$('pRawText').style.display=editing.raw?'block':'none';
+ preview();
+}
+function readEditor(){
+ editing.emoji=$('pEmoji').value.trim();editing.name=$('pName').value.trim()||'Ассистент';editing.character=$('pChar').value;
+ editing.user=$('pUser').value;editing.lang=$('pLang').value;editing.len=$('pLen').value;editing.temp=parseFloat($('pTemp').value)||0.7;
+ editing.rules=$('pRules').value;editing.raw=$('pRaw').checked;editing.rawText=$('pRawText').value;
+}
+function preview(){readEditor();$('pPrev').textContent=systemPrompt(editing);$('tv').textContent=editing.temp;$('pRawText').style.display=editing.raw?'block':'none'}
+['pEmoji','pName','pChar','pUser','pLang','pLen','pTemp','pRules','pRaw','pRawText'].forEach(function(id){$(id).addEventListener('input',preview);$(id).addEventListener('change',preview)});
+$('pSave').onclick=function(){readEditor();var i=S.personas.findIndex(function(p){return p.id===editing.id});if(i>=0)S.personas[i]=editing;else S.personas.push(editing);S.persona=editing.id;save();$('overlay').classList.remove('on');renderAll()};
+$('pNew').onclick=function(){editing={id:uid('p-'),emoji:'✨',name:'Новый персонаж',character:'',user:'',lang:'русском',len:'',temp:0.7,rules:'',raw:false,rawText:''};fillEditor()};
+$('pDup').onclick=function(){readEditor();editing=JSON.parse(JSON.stringify(editing));editing.id=uid('p-');editing.name+=' (копия)';fillEditor()};
+$('pDel').onclick=function(){
+ if(S.personas.length<2){alert('Должен остаться хотя бы один персонаж.');return}
+ if(!confirm('Удалить персонажа «'+editing.name+'»?'))return;
+ S.personas=S.personas.filter(function(p){return p.id!==editing.id});if(S.persona===editing.id)S.persona=S.personas[0].id;save();editing=JSON.parse(JSON.stringify(S.personas[0]));fillEditor();renderAll();
+};
+$('pClose').onclick=function(){$('overlay').classList.remove('on')};
+$('overlay').onclick=function(e){if(e.target===this)$('overlay').classList.remove('on')};
+$('edit').onclick=function(){openEditor()};
+$('personas').onclick=function(){openEditor();$('side').classList.remove('open')};
+
+if(window.AiPlus){$('appOnly').style.display='block';$('srv').onclick=function(){window.AiPlus.changeServer()}}
+renderAll();loadModels();
+})();
+</script>
+</body>
+</html>
