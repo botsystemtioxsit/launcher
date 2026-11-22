@@ -249,9 +249,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fingerprint(e: SslError): String? = try {
-        val b = Bundle()
-        android.net.http.SslCertificate.saveState(e.certificate, b)
-        val der = b.getByteArray("x509-certificate")
+        val der = android.net.http.SslCertificate.saveState(e.certificate)?.getByteArray("x509-certificate")
         if (der == null) null else MessageDigest.getInstance("SHA-256").digest(der).joinToString("") { "%02x".format(it) }
     } catch (_: Exception) { null }
 
