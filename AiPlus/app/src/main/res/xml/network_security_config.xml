@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Чат нейросети открывается по адресу внутри VPN-туннеля (http, без сертификата). Обычный http разрешён только для этих адресов;
+     если у вас другой адрес туннеля — укажите его здесь и пересоберите приложение (или откройте чат в браузере). -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.66.66.1</domain>
+        <domain includeSubdomains="false">10.78.0.1</domain>
+    </domain-config>
+</network-security-config>

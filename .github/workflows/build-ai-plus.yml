@@ -1,0 +1,115 @@
+name: Build AI Plus (Android + server script)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'AiPlus/**'
+      - 'tools/ai-chat/**'
+      - '.github/workflows/build-ai-plus.yml'
+  pull_request:
+    paths:
+      - 'AiPlus/**'
+      - 'tools/ai-chat/**'
+      - '.github/workflows/build-ai-plus.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Accept Android SDK licenses and ensure required packages
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+
+      # Тот же постоянный ключ подписи, что у Android-лаунчера (секрет ANDROID_KEYSTORE_BASE64).
+      # Без него APK подписан одноразовым ключом и не обновится поверх прежней версии.
+      - name: Prepare signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/battle-signing.p12"
+            {
+              echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/battle-signing.p12"
+              echo "ANDROID_KEYSTORE_PASSWORD=battle-android"
+              echo "ANDROID_KEY_ALIAS=battle"
+              echo "ANDROID_KEY_PASSWORD=battle-android"
+              echo "SIGNING=stable"
+            } >> "$GITHUB_ENV"
+          else
+            echo "SIGNING=debug" >> "$GITHUB_ENV"
+            echo "::warning::Секрет ANDROID_KEYSTORE_BASE64 не задан: APK подписан одноразовым отладочным ключом — обновиться поверх прежней версии Android не даст («Приложение не установлено»)."
+          fi
+
+      - name: Build debug APK
+        working-directory: AiPlus
+        run: gradle assembleDebug --no-daemon
+
+      - name: Show signing certificate
+        run: |
+          APK=$(ls AiPlus/app/build/outputs/apk/debug/*.apk | head -1)
+          "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --print-certs "$APK" | grep -E "certificate (DN|SHA-256)"
+          echo "Подпись: $SIGNING"
+
+      - name: Rename APK and write checksum
+        run: |
+          cp AiPlus/app/build/outputs/apk/debug/app-debug.apk AiPlus/AiPlus.apk
+          (cd AiPlus && sha256sum AiPlus.apk | cut -d' ' -f1 > AiPlus.apk.sha256)
+          cat AiPlus/AiPlus.apk.sha256
+
+      - name: Build server install script
+        run: |
+          python3 tools/ai-chat/make-setup.py
+          bash -n tools/ai-chat/ai-server-setup.sh
+          grep -q "@@" tools/ai-chat/ai-server-setup.sh && { echo "в скрипте остались незаполненные места"; exit 1; } || true
+          cp tools/ai-chat/ai-server-setup.sh ai-server-setup.sh
+          sha256sum ai-server-setup.sh | cut -d' ' -f1 > ai-server-setup.sh.sha256
+
+      - name: Upload APK as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-plus-apk
+          path: |
+            AiPlus/AiPlus.apk
+            AiPlus/AiPlus.apk.sha256
+            ai-server-setup.sh
+            ai-server-setup.sh.sha256
+          retention-days: 7
+
+      - name: Read version
+        id: ver
+        run: echo "version=$(grep -o 'versionName "[^"]*"' AiPlus/app/build.gradle | cut -d'"' -f2)" >> "$GITHUB_OUTPUT"
+
+      # prerelease и не «последний»: «последним» остаётся релиз Windows-лаунчера (от него зависит самообновление).
+      - name: Publish release (main only)
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ai-plus-latest
+          name: AI Plus — последняя сборка (приложение + скрипт сервера)
+          prerelease: true
+          make_latest: false
+          files: |
+            AiPlus/AiPlus.apk
+            AiPlus/AiPlus.apk.sha256
+            ai-server-setup.sh
+            ai-server-setup.sh.sha256
+          body: |
+            Версия ${{ steps.ver.outputs.version }}, сборка ${{ github.run_number }}, из коммита ${{ github.sha }}.
+            Этот релиз всегда переиспользуется под фиксированным тегом `ai-plus-latest`.

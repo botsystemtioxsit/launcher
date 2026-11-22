@@ -27,6 +27,7 @@ static class PhoneApps
     {
         new("lockscreen-plus", "Lock Screen Plus", "com.tioxsit.lockscreenplus", "launcher", "lockscreen-plus-latest", "LockScreenPlus.apk", "LockScreenPlus/app/build.gradle"),
         new("gateway-plus-android", "Gateway Plus (Android)", "com.tioxsit.gatewayplus", "launcher", "android-gateway-latest", "GatewayPlus.apk", "AndroidGateway/app/build.gradle"),
+        new("ai-plus", "AI Plus (чат с нейросетью)", "com.tioxsit.aiplus", "launcher", "ai-plus-latest", "AiPlus.apk", "AiPlus/app/build.gradle"),
         new("launcher-android", "Ghost Shell Launcher (Android)", "com.tioxsit.launcher", "launcher", "android-latest", "TIOXSITLauncher.apk", "Android/app/build.gradle"),
     };
 
