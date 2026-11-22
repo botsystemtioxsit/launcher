@@ -5,6 +5,15 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.http.SslError
+import android.provider.MediaStore
+import android.webkit.PermissionRequest
+import android.webkit.SslErrorHandler
+import android.webkit.ValueCallback
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
+import java.io.File
+import java.security.MessageDigest
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -42,6 +51,26 @@ class MainActivity : AppCompatActivity() {
     private var ttsReady = false
     private var recognizer: SpeechRecognizer? = null
     private var pendingListenLang: String? = null
+    private var filePathCallback: ValueCallback<Array<Uri>>? = null
+    private var cameraUri: Uri? = null
+    private var pendingPermRequest: PermissionRequest? = null
+    private var pendingChooser: WebChromeClient.FileChooserParams? = null
+
+    // выбор фото: галерея/файлы или съёмка камерой
+    private val picker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
+        val cb = filePathCallback
+        filePathCallback = null
+        if (cb == null) return@registerForActivityResult
+        val data = r.data
+        val result: Array<Uri>? = when {
+            r.resultCode != RESULT_OK -> null
+            data?.data != null -> arrayOf(data.data!!)
+            data?.clipData != null -> Array(data.clipData!!.itemCount) { i -> data.clipData!!.getItemAt(i).uri }
+            cameraUri != null -> arrayOf(cameraUri!!)
+            else -> null
+        }
+        cb.onReceiveValue(result)
+    }
     private val prefs by lazy { getSharedPreferences("aiplus", Context.MODE_PRIVATE) }
 
     private fun serverUrl(): String = prefs.getString("url", DEFAULT_URL) ?: DEFAULT_URL
@@ -57,8 +86,48 @@ class MainActivity : AppCompatActivity() {
             settings.allowContentAccess = false
             setBackgroundColor(Color.parseColor("#070314"))
             addJavascriptInterface(Bridge(), "AiPlus")
-            webChromeClient = WebChromeClient()
+            webChromeClient = object : WebChromeClient() {
+                override fun onShowFileChooser(v: WebView, cb: ValueCallback<Array<Uri>>, p: FileChooserParams): Boolean {
+                    filePathCallback?.onReceiveValue(null)
+                    filePathCallback = cb
+                    openChooser(p)
+                    return true
+                }
+                // камера и микрофон для звонка: разрешаем только странице нашего сервера
+                override fun onPermissionRequest(r: PermissionRequest) {
+                    runOnUiThread {
+                        if (r.origin.host != Uri.parse(serverUrl()).host) { r.deny(); return@runOnUiThread }
+                        val need = ArrayList<String>()
+                        if (r.resources.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE) && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) need.add(Manifest.permission.CAMERA)
+                        if (r.resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE) && checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) need.add(Manifest.permission.RECORD_AUDIO)
+                        if (need.isEmpty()) r.grant(r.resources) else { pendingPermRequest = r; requestPermissions(need.toTypedArray(), 78) }
+                    }
+                }
+            }
             webViewClient = object : WebViewClient() {
+                // Адрес — внутри вашего VPN, сертификат свой (самоподписанный). Доверяем ему «по первому знакомству»:
+                // запоминаем отпечаток при первом открытии, а если он потом изменится — не открываем (спрашиваем снова).
+                override fun onReceivedSslError(v: WebView, h: SslErrorHandler, e: SslError) {
+                    val host = Uri.parse(e.url).host
+                    if (host != Uri.parse(serverUrl()).host) { h.cancel(); return }
+                    val fp = fingerprint(e)
+                    val known = prefs.getString("pin:$host", null)
+                    when {
+                        fp == null -> h.cancel()
+                        known == null -> {
+                            AlertDialog.Builder(this@MainActivity)
+                                .setTitle("Доверять серверу?")
+                                .setMessage("Это ваш сервер внутри VPN (адрес $host). Сертификат у него свой.\n\nОтпечаток:\n${fp.chunked(2).joinToString(":").chunked(48).joinToString("\n")}\n\nЕсли вы сами ставили AI Plus на этот сервер — нажмите «Доверять».")
+                                .setPositiveButton("Доверять") { _, _ -> prefs.edit().putString("pin:$host", fp).apply(); h.proceed() }
+                                .setNegativeButton("Нет") { _, _ -> h.cancel() }
+                                .setCancelable(false)
+                                .show()
+                        }
+                        known == fp -> h.proceed()
+                        else -> { h.cancel(); showError("Сертификат сервера изменился. Если вы переустанавливали сервер — нажмите «Адрес сервера…» и сохраните адрес заново, чтобы доверять новому.") }
+                    }
+                }
+
                 override fun shouldOverrideUrlLoading(v: WebView, r: WebResourceRequest): Boolean = !sameHost(r.url)   // чужие ссылки в приложении не открываем
                 override fun onReceivedError(v: WebView, r: WebResourceRequest, e: WebResourceError) {
                     if (r.isForMainFrame) showError("Нет связи с чатом (${e.description}).\nВключён ли Gateway Plus и работает ли сервер?")
@@ -100,15 +169,15 @@ class MainActivity : AppCompatActivity() {
         val box = EditText(this).apply { setText(serverUrl()); setSingleLine(); setPadding(48, 32, 48, 32) }
         AlertDialog.Builder(this)
             .setTitle("Адрес чата на сервере")
-            .setMessage("Адрес внутри VPN, например http://10.66.66.1:8080 (его печатает скрипт установки). Разрешены только адреса 10.66.66.1 и 10.78.0.1.")
+            .setMessage("Адрес внутри VPN, его печатает скрипт установки: https://10.66.66.1:8443 (с камерой и микрофоном) или http://10.66.66.1:8080 (без камеры). Для http разрешены только 10.66.66.1 и 10.78.0.1.")
             .setView(box)
             .setPositiveButton("Сохранить") { _, _ ->
                 val v = box.text.toString().trim().trimEnd('/')
                 val uri = Uri.parse(v)
-                if (uri.scheme != "http" || uri.host.isNullOrEmpty()) {
-                    showError("Нужен адрес вида http://10.66.66.1:8080")
+                if ((uri.scheme != "http" && uri.scheme != "https") || uri.host.isNullOrEmpty()) {
+                    showError("Нужен адрес вида https://10.66.66.1:8443 или http://10.66.66.1:8080")
                 } else {
-                    prefs.edit().putString("url", v).apply()
+                    prefs.edit().putString("url", v).remove("pin:" + uri.host).apply()   // новый адрес — отпечаток запомним заново
                     load()
                 }
             }
@@ -179,6 +248,35 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun fingerprint(e: SslError): String? = try {
+        val der = android.net.http.SslCertificate.saveState(e.certificate)?.getByteArray("x509-certificate")
+        if (der == null) null else MessageDigest.getInstance("SHA-256").digest(der).joinToString("") { "%02x".format(it) }
+    } catch (_: Exception) { null }
+
+    private fun openChooser(p: WebChromeClient.FileChooserParams) {
+        val takePhoto = p.isCaptureEnabled
+        if (takePhoto) {
+            if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                pendingChooser = p
+                requestPermissions(arrayOf(Manifest.permission.CAMERA), 79)
+                return
+            }
+            try {
+                val dir = File(cacheDir, "shots").apply { mkdirs() }
+                val f = File.createTempFile("shot", ".jpg", dir)
+                cameraUri = FileProvider.getUriForFile(this, "$packageName.files", f)
+                val cam = Intent(MediaStore.ACTION_IMAGE_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT, cameraUri)
+                    .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                picker.launch(cam)
+                return
+            } catch (_: Exception) { /* камеры нет — предложим выбрать файл */ }
+        }
+        cameraUri = null
+        val pick = Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE).setType("image/*")
+        try { picker.launch(Intent.createChooser(pick, "Выберите фото")) }
+        catch (_: Exception) { filePathCallback?.onReceiveValue(null); filePathCallback = null }
+    }
+
     private fun listenNow(lang: String) {
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             pendingListenLang = lang
@@ -225,6 +323,20 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 78) {
+            val r = pendingPermRequest
+            pendingPermRequest = null
+            if (r != null) {
+                val ok = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+                if (ok) r.grant(r.resources) else r.deny()
+            }
+        }
+        if (requestCode == 79) {
+            val p = pendingChooser
+            pendingChooser = null
+            if (p != null && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) openChooser(p)
+            else { filePathCallback?.onReceiveValue(null); filePathCallback = null }
+        }
         if (requestCode == 77) {
             val lang = pendingListenLang
             pendingListenLang = null
@@ -244,5 +356,5 @@ class MainActivity : AppCompatActivity() {
         if (errorBox.visibility == android.view.View.GONE && web.canGoBack()) web.goBack() else super.onBackPressed()
     }
 
-    companion object { const val DEFAULT_URL = "http://10.66.66.1:8080" }
+    companion object { const val DEFAULT_URL = "https://10.66.66.1:8443" }
 }
