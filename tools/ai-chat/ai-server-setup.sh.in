@@ -10,7 +10,8 @@ fail() { echo "ОШИБКА: $*" >&2; exit 1; }
 [ "$(id -u)" = "0" ] || fail "запустите от root (sudo bash …)"
 
 PORT="${AI_PORT:-8080}"
-case "$PORT" in ''|*[!0-9]*) fail "порт должен быть числом";; esac
+TLS_PORT="${AI_TLS_PORT:-8443}"
+case "$PORT$TLS_PORT" in ''|*[!0-9]*) fail "порты должны быть числами";; esac
 DIR=/opt/ai-plus
 
 if [ "${AI_REMOVE:-}" = "1" ]; then
@@ -55,7 +56,7 @@ echo "Модель: $MODEL"
 export DEBIAN_FRONTEND=noninteractive
 if command -v apt-get >/dev/null 2>&1; then
   apt-get update -qq || true
-  apt-get install -y -qq curl ca-certificates python3 zstd >/dev/null || fail "не удалось поставить curl/python3 (apt)"
+  apt-get install -y -qq curl ca-certificates python3 zstd openssl >/dev/null || fail "не удалось поставить curl/python3 (apt)"
 fi
 command -v python3 >/dev/null 2>&1 || fail "нужен python3"
 if ! command -v ollama >/dev/null 2>&1; then
@@ -75,6 +76,22 @@ echo '@@CHAT_B64@@' | base64 -d > "$DIR/chat.html"
 chmod 755 "$DIR/gateway.py"
 python3 -m py_compile "$DIR/gateway.py" || fail "файл шлюза повреждён"
 
+# сертификат для https (нужен браузеру, чтобы разрешить микрофон): свой, на адреса туннеля; браузер один раз спросит «доверять?»
+TLS_ARGS=""
+CRED=""
+if command -v openssl >/dev/null 2>&1; then
+  if [ ! -f "$DIR/tls.key" ]; then
+    SAN=""; for a in ${ADDRS//,/ }; do SAN="${SAN:+$SAN,}IP:$a"; done
+    openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -subj "/CN=ai-plus" -addext "subjectAltName=$SAN" \
+      -keyout "$DIR/tls.key" -out "$DIR/tls.pem" >/dev/null 2>&1 || true
+    chmod 600 "$DIR/tls.key" 2>/dev/null || true
+  fi
+  if [ -f "$DIR/tls.key" ] && [ -f "$DIR/tls.pem" ]; then
+    TLS_ARGS="--tls-port $TLS_PORT --tls-cert $DIR/tls.pem --tls-key cred:tls.key"
+    CRED="LoadCredential=tls.key:$DIR/tls.key"
+  fi
+fi
+
 cat > /etc/systemd/system/ai-plus.service <<UNIT
 [Unit]
 Description=AI Plus (чат с нейросетью внутри VPN)
@@ -82,7 +99,8 @@ After=network-online.target ollama.service
 Wants=network-online.target
 
 [Service]
-ExecStart=/usr/bin/python3 $DIR/gateway.py --bind $ADDRS --port $PORT --page $DIR/chat.html
+ExecStart=/usr/bin/python3 $DIR/gateway.py --bind $ADDRS --port $PORT --page $DIR/chat.html $TLS_ARGS
+${CRED}
 Restart=always
 RestartSec=5
 DynamicUser=yes
@@ -101,10 +119,10 @@ systemctl is-active --quiet ai-plus || fail "служба чата не запу
 
 # файрвол: пускаем порт только со стороны туннелей (из интернета порт и так не слушается)
 if command -v ufw >/dev/null 2>&1 && ufw status | grep -q "Status: active"; then
-  for ifc in wg0 gsp0; do ufw allow in on "$ifc" to any port "$PORT" proto tcp >/dev/null 2>&1 || true; done
+  for ifc in wg0 gsp0; do for pt in "$PORT" "$TLS_PORT"; do ufw allow in on "$ifc" to any port "$pt" proto tcp >/dev/null 2>&1 || true; done; done
 fi
 
 echo
 echo "ГОТОВО."
-for a in ${ADDRS//,/ }; do echo "Чат: http://$a:$PORT   (откройте с включённым Gateway Plus)"; done
+for a in ${ADDRS//,/ }; do echo "Чат: http://$a:$PORT   (откройте с включённым Gateway Plus; в приложении AI Plus — этот адрес)"; [ -n "$TLS_ARGS" ] && echo "Для микрофона в БРАУЗЕРЕ: https://$a:$TLS_PORT   (один раз подтвердите сертификат)"; done
 echo "Модель: $MODEL. Другие модели: ollama pull <имя>, они появятся в списке чата."

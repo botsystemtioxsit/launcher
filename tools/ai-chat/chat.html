@@ -64,6 +64,21 @@ label{display:block;color:var(--muted);font-size:13px;margin:12px 0 4px}
 .hint{color:var(--muted);font-size:12px;margin-top:4px}
 pre.prev{background:#04010f;border:1px solid var(--line);border-radius:8px;padding:10px;white-space:pre-wrap;font-size:12px;color:var(--muted);max-height:140px;overflow:auto}
 .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+#call{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#1b0b4a,#070314 70%);z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;text-align:center}
+#call.on{display:flex}
+#call .big{font-size:96px;width:170px;height:170px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--panel2);border:2px solid var(--line);transition:box-shadow .2s,border-color .2s}
+#call.listen .big{border-color:var(--green);box-shadow:0 0 0 8px #3cff9a22,0 0 40px #3cff9a55}
+#call.think .big{border-color:var(--yellow);box-shadow:0 0 0 8px #fcee0a22,0 0 40px #fcee0a44}
+#call.speak .big{border-color:var(--cyan);box-shadow:0 0 0 8px #00f0ff22,0 0 40px #00f0ff66;animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.05)}}
+#call .cn{font-size:24px;font-weight:700}
+#call .cs{color:var(--muted);min-height:22px}
+#call .ct{font-family:ui-monospace,Consolas,monospace;color:var(--cyan)}
+#call .cx{max-width:560px;color:var(--text);opacity:.85;min-height:44px;font-size:15px}
+#call .cb{display:flex;gap:14px;margin-top:10px}
+#call .cb button{width:68px;height:68px;border-radius:50%;font-size:26px;padding:0}
+#call .hang{background:var(--red);border-color:var(--red)}
+#call .on2{border-color:var(--yellow);color:var(--yellow)}
 @media(max-width:760px){
  #side{position:fixed;inset:0 auto 0 0;z-index:5;transform:translateX(-100%);transition:transform .2s;width:82%}
  #side.open{transform:none}
@@ -86,6 +101,8 @@ pre.prev{background:#04010f;border:1px solid var(--line);border-radius:8px;paddi
     <button id="menu">☰</button>
     <div class="who"><span class="av" id="av">🤖</span><span class="nm" id="nm">—</span></div>
     <select id="model" title="Модель"></select>
+    <button id="spk" title="Озвучивать ответы">🔇</button>
+    <button id="callBtn" title="Позвонить (голосом)">📞</button>
     <button id="edit" title="Настроить персонажа">⚙</button>
   </div>
   <div id="msgs"></div>
@@ -94,6 +111,20 @@ pre.prev{background:#04010f;border:1px solid var(--line);border-radius:8px;paddi
     <button class="primary" id="send" type="submit">Отправить</button>
   </form>
 </section>
+
+<div id="call">
+  <div class="big" id="cAv">🤖</div>
+  <div class="cn" id="cName">—</div>
+  <div class="cs" id="cStat">Соединяю…</div>
+  <div class="ct" id="cTime">00:00</div>
+  <div class="cx" id="cText"></div>
+  <div class="cb">
+    <button id="cMute" title="Выключить микрофон">🎤</button>
+    <button id="cSkip" title="Перебить / ответить сейчас">⏭</button>
+    <button class="hang" id="cHang" title="Положить трубку">📵</button>
+  </div>
+  <div class="hint" id="cHint"></div>
+</div>
 
 <div id="overlay"><div id="modal">
   <h2>Персонаж</h2>
@@ -105,6 +136,10 @@ pre.prev{background:#04010f;border:1px solid var(--line);border-radius:8px;paddi
   <div><label>Язык ответов</label><select id="pLang"><option value="русском">русский</option><option value="английском">английский</option><option value="немецком">немецкий</option><option value="">как напишете вы</option></select></div></div>
   <div class="row"><div><label>Длина ответов</label><select id="pLen"><option value="">обычная</option><option value="short">короткие</option><option value="long">подробные</option></select></div>
   <div><label>Фантазия: <span id="tv">0.7</span></label><input id="pTemp" type="range" min="0" max="1.5" step="0.1"></div></div>
+  <div class="row"><div><label>Голос</label><select id="pVoice"><option value="">по умолчанию</option></select></div>
+  <div><label>Скорость речи: <span id="rv">1</span></label><input id="pRate" type="range" min="0.6" max="1.6" step="0.05"></div>
+  <div><label>Тон: <span id="pv">1</span></label><input id="pPitch" type="range" min="0.5" max="1.5" step="0.05"></div></div>
+  <div class="btns" style="margin-top:6px"><button type="button" id="pTest">🔊 Проверить голос</button></div>
   <label>Свои правила (необязательно)</label>
   <textarea id="pRules" rows="3" placeholder="Например: никогда не извиняйся; в конце каждого ответа добавляй шутку"></textarea>
   <label>Итоговый «системный промпт» (его получает нейросеть)</label>
@@ -132,8 +167,10 @@ var PRESETS=[
  {id:'p-coder',emoji:'👨‍💻',name:'Программист',character:'Опытный программист. Пишет рабочий код с короткими пояснениями, указывает на возможные ошибки.',user:'',lang:'русском',len:'',temp:0.3,rules:'Код всегда в блоках с указанием языка.',raw:false,rawText:''}
 ];
 var S=load();
+S.personas.forEach(normP);if(S.speak===undefined)S.speak=false;
 function load(){try{var s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.personas&&s.chats)return s}catch(e){}
  return {personas:JSON.parse(JSON.stringify(PRESETS)),chats:[],persona:'p-helper',chat:null,model:''}}
+function normP(p){if(p.voice===undefined)p.voice='';if(!p.rate)p.rate=1;if(!p.pitch)p.pitch=1;return p}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function $(id){return document.getElementById(id)}
 function uid(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
@@ -141,6 +178,10 @@ function persona(id){return S.personas.find(function(p){return p.id===(id||S.per
 function chat(){return S.chats.find(function(c){return c.id===S.chat})}
 
 function systemPrompt(p){
+ var base=systemPrompt0(p);
+ return call.on?base+' Сейчас идёт голосовой звонок: говори естественно, как по телефону, коротко (1–3 предложения), без списков, разметки, эмодзи и кода.':base;
+}
+function systemPrompt0(p){
  if(p.raw&&p.rawText.trim())return p.rawText.trim();
  var t='Тебя зовут '+(p.name||'Ассистент')+'. ';
  if(p.character.trim())t+=p.character.trim()+' ';
@@ -150,6 +191,70 @@ function systemPrompt(p){
  if(p.rules.trim())t+='Дополнительные правила: '+p.rules.trim();
  return t.trim();
 }
+
+
+// ---------- голос: озвучка и распознавание (в приложении — родные средства телефона, в браузере — встроенные) ----------
+var Voice=(function(){
+ var nat=!!(window.AiPlus&&window.AiPlus.speak);
+ var synth=window.speechSynthesis||null;
+ var SR=window.SpeechRecognition||window.webkitSpeechRecognition||null;
+ var speakWait={},listenWait=null,seq=0,rec=null;
+ window.AiPlusEvt=function(type,a){
+  if(type==='speakDone'){var f=speakWait[a];if(f){delete speakWait[a];f()}}
+  else if(listenWait){var w=listenWait;
+   if(type==='result'){listenWait=null;w.ok(a||'')}
+   else if(type==='error'){listenWait=null;w.no(a||'error')}
+  }
+ };
+ var V={
+  native:nat,
+  canSpeak:nat||!!synth,
+  canListen:function(){try{return nat?!!(window.AiPlus.canListen&&window.AiPlus.canListen()):(!!SR&&window.isSecureContext)}catch(e){return false}},
+  voices:function(){
+   try{
+    if(nat&&window.AiPlus.voices){return JSON.parse(window.AiPlus.voices()||'[]')}
+    if(synth){return synth.getVoices().map(function(v){return{name:v.name,lang:v.lang}})}
+   }catch(e){}
+   return [];
+  },
+  speak:function(text,o){
+   o=o||{};
+   return new Promise(function(res){
+    text=String(text||'').trim();if(!text){res();return}
+    if(nat){var id=++seq;speakWait[id]=res;window.AiPlus.speak(text.slice(0,3500),o.rate||1,o.pitch||1,o.voice||'',id);return}
+    if(!synth){res();return}
+    var u=new SpeechSynthesisUtterance(text.slice(0,3500));
+    u.rate=o.rate||1;u.pitch=o.pitch||1;u.lang='ru-RU';
+    if(o.voice){var vv=synth.getVoices().find(function(x){return x.name===o.voice});if(vv){u.voice=vv;u.lang=vv.lang}}
+    else{var ru=synth.getVoices().find(function(x){return /^ru/i.test(x.lang)});if(ru)u.voice=ru}
+    u.onend=u.onerror=function(){res()};
+    synth.speak(u);
+   });
+  },
+  stopSpeak:function(){
+   try{if(nat)window.AiPlus.stopSpeak();else if(synth)synth.cancel()}catch(e){}
+   var w=speakWait;speakWait={};Object.keys(w).forEach(function(k){w[k]()});
+  },
+  listen:function(lang){
+   lang=lang||'ru-RU';
+   return new Promise(function(ok,no){
+    if(nat){listenWait={ok:ok,no:no};window.AiPlus.listen(lang);return}
+    if(!SR){no('unsupported');return}
+    var r=new SR();rec=r;r.lang=lang;r.interimResults=false;r.continuous=false;r.maxAlternatives=1;
+    var got='',done=false;
+    r.onresult=function(e){for(var i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)got+=e.results[i][0].transcript};
+    r.onerror=function(e){if(done)return;done=true;rec=null;no(e.error||'error')};
+    r.onend=function(){if(done)return;done=true;rec=null;ok(got)};
+    try{r.start()}catch(e){done=true;no('error')}
+   });
+  },
+  stopListen:function(){
+   try{if(nat){window.AiPlus.stopListen();if(listenWait){var w=listenWait;listenWait=null;w.no('aborted')}}else if(rec){rec.abort()}}catch(e){}
+  }
+ };
+ if(synth&&synth.onvoiceschanged!==undefined)synth.onvoiceschanged=function(){if(window.fillVoices)window.fillVoices()};
+ return V;
+})();
 
 // ---------- отрисовка ----------
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
@@ -238,7 +343,7 @@ function regenerate(){
  while(c.messages.length&&c.messages[c.messages.length-1].role==='assistant')c.messages.pop();
  if(c.messages.length)run(c);
 }
-function run(c){
+function run(c,hook){
  var p=persona(c.persona);
  var msgs=[{role:'system',content:systemPrompt(p)}].concat(c.messages.map(function(m){return{role:m.role,content:m.content}}));
  var reply={role:'assistant',content:''};c.messages.push(reply);
@@ -247,14 +352,14 @@ function run(c){
  $('send').textContent='Стоп';$('send').classList.remove('primary');
  save();renderAll();
  var body=JSON.stringify({model:S.model,messages:msgs,stream:true,options:{temperature:p.temp}});
- fetch('api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:body,signal:ctrl.signal}).then(function(r){
+ return fetch('api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:body,signal:ctrl.signal}).then(function(r){
   if(!r.ok)throw new Error('HTTP '+r.status);
   var rd=r.body.getReader(),dec=new TextDecoder(),buf='';
   function pump(){return rd.read().then(function(x){
    if(x.done)return;
    buf+=dec.decode(x.value,{stream:true});
    var lines=buf.split('\n');buf=lines.pop();
-   lines.forEach(function(ln){ln=ln.trim();if(!ln)return;try{var o=JSON.parse(ln);if(o.error)throw new Error(o.error);if(o.message&&o.message.content){reply.content+=o.message.content}}catch(e){if(e.message&&e.message!=='Unexpected end of JSON input')throw e}});
+   lines.forEach(function(ln){ln=ln.trim();if(!ln)return;try{var o=JSON.parse(ln);if(o.error)throw new Error(o.error);if(o.message&&o.message.content){reply.content+=o.message.content;if(hook)hook(o.message.content)}}catch(e){if(e.message&&e.message!=='Unexpected end of JSON input')throw e}});
    var box=$('msgs').lastElementChild;if(box&&box.classList.contains('assistant')){var b=box.children[1];if(b)renderText(b,reply.content)}
    $('msgs').scrollTop=$('msgs').scrollHeight;
    return pump();
@@ -266,10 +371,13 @@ function run(c){
   if(!reply.content)c.messages.pop();
   streaming=null;ctrl=null;$('send').textContent='Отправить';$('send').classList.add('primary');
   c.at=Date.now();save();renderAll();
+  if(!call.on&&S.speak&&reply.content)speakReply(reply.content,persona(c.persona));
+  return reply.content;
  });
 }
 $('form').onsubmit=function(e){
  e.preventDefault();
+ if(call.on){$('inp').value='';autosize();return}
  if(streaming){ctrl&&ctrl.abort();return}
  var t=$('inp').value.trim();if(!t)return;$('inp').value='';autosize();send(t);
 };
@@ -278,6 +386,108 @@ function autosize(){var t=$('inp');t.style.height='auto';t.style.height=Math.min
 $('inp').addEventListener('input',autosize);
 $('newChat').onclick=function(){S.chat=null;save();renderAll();$('side').classList.remove('open');$('inp').focus()};
 $('menu').onclick=function(){$('side').classList.toggle('open')};
+
+
+// ---------- озвучка ответов и звонок ----------
+function plain(t){return t.replace(/```[\s\S]*?```/g,' (код пропускаю) ').replace(/[*_`#>]/g,'').replace(/\s+/g,' ').trim()}
+function speakReply(text,p){Voice.stopSpeak();Voice.speak(plain(text),{voice:p.voice,rate:p.rate,pitch:p.pitch})}
+function syncSpk(){$('spk').textContent=S.speak?'🔊':'🔇';$('spk').title=S.speak?'Озвучка ответов включена':'Озвучка ответов выключена'}
+$('spk').onclick=function(){S.speak=!S.speak;if(!S.speak)Voice.stopSpeak();save();syncSpk()};
+if(!Voice.canSpeak){$('spk').style.display='none';$('callBtn').style.display='none'}
+syncSpk();
+
+var call={on:false,mute:false,t0:0,tick:null,skip:false};
+function cset(state,text){$('call').className='on '+state;$('cStat').textContent=text}
+function ctime(){var s=Math.floor((Date.now()-call.t0)/1000);$('cTime').textContent=('0'+Math.floor(s/60)).slice(-2)+':'+('0'+s%60).slice(-2)}
+function delay(ms){return new Promise(function(r){setTimeout(r,ms)})}
+$('callBtn').onclick=function(){
+ if(call.on)return;
+ var p=persona();
+ call.on=true;call.mute=false;call.skip=false;call.t0=Date.now();
+ $('cAv').textContent=p.emoji||'🤖';$('cName').textContent=p.name||'Ассистент';$('cText').textContent='';$('cMute').classList.remove('on2');
+ var hint='';
+ if(!Voice.canListen())hint=window.isSecureContext===false&&!Voice.native?'Микрофон в браузере работает только по защищённому адресу: откройте чат по https://…:8443 (один раз подтвердите сертификат) или используйте приложение AI Plus на телефоне. Пока можно печатать — я буду отвечать голосом.':'Распознавание речи здесь недоступно — печатайте, а я отвечу голосом.';
+ $('cHint').textContent=hint;
+ cset('think','Соединяю…');
+ call.tick=setInterval(ctime,1000);ctime();
+ callLoop();
+};
+function endCall(){
+ call.on=false;clearInterval(call.tick);Voice.stopListen();Voice.stopSpeak();if(ctrl)ctrl.abort();
+ $('call').className='';
+}
+$('cHang').onclick=endCall;
+$('cMute').onclick=function(){call.mute=!call.mute;this.classList.toggle('on2',call.mute);this.textContent=call.mute?'🙊':'🎤';if(call.mute)Voice.stopListen()};
+$('cSkip').onclick=function(){call.skip=true;Voice.stopSpeak();Voice.stopListen()};
+async function callLoop(){
+ var p=persona();
+ // приветствие: нейросеть начинает разговор первой
+ await callTurn(null);
+ while(call.on){
+  if(call.mute||!Voice.canListen()){
+   cset('listen',call.mute?'Микрофон выключен':'Печатайте — отвечу голосом');
+   await delay(400);
+   if(!Voice.canListen()&&call.on){ /* текстовый ввод во время звонка: ждём сообщение из поля */ var t=await waitTyped();if(t&&call.on)await callTurn(t)}
+   continue;
+  }
+  cset('listen','Слушаю…');
+  var text='';
+  try{text=await Voice.listen('ru-RU')}catch(e){
+   if(!call.on)break;
+   if(e==='not-allowed'||e==='service-not-allowed'||e==='permission'){$('cHint').textContent='Нет доступа к микрофону. Разрешите его в настройках и позвоните снова.';call.mute=true;$('cMute').classList.add('on2');continue}
+   await delay(e==='no-speech'||e==='aborted'||e==='nomatch'?200:1500);continue;
+  }
+  if(!call.on)break;
+  text=(text||'').trim();
+  if(call.skip){call.skip=false;continue}
+  if(!text)continue;
+  await callTurn(text);
+ }
+}
+var typedWaiter=null;
+function waitTyped(){return new Promise(function(r){typedWaiter=r;var f=function(){if(!call.on){clearInterval(i);r('')}};var i=setInterval(f,500)})}
+// одна «реплика» звонка: отправили → читаем ответ по предложениям и сразу озвучиваем
+async function callTurn(text){
+ var p=persona();
+ var c=chat();
+ if(!c){c={id:uid('c'),title:'Звонок',at:Date.now(),persona:S.persona,messages:[]};S.chats.push(c);S.chat=c.id}
+ c.persona=S.persona;
+ if(text===null){ if(c.messages.length)return; c.messages.push({role:'user',content:'(звонок начался — поздоровайся коротко и спроси, о чём поговорим)'}) }
+ else{c.messages.push({role:'user',content:text});if(!c.title||c.title==='Звонок')c.title=text.slice(0,40)}
+ $('cText').textContent=text?('Вы: '+text):'';
+ cset('think','Думаю…');
+ var buf='',queue=[],speaking=false,finished=false;
+ async function pump(){
+  if(speaking)return;speaking=true;
+  while(queue.length&&call.on&&!call.skip){
+   var s=queue.shift();cset('speak','Говорит…');$('cText').textContent=s;
+   await Voice.speak(plain(s),{voice:p.voice,rate:p.rate,pitch:p.pitch});
+  }
+  speaking=false;
+ }
+ var inCode=false;
+ function feed(delta){
+  delta.split('```').forEach(function(part,i){if(i>0)inCode=!inCode;if(!inCode)buf+=part});
+  var m;
+  while((m=buf.match(/^([\s\S]*?[.!?…]+["»)]*(\s+|$)|[\s\S]*?\n)/))&&m[0].trim().length>3&&(m[0].length<buf.length||/\s$/.test(m[0]))){
+   queue.push(m[0].trim());buf=buf.slice(m[0].length);pump();
+  }
+ }
+ await run(c,feed);
+ if(buf.trim()&&call.on){queue.push(buf.trim());buf='';pump()}
+ while((speaking||queue.length)&&call.on&&!call.skip)await delay(120);
+ call.skip=false;
+}
+// текст, набранный во время звонка без микрофона
+$('form').addEventListener('submit',function(){if(call.on&&typedWaiter){var t=$('inp').value.trim();if(t){var w=typedWaiter;typedWaiter=null;setTimeout(function(){w(t)},0)}}},true);
+
+window.fillVoices=function(){
+ var sel=$('pVoice');if(!sel)return;var cur=editing?editing.voice:'';
+ sel.textContent='';var d=el('option',null,'по умолчанию');d.value='';sel.appendChild(d);
+ var vs=Voice.voices().slice().sort(function(a,b){return (/^ru/i.test(b.lang)?1:0)-(/^ru/i.test(a.lang)?1:0)});
+ vs.forEach(function(v){var o=el('option',null,v.name+' ('+v.lang+')');o.value=v.name;sel.appendChild(o)});
+ sel.value=cur||'';
+};
 
 // ---------- редактор персонажей ----------
 var editing=null;
@@ -288,24 +498,27 @@ function fillEditor(){
  $('pEmoji').value=editing.emoji||'';$('pName').value=editing.name||'';$('pChar').value=editing.character||'';
  $('pUser').value=editing.user||'';$('pLang').value=editing.lang;$('pLen').value=editing.len||'';
  $('pTemp').value=editing.temp;$('tv').textContent=editing.temp;$('pRules').value=editing.rules||'';
+ $('pRate').value=editing.rate;$('rv').textContent=editing.rate;$('pPitch').value=editing.pitch;$('pv').textContent=editing.pitch;if(window.fillVoices)window.fillVoices();$('pVoice').value=editing.voice||'';
  $('pRaw').checked=!!editing.raw;$('pRawText').value=editing.rawText||'';$('pRawText').style.display=editing.raw?'block':'none';
  preview();
 }
 function readEditor(){
  editing.emoji=$('pEmoji').value.trim();editing.name=$('pName').value.trim()||'Ассистент';editing.character=$('pChar').value;
  editing.user=$('pUser').value;editing.lang=$('pLang').value;editing.len=$('pLen').value;editing.temp=parseFloat($('pTemp').value)||0.7;
+ editing.voice=$('pVoice').value;editing.rate=parseFloat($('pRate').value)||1;editing.pitch=parseFloat($('pPitch').value)||1;
  editing.rules=$('pRules').value;editing.raw=$('pRaw').checked;editing.rawText=$('pRawText').value;
 }
-function preview(){readEditor();$('pPrev').textContent=systemPrompt(editing);$('tv').textContent=editing.temp;$('pRawText').style.display=editing.raw?'block':'none'}
-['pEmoji','pName','pChar','pUser','pLang','pLen','pTemp','pRules','pRaw','pRawText'].forEach(function(id){$(id).addEventListener('input',preview);$(id).addEventListener('change',preview)});
+function preview(){readEditor();$('pPrev').textContent=systemPrompt0(editing);$('tv').textContent=editing.temp;$('rv').textContent=editing.rate;$('pv').textContent=editing.pitch;$('rv').textContent=editing.rate;$('pv').textContent=editing.pitch;$('pRawText').style.display=editing.raw?'block':'none'}
+['pEmoji','pName','pChar','pUser','pLang','pLen','pTemp','pRules','pRaw','pRawText','pVoice','pRate','pPitch'].forEach(function(id){$(id).addEventListener('input',preview);$(id).addEventListener('change',preview)});
 $('pSave').onclick=function(){readEditor();var i=S.personas.findIndex(function(p){return p.id===editing.id});if(i>=0)S.personas[i]=editing;else S.personas.push(editing);S.persona=editing.id;save();$('overlay').classList.remove('on');renderAll()};
-$('pNew').onclick=function(){editing={id:uid('p-'),emoji:'✨',name:'Новый персонаж',character:'',user:'',lang:'русском',len:'',temp:0.7,rules:'',raw:false,rawText:''};fillEditor()};
+$('pNew').onclick=function(){editing={id:uid('p-'),emoji:'✨',name:'Новый персонаж',character:'',user:'',lang:'русском',len:'',temp:0.7,rules:'',raw:false,rawText:'',voice:'',rate:1,pitch:1};fillEditor()};
 $('pDup').onclick=function(){readEditor();editing=JSON.parse(JSON.stringify(editing));editing.id=uid('p-');editing.name+=' (копия)';fillEditor()};
 $('pDel').onclick=function(){
  if(S.personas.length<2){alert('Должен остаться хотя бы один персонаж.');return}
  if(!confirm('Удалить персонажа «'+editing.name+'»?'))return;
  S.personas=S.personas.filter(function(p){return p.id!==editing.id});if(S.persona===editing.id)S.persona=S.personas[0].id;save();editing=JSON.parse(JSON.stringify(S.personas[0]));fillEditor();renderAll();
 };
+$('pTest').onclick=function(){readEditor();Voice.stopSpeak();Voice.speak('Привет! Меня зовут '+(editing.name||'Ассистент')+'. Вот так я звучу.',{voice:editing.voice,rate:editing.rate,pitch:editing.pitch})};
 $('pClose').onclick=function(){$('overlay').classList.remove('on')};
 $('overlay').onclick=function(e){if(e.target===this)$('overlay').classList.remove('on')};
 $('edit').onclick=function(){openEditor()};
