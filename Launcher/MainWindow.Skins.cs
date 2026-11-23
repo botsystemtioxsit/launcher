@@ -48,6 +48,10 @@ public partial class MainWindow
                 var img = SkinPreview(s.Id);
                 if (img != null)
                     st.Children.Add(new Border { Height = 197, ClipToBounds = true, Child = new Image { Source = img, Stretch = Stretch.UniformToFill }, Margin = new Thickness(0, 0, 0, 8) });
+                var icons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+                foreach (var k in new[] { "apps", "style", "net", "phone", "update", "play" })
+                    icons.Children.Add(new Border { Margin = new Thickness(0, 0, 8, 0), Child = Icons.Make(k, 16, s, false, true) });
+                st.Children.Add(icons);
                 st.Children.Add(new TextBlock { Text = s.Name, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis });
                 st.Children.Add(new TextBlock { Text = s.Desc, Foreground = Res("Muted"), FontSize = 12, TextWrapping = TextWrapping.Wrap, MinHeight = 34, Margin = new Thickness(0, 2, 0, 8) });
                 var b = new Button
@@ -56,7 +60,7 @@ public partial class MainWindow
                     HorizontalAlignment = HorizontalAlignment.Left, IsEnabled = !current,
                 };
                 var skin = s;
-                b.Click += (_, _) => { Skins.Apply(skin); Render(); ShowView("skins"); Toast("Скин: " + skin.Name); };
+                b.Click += (_, _) => { Skins.Apply(skin); SetNavIcons(); Render(); ShowView("skins"); Toast("Скин: " + skin.Name); };
                 st.Children.Add(b);
                 var card = new Border
                 {
@@ -67,5 +71,35 @@ public partial class MainWindow
             }
             SkinsBody.Children.Add(wrap);
         }
+    }
+
+    // ---------- значки в меню и карточках ----------
+    readonly Dictionary<Button, string> navText = new();
+
+    // Пункты меню слева: значок + подпись. Подписи берём из разметки один раз; значки перерисовываются при смене скина.
+    void SetNavIcons()
+    {
+        var items = new (Button Btn, string Icon)[]
+        {
+            (NavApps, "apps"), (NavStyle, "style"), (NavNet, "net"), (NavExt, "ext"), (NavEnv, "env"),
+            (NavSkins, "skins"), (NavPhone, "phone"), (NavFeedback, "feedback"), (NavAccount, "account"),
+        };
+        foreach (var (btn, icon) in items)
+        {
+            if (!navText.TryGetValue(btn, out var text)) navText[btn] = text = btn.Content as string ?? "";
+            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            row.Children.Add(new Border { Width = 22, Margin = new Thickness(0, 0, 10, 0), Child = Icons.Make(icon, 16, null, true, false), VerticalAlignment = VerticalAlignment.Center });
+            row.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+            btn.Content = row;
+        }
+    }
+
+    // Строка заголовка карточки: значок слева от названия
+    UIElement TitleRow(string title, string icon, double fontSize = 17)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal };
+        row.Children.Add(new Border { Margin = new Thickness(0, 0, 12, 0), Child = Icons.Make(icon, 20, null, false, true), VerticalAlignment = VerticalAlignment.Center });
+        row.Children.Add(new TextBlock { Text = title, FontSize = fontSize, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+        return row;
     }
 }

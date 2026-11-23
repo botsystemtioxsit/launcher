@@ -42,6 +42,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         FontFamily = Skins.MainFont;   // шрифт выбранного скина
         InitOps();
+        SetNavIcons();
         loginTimer.Tick += (_, _) => LoginTick();
         toastTimer.Tick += (_, _) => { toastTimer.Stop(); ToastBox.Visibility = Visibility.Collapsed; };
         VersionText.Text = "Версия " + SelfUpdate.CurrentVersion;
@@ -487,7 +488,7 @@ public partial class MainWindow : Window
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var left = new StackPanel();
-        left.Children.Add(new TextBlock { Text = p.Def.Name, FontSize = 17, FontWeight = FontWeights.SemiBold });
+        left.Children.Add(TitleRow(p.Def.Name, IconOfPlugin(p.Def)));
         left.Children.Add(new TextBlock { Text = p.Def.Desc, Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 12, 8) });
         var badges = new StackPanel { Orientation = Orientation.Horizontal };
         badges.Children.Add(Badge("Плагин", Res("Muted"), null));
@@ -655,7 +656,7 @@ public partial class MainWindow : Window
         var key = p.Def.Id + ":browser";
         var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) }.WithSkin();
         var col = new StackPanel();
-        col.Children.Add(new TextBlock { Text = p.Def.Name, FontSize = 17, FontWeight = FontWeights.SemiBold });
+        col.Children.Add(TitleRow(p.Def.Name, "ext"));
         col.Children.Add(new TextBlock { Text = p.Def.Desc, Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 8) });
         var badges = new WrapPanel { Orientation = Orientation.Horizontal };
         badges.Children.Add(Badge("Для браузера", Res("Muted"), null));
@@ -866,7 +867,7 @@ public partial class MainWindow : Window
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var left = new StackPanel();
-        left.Children.Add(new TextBlock { Text = d.Name, FontSize = 17, FontWeight = FontWeights.SemiBold });
+        left.Children.Add(TitleRow(d.Name, d.Platform.Contains("Android", StringComparison.OrdinalIgnoreCase) ? "phone" : "update"));
         left.Children.Add(new TextBlock { Text = d.Desc, Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 12, 8) });
         left.Children.Add(Badge(d.Platform, Res("Muted"), null));
         grid.Children.Add(left);
@@ -891,7 +892,7 @@ public partial class MainWindow : Window
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var left = new StackPanel();
-        left.Children.Add(new TextBlock { Text = a.Def.Name, FontSize = 17, FontWeight = FontWeights.SemiBold });
+        left.Children.Add(TitleRow(a.Def.Name, IconOfApp(a.Def.Id)));
         left.Children.Add(new TextBlock { Text = a.Def.Desc, Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 12, 8) });
         var badges = new StackPanel { Orientation = Orientation.Horizontal };
         if (!a.Allowed) badges.Children.Add(Badge("Нет доступа для твоей роли", Res("Muted"), null));
@@ -1175,11 +1176,14 @@ public partial class MainWindow : Window
         foreach (var sk in Skins.All)
         {
             Skins.Apply(sk, false);
+            SetNavIcons();
             await Capture(Path.Combine(dir, "skin-" + sk.Id + ".png"), () => { ShowView("apps"); RenderApps(); });
         }
         Skins.Apply(Skins.ById(Skins.DefaultId), false);
+        SetNavIcons();
         await Capture(Path.Combine(dir, "launcher-10-skins.png"), () => { ShowView("skins"); });
         Skins.Apply(skinSaved, false);
+        SetNavIcons();
         await Capture(Path.Combine(dir, "launcher-7-style.png"), () => { ShowView("style"); RenderPlugins(); });
         await Capture(Path.Combine(dir, "launcher-8-net.png"), () => { ShowView("net"); RenderPlugins(); });
         await Capture(Path.Combine(dir, "launcher-3-plugins-browser.png"), () =>
@@ -1358,5 +1362,24 @@ public partial class MainWindow : Window
             UpdateBtn.IsEnabled = true;
             Toast("Не удалось обновить лаунчер: " + ex.Message);
         }
+    }
+
+    // Какой значок у приложения / плагина (по названию и разделу)
+    static string IconOfApp(string id)
+    {
+        var l = id.ToLowerInvariant();
+        if (l.Contains("video")) return "video";
+        if (l.Contains("admin") || l.Contains("terminal")) return "admin";
+        if (l.Contains("troll") || l.Contains("battle") || l.Contains("game")) return "game";
+        return "apps";
+    }
+
+    static string IconOfPlugin(AppDef d)
+    {
+        var l = d.Id.ToLowerInvariant();
+        if (l.Contains("skin")) return "skins";
+        if (l.Contains("dns") || l.Contains("gateway")) return "globe";
+        if (l.Contains("chat") || l.Contains("ai")) return "ai";
+        return Catalog.CategoryOf(d) == "net" ? "net" : "style";
     }
 }
