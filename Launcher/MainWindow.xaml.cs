@@ -40,6 +40,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        FontFamily = Skins.MainFont;   // шрифт выбранного скина
         InitOps();
         loginTimer.Tick += (_, _) => LoginTick();
         toastTimer.Tick += (_, _) => { toastTimer.Stop(); ToastBox.Visibility = Visibility.Collapsed; };
@@ -420,6 +421,8 @@ public partial class MainWindow : Window
         FeedbackView.Visibility = name == "feedback" ? Visibility.Visible : Visibility.Collapsed;
         EnvView.Visibility = name == "env" ? Visibility.Visible : Visibility.Collapsed;
         PhoneView.Visibility = name == "phone" ? Visibility.Visible : Visibility.Collapsed;
+        SkinsView.Visibility = name == "skins" ? Visibility.Visible : Visibility.Collapsed;
+        NavSkins.Foreground = name == "skins" ? Res("Text") : Res("Muted");
         NavPhone.Foreground = name == "phone" ? Res("Text") : Res("Muted");
         NavEnv.Foreground = name == "env" ? Res("Text") : Res("Muted");
         NavFeedback.Foreground = name == "feedback" ? Res("Text") : Res("Muted");
@@ -439,6 +442,7 @@ public partial class MainWindow : Window
         if (name == "feedback") OpenFeedback();
         if (name == "env") OpenEnv();
         if (name == "phone") OpenPhone();
+        if (name == "skins") BuildSkins();
     }
 
     // ---------- плагины ----------
@@ -478,7 +482,7 @@ public partial class MainWindow : Window
     UIElement PluginCard(AppInfo p)
     {
         var key = p.Def.Id + ":plugin";
-        var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) };
+        var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) }.WithSkin();
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -649,7 +653,7 @@ public partial class MainWindow : Window
     UIElement BrowserPluginCard(BrowserPluginInfo p)
     {
         var key = p.Def.Id + ":browser";
-        var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) };
+        var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) }.WithSkin();
         var col = new StackPanel();
         col.Children.Add(new TextBlock { Text = p.Def.Name, FontSize = 17, FontWeight = FontWeights.SemiBold });
         col.Children.Add(new TextBlock { Text = p.Def.Desc, Foreground = Res("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 8) });
@@ -704,7 +708,7 @@ public partial class MainWindow : Window
     // Короткая инструкция «как подключить» — внутри карточки, пока расширение скачано
     UIElement BrowserHelp(BrowserPluginInfo p)
     {
-        var box = new Border { Background = Res("Panel2"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3), Padding = new Thickness(14, 10, 14, 12), Margin = new Thickness(0, 14, 0, 0) };
+        var box = new Border { Background = Res("Panel2"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3), Padding = new Thickness(14, 10, 14, 12), Margin = new Thickness(0, 14, 0, 0) }.WithSkin();
         var st = new StackPanel();
         st.Children.Add(new TextBlock { Text = "Как подключить (один раз)", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 6) });
         string[] steps =
@@ -790,6 +794,7 @@ public partial class MainWindow : Window
     void NavAccount_Click(object sender, RoutedEventArgs e) => ShowView("account");
     void NavEnv_Click(object sender, RoutedEventArgs e) => ShowView("env");
     void NavPhone_Click(object sender, RoutedEventArgs e) => ShowView("phone");
+    void NavSkins_Click(object sender, RoutedEventArgs e) => ShowView("skins");
     void NavFeedback_Click(object sender, RoutedEventArgs e) => ShowView("feedback");
 
     void AddAccount_Click(object sender, RoutedEventArgs e) { store.ActiveId = null; store.Save(); Render(); }
@@ -856,7 +861,7 @@ public partial class MainWindow : Window
 
     UIElement DownloadCard(DownloadDef d)
     {
-        var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) };
+        var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) }.WithSkin();
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -880,7 +885,7 @@ public partial class MainWindow : Window
 
     UIElement AppCard(AppInfo a)
     {
-        var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) };
+        var card = new Border { Background = Res("Panel"), BorderBrush = Res("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 14) }.WithSkin();
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -1165,6 +1170,16 @@ public partial class MainWindow : Window
             NativeLatest = new NativeRelease("latest", "", i == 1 ? "bb" : "aa"),
             NativeUpdate = i == 1,
         }).ToList();
+        // все скины: экран «Приложения» в каждом (проверка, что ни один не ломает окно)
+        var skinSaved = Skins.Current;
+        foreach (var sk in Skins.All)
+        {
+            Skins.Apply(sk, false);
+            await Capture(Path.Combine(dir, "skin-" + sk.Id + ".png"), () => { ShowView("apps"); RenderApps(); });
+        }
+        Skins.Apply(Skins.ById(Skins.DefaultId), false);
+        await Capture(Path.Combine(dir, "launcher-10-skins.png"), () => { ShowView("skins"); });
+        Skins.Apply(skinSaved, false);
         await Capture(Path.Combine(dir, "launcher-7-style.png"), () => { ShowView("style"); RenderPlugins(); });
         await Capture(Path.Combine(dir, "launcher-8-net.png"), () => { ShowView("net"); RenderPlugins(); });
         await Capture(Path.Combine(dir, "launcher-3-plugins-browser.png"), () =>

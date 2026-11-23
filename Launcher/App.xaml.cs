@@ -14,6 +14,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         Loc.Start(e.Args);   // язык интерфейса: русский / English / Deutsch
+        Skins.LoadSaved();   // выбранный скин (вкладка «Скины»)
         // Программа удаления из списка «Установленные приложения»
         if (e.Args.Contains("--uninstall")) { SelfInstall.Uninstall(); Shutdown(); return; }
         var un = e.Args.FirstOrDefault(a => a.StartsWith("--uninstall-native=", StringComparison.Ordinal));
