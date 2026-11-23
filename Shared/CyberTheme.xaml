@@ -9,6 +9,12 @@
   -->
   <FontFamily x:Key="Mono">Cascadia Mono, Consolas, Courier New</FontFamily>
 
+  <!-- Скины лаунчера подменяют эти значения на лету; по умолчанию вид прежний (острые кнопки, угловые скобки, без теней) -->
+  <CornerRadius x:Key="BtnRadius">0</CornerRadius>
+  <CornerRadius x:Key="CardRadius">4</CornerRadius>
+  <Visibility x:Key="BracketVis">Visible</Visibility>
+  <DropShadowEffect x:Key="CardEffect" Opacity="0" ShadowDepth="0" BlurRadius="0"/>
+
   <!-- Фон окна: тёмный цвет + тонкие горизонтальные линии через каждые 6 px (видны в промежутках между карточками) -->
   <DrawingBrush x:Key="Bg" TileMode="Tile" Viewport="0,0,6,6" ViewportUnits="Absolute" Viewbox="0,0,6,6" ViewboxUnits="Absolute">
     <DrawingBrush.Drawing>
@@ -49,13 +55,13 @@
         <ControlTemplate TargetType="Button">
           <Grid x:Name="root" SnapsToDevicePixels="True">
             <Border x:Name="bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
+                    BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="{DynamicResource BtnRadius}">
               <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
             </Border>
             <Path x:Name="tl" Data="M0,7 L0,0 L7,0" Stroke="{DynamicResource Accent}" StrokeThickness="2" Opacity="0.55"
-                  HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False"/>
+                  HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False" Visibility="{DynamicResource BracketVis}"/>
             <Path x:Name="br" Data="M7,0 L7,7 L0,7" Stroke="{DynamicResource Accent2}" StrokeThickness="2" Opacity="0.55"
-                  HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"/>
+                  HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False" Visibility="{DynamicResource BracketVis}"/>
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
