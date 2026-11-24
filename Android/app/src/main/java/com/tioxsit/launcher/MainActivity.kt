@@ -569,7 +569,14 @@ class MainActivity : Activity() {
         c.addView(tv(d.name, 17f, TEXT, true))
         c.addView(tv(d.desc, 13f, MUTED), lp(3))
         c.addView(tv(d.platform, 12f, MUTED), lp(6))
-        c.addView(button("Скачать", primary = true) {
+        val inst = d.pkg?.let { Installer.installedVersion(this, it) }
+        if (inst != null) {
+            c.addView(tv("Установлено $inst", 13f, GREEN), lp(6))
+            c.addView(button("Открыть", primary = true) {
+                if (!Installer.launch(this, d.pkg!!)) toast("Не удалось открыть")
+            }, lp(8))
+        }
+        c.addView(button(if (inst != null) "Скачать новую версию" else "Скачать", primary = inst == null) {
             try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(d.url))) } catch (_: Exception) { toast("Не удалось открыть браузер") }
         }, lp(8))
         return c

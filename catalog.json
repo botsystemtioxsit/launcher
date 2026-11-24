@@ -110,7 +110,7 @@
       ]
     },
     {
-      "id": "gateway-plus-android",
+      "id": "gateway-plus-android", "package": "com.tioxsit.gatewayplus",
       "name": "Gateway Plus (Android)",
       "desc": "Личный VPN на вашем сервере для телефона. Вход по нику и паролю, профили из QR с компьютера. Нужен свой сервер WireGuard.",
       "platform": "Android",
@@ -122,7 +122,7 @@
       ]
     },
     {
-      "id": "lockscreen-plus",
+      "id": "lockscreen-plus", "package": "com.tioxsit.lockscreenplus",
       "name": "Lock Screen Plus (для телефона)",
       "desc": "Android-приложение: живые обои для экрана блокировки, режим «на боку», «Режим часов» поверх экрана Samsung и вывод данных компьютера (вместе с плагином Lock Screen PC Stats). Скачать .apk и установить на телефоне.",
       "platform": "Android",
@@ -136,7 +136,7 @@
       ]
     },
     {
-      "id": "ai-plus",
+      "id": "ai-plus", "package": "com.tioxsit.aiplus",
       "name": "AI Plus (чат с нейросетью на вашем сервере)",
       "desc": "Android-приложение: чат с нейросетью, которую вы ставите на свой сервер (с настройкой имени, характера и своего промпта). Работает при включённом Gateway Plus. Сервер: команда установки — в описании релиза.",
       "platform": "Android",
