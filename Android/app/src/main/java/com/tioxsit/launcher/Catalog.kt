@@ -21,7 +21,7 @@ data class AppDef(
 }
 
 // Программы, которые лаунчер не ставит сам (Linux, расширения Chrome): только кнопка «Скачать» со ссылкой на релиз.
-data class DownloadDef(val id: String, val name: String, val desc: String, val platform: String, val url: String, val os: Set<String>)
+data class DownloadDef(val id: String, val name: String, val desc: String, val platform: String, val url: String, val os: Set<String>, val pkg: String? = null)
 
 object Catalog {
     const val OWNER = "botsystemtioxsit"
@@ -100,7 +100,8 @@ object Catalog {
                 val osArr = d.optJSONArray("os")
                 val os = if (osArr == null) emptySet() else (0 until osArr.length()).map { osArr.getString(it) }.filter { SAFE.matches(it) }.toSet()
                 out.add(DownloadDef(id, d.getString("name").take(60), d.optString("desc", "").take(240), d.optString("platform", "").take(40),
-                    "https://github.com/$OWNER/$repo/releases/download/$tag/$asset", os))
+                    "https://github.com/$OWNER/$repo/releases/download/$tag/$asset", os,
+                    d.optString("package", "").takeIf { Regex("^[A-Za-z0-9_.]{3,100}$").matches(it) }))
             } catch (_: Exception) { /* одну битую запись пропускаем */ }
         }
         return out
