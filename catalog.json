@@ -174,18 +174,6 @@
       }
     },
     {
-      "id": "color-plus",
-      "category": "style",
-      "name": "Color Plus",
-      "desc": "Один цвет для окон, выделения и панели задач: выберите, посмотрите на предпросмотре и примените.",
-      "desktop": {
-        "repo": "launcher",
-        "tag": "latest",
-        "asset": "ColorPlus.exe",
-        "name": "Color Plus"
-      }
-    },
-    {
       "id": "icon-plus",
       "category": "style",
       "name": "Icon Plus",
@@ -207,18 +195,6 @@
         "tag": "latest",
         "asset": "WallpaperPlus.exe",
         "name": "Wallpaper Plus"
-      }
-    },
-    {
-      "id": "cursor-plus",
-      "category": "style",
-      "name": "Cursor Plus",
-      "desc": "Свой курсор: цвет, форма, шлейф за мышью (комета, искры, звёзды…) и эффекты клика. Можно нарисовать курсор самому.",
-      "desktop": {
-        "repo": "launcher",
-        "tag": "latest",
-        "asset": "CursorPlus.exe",
-        "name": "Cursor Plus"
       }
     },
     {

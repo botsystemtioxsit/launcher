@@ -13,8 +13,6 @@ $apps = @(
     @{ n = 'WallpaperPlus'; exe = 'out-test/WallpaperPlus.exe' },
     @{ n = 'TaskbarPlus'; exe = 'out-test/TaskbarPlus.exe' },
     @{ n = 'SkinLoader'; exe = 'out-test/SkinLoader.exe' },
-    @{ n = 'CursorPlus'; exe = 'out-test/CursorPlus.exe' },
-    @{ n = 'ColorPlus'; exe = 'out-test/ColorPlus.exe' },
     @{ n = 'DnsPlus'; exe = 'out-test/DnsPlus.exe' }
 )
 

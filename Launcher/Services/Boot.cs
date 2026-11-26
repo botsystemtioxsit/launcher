@@ -10,7 +10,7 @@ namespace BattleLauncher;
 static class Boot
 {
     // Плагины с режимом --background (применяют своё и сидят в фоне без окна)
-    public static readonly string[] BackgroundIds = { "taskbar-plus", "wallpaper-plus", "cursor-plus", "color-plus", "ghost-style" };
+    public static readonly string[] BackgroundIds = { "taskbar-plus", "wallpaper-plus", "ghost-style" };
     public const string RunName = "GhostShellLauncher";
     public const string Arg = "--boot";
 
