@@ -1,0 +1,77 @@
+name: Native plugins (C++)
+
+# Нативные (C++) версии плагинов: собираются на Linux (mingw-w64, один статический exe без .NET), логика проверяется там же,
+# а рисование и поведение на экране — на настоящей Windows-машине GitHub. Результат — ветка ci-e2e-native и артефакт native-windows.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'ccr-**']
+    paths: ['Native/**', 'Shared/Loc/common.loc', '.github/workflows/native.yml', 'tests/e2e/native-*.ps1', 'Plugins/SeasonPlus/app.ico', 'Plugins/SeasonPlus/app.manifest']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mingw-w64 cmake ninja-build g++
+      - name: Logic tests (native Linux build of the engine)
+        run: |
+          g++ -std=c++20 -O2 -Wall -Wextra -Wno-unused-parameter -INative/common -INative/seasonplus Native/seasonplus/engine.cpp Native/seasonplus/model.cpp Native/seasonplus/logic_test.cpp -o logic_test
+          ./logic_test 2>/dev/null | tee logic-test.txt
+          grep -q "ВСЁ В ПОРЯДКЕ" logic-test.txt
+      - name: Build Windows executables
+        run: |
+          cmake -S Native -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=$PWD/Native/cmake/mingw.cmake -DCMAKE_BUILD_TYPE=Release
+          ninja -C build SeasonPlus sp_logic_test
+          mkdir -p dist
+          cp build/out/SeasonPlus.exe dist/SeasonPlus.debug.exe
+          x86_64-w64-mingw32-strip build/out/SeasonPlus.exe build/out/sp_logic_test.exe
+          cp build/out/SeasonPlus.exe build/out/sp_logic_test.exe dist/
+          (cd dist && for f in SeasonPlus.exe; do sha256sum $f | awk '{print $1"  "$2}' > $f.sha256; done)
+          ls -la dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-windows
+          path: dist/*
+          retention-days: 30
+
+  test-windows:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-windows
+          path: native-dist
+      - name: Run native checks
+        shell: pwsh
+        run: ./tests/e2e/native-season.ps1 -Out results
+        continue-on-error: true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-e2e-results
+          path: results/*
+      - name: Results to branch
+        if: always()
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'e2e-branch'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Copy-Item results/* $dir -Recurse -ErrorAction SilentlyContinue
+          Set-Location $dir
+          git init -q
+          git config user.name 'github-actions'
+          git config user.email 'github-actions@users.noreply.github.com'
+          git checkout -q -b ci-e2e-native
+          git add .
+          git commit -q -m 'Результаты проверки нативных плагинов на Windows'
+          git remote add origin "https://x-access-token:$($env:GH_TOKEN)@github.com/${{ github.repository }}.git"
+          git push -q --force origin ci-e2e-native
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

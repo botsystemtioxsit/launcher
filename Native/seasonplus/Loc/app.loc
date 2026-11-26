@@ -1,0 +1,104 @@
+# Season Plus (нативная версия): русский ⇒ English ⇒ Deutsch. Формат тот же, что у остальных плагинов (см. Shared/Loc.cs).
+Выкл ⇒ Off ⇒ Aus
+Вкл ⇒ On ⇒ An
+Предпросмотр обновлён. Чтобы это появилось на экране, нажмите «Включить». ⇒ Preview updated. Press “Turn on” to see it on your screen. ⇒ Vorschau aktualisiert. Zum Anzeigen auf dem Bildschirm „Einschalten“ drücken.
+1. Так будет выглядеть ⇒ 1. This is how it will look ⇒ 1. So wird es aussehen
+2. Время года ⇒ 2. Season ⇒ 2. Jahreszeit
+3. Сугробы, листва и трава на окнах ⇒ 3. Snow, leaves and grass on windows ⇒ 3. Schnee, Laub und Gras auf Fenstern
+4. Праздники ⇒ 4. Holidays ⇒ 4. Feiertage
+5. Гирлянда ⇒ 5. Garland ⇒ 5. Lichterkette
+6. Видеокарта ⇒ 6. Graphics card ⇒ 6. Grafikkarte
+Снег, листья, лепестки и пух падают поверх окон и копятся на их верхнем краю; весной и летом на окнах растёт трава с цветами. Есть праздники с гирляндами, украшениями и салютом. Клики проходят сквозь эффекты, окна не мешают работе. ⇒ Snow, leaves, petals and fluff fall over your windows and pile up on their top edge; in spring and summer grass with flowers grows on windows. There are holidays with garlands, decorations and fireworks. Clicks pass through the effects, windows do not get in the way. ⇒ Schnee, Blätter, Blütenblätter und Pusteblumen fallen über die Fenster und sammeln sich auf deren Oberkante; im Frühling und Sommer wächst auf den Fenstern Gras mit Blumen. Es gibt Feiertage mit Lichterketten, Dekoration und Feuerwerk. Klicks gehen durch die Effekte hindurch.
+Это выдуманный рабочий стол: на нём работает то же самое, что появится у вас. Пока не нажали «Включить», на настоящем экране ничего не меняется. ⇒ This is an imaginary desktop: the same thing runs on it as will appear on yours. Until you press “Turn on”, nothing changes on your real screen. ⇒ Das ist ein ausgedachter Desktop: Darauf läuft dasselbe wie bei Ihnen. Solange Sie nicht „Einschalten“ drücken, ändert sich auf dem echten Bildschirm nichts.
+Сезон ⇒ Season ⇒ Jahreszeit
+«По календарю» — само меняется зимой, весной, летом и осенью. ⇒ “By calendar” changes by itself in winter, spring, summer and autumn. ⇒ „Nach Kalender“ wechselt von selbst zwischen Winter, Frühling, Sommer und Herbst.
+По календарю ⇒ By calendar ⇒ Nach Kalender
+Зима ⇒ Winter ⇒ Winter
+Весна ⇒ Spring ⇒ Frühling
+Лето ⇒ Summer ⇒ Sommer
+Осень ⇒ Autumn ⇒ Herbst
+Выключено ⇒ Off ⇒ Aus
+Сколько падает ⇒ How much falls ⇒ Wie viel fällt
+от редких снежинок до метели ⇒ from a few flakes to a blizzard ⇒ von wenigen Flocken bis zum Schneesturm
+Ветер ⇒ Wind ⇒ Wind
+минус — влево, плюс — вправо; порывы бывают всегда ⇒ minus is left, plus is right; gusts always happen ⇒ minus = links, plus = rechts; Böen gibt es immer
+Скорость ⇒ Speed ⇒ Geschwindigkeit
+в процентах ⇒ in percent ⇒ in Prozent
+Размер ⇒ Size ⇒ Größe
+снежинок, листьев, лепестков ⇒ of flakes, leaves, petals ⇒ der Flocken, Blätter, Blütenblätter
+Копится на окнах ⇒ Piles up on windows ⇒ Sammelt sich auf Fenstern
+снег зимой, лепестки весной, пух летом, листья осенью; если окно сдвинуть — осыпается комьями ⇒ snow in winter, petals in spring, fluff in summer, leaves in autumn; move the window and it falls off in clumps ⇒ Schnee im Winter, Blütenblätter im Frühling, Pusteblumen im Sommer, Laub im Herbst; wird das Fenster verschoben, rutscht es in Klumpen ab
+Высота ⇒ Height ⇒ Höhe
+насколько высокие сугробы и листва ⇒ how high the drifts and leaves get ⇒ wie hoch Schneehaufen und Laub werden
+И на панели задач ⇒ And on the taskbar ⇒ Und auf der Taskleiste
+панель задач — тоже подоконник (только если она внизу экрана) ⇒ the taskbar is a windowsill too (only if it is at the bottom of the screen) ⇒ die Taskleiste ist auch ein Fensterbrett (nur wenn sie unten ist)
+Праздник ⇒ Holiday ⇒ Feiertag
+«По датам» — включается сам: Новый год, Хэллоуин, 14 февраля, 8 Марта, Масленица, Пасха. Или выберите вручную. ⇒ “By dates” turns on by itself: New Year, Halloween, 14 February, 8 March, Maslenitsa, Easter. Or pick one by hand. ⇒ „Nach Datum“ schaltet sich selbst ein: Neujahr, Halloween, 14. Februar, 8. März, Maslenitsa, Ostern. Oder von Hand wählen.
+Нет ⇒ None ⇒ Keiner
+По датам ⇒ By dates ⇒ Nach Datum
+Новый год ⇒ New Year ⇒ Neujahr
+Рождество ⇒ Christmas ⇒ Weihnachten
+Тет ⇒ Tet ⇒ Tet
+Хэллоуин ⇒ Halloween ⇒ Halloween
+День влюблённых ⇒ Valentine's Day ⇒ Valentinstag
+8 Марта ⇒ 8 March ⇒ 8. März
+Масленица ⇒ Maslenitsa ⇒ Maslenitsa
+Пасха ⇒ Easter ⇒ Ostern
+Свой праздник ⇒ Own holiday ⇒ Eigener Feiertag
+Украшения на окнах ⇒ Decorations on windows ⇒ Dekoration auf Fenstern
+тыквы, ёлки и подарки, яйца, тюльпаны, блины — сидят на верхнем крае окон ⇒ pumpkins, trees and gifts, eggs, tulips, pancakes sit on the top edge of windows ⇒ Kürbisse, Bäume und Geschenke, Eier, Tulpen, Pfannkuchen sitzen auf der Fensterkante
+Отсчёт до Нового года ⇒ New Year countdown ⇒ Neujahrs-Countdown
+в последние 10 секунд года — большие цифры, потом поздравление ⇒ big digits in the last 10 seconds of the year, then a greeting ⇒ große Ziffern in den letzten 10 Sekunden des Jahres, dann ein Glückwunsch
+Салют в полночь ⇒ Fireworks at midnight ⇒ Feuerwerk um Mitternacht
+в Новый год ровно в 00:00 ⇒ on New Year at exactly 00:00 ⇒ an Neujahr genau um 00:00
+Салют сейчас ⇒ Fireworks now ⇒ Feuerwerk jetzt
+запустить на пробу (в предпросмотре и на экране, если включено) ⇒ launch a test (in the preview and on screen, if turned on) ⇒ zum Testen starten (in der Vorschau und auf dem Bildschirm, wenn eingeschaltet)
+Запустить салют ⇒ Launch fireworks ⇒ Feuerwerk starten
+Проверить новогоднюю полночь ⇒ Check New Year's midnight ⇒ Neujahrsmitternacht testen
+отсчёт 10…1, поздравление и салют — как будет в Новый год ⇒ countdown 10…1, greeting and fireworks, just like on New Year ⇒ Countdown 10…1, Glückwunsch und Feuerwerk, wie an Neujahr
+Проверить ⇒ Check ⇒ Testen
+Дата праздника ⇒ Holiday date ⇒ Datum des Feiertags
+каждый год в этот день ⇒ every year on this day ⇒ jedes Jahr an diesem Tag
+день ⇒ day ⇒ Tag
+месяц ⇒ month ⇒ Monat
+Что падает ⇒ What falls ⇒ Was fällt
+Шарики ⇒ Balloons ⇒ Luftballons
+Конфетти ⇒ Confetti ⇒ Konfetti
+Цветы ⇒ Flowers ⇒ Blumen
+Салют ⇒ Fireworks ⇒ Feuerwerk
+Когда ⇒ When ⇒ Wann
+Никогда ⇒ Never ⇒ Nie
+В праздники ⇒ On holidays ⇒ An Feiertagen
+Всегда ⇒ Always ⇒ Immer
+Где ⇒ Where ⇒ Wo
+На окнах и панели задач ⇒ On windows and the taskbar ⇒ Auf Fenstern und der Taskleiste
+Только на панели задач ⇒ Taskbar only ⇒ Nur auf der Taskleiste
+Как горит ⇒ How it lights ⇒ Wie sie leuchtet
+Переливы ⇒ Fading ⇒ Überblenden
+Бегущие огни ⇒ Chase ⇒ Lauflicht
+Мерцание ⇒ Twinkle ⇒ Funkeln
+Ровный свет ⇒ Steady ⇒ Gleichmäßig
+Вспышки ⇒ Flashes ⇒ Blitze
+Смена цвета ⇒ Color change ⇒ Farbwechsel
+Цвет ⇒ Color ⇒ Farbe
+Разноцветная ⇒ Multicolor ⇒ Bunt
+Тёплая ⇒ Warm ⇒ Warm
+Холодная ⇒ Cold ⇒ Kalt
+Синяя ⇒ Blue ⇒ Blau
+Красно-зелёная ⇒ Red-green ⇒ Rot-Grün
+Золотая ⇒ Gold ⇒ Gold
+Лампочки ⇒ Bulbs ⇒ Lampen
+Звёздочки ⇒ Stars ⇒ Sterne
+Бахрома ⇒ Fringe ⇒ Fransen
+Чем рисовать ⇒ What to draw with ⇒ Womit gezeichnet wird
+Эффекты рисуются на видеокарте. Если у вас две (встроенная и мощная) — выберите, какая. «Как решит Windows» подходит почти всегда. ⇒ Effects are drawn on the graphics card. If you have two (built-in and powerful), choose which. “Let Windows decide” fits almost always. ⇒ Die Effekte werden auf der Grafikkarte gezeichnet. Bei zwei Karten (integriert und leistungsstark) wählen Sie, welche. „Windows entscheidet“ passt fast immer.
+Как решит Windows ⇒ Let Windows decide ⇒ Windows entscheidet
+Мощная видеокарта ⇒ Powerful graphics card ⇒ Leistungsstarke Grafikkarte
+Применить изменения ⇒ Apply changes ⇒ Änderungen anwenden
+Включить ⇒ Turn on ⇒ Einschalten
+Выключить ⇒ Turn off ⇒ Ausschalten
+Включено. Season Plus остаётся в фоне и запускается вместе с Windows. Окно можно закрыть. ⇒ Turned on. Season Plus stays in the background and starts with Windows. You can close the window. ⇒ Eingeschaltet. Season Plus bleibt im Hintergrund und startet mit Windows. Sie können das Fenster schließen.
+Выключено: с экрана и из автозапуска всё убрано. ⇒ Turned off: everything is removed from the screen and from startup. ⇒ Ausgeschaltet: alles wurde vom Bildschirm und aus dem Autostart entfernt.
+Включено: Season Plus работает в фоне и запускается вместе с Windows. ⇒ On: Season Plus runs in the background and starts with Windows. ⇒ Ein: Season Plus läuft im Hintergrund und startet mit Windows.
+Не включено. ⇒ Not turned on. ⇒ Nicht eingeschaltet.
+Полноэкранные игры, видео и презентации плагин определяет сам и в это время ничего не рисует. «Выключить» убирает всё с экрана и из автозапуска. ⇒ The plugin detects full-screen games, video and presentations by itself and draws nothing then. “Turn off” removes everything from the screen and from startup. ⇒ Das Plugin erkennt Vollbildspiele, Videos und Präsentationen selbst und zeichnet dann nichts. „Ausschalten“ entfernt alles vom Bildschirm und aus dem Autostart.
