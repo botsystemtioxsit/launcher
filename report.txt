@@ -1,0 +1,131 @@
+=== окно (снимки без показа) ===
+screenshot: код 0
+  файл: loc-missing-SeasonPlus-en.txt (11295 байт)
+  файл: season-autumn.png (34008 байт)
+  файл: season-countdown.png (62920 байт)
+  файл: season-easter.png (88971 байт)
+  файл: season-fireworks.png (60780 байт)
+  файл: season-greeting.png (118301 байт)
+  файл: season-halloween.png (99808 байт)
+  файл: season-maslenitsa.png (69003 байт)
+  файл: season-newyear.png (57633 байт)
+  файл: season-plus-ui.png (219900 байт)
+  файл: season-rain.png (23751 байт)
+  файл: season-spring.png (46509 байт)
+  файл: season-summer.png (46729 байт)
+  файл: season-tet.png (70878 байт)
+  файл: season-valentine.png (70218 байт)
+  файл: season-winter.png (8322 байт)
+  файл: season-women.png (91437 байт)
+
+=== самопроверка ===
+selftest: код 0
+PASS сезон по календарю: январь — зима
+PASS сезон по календарю: апрель — весна
+PASS сезон по календарю: июль — лето
+PASS сезон по календарю: октябрь — осень
+PASS сезон «выключено» → −1
+PASS праздник: 31 декабря — Новый год
+PASS праздник: 31 октября — Хэллоуин
+PASS праздник: 14 февраля
+PASS праздник: 8 марта
+PASS праздник: середина лета — нет
+PASS Пасха 2027 — 2 мая — 2027-05-02
+PASS Пасха 2026 — 12 апреля — 2026-04-12
+PASS Масленица 2027 — за 7 недель до Пасхи
+PASS праздник вручную важнее даты
+PASS свой праздник по дате
+PASS закрытый кусок вырезается из середины
+PASS закрыто целиком — ничего не остаётся
+PASS не пересекается — без изменений
+PASS два окна подряд
+PASS край на самом углу провален на радиус
+PASS за пределами угла провала нет
+PASS провал плавно уменьшается
+PASS у панели задач провала нет
+PASS зимой на окне вырастает сугроб — высота 17.0 px, потолок 17
+PASS сугроб не выше потолка
+PASS сугроб растёт не слишком быстро и не слишком медленно — половина потолка за 36 с
+PASS у скруглённого угла поверхность ниже, чем в середине
+PASS на панели задач тоже ложится
+PASS частиц не больше предела — частиц 22
+PASS после сдвига окна сугроб пуст
+PASS и осыпается комьями — частиц было 22, стало 83
+PASS закрытое окно забыто
+PASS зимой был сугроб, при смене на лето он растаял — 17.0 → 0.9
+PASS весной на окне растёт трава — 21.0
+PASS на панели задач трава не растёт
+PASS осенью на окне копятся листья — 17.0
+PASS в Хэллоуин летают летучие мыши
+PASS салют: появляются ракеты и искры — искр и ракет 214
+PASS отсчёт перед Новым годом показывает цифру
+PASS после полуночи — поздравление
+PASS отсчёт можно выключить
+PASS кадр не пустой — закрашено 45505 пикселей
+PASS кадр не залит целиком
+PASS цвет не ярче прозрачности (как требует окно со слоями)
+ВСЁ В ПОРЯДКЕ
+  снимок: season-autumn.png (34008 байт)
+  снимок: season-countdown.png (62920 байт)
+  снимок: season-easter.png (88971 байт)
+  снимок: season-fireworks.png (60780 байт)
+  снимок: season-greeting.png (118301 байт)
+  снимок: season-halloween.png (99808 байт)
+  снимок: season-maslenitsa.png (69003 байт)
+  снимок: season-newyear.png (57633 байт)
+  снимок: season-rain.png (23751 байт)
+  снимок: season-spring.png (46509 байт)
+  снимок: season-summer.png (46729 байт)
+  снимок: season-tet.png (70878 байт)
+  снимок: season-valentine.png (70218 байт)
+  снимок: season-winter.png (8322 байт)
+  снимок: season-women.png (91437 байт)
+
+=== настоящий экран: прозрачное окно поверх рабочего стола ===
+снимок экрана: 1024x768
+overlay-test: код 0
+окно работает: True
+частиц: 25
+ошибка: нет
+найдено краёв окон: 4
+  окно 137..891 y=130 r=8 видимых кусков 1
+  окно 111..865 y=104 r=8 видимых кусков 1
+  окно 51..1081 y=52 r=8 видимых кусков 1
+  панель 0..1024 y=720 r=0 видимых кусков 1
+остановлено: True
+  итого файл: \report.txt 5354
+  итого файл: \overlay\overlay-test.txt 388
+  итого файл: \overlay\screen.bmp 3145782
+  итого файл: \self\season-autumn.png 34008
+  итого файл: \self\season-countdown.png 62920
+  итого файл: \self\season-easter.png 88971
+  итого файл: \self\season-fireworks.png 60780
+  итого файл: \self\season-greeting.png 118301
+  итого файл: \self\season-halloween.png 99808
+  итого файл: \self\season-maslenitsa.png 69003
+  итого файл: \self\season-newyear.png 57633
+  итого файл: \self\season-rain.png 23751
+  итого файл: \self\season-spring.png 46509
+  итого файл: \self\season-summer.png 46729
+  итого файл: \self\season-tet.png 70878
+  итого файл: \self\season-valentine.png 70218
+  итого файл: \self\season-winter.png 8322
+  итого файл: \self\season-women.png 91437
+  итого файл: \self\selftest.txt 3025
+  итого файл: \ui\loc-missing-SeasonPlus-en.txt 11295
+  итого файл: \ui\season-autumn.png 34008
+  итого файл: \ui\season-countdown.png 62920
+  итого файл: \ui\season-easter.png 88971
+  итого файл: \ui\season-fireworks.png 60780
+  итого файл: \ui\season-greeting.png 118301
+  итого файл: \ui\season-halloween.png 99808
+  итого файл: \ui\season-maslenitsa.png 69003
+  итого файл: \ui\season-newyear.png 57633
+  итого файл: \ui\season-plus-ui.png 219900
+  итого файл: \ui\season-rain.png 23751
+  итого файл: \ui\season-spring.png 46509
+  итого файл: \ui\season-summer.png 46729
+  итого файл: \ui\season-tet.png 70878
+  итого файл: \ui\season-valentine.png 70218
+  итого файл: \ui\season-winter.png 8322
+  итого файл: \ui\season-women.png 91437
