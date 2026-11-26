@@ -29,6 +29,7 @@ private:
     std::vector<RoundRect> rects_; Fill fill_{};
     RECT lastRect_{};
     bool shown_ = false, dirty_ = true;
+    ULONGLONG lastPlaceAt_ = 0;
     int w_ = 0, h_ = 0;
     void redraw();
     void ensureBuffer(int w, int h);

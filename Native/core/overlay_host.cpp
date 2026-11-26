@@ -136,7 +136,7 @@ void OverlayHost::loop() {
     int vx = 0, vy = 0, vw = 0, vh = 0;
     auto t0 = std::chrono::steady_clock::now();
     double last = 0, nextScan = 0, nextCheck = 0, nextMetrics = 0, topAt = 0;
-    bool paused = false, lPrev = false, rPrev = false;
+    bool paused = false, lPrev = false, rPrev = false; int pausedHits = 0;
     double ms = 0;
     std::vector<Surf> surfaces;
     const DWORD pid = GetCurrentProcessId();
@@ -175,7 +175,7 @@ void OverlayHost::loop() {
                 haveTarget = true;
             }
         }
-        if (now >= nextCheck) { paused = gs::fullscreenBusy(); nextCheck = now + 0.5; }
+        if (now >= nextCheck) { bool raw = gs::fullscreenBusy(); pausedHits = raw ? pausedHits + 1 : 0; paused = pausedHits >= 3; nextCheck = now + 0.5; }   // прячемся, только если «полный экран» держится больше секунды
         if (paused) {
             if (visible) { ShowWindow(hwnd, SW_HIDE); visible = false; }
             Sleep(150);
@@ -204,7 +204,19 @@ void OverlayHost::loop() {
             if (r == DXGI_ERROR_DEVICE_REMOVED || r == DXGI_ERROR_DEVICE_RESET) { haveTarget = false; nextMetrics = 0; vw = 0; Sleep(200); continue; }
             tg.dcomp->Commit();
             if (!visible) { ShowWindow(hwnd, SW_SHOWNOACTIVATE); visible = true; topAt = now; }
-            else if (now - topAt > 1.5) { SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE); topAt = now; }
+            else if (now - topAt > 2.0) {
+                topAt = now;
+                // поднимаем окно, только если над ним оказалось чужое «поверх всех» окно (панель задач не в счёт: слой прозрачный, и борьба с ней даёт мигание)
+                bool covered = false;
+                for (HWND w = GetWindow(hwnd, GW_HWNDPREV); w; w = GetWindow(w, GW_HWNDPREV)) {
+                    if (!(GetWindowLongPtrW(w, GWL_EXSTYLE) & WS_EX_TOPMOST) || !IsWindowVisible(w)) continue;
+                    wchar_t cls[64] = {}; GetClassNameW(w, cls, 64);
+                    if (!wcscmp(cls, L"Shell_TrayWnd") || !wcscmp(cls, L"Shell_SecondaryTrayWnd") || !wcsncmp(cls, L"GhostShell", 10) || !wcscmp(cls, kClass)) continue;
+                    if (GetWindowLongPtrW(w, GWL_EXSTYLE) & (WS_EX_TRANSPARENT | WS_EX_NOACTIVATE)) continue;
+                    covered = true; break;
+                }
+                if (covered) SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            }
             ms = ms * 0.9 + 0.1 * std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - f0).count();
             avgFrameMs = ms;
             framesDrawn++;

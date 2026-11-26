@@ -156,8 +156,21 @@ bool fullscreenBusy() {
     static Fn fn = (Fn)GetProcAddress(LoadLibraryW(L"shell32.dll"), "SHQueryUserNotificationState");
     if (!fn) return false;
     int s = 0;
-    // 2 — полноэкранное приложение, 3 — игра (Direct3D), 4 — презентация
-    return fn(&s) == 0 && (s == 2 || s == 3 || s == 4);
+    // 3 — игра (Direct3D), 4 — презентация верим сразу; 2 («занят») Windows ставит и по другим поводам (в том числе из-за нашего же прозрачного окна
+    // во весь экран — тогда слой прятался и показывался по кругу, это и было мигание), поэтому для него проверяем сами: впереди чужое окно без рамки на весь монитор
+    if (fn(&s) != 0) return false;
+    if (s == 3 || s == 4) return true;
+    if (s != 2) return false;
+    HWND fg = GetForegroundWindow();
+    if (!fg || !IsWindowVisible(fg)) return false;
+    DWORD pid = 0; GetWindowThreadProcessId(fg, &pid);
+    if (pid == GetCurrentProcessId()) return false;
+    wchar_t cls[64] = {}; GetClassNameW(fg, cls, 64);
+    if (!wcscmp(cls, L"Progman") || !wcscmp(cls, L"WorkerW") || !wcscmp(cls, L"Shell_TrayWnd") || !wcscmp(cls, L"Shell_SecondaryTrayWnd")) return false;
+    if (GetWindowLongW(fg, GWL_STYLE) & WS_CAPTION) return false;
+    RECT r{}; if (!GetWindowRect(fg, &r)) return false;
+    MONITORINFO mi{sizeof mi}; if (!GetMonitorInfoW(MonitorFromWindow(fg, MONITOR_DEFAULTTONEAREST), &mi)) return false;
+    return r.left <= mi.rcMonitor.left + 2 && r.top <= mi.rcMonitor.top + 2 && r.right >= mi.rcMonitor.right - 2 && r.bottom >= mi.rcMonitor.bottom - 2;
 }
 
 }  // namespace gs

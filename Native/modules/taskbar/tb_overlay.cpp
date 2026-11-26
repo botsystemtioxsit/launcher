@@ -123,9 +123,12 @@ void OverlayWindow::setShapes(const std::vector<RoundRect>& rects, const Fill& f
 
 // Ставит окно на место панели — СРАЗУ ПОД ней в порядке окон (она выше, мы сразу за ней).
 void OverlayWindow::place(HWND taskbar, const RECT& rc) {
-    bool below = GetWindow(taskbar, GW_HWNDNEXT) == hwnd_;
+    // окно плашек должно лежать под панелью; между ними могут оказаться другие наши прозрачные слои — это нормально (иначе окна дерутся за порядок и панель мигает)
+    bool below = false; { HWND w = GetWindow(taskbar, GW_HWNDNEXT); for (int i = 0; i < 4 && w; i++, w = GetWindow(w, GW_HWNDNEXT)) if (w == hwnd_) { below = true; break; } }
+    ULONGLONG nowT = GetTickCount64();
     bool moved = rc.left != lastRect_.left || rc.top != lastRect_.top || rc.right - rc.left != lastRect_.right - lastRect_.left || rc.bottom - rc.top != lastRect_.bottom - lastRect_.top;
-    if (!shown_ || moved || below == false) {
+    if (!shown_ || moved || (!below && nowT - lastPlaceAt_ > 1000)) {
+        lastPlaceAt_ = nowT;
         SetWindowPos(hwnd_, taskbar, rc.left, rc.top, std::max<LONG>(1, rc.right - rc.left), std::max<LONG>(1, rc.bottom - rc.top), SWP_NOACTIVATE | (shown_ ? 0 : SWP_SHOWWINDOW));
         lastRect_ = rc; shown_ = true; dirty_ = true;
     }
