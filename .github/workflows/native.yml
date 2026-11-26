@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main, 'ccr-**']
-    paths: ['Native/**', 'Shared/Loc/common.loc', '.github/workflows/native.yml', 'tests/e2e/native-*.ps1', 'Plugins/SeasonPlus/app.ico', 'Plugins/SeasonPlus/app.manifest']
+    paths: ['Native/**', 'Shared/Loc/common.loc', '.github/workflows/native.yml', 'tests/e2e/native-*.ps1']
 
 permissions:
   contents: write
