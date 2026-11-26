@@ -1,4 +1,5 @@
 // Проверка расчёта плашек и разбора измерений без Windows и Проводника (те же проверки, что были у прежнего плагина Taskbar Plus).
+#include <algorithm>
 #include <cstdio>
 #include <functional>
 #include <string>
