@@ -94,7 +94,11 @@ void WallpaperModule::revert() {
     status_ = L("Обои выключены. Системные обои Windows на месте.");
 }
 
-void WallpaperModule::refreshList() { list_ = listAll(); listDirty_ = false; }
+void WallpaperModule::refreshList() {
+    list_ = listAll();
+    if (list_.empty()) { ensureBuiltins(kVersion); list_ = listAll(); }   // окно открыто раньше запуска (снимки, проверки)
+    listDirty_ = false;
+}
 const Wallpaper* WallpaperModule::find(const std::string& id) const { for (auto& w : list_) if (w.id == id) return &w; return nullptr; }
 
 void WallpaperModule::applySettings() {

@@ -1,5 +1,6 @@
 // Проверка модуля «Обои» на настоящей Windows (запускается в CI: GhostStyle.exe --selftest=<папка>).
 #include <windows.h>
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <filesystem>

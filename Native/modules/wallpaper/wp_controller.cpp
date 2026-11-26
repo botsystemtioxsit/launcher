@@ -308,7 +308,7 @@ void Controller::onTimer() {
 }
 
 static bool otherEngine(std::string& which) {
-    static const char* names[] = {"wallpaper32.exe", "wallpaper64.exe", "lively.exe", "livelywpf.exe"};
+    static const char* names[] = {"wallpaper32.exe", "wallpaper64.exe", "lively.exe", "livelywpf.exe", "WallpaperPlus.exe"};
     HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snap == INVALID_HANDLE_VALUE) return false;
     PROCESSENTRY32W pe{sizeof pe}; bool found = false;
