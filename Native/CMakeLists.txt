@@ -52,12 +52,16 @@ add_library(mod_cursor STATIC modules/cursor/cursor_settings.cpp modules/cursor/
 target_include_directories(mod_cursor PUBLIC modules/cursor)
 target_link_libraries(mod_cursor PUBLIC gscore)
 
+add_library(mod_color STATIC modules/color/color_module.cpp)
+target_include_directories(mod_color PUBLIC modules/color)
+target_link_libraries(mod_color PUBLIC gscore mod_cursor dwmapi psapi)
+
 # проверка логики Season без экрана
 add_executable(sp_logic_test modules/season/logic_test.cpp)
 target_link_libraries(sp_logic_test PRIVATE mod_season)
 
 # приложение
-gs_embed_text(${CMAKE_BINARY_DIR}/style_loc.cpp kStyleLoc ${CMAKE_SOURCE_DIR}/apps/style/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/season/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/cursor/Loc/app.loc)
+gs_embed_text(${CMAKE_BINARY_DIR}/style_loc.cpp kStyleLoc ${CMAKE_SOURCE_DIR}/apps/style/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/season/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/cursor/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/color/Loc/app.loc)
 add_executable(GhostStyle WIN32 apps/style/main.cpp apps/style/app.rc ${CMAKE_BINARY_DIR}/style_loc.cpp)
-target_link_libraries(GhostStyle PRIVATE mod_season mod_cursor gscore)
+target_link_libraries(GhostStyle PRIVATE mod_season mod_cursor mod_color gscore)
 target_link_options(GhostStyle PRIVATE -mwindows -municode)
