@@ -150,6 +150,18 @@
   ],
   "plugins": [
     {
+      "id": "ghost-style",
+      "category": "style",
+      "name": "Ghost Style",
+      "desc": "Всё оформление Windows в одном приложении (нативное, лёгкое): сезоны и праздники на окнах (снег, листья, трава, гирлянды, салют), свой курсор со шлейфом и эффектами клика, один цвет для акцента, выделения и заголовков окон. Остальное (панель задач, обои, значки, скины) добавляется в него по очереди.",
+      "desktop": {
+        "repo": "launcher",
+        "tag": "latest",
+        "asset": "GhostStyle.exe",
+        "name": "Ghost Style"
+      }
+    },
+    {
       "id": "taskbar-plus",
       "category": "style",
       "name": "Taskbar Plus",
@@ -207,18 +219,6 @@
         "tag": "latest",
         "asset": "CursorPlus.exe",
         "name": "Cursor Plus"
-      }
-    },
-    {
-      "id": "season-plus",
-      "category": "style",
-      "name": "Season Plus",
-      "desc": "Времена года на рабочем столе: снег, листья, лепестки и пух падают поверх окон и копятся на них, на окнах растёт трава и цветы. Праздники: гирлянды, украшения, салют и отсчёт до Нового года.",
-      "desktop": {
-        "repo": "launcher",
-        "tag": "latest",
-        "asset": "SeasonPlus.exe",
-        "name": "Season Plus"
       }
     },
     {

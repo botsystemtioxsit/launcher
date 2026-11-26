@@ -51,6 +51,8 @@ static class Catalog
 
     static AppDef[] DefaultPlugins() => new[]
     {
+        new AppDef("ghost-style", "Ghost Style", "Всё оформление Windows в одном приложении (нативное, лёгкое): сезоны и праздники на окнах, свой курсор со шлейфом, один цвет для акцента и заголовков. Остальное добавляется в него по очереди.",
+            "launcher", "Ghost Style", null, "GhostStyle.exe", "Ghost Style", IsPlugin: true),
         new AppDef("taskbar-plus", "Taskbar Plus", "Панель задач Windows 11 по-своему: плавающая панель, вкладка или острова под значками; цвет — в Color Plus.",
             "launcher", "Taskbar Plus", null, "TaskbarPlus.exe", "Taskbar Plus", IsPlugin: true),
         new AppDef("color-plus", "Color Plus", "Один цвет для окон, выделения и панели задач: выберите, посмотрите на предпросмотре и примените.",
@@ -61,8 +63,6 @@ static class Catalog
             "launcher", "Wallpaper Plus", null, "WallpaperPlus.exe", "Wallpaper Plus", IsPlugin: true),
         new AppDef("cursor-plus", "Cursor Plus", "Свой курсор: цвет, форма, шлейф за мышью (комета, искры, звёзды…) и эффекты клика. Можно нарисовать курсор самому.",
             "launcher", "Cursor Plus", null, "CursorPlus.exe", "Cursor Plus", IsPlugin: true),
-        new AppDef("season-plus", "Season Plus", "Времена года на рабочем столе: снег, листья, лепестки и пух падают поверх окон и копятся на них, на окнах растёт трава. Праздники: гирлянды, украшения, салют и отсчёт до Нового года.",
-            "launcher", "Season Plus", null, "SeasonPlus.exe", "Season Plus", IsPlugin: true),
         new AppDef("dns-plus", "DNS Plus", "Защищённый DNS NextDNS для всей Windows: вставьте свой ID и нажмите «Включить». Сам сервис NextDNS (nextdns.io) бесплатный — профиль и фильтры настраиваются у них. Нужна Windows 11.",
             "launcher", "DNS Plus", null, "DnsPlus.exe", "DNS Plus", IsPlugin: true),
         new AppDef("gateway-plus", "Gateway Plus", "Личный VPN: мастер сам ставит на ваш сервер по SSH WireGuard или наш протокол GSP (лучше переносит потери связи), шлюз пускает через него весь интернет компьютера — сайты видят адрес и страну сервера. Нужен бесплатный аккаунт; только личное использование.",

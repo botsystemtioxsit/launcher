@@ -213,7 +213,7 @@ JOBS = {
     "Plugins/CursorPlus/app.ico": cursor,
     "Plugins/GatewayPlus/app.ico": gateway,
     "Plugins/SkinLoader/app.ico": skinloader,
-    "Plugins/SeasonPlus/app.ico": seasonplus,
+    "Native/apps/style/app.ico": seasonplus,
 }
 
 if __name__ == "__main__":
