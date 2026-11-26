@@ -349,11 +349,23 @@ ColorModule::ColorModule() {
 
 void ColorModule::init(ID3D11Device* dev) { canvas_.init(dev, 640, 250); }
 
+// Цвет островов панели: модуль «Панель» читает этот файл (тот же формат, что у прежнего Color Plus)
+static void writeTaskbarLink(bool active, const std::string& color) {
+    using gs::Json;
+    Json j = Json::Object();
+    j.set("Active", Json::Boolean(active)); j.set("BgMode", Json::String(active ? "solid" : "default")); j.set("BgColor", Json::String(color));
+    j.set("BgOpacity", Json::Number(85)); j.set("HideStroke", Json::Boolean(false));
+    std::string out; gs::jsonDump(j, out);
+    gs::makeDirs(gs::appDataDir());
+    gs::writeFileAtomic(gs::appDataDir() + L"\\color-plus-taskbar.json", out);
+}
+
 std::string ColorModule::applyNow(const ColorSettings& s) {
     ColorSettings n = s; n.normalize();
     std::string err;
     try { if (n.Windows) applyWindows(n.Color); else restoreWindows(); } catch (...) { err = "окна: ошибка"; }
     if (n.Windows && TitleEngine::supported()) titles_.set(n.Color); else titles_.stop();
+    writeTaskbarLink(n.Taskbar, n.Color);
     n.Applied = true;
     saved_ = n; draft_ = n; saved_.save();
     if (app_ && app_->changed) app_->changed();
@@ -362,6 +374,7 @@ std::string ColorModule::applyNow(const ColorSettings& s) {
 
 void ColorModule::revert() {
     titles_.stop();
+    writeTaskbarLink(false, saved_.Color);
     restoreWindows();
     saved_.Applied = false; draft_.Applied = false; saved_.save();
     if (app_ && app_->changed) app_->changed();

@@ -53,8 +53,6 @@ static class Catalog
     {
         new AppDef("ghost-style", "Ghost Style", "Всё оформление Windows в одном приложении (нативное, лёгкое): сезоны и праздники на окнах, свой курсор со шлейфом, один цвет для акцента и заголовков. Остальное добавляется в него по очереди.",
             "launcher", "Ghost Style", null, "GhostStyle.exe", "Ghost Style", IsPlugin: true),
-        new AppDef("taskbar-plus", "Taskbar Plus", "Панель задач Windows 11 по-своему: плавающая панель, вкладка или острова под значками; цвет — в Color Plus.",
-            "launcher", "Taskbar Plus", null, "TaskbarPlus.exe", "Taskbar Plus", IsPlugin: true),
         new AppDef("icon-plus", "Icon Plus", "Значки Windows по-своему: один цвет для всех значков или готовый набор иконок, сайт с иконками внутри.",
             "launcher", "Icon Plus", null, "IconPlus.exe", "Icon Plus", IsPlugin: true),
         new AppDef("dns-plus", "DNS Plus", "Защищённый DNS NextDNS для всей Windows: вставьте свой ID и нажмите «Включить». Сам сервис NextDNS (nextdns.io) бесплатный — профиль и фильтры настраиваются у них. Нужна Windows 11.",

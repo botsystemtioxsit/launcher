@@ -95,12 +95,25 @@ add_library(mod_wallpaper STATIC modules/wallpaper/wp_model.cpp modules/wallpape
 target_include_directories(mod_wallpaper PUBLIC modules/wallpaper)
 target_link_libraries(mod_wallpaper PUBLIC gscore winhttp iphlpapi dwmapi shell32 ole32 uuid)
 
+add_library(mod_taskbar STATIC modules/taskbar/tb_logic.cpp modules/taskbar/tb_settings.cpp modules/taskbar/tb_engine.cpp modules/taskbar/tb_overlay.cpp
+  modules/taskbar/tb_registry.cpp modules/taskbar/taskbar_module.cpp modules/taskbar/logic_test.cpp)
+target_include_directories(mod_taskbar PUBLIC modules/taskbar)
+target_link_libraries(mod_taskbar PUBLIC gscore d2d1 shell32 advapi32 ole32)
+
+# движок панели задач (DLL для Проводника, собирается отдельно Visual Studio — см. modules/taskbar/engine): вкладывается в exe, если он собран
+set(GS_TAP_DLL "" CACHE FILEPATH "GhostShellTap.dll")
+if(GS_TAP_DLL AND EXISTS "${GS_TAP_DLL}")
+  file(WRITE ${CMAKE_BINARY_DIR}/tap.rc "GSTAPDLL RCDATA \"${GS_TAP_DLL}\"\n")
+else()
+  file(WRITE ${CMAKE_BINARY_DIR}/tap.rc "GSNOTAP RCDATA { 0 }\n")
+endif()
+
 # проверка логики Season без экрана
 add_executable(sp_logic_test modules/season/logic_test.cpp)
 target_link_libraries(sp_logic_test PRIVATE mod_season)
 
 # приложение
-gs_embed_text(${CMAKE_BINARY_DIR}/style_loc.cpp kStyleLoc ${CMAKE_SOURCE_DIR}/apps/style/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/season/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/wallpaper/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/cursor/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/color/Loc/app.loc)
-add_executable(GhostStyle WIN32 apps/style/main.cpp apps/style/app.rc ${CMAKE_BINARY_DIR}/wv2.rc ${CMAKE_BINARY_DIR}/style_loc.cpp)
-target_link_libraries(GhostStyle PRIVATE mod_season mod_wallpaper mod_cursor mod_color gscore)
+gs_embed_text(${CMAKE_BINARY_DIR}/style_loc.cpp kStyleLoc ${CMAKE_SOURCE_DIR}/apps/style/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/season/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/wallpaper/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/taskbar/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/cursor/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/color/Loc/app.loc)
+add_executable(GhostStyle WIN32 apps/style/main.cpp apps/style/app.rc ${CMAKE_BINARY_DIR}/wv2.rc ${CMAKE_BINARY_DIR}/tap.rc ${CMAKE_BINARY_DIR}/style_loc.cpp)
+target_link_libraries(GhostStyle PRIVATE mod_season mod_wallpaper mod_taskbar mod_cursor mod_color gscore)
 target_link_options(GhostStyle PRIVATE -mwindows -municode)

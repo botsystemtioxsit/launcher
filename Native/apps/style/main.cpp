@@ -7,6 +7,7 @@
 #include "color_module.hpp"
 #include "cursor_module.hpp"
 #include "season_module.hpp"
+#include "taskbar_module.hpp"
 #include "wallpaper_module.hpp"
 
 namespace gs { extern const char* kStyleLoc; }
@@ -17,6 +18,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     std::vector<std::unique_ptr<sp::Module>> modules;
     modules.push_back(std::make_unique<sp::SeasonModule>());
     modules.push_back(std::make_unique<wp::WallpaperModule>());
+    modules.push_back(std::make_unique<tb::TaskbarModule>());
     modules.push_back(std::make_unique<sp::CursorModule>());
     modules.push_back(std::make_unique<sp::ColorModule>());
     sp::AppInfo info;

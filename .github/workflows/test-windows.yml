@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
     inputs:
       scenario:
-        description: 'plugins — проверка плагина панели; bg — опыты с прозрачным фоном окон; glass — опыты со «стеклом» под окном'
-        default: plugins
+        description: 'icons — проверка Icon Plus; bg — опыты с прозрачным фоном окон; glass — опыты со «стеклом» под окном'
+        default: icons
         type: choice
-        options: [plugins, bg, glass, site, icons, store, startapps, taskbar, gateway, gateway-ssh, browser, skins, dns, gsp, loc]
+        options: [icons, bg, glass, site, store, startapps, gateway, gateway-ssh, browser, skins, dns, gsp, loc]
 
 permissions:
   contents: write
@@ -20,12 +20,12 @@ jobs:
     if: inputs.scenario != 'gateway-ssh'
     runs-on: windows-latest
     env:
-      SCENARIO: ${{ inputs.scenario || 'plugins' }}
+      SCENARIO: ${{ inputs.scenario || 'icons' }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
-        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'icons' || env.SCENARIO == 'startapps' || env.SCENARIO == 'taskbar' || env.SCENARIO == 'gateway' || env.SCENARIO == 'browser' || env.SCENARIO == 'skins' || env.SCENARIO == 'dns' || env.SCENARIO == 'loc'
+        if: env.SCENARIO == 'icons' || env.SCENARIO == 'startapps' || env.SCENARIO == 'gateway' || env.SCENARIO == 'browser' || env.SCENARIO == 'skins' || env.SCENARIO == 'dns' || env.SCENARIO == 'loc'
         with:
           dotnet-version: 8.0.x
 
@@ -60,24 +60,6 @@ jobs:
           Write-Host "подпись wintun.dll: $($sig.Status) $($sig.SignerCertificate.Subject)"
           if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notmatch 'WireGuard') { throw 'подпись wintun.dll не подтвердилась' }
 
-      - name: Build engine
-        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'taskbar' || env.SCENARIO == 'skins' || env.SCENARIO == 'loc'
-        shell: pwsh
-        run: |
-          cmake -S Plugins/TaskbarPlus/Engine -B Plugins/TaskbarPlus/Engine/build -A x64
-          if ($LASTEXITCODE -ne 0) { throw 'cmake: настройка не удалась' }
-          cmake --build Plugins/TaskbarPlus/Engine/build --config Release
-          if ($LASTEXITCODE -ne 0) { throw 'cmake: сборка не удалась' }
-
-      - name: Publish plugins
-        if: env.SCENARIO == 'plugins' || env.SCENARIO == 'taskbar'
-        shell: pwsh
-        run: |
-          foreach ($p in 'TaskbarPlus') {
-            dotnet publish Plugins/$p/$p.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-test
-            if ($LASTEXITCODE -ne 0) { throw "publish $p не удался" }
-          }
-
       - name: Publish Gateway Plus
         if: env.SCENARIO == 'gateway'
         shell: pwsh
@@ -92,7 +74,7 @@ jobs:
         run: |
           dotnet publish Launcher/Launcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-test
           if ($LASTEXITCODE -ne 0) { throw 'publish Launcher не удался' }
-          foreach ($p in 'GatewayPlus','IconPlus','TaskbarPlus','SkinLoader','DnsPlus') {
+          foreach ($p in 'GatewayPlus','IconPlus','SkinLoader','DnsPlus') {
             dotnet publish Plugins/$p/$p.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-test
             if ($LASTEXITCODE -ne 0) { throw "publish $p не удался" }
           }
@@ -109,7 +91,7 @@ jobs:
         if: env.SCENARIO == 'skins'
         shell: pwsh
         run: |
-          foreach ($p in 'TaskbarPlus','IconPlus') {
+          foreach ($p in 'IconPlus') {
             dotnet publish Plugins/$p/$p.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o "$env:LOCALAPPDATA/Programs/$p"
             if ($LASTEXITCODE -ne 0) { throw "publish $p не удался" }
           }
@@ -139,14 +121,13 @@ jobs:
           elseif ($env:SCENARIO -eq 'icons') { ./tests/e2e/icon-plus.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'store') { ./tests/e2e/store-probe.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'startapps') { ./tests/e2e/startapps.ps1 -Out results }
-          elseif ($env:SCENARIO -eq 'taskbar') { ./tests/e2e/taskbar-states.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'gateway') { ./tests/e2e/gateway-plus.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'browser') { ./tests/e2e/browser-plugins.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'skins') { ./tests/e2e/skin-loader.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'dns') { ./tests/e2e/dns-plus.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'gsp') { ./tests/e2e/gsp-windows.ps1 -Out results }
           elseif ($env:SCENARIO -eq 'loc') { ./tests/e2e/loc.ps1 -Out results }
-          else { ./tests/e2e/run.ps1 -Out results }
+          else { ./tests/e2e/icon-plus.ps1 -Out results }
         continue-on-error: true
 
       - uses: actions/upload-artifact@v4
@@ -159,7 +140,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } elseif ($env:SCENARIO -eq 'site') { 'ci-e2e-site' } elseif ($env:SCENARIO -eq 'icons') { 'ci-e2e-icons' } elseif ($env:SCENARIO -eq 'store') { 'ci-e2e-store' } elseif ($env:SCENARIO -eq 'startapps') { 'ci-e2e-startapps' } elseif ($env:SCENARIO -eq 'taskbar') { 'ci-e2e-taskbar' } elseif ($env:SCENARIO -eq 'gpu') { 'ci-e2e-gpu' } elseif ($env:SCENARIO -eq 'extend') { 'ci-e2e-extend' } elseif ($env:SCENARIO -eq 'accent') { 'ci-e2e-accent' } elseif ($env:SCENARIO -eq 'gateway') { 'ci-e2e-gateway' } elseif ($env:SCENARIO -eq 'browser') { 'ci-e2e-browser' } elseif ($env:SCENARIO -eq 'skins') { 'ci-e2e-skins' } elseif ($env:SCENARIO -eq 'dns') { 'ci-e2e-dns' } elseif ($env:SCENARIO -eq 'gsp') { 'ci-e2e-gsp' } elseif ($env:SCENARIO -eq 'loc') { 'ci-e2e-loc' } else { 'ci-e2e' }
+          $branch = if ($env:SCENARIO -eq 'bg') { 'ci-e2e-bg' } elseif ($env:SCENARIO -eq 'glass') { 'ci-e2e-glass' } elseif ($env:SCENARIO -eq 'site') { 'ci-e2e-site' } elseif ($env:SCENARIO -eq 'icons') { 'ci-e2e-icons' } elseif ($env:SCENARIO -eq 'store') { 'ci-e2e-store' } elseif ($env:SCENARIO -eq 'startapps') { 'ci-e2e-startapps' } elseif ($env:SCENARIO -eq 'gpu') { 'ci-e2e-gpu' } elseif ($env:SCENARIO -eq 'extend') { 'ci-e2e-extend' } elseif ($env:SCENARIO -eq 'accent') { 'ci-e2e-accent' } elseif ($env:SCENARIO -eq 'gateway') { 'ci-e2e-gateway' } elseif ($env:SCENARIO -eq 'browser') { 'ci-e2e-browser' } elseif ($env:SCENARIO -eq 'skins') { 'ci-e2e-skins' } elseif ($env:SCENARIO -eq 'dns') { 'ci-e2e-dns' } elseif ($env:SCENARIO -eq 'gsp') { 'ci-e2e-gsp' } elseif ($env:SCENARIO -eq 'loc') { 'ci-e2e-loc' } else { 'ci-e2e' }
           $dir = Join-Path $env:RUNNER_TEMP 'e2e-branch'
           New-Item -ItemType Directory -Force $dir | Out-Null
           Copy-Item results/* $dir -Recurse -ErrorAction SilentlyContinue

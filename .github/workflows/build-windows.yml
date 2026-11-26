@@ -26,17 +26,17 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      # Движок Taskbar Plus для Windows 11 (C++ DLL, подключается к панели задач). Собираем первым — если не соберётся, дальше идти незачем.
-      # Файл вкладывается в TaskbarPlus.exe (см. TaskbarPlus.csproj), отдельно его скачивать не нужно.
-      - name: Build Taskbar Plus engine
+      # Движок панели задач Windows 11 (C++ DLL, подключается к панели в Проводнике). Собираем первым — если не соберётся, дальше идти незачем.
+      # Файл вкладывается в GhostStyle.exe (модуль «Панель»), отдельно его скачивать не нужно.
+      - name: Build taskbar engine
         shell: pwsh
         run: |
-          cmake -S Plugins/TaskbarPlus/Engine -B Plugins/TaskbarPlus/Engine/build -A x64
+          cmake -S Native/modules/taskbar/engine -B Native/modules/taskbar/engine/build -A x64
           if ($LASTEXITCODE -ne 0) { throw 'cmake: настройка не удалась' }
-          cmake --build Plugins/TaskbarPlus/Engine/build --config Release
+          cmake --build Native/modules/taskbar/engine/build --config Release
           if ($LASTEXITCODE -ne 0) { throw 'cmake: сборка движка не удалась' }
-          if (-not (Test-Path Plugins/TaskbarPlus/Engine/out/GhostShellTap.dll)) { throw 'GhostShellTap.dll не появился' }
-          Get-Item Plugins/TaskbarPlus/Engine/out/GhostShellTap.dll | Select-Object Name, Length
+          if (-not (Test-Path Native/modules/taskbar/engine/out/GhostShellTap.dll)) { throw 'GhostShellTap.dll не появился' }
+          Get-Item Native/modules/taskbar/engine/out/GhostShellTap.dll | Select-Object Name, Length
 
       # Один самодостаточный .exe: .NET внутри, ставить ничего на компьютер не нужно.
       - name: Publish
@@ -66,29 +66,6 @@ jobs:
           Set-Content -Path out/TIOXSITTerminal.exe.sha256 -Value "$h  TIOXSITTerminal.exe" -NoNewline
 
       # Плагины лаунчера — отдельные программы (скачиваются из лаунчера только по кнопке), тоже в этом релизе
-      - name: Publish Taskbar Plus
-        run: >
-          dotnet publish Plugins/TaskbarPlus/TaskbarPlus.csproj -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:TieredPGO=false -p:IncludeNativeLibrariesForSelfExtract=true
-          -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out-taskbarplus
-
-      # Проверка: движок действительно вложен в TaskbarPlus.exe (иначе «Новый движок» в плагине был бы пустой кнопкой)
-      - name: Check engine embedded in Taskbar Plus
-        shell: pwsh
-        run: |
-          $dll = Get-ChildItem Plugins/TaskbarPlus/obj -Recurse -Filter TaskbarPlus.dll | Select-Object -First 1
-          if (-not $dll) { throw 'TaskbarPlus.dll не найден в obj' }
-          $names = [Reflection.Assembly]::Load([IO.File]::ReadAllBytes($dll.FullName)).GetManifestResourceNames()
-          Write-Host ('Ресурсы: ' + ($names -join ', '))
-          if ($names -notcontains 'GhostShellTap.dll') { throw 'GhostShellTap.dll не вложен в плагин' }
-
-      - name: Checksum Taskbar Plus
-        shell: pwsh
-        run: |
-          Copy-Item out-taskbarplus/TaskbarPlus.exe out/TaskbarPlus.exe
-          $h = (Get-FileHash out/TaskbarPlus.exe -Algorithm SHA256).Hash.ToLower()
-          Set-Content -Path out/TaskbarPlus.exe.sha256 -Value "$h  TaskbarPlus.exe" -NoNewline
-
       # Icon Plus — третий плагин: значки Windows одним цветом или из готового набора, сайт с иконками во встроенном браузере
       - name: Publish Icon Plus
         run: >
@@ -188,7 +165,7 @@ jobs:
         shell: pwsh
         run: |
           $env:PATH = 'C:\mingw64\bin;' + $env:PATH
-          cmake -S Native -B build-native -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+          cmake -S Native -B build-native -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ "-DGS_TAP_DLL=$($PWD.Path -replace '\\','/')/Native/modules/taskbar/engine/out/GhostShellTap.dll"
           if ($LASTEXITCODE -ne 0) { throw 'cmake для Ghost Style не вышел' }
           cmake --build build-native --target GhostStyle
           if ($LASTEXITCODE -ne 0) { throw 'сборка Ghost Style не вышла' }
@@ -256,7 +233,6 @@ jobs:
           path: |
             out/BattleLauncher.exe*
             out/TIOXSITTerminal.exe*
-            out/TaskbarPlus.exe*
             out/IconPlus.exe*
             out/DnsPlus.exe*
             out/GatewayPlus.exe*
@@ -276,7 +252,7 @@ jobs:
           $v = (Select-String -Path Launcher/Launcher.csproj -Pattern '<Version>(.+)</Version>').Matches[0].Groups[1].Value
           gh release view "v$v" *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/DnsPlus.exe out/DnsPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/gsp-linux-amd64 out/gsp-linux-amd64.sha256 out/gsp-linux-arm64 out/gsp-linux-arm64.sha256 out/SkinLoader.exe out/SkinLoader.exe.sha256 out/GhostStyle.exe out/GhostStyle.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --clobber
+            gh release upload "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/DnsPlus.exe out/DnsPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/gsp-linux-amd64 out/gsp-linux-amd64.sha256 out/gsp-linux-arm64 out/gsp-linux-arm64.sha256 out/SkinLoader.exe out/SkinLoader.exe.sha256 out/GhostStyle.exe out/GhostStyle.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --clobber
           } else {
-            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/TaskbarPlus.exe out/TaskbarPlus.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/DnsPlus.exe out/DnsPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/gsp-linux-amd64 out/gsp-linux-amd64.sha256 out/gsp-linux-arm64 out/gsp-linux-arm64.sha256 out/SkinLoader.exe out/SkinLoader.exe.sha256 out/GhostStyle.exe out/GhostStyle.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --title "Лаунчер $v" --notes "BattleLauncher.exe — лаунчер (скачай и запусти). TIOXSITTerminal.exe — Терминал, админ-панель в виде приложения. TaskbarPlus.exe — плагин Taskbar Plus, IconPlus.exe — плагин Icon Plus, DnsPlus.exe — плагин DNS Plus, GatewayPlus.exe — плагин Gateway Plus (внутри него Windows-клиент GSP), gsp-linux-amd64 / gsp-linux-arm64 — серверная программа GSP (её скачивает скрипт установки сервера, ставить вручную не нужно), SkinLoader.exe — плагин Skin Loader, GhostStyle.exe — приложение Ghost Style, все оформление в одном (ставятся из лаунчера, вкладка «Плагины → Для компьютера»). MaskPlus-extension.zip — расширение для браузера Mask Plus (вкладка «Плагины → Для браузера»)."
+            gh release create "v$v" out/BattleLauncher.exe out/BattleLauncher.exe.sha256 out/TIOXSITTerminal.exe out/TIOXSITTerminal.exe.sha256 out/IconPlus.exe out/IconPlus.exe.sha256 out/DnsPlus.exe out/DnsPlus.exe.sha256 out/GatewayPlus.exe out/GatewayPlus.exe.sha256 out/gsp-linux-amd64 out/gsp-linux-amd64.sha256 out/gsp-linux-arm64 out/gsp-linux-arm64.sha256 out/SkinLoader.exe out/SkinLoader.exe.sha256 out/GhostStyle.exe out/GhostStyle.exe.sha256 out/MaskPlus-extension.zip out/MaskPlus-extension.zip.sha256 --title "Лаунчер $v" --notes "BattleLauncher.exe — лаунчер (скачай и запусти). TIOXSITTerminal.exe — Терминал, админ-панель в виде приложения. IconPlus.exe — плагин Icon Plus, DnsPlus.exe — плагин DNS Plus, GatewayPlus.exe — плагин Gateway Plus (внутри него Windows-клиент GSP), gsp-linux-amd64 / gsp-linux-arm64 — серверная программа GSP (её скачивает скрипт установки сервера, ставить вручную не нужно), SkinLoader.exe — плагин Skin Loader, GhostStyle.exe — приложение Ghost Style, все оформление в одном (ставятся из лаунчера, вкладка «Плагины → Для компьютера»). MaskPlus-extension.zip — расширение для браузера Mask Plus (вкладка «Плагины → Для браузера»)."
           }

@@ -162,18 +162,6 @@
       }
     },
     {
-      "id": "taskbar-plus",
-      "category": "style",
-      "name": "Taskbar Plus",
-      "desc": "Панель задач Windows 11 по-своему: плавающая панель, вкладка или острова под значками; цвет — в Color Plus.",
-      "desktop": {
-        "repo": "launcher",
-        "tag": "latest",
-        "asset": "TaskbarPlus.exe",
-        "name": "Taskbar Plus"
-      }
-    },
-    {
       "id": "icon-plus",
       "category": "style",
       "name": "Icon Plus",
