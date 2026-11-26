@@ -5,16 +5,24 @@ New-Item -ItemType Directory -Force $Out | Out-Null
 $outFull = (Resolve-Path $Out).Path
 $log = Join-Path $outFull 'report.txt'
 function Say($t) { $t | Tee-Object -FilePath $log -Append }
-$exe = (Resolve-Path 'native-dist/SeasonPlus.exe').Path
+$exe = (Resolve-Path 'native-dist/GhostStyle.exe').Path
 $env:GS_TRACE = Join-Path $outFull 'trace.log'
 $len = (Get-Item $exe).Length
-Say "SeasonPlus.exe: $len байт"
+Say "GhostStyle.exe: $len байт"
 Say ("Windows: " + [Environment]::OSVersion.Version)
 
 Say ''
 Say '=== логика (под Windows) ==='
 $lt = Join-Path (Split-Path $exe) 'sp_logic_test.exe'
 & $lt 2>$null | Tee-Object -FilePath (Join-Path $outFull 'logic-test.txt') | ForEach-Object { Say $_ }
+
+Say ''
+Say '=== проверки модулей на настоящей Windows ==='
+$st = Join-Path $outFull 'selftest'
+New-Item -ItemType Directory -Force $st | Out-Null
+$p = Start-Process -FilePath $exe -ArgumentList "--selftest=$st" -PassThru
+if (-not $p.WaitForExit(300000)) { $p.Kill(); Say 'selftest: не завершился за 5 минут' } else { Say "selftest: код $($p.ExitCode)" }
+if (Test-Path (Join-Path $st 'selftest.txt')) { Get-Content (Join-Path $st 'selftest.txt') | ForEach-Object { Say $_ } } else { Say 'selftest.txt не появился' }
 
 Say ''
 Say '=== снимки сцен и окна ==='

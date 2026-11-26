@@ -1,4 +1,4 @@
-#include "overlay.hpp"
+#include "overlay_host.hpp"
 #include <d3d11.h>
 #include <dxgi1_2.h>
 #include <dcomp.h>
@@ -7,9 +7,8 @@
 #include <wrl/client.h>
 #include <chrono>
 #include <mmsystem.h>
-#include "draw.hpp"
 #include "scanner.hpp"
-#include "scenes.hpp"
+#include "snapshots.hpp"
 #include "win.hpp"
 
 using Microsoft::WRL::ComPtr;
@@ -17,7 +16,7 @@ using Microsoft::WRL::ComPtr;
 namespace sp {
 namespace {
 
-const wchar_t* kClass = L"GhostShellSeasonPlusNativeOverlay";
+const wchar_t* kClass = L"GhostShellStyleOverlay";
 
 LRESULT CALLBACK wndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
     if (m == WM_NCHITTEST) return HTTRANSPARENT;
@@ -96,21 +95,20 @@ void dumpFrame(Target& tg, const std::wstring& path) {
 
 }  // namespace
 
-void Overlay::start(const Settings& s) {
-    setSettings(s);
+void OverlayHost::addLayer(Layer* l) { std::lock_guard<std::mutex> g(mu_); layers_.push_back(l); }
+
+void OverlayHost::start() {
     if (running()) return;
     run_ = true; healthy = true;
     th_ = std::thread([this] { loop(); });
 }
 
-void Overlay::stop() {
+void OverlayHost::stop() {
     run_ = false;
     if (th_.joinable()) th_.join();
 }
 
-void Overlay::setSettings(const Settings& s) { std::lock_guard<std::mutex> l(mu_); settings_ = s; }
-
-void Overlay::loop() {
+void OverlayHost::loop() {
     gs::trace("overlay: поток запущен");
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     timeBeginPeriod(1);
@@ -118,7 +116,7 @@ void Overlay::loop() {
     WNDCLASSEXW wc{}; wc.cbSize = sizeof wc; wc.lpfnWndProc = wndProc; wc.hInstance = inst; wc.lpszClassName = kClass;
     RegisterClassExW(&wc);
     HWND hwnd = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
-                                kClass, L"Ghost Shell Season Plus", WS_POPUP, 0, 0, 1, 1, nullptr, nullptr, inst, nullptr);
+                                kClass, L"Ghost Style Overlay", WS_POPUP, 0, 0, 1, 1, nullptr, nullptr, inst, nullptr);
     if (!hwnd) { fail("не удалось создать окно"); CoUninitialize(); return; }
     SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
 
@@ -133,22 +131,32 @@ void Overlay::loop() {
     Gfx gfx;
     if (!gfx.init(fac.Get(), dw.Get())) { fail("не удалось подготовить рисование"); DestroyWindow(hwnd); CoUninitialize(); return; }
 
-    Engine eng((int)GetTickCount());
     Target tg;
-    bool haveTarget = false, visible = false, warmed = false;
+    bool haveTarget = false, visible = false;
     int vx = 0, vy = 0, vw = 0, vh = 0;
     auto t0 = std::chrono::steady_clock::now();
     double last = 0, nextScan = 0, nextCheck = 0, nextMetrics = 0, topAt = 0;
-    bool paused = false;
+    bool paused = false, lPrev = false, rPrev = false;
     double ms = 0;
+    std::vector<Surf> surfaces;
     const DWORD pid = GetCurrentProcessId();
 
     while (run_) {
         double now = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
         double dt = std::min(0.05, now - last); last = now;
         MSG m; while (PeekMessageW(&m, nullptr, 0, 0, PM_REMOVE)) { TranslateMessage(&m); DispatchMessageW(&m); }
-        { std::lock_guard<std::mutex> l(mu_); eng.S = settings_; }
-        if (fw_.exchange(false)) eng.startFireworks();
+
+        std::vector<Layer*> layers;
+        { std::lock_guard<std::mutex> l(mu_); layers = layers_; }
+        bool any = false, needSurf = false;
+        for (auto* ly : layers) if (ly->wantsFrame()) { any = true; if (ly->needsSurfaces()) needSurf = true; }
+        if (!any) {                                    // всё выключено: окно спрятано, ничего не рисуется и почти ничего не стоит
+            if (visible) { ShowWindow(hwnd, SW_HIDE); visible = false; }
+            for (int i = 0; i < 10 && run_ && !wake_; i++) Sleep(20);
+            wake_ = false;
+            last = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+            continue;
+        }
 
         if (now >= nextMetrics) {
             nextMetrics = now + 2;
@@ -156,8 +164,9 @@ void Overlay::loop() {
             nw = std::min(8192, std::max(100, nw)); nh = std::min(8192, std::max(100, nh));
             if (nx != vx || ny != vy || nw != vw || nh != vh || !haveTarget) {
                 vx = nx; vy = ny; vw = nw; vh = nh;
-                eng.OX = vx; eng.OY = vy; eng.W = vw; eng.H = vh;
+                for (auto* ly : layers) ly->onResize(vx, vy, vw, vh);
                 SetWindowPos(hwnd, HWND_TOPMOST, vx, vy, vw, vh, SWP_NOACTIVATE);
+                gfx.begin(nullptr);
                 tg = Target();
                 gs::trace("overlay: создаю цель");
                 std::string e = tg.create(hwnd, fac.Get(), vw, vh, true);
@@ -172,21 +181,22 @@ void Overlay::loop() {
             Sleep(150);
             continue;
         }
-        if (now >= nextScan) {
-            nextScan = now + 0.12;
-            eng.setSurfaces(scanWindows(pid, vy));
-            if (!warmed) { eng.warm(8); warmed = true; }
-        }
-        eng.step(dt);
-        particles = (int)eng.parts().size();
+
+        Env env;
+        env.dt = dt; env.time = now; env.vx = vx; env.vy = vy; env.vw = vw; env.vh = vh;
+        if (needSurf && now >= nextScan) { nextScan = now + 0.12; surfaces = scanWindows(pid, vy); env.surfacesChanged = true; }
+        env.surfaces = &surfaces;
+        GetCursorPos(&env.cursor);
+        env.lbtn = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0; env.rbtn = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0;
+        env.lclick = env.lbtn && !lPrev; env.rclick = env.rbtn && !rPrev; lPrev = env.lbtn; rPrev = env.rbtn;
+        for (auto* ly : layers) if (ly->wantsFrame()) ly->update(env);
 
         if (haveTarget) {
             auto f0 = std::chrono::steady_clock::now();
-            gs::trace("overlay: кадр");
             tg.ctx->BeginDraw();
             tg.ctx->Clear(D2D1::ColorF(0, 0, 0, 0));
             gfx.begin(tg.ctx.Get());
-            drawScene(gfx, eng);
+            for (auto* ly : layers) if (ly->wantsFrame()) ly->draw(gfx, env);
             HRESULT r = tg.ctx->EndDraw();
             if (r == (HRESULT)D2DERR_RECREATE_TARGET) { haveTarget = false; nextMetrics = 0; vw = 0; Sleep(200); continue; }
             if (framesDrawn == 240) { char dp[MAX_PATH * 2]; DWORD n = GetEnvironmentVariableA("GS_DUMP", dp, (DWORD)sizeof dp); if (n && n < sizeof dp) dumpFrame(tg, gs::widen(dp)); }

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <ctime>
 #include "json.hpp"
+#include "surface.hpp"
 
 namespace sp {
 
@@ -39,18 +40,5 @@ struct Cal {
     static Date addDays(Date a, int n);
     static Date today();
 };
-
-struct Seg { double a, b; };
-
-// Верхний край окна или панели задач: пиксели экрана.
-struct Surf {
-    long long id = 0;
-    double left = 0, right = 0, top = 0, radius = 0;
-    bool taskbar = false;
-    std::vector<Seg> vis;            // видимые куски края
-};
-
-// Куски отрезка [a, b], не попавшие в закрытые промежутки.
-std::vector<Seg> subtract(double a, double b, const std::vector<Seg>& cut);
 
 }  // namespace sp

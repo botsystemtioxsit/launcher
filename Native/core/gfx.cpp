@@ -101,6 +101,33 @@ void Gfx::heart(float cx, float cy, float s, Rgb c, float a) {
     rt_->SetTransform(old);
 }
 
+static ComPtr<ID2D1PathGeometry> pathOf(ID2D1Factory1* f, const std::vector<Gfx::Pt>& p, bool closed) {
+    ComPtr<ID2D1PathGeometry> g;
+    if (p.size() < 2 || FAILED(f->CreatePathGeometry(&g))) return nullptr;
+    ComPtr<ID2D1GeometrySink> s;
+    if (FAILED(g->Open(&s))) return nullptr;
+    s->BeginFigure(D2D1::Point2F(p[0].x, p[0].y), D2D1_FIGURE_BEGIN_FILLED);
+    for (size_t i = 1; i < p.size(); i++) s->AddLine(D2D1::Point2F(p[i].x, p[i].y));
+    s->EndFigure(closed ? D2D1_FIGURE_END_CLOSED : D2D1_FIGURE_END_OPEN);
+    s->Close();
+    return g;
+}
+
+void Gfx::polyFill(const std::vector<Pt>& p, Rgb c, float a) { auto g = pathOf(fac_, p, true); if (g) rt_->FillGeometry(g.Get(), brush(c, a)); }
+
+void Gfx::polyStroke(const std::vector<Pt>& p, bool closed, float w, Rgb c, float a, bool roundJoin) {
+    auto g = pathOf(fac_, p, closed);
+    if (!g) return;
+    if (!roundJoin) {
+        ComPtr<ID2D1StrokeStyle> miter;
+        D2D1_STROKE_STYLE_PROPERTIES sp = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_LINE_JOIN_MITER);
+        if (SUCCEEDED(fac_->CreateStrokeStyle(sp, nullptr, 0, &miter))) { rt_->DrawGeometry(g.Get(), brush(c, a), w, miter.Get()); return; }
+    }
+    rt_->DrawGeometry(g.Get(), brush(c, a), w, round_.Get());
+}
+
+void Gfx::ringXY(float cx, float cy, float rx, float ry, float w, Rgb c, float a) { rt_->DrawEllipse(D2D1::Ellipse(D2D1::Point2F(cx, cy), rx, ry), brush(c, a), w); }
+
 void Gfx::hill(float x0, float step, const std::vector<float>& top, const std::vector<float>& base, Rgb cTop, Rgb cBot, float a) {
     if (top.size() < 2) return;
     ComPtr<ID2D1PathGeometry> g;

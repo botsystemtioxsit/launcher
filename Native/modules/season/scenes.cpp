@@ -1,4 +1,5 @@
 #include "scenes.hpp"
+#include "snapshots.hpp"
 #include <d2d1_1.h>
 #include <dwrite.h>
 #include <wincodec.h>
@@ -63,16 +64,7 @@ bool savePng(IWICImagingFactory* wic, IWICBitmap* bmp, const std::wstring& path,
 
 }  // namespace
 
-bool savePngBgra(const std::wstring& path, int w, int h, const unsigned char* px, int stride) {
-    CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-    ComPtr<IWICImagingFactory> wic;
-    if (FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&wic)))) return false;
-    ComPtr<IWICBitmap> bmp;
-    if (FAILED(wic->CreateBitmapFromMemory(w, h, GUID_WICPixelFormat32bppBGRA, stride, stride * h, const_cast<BYTE*>(px), &bmp))) return false;
-    return savePng(wic.Get(), bmp.Get(), path, w, h);
-}
-
-int renderScenes(const std::wstring& dir, std::string& log) {
+int renderSeasonScenes(const std::wstring& dir, std::string& log) {
     gs::makeDirs(dir);
     gs::trace("renderScenes: старт");
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
