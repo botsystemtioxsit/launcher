@@ -186,18 +186,6 @@
       }
     },
     {
-      "id": "wallpaper-plus",
-      "category": "style",
-      "name": "Wallpaper Plus",
-      "desc": "Живые обои рабочего стола: видео, GIF и анимированные страницы. Каталог, свои файлы и сайты, конструктор своих обоев.",
-      "desktop": {
-        "repo": "launcher",
-        "tag": "latest",
-        "asset": "WallpaperPlus.exe",
-        "name": "Wallpaper Plus"
-      }
-    },
-    {
       "id": "dns-plus",
       "category": "net",
       "name": "DNS Plus",

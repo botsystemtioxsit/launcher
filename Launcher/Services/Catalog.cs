@@ -57,8 +57,6 @@ static class Catalog
             "launcher", "Taskbar Plus", null, "TaskbarPlus.exe", "Taskbar Plus", IsPlugin: true),
         new AppDef("icon-plus", "Icon Plus", "Значки Windows по-своему: один цвет для всех значков или готовый набор иконок, сайт с иконками внутри.",
             "launcher", "Icon Plus", null, "IconPlus.exe", "Icon Plus", IsPlugin: true),
-        new AppDef("wallpaper-plus", "Wallpaper Plus", "Живые обои рабочего стола: видео, GIF и анимированные страницы. Каталог, свои файлы и сайты, конструктор своих обоев.",
-            "launcher", "Wallpaper Plus", null, "WallpaperPlus.exe", "Wallpaper Plus", IsPlugin: true),
         new AppDef("dns-plus", "DNS Plus", "Защищённый DNS NextDNS для всей Windows: вставьте свой ID и нажмите «Включить». Сам сервис NextDNS (nextdns.io) бесплатный — профиль и фильтры настраиваются у них. Нужна Windows 11.",
             "launcher", "DNS Plus", null, "DnsPlus.exe", "DNS Plus", IsPlugin: true),
         new AppDef("gateway-plus", "Gateway Plus", "Личный VPN: мастер сам ставит на ваш сервер по SSH WireGuard или наш протокол GSP (лучше переносит потери связи), шлюз пускает через него весь интернет компьютера — сайты видят адрес и страну сервера. Нужен бесплатный аккаунт; только личное использование.",

@@ -64,8 +64,9 @@ if(NOT EXISTS ${WV2_DIR}/build/native/include/WebView2.h)
 endif()
 file(WRITE ${CMAKE_BINARY_DIR}/wv2.rc "WV2LOADER RCDATA \"${WV2_DIR}/build/native/x64/WebView2Loader.dll\"\n")
 
-add_library(gscommon STATIC common/win.cpp common/loc.cpp ${CMAKE_BINARY_DIR}/common_loc.cpp)
+add_library(gscommon STATIC common/win.cpp common/loc.cpp common/net.cpp ${CMAKE_BINARY_DIR}/common_loc.cpp)
 target_include_directories(gscommon PUBLIC common)
+target_link_libraries(gscommon PUBLIC winhttp)
 
 # ядро: рисование, слои поверх экрана, оболочка с вкладками
 add_library(gscore STATIC core/gfx.cpp core/scanner.cpp core/surface.cpp core/overlay_host.cpp core/ui_common.cpp core/app.cpp core/snapshots.cpp core/gpu_canvas.cpp core/webview.cpp)

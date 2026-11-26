@@ -208,7 +208,6 @@ JOBS = {
     "Terminal/app.ico": terminal,
     "Plugins/TaskbarPlus/app.ico": taskbar,
     "Plugins/IconPlus/app.ico": icons,
-    "Plugins/WallpaperPlus/app.ico": wallpaper,
     "Plugins/GatewayPlus/app.ico": gateway,
     "Plugins/SkinLoader/app.ico": skinloader,
     "Native/apps/style/app.ico": seasonplus,

@@ -181,11 +181,11 @@ void WallpaperModule::tabLibrary() {
     for (size_t i = 0; i < list_.size(); i++) {
         const Wallpaper& w = list_[i];
         ImGui::PushID((int)i);
-        if (beginCard((w.id).c_str())) {
+        if (ImGui::BeginChild(w.id.c_str(), ImVec2(0, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding)) {
             bool on = saved_.Active == w.id;
             ImGui::PushFont(mono()); ImGui::TextUnformatted(w.title.c_str()); ImGui::PopFont();
             ImGui::SameLine(); ImGui::PushStyleColor(ImGuiCol_Text, muted());
-            char info[160]; std::snprintf(info, sizeof info, "  %s · %s · %.1f МБ%s", L(w.typeLabel()), L(w.builtin() ? "встроенные" : w.source.empty() ? "мои" : w.source.c_str()), w.sizeBytes / 1048576.0, w.overlay ? " · слой" : "");
+            char info[160]; std::snprintf(info, sizeof info, "  %s · %s · %.1f %s%s", L(w.typeLabel()), L(w.builtin() ? "встроенные" : w.source.empty() ? "мои" : w.source.c_str()), w.sizeBytes / 1048576.0, L("МБ"), w.overlay ? L(" · слой") : "");
             ImGui::TextUnformatted(info); ImGui::PopStyleColor();
             if (!w.description.empty() && w.type == "html") { ImGui::PushStyleColor(ImGuiCol_Text, muted()); ImGui::TextWrapped("%s", L(w.description.c_str())); ImGui::PopStyleColor(); }
             if (on) { ImGui::PushStyleColor(ImGuiCol_Button, rgb(0, 240, 255)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13)); }
@@ -202,7 +202,7 @@ void WallpaperModule::tabLibrary() {
                 } else if (ImGui::Button(L("Удалить"))) confirmDelete_ = w.id;
             }
         }
-        endCard();
+        ImGui::EndChild(); ImGui::Spacing();
         ImGui::PopID();
     }
 }
@@ -226,7 +226,7 @@ void WallpaperModule::tabCatalog() {
     for (size_t i = 0; i < items.size(); i++) {
         auto& c = items[i];
         ImGui::PushID((int)i);
-        if (beginCard(("cat-" + c.id).c_str())) {
+        if (ImGui::BeginChild(("cat-" + c.id).c_str(), ImVec2(0, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding)) {
             ImGui::PushFont(mono()); ImGui::TextUnformatted(c.title.c_str()); ImGui::PopFont();
             ImGui::PushStyleColor(ImGuiCol_Text, muted()); ImGui::TextWrapped("%s", c.description.c_str()); ImGui::PopStyleColor();
             Wallpaper tmp; bool have = getWallpaper(c.libraryId(), tmp);
@@ -240,7 +240,7 @@ void WallpaperModule::tabCatalog() {
                 });
             }
         }
-        endCard();
+        ImGui::EndChild(); ImGui::Spacing();
         ImGui::PopID();
     }
     if (!catalogLoaded_ && !catalogBusy_ && catalogErr_.empty()) { ImGui::PushStyleColor(ImGuiCol_Text, muted()); ImGui::TextUnformatted(L("Нажмите «Обновить список».")); ImGui::PopStyleColor(); }
