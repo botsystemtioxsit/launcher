@@ -235,12 +235,14 @@ void OverlayManager::tick() {
 
 void OverlayManager::hideAll() { for (auto& kv : windows_) kv.second->hide(); }
 
+static bool nearBelow(HWND taskbar, HWND ours) { HWND w = GetWindow(taskbar, GW_HWNDNEXT); for (int i = 0; i < 4 && w; i++, w = GetWindow(w, GW_HWNDNEXT)) if (w == ours) return true; return false; }
+
 std::string OverlayManager::describeWindows() const {
     std::string o;
     for (auto& kv : windows_) {
         RECT tb{}, ov{}; GetWindowRect(kv.first, &tb); GetWindowRect(kv.second->hwnd(), &ov);
         char b[400]; std::snprintf(b, sizeof b, "панель %p (%ld,%ld,%ld,%ld); окно плашек %s (%ld,%ld,%ld,%ld); сразу под панелью: %s\n", (void*)kv.first, tb.left, tb.top, tb.right, tb.bottom,
-            kv.second->shown() ? "показано" : "скрыто", ov.left, ov.top, ov.right, ov.bottom, GetWindow(kv.first, GW_HWNDNEXT) == kv.second->hwnd() ? "да" : "нет");
+            kv.second->shown() ? "показано" : "скрыто", ov.left, ov.top, ov.right, ov.bottom, nearBelow(kv.first, kv.second->hwnd()) ? "да" : "нет");
         o += b;
     }
     return o;

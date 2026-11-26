@@ -242,7 +242,7 @@ static class NativeInstaller
     }
 
     // BattleLauncher.exe --selftest-update=<папка>: служебная проверка «обновление не выключает плагин» на Windows-раннере GitHub.
-    // Берёт настоящий релиз плагина Icon Plus (у него есть окно и выход по событию), ставит, запускает, обновляет поверх работающего и смотрит,
+    // Берёт настоящий релиз плагина DNS Plus (у него есть окно и выход по событию), ставит, запускает, обновляет поверх работающего и смотрит,
     // что он запущен снова новым процессом; обновление НЕработающего плагина его не запускает.
     public static void SelfTestUpdate(string outDir)
     {
@@ -255,7 +255,7 @@ static class NativeInstaller
         {
             try
             {
-                var def = Catalog.Plugins.FirstOrDefault(p => p.Id == "icon-plus") ?? throw new InvalidOperationException("в каталоге нет icon-plus");
+                var def = Catalog.Plugins.FirstOrDefault(p => p.Id == "dns-plus") ?? throw new InvalidOperationException("в каталоге нет dns-plus");
                 var progress = new Progress<int?>(_ => { });
                 var pname = Path.GetFileNameWithoutExtension(def.NativeExe!);
                 static void KillAll(string name) { foreach (var p in Process.GetProcessesByName(name)) { try { p.Kill(true); p.WaitForExit(5000); } catch { } } }
