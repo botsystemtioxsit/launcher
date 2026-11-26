@@ -1,7 +1,7 @@
 name: Native apps (C++)
 
-# Нативные (C++) версии плагинов: собираются на Linux (mingw-w64, один статический exe без .NET), логика проверяется там же,
-# а рисование и поведение на экране — на настоящей Windows-машине GitHub. Результат — ветка ci-e2e-native и артефакт native-windows.
+# Нативные (C++) приложения: собираются на Windows-раннере MinGW-w64 (один статический exe без .NET), логика и рисование проверяются там же,
+# на настоящей Windows. Результат — ветка ci-e2e-native и артефакт native-windows.
 on:
   workflow_dispatch:
   push:
@@ -12,54 +12,56 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-test:
+    runs-on: windows-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-      - name: Install toolchain
-        timeout-minutes: 10
+
+      - name: Toolchain info
+        shell: pwsh
         run: |
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y --no-install-recommends mingw-w64 cmake ninja-build g++
-      - name: Logic tests (native Linux build of the engine)
+          $env:PATH = 'C:\mingw64\bin;' + $env:PATH
+          g++ --version | Select-Object -First 1
+          cmake --version | Select-Object -First 1
+          ninja --version
+
+      - name: Build (MinGW-w64)
+        shell: pwsh
         run: |
-          g++ -std=c++20 -O2 -Wall -Wextra -Wno-unused-parameter -INative/common -INative/core -INative/modules/season Native/modules/season/engine.cpp Native/modules/season/model.cpp Native/core/surface.cpp Native/modules/season/logic_test.cpp -o logic_test
-          ./logic_test 2>/dev/null | tee logic-test.txt
-          grep -q "ВСЁ В ПОРЯДКЕ" logic-test.txt
-      - name: Build Windows executables
-        run: |
-          cmake -S Native -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=$PWD/Native/cmake/mingw.cmake -DCMAKE_BUILD_TYPE=Release
-          ninja -C build GhostStyle sp_logic_test
-          mkdir -p dist
-          cp build/out/GhostStyle.exe dist/GhostStyle.debug.exe
-          x86_64-w64-mingw32-strip build/out/GhostStyle.exe build/out/sp_logic_test.exe
-          cp build/out/GhostStyle.exe build/out/sp_logic_test.exe dist/
-          (cd dist && for f in GhostStyle.exe; do sha256sum $f | awk '{print $1"  "$2}' > $f.sha256; done)
-          ls -la dist
+          $env:PATH = 'C:\mingw64\bin;' + $env:PATH
+          cmake -S Native -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+          if ($LASTEXITCODE -ne 0) { throw 'cmake не вышел' }
+          cmake --build build --target GhostStyle sp_logic_test
+          if ($LASTEXITCODE -ne 0) { throw 'сборка не вышла' }
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item build/out/GhostStyle.exe dist/GhostStyle.debug.exe
+          strip build/out/GhostStyle.exe build/out/sp_logic_test.exe
+          Copy-Item build/out/GhostStyle.exe, build/out/sp_logic_test.exe dist/
+          $h = (Get-FileHash dist/GhostStyle.exe -Algorithm SHA256).Hash.ToLower()
+          Set-Content -Path dist/GhostStyle.exe.sha256 -Value "$h  GhostStyle.exe" -NoNewline
+          Get-ChildItem dist | ForEach-Object { "$($_.Name) $($_.Length)" }
+
       - uses: actions/upload-artifact@v4
         with:
           name: native-windows
           path: dist/*
           retention-days: 30
 
-  test-windows:
-    needs: build
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: native-windows
-          path: native-dist
       - name: Run native checks
         shell: pwsh
-        run: ./tests/e2e/native-style.ps1 -Out results
+        run: |
+          New-Item -ItemType Directory -Force native-dist | Out-Null
+          Copy-Item dist/GhostStyle.exe, dist/sp_logic_test.exe native-dist/
+          ./tests/e2e/native-style.ps1 -Out results
         continue-on-error: true
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: native-e2e-results
           path: results/*
+
       - name: Results to branch
         if: always()
         shell: pwsh
@@ -73,7 +75,7 @@ jobs:
           git config user.email 'github-actions@users.noreply.github.com'
           git checkout -q -b ci-e2e-native
           git add .
-          git commit -q -m 'Результаты проверки нативных плагинов на Windows'
+          git commit -q -m 'Результаты проверки нативных приложений на Windows'
           git remote add origin "https://x-access-token:$($env:GH_TOKEN)@github.com/${{ github.repository }}.git"
           git push -q --force origin ci-e2e-native
         env:
