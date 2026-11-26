@@ -135,6 +135,32 @@ def cursor():
     glow(img, l2, MAG, 26, 0.9)
     return img
 
+def seasonplus():
+    img, _ = base()
+    # снежинка над краем окна, на котором лежит сугроб; рядом падающий лист
+    l = layer(); d = ImageDraw.Draw(l)
+    cx, cy, r = 512, 400, 230
+    for k in range(6):
+        a = math.radians(k * 60 - 90)
+        ex, ey = cx + r * math.cos(a), cy + r * math.sin(a)
+        d.line([(cx, cy), (ex, ey)], fill=CYAN + (255,), width=26)
+        for off in (0.55, 0.78):
+            bx, by = cx + r * off * math.cos(a), cy + r * off * math.sin(a)
+            for sgn in (-1, 1):
+                ba = a + sgn * math.radians(55)
+                d.line([(bx, by), (bx + 70 * math.cos(ba), by + 70 * math.sin(ba))], fill=CYAN + (255,), width=18)
+    glow(img, l, CYAN, 22, 0.8)
+    l2 = layer(); d2 = ImageDraw.Draw(l2)
+    d2.rounded_rectangle([150, 700, 874, 760], radius=22, fill=MAG + (255,))
+    d2.pieslice([240, 640, 520, 800], 180, 360, fill=(255, 255, 255, 255))
+    d2.pieslice([440, 610, 760, 800], 180, 360, fill=(255, 255, 255, 255))
+    glow(img, l2, MAG, 18, 0.7)
+    l3 = layer(); d3 = ImageDraw.Draw(l3)
+    d3.ellipse([760, 330, 860, 470], fill=YEL + (255,))
+    d3.line([(780, 450), (840, 350)], fill=(10, 6, 24, 255), width=10)
+    glow(img, l3, YEL, 14, 0.6)
+    return img
+
 def gateway():
     img, _ = base()
     # щит с глобусом внутри и стрелкой-«шлюзом», которая входит слева и выходит справа
@@ -187,6 +213,7 @@ JOBS = {
     "Plugins/CursorPlus/app.ico": cursor,
     "Plugins/GatewayPlus/app.ico": gateway,
     "Plugins/SkinLoader/app.ico": skinloader,
+    "Plugins/SeasonPlus/app.ico": seasonplus,
 }
 
 if __name__ == "__main__":

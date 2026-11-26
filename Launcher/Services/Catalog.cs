@@ -61,6 +61,8 @@ static class Catalog
             "launcher", "Wallpaper Plus", null, "WallpaperPlus.exe", "Wallpaper Plus", IsPlugin: true),
         new AppDef("cursor-plus", "Cursor Plus", "Свой курсор: цвет, форма, шлейф за мышью (комета, искры, звёзды…) и эффекты клика. Можно нарисовать курсор самому.",
             "launcher", "Cursor Plus", null, "CursorPlus.exe", "Cursor Plus", IsPlugin: true),
+        new AppDef("season-plus", "Season Plus", "Времена года на рабочем столе: снег, листья, лепестки и пух падают поверх окон и копятся на них, на окнах растёт трава. Праздники: гирлянды, украшения, салют и отсчёт до Нового года.",
+            "launcher", "Season Plus", null, "SeasonPlus.exe", "Season Plus", IsPlugin: true),
         new AppDef("dns-plus", "DNS Plus", "Защищённый DNS NextDNS для всей Windows: вставьте свой ID и нажмите «Включить». Сам сервис NextDNS (nextdns.io) бесплатный — профиль и фильтры настраиваются у них. Нужна Windows 11.",
             "launcher", "DNS Plus", null, "DnsPlus.exe", "DNS Plus", IsPlugin: true),
         new AppDef("gateway-plus", "Gateway Plus", "Личный VPN: мастер сам ставит на ваш сервер по SSH WireGuard или наш протокол GSP (лучше переносит потери связи), шлюз пускает через него весь интернет компьютера — сайты видят адрес и страну сервера. Нужен бесплатный аккаунт; только личное использование.",

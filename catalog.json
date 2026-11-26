@@ -210,6 +210,18 @@
       }
     },
     {
+      "id": "season-plus",
+      "category": "style",
+      "name": "Season Plus",
+      "desc": "Времена года на рабочем столе: снег, листья, лепестки и пух падают поверх окон и копятся на них, на окнах растёт трава и цветы. Праздники: гирлянды, украшения, салют и отсчёт до Нового года.",
+      "desktop": {
+        "repo": "launcher",
+        "tag": "latest",
+        "asset": "SeasonPlus.exe",
+        "name": "Season Plus"
+      }
+    },
+    {
       "id": "dns-plus",
       "category": "net",
       "name": "DNS Plus",
