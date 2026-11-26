@@ -40,7 +40,7 @@ sealed partial class SeasonEngine
             {
                 var h = HtAt(p, x);
                 if (h < 0.3f) continue;
-                var baseY = (float)(p.Top - Dip(p, x)) + 1f - OY;
+                var baseY = (float)(p.Top + Dip(p, x)) + 1f - OY;
                 var yTop = baseY - h;
                 var xc = x - OX;
                 switch (p.Kind)
@@ -77,7 +77,7 @@ sealed partial class SeasonEngine
             if (g < 1.2f) continue;
             var bx = p.L + i * Step;
             if (bx < sg.A || bx > sg.B) continue;
-            var baseY = (float)(p.Top - Dip(p, bx)) + 1f - OY;
+            var baseY = (float)(p.Top + Dip(p, bx)) + 1f - OY;
             var hs = Hash(p.Seed, (uint)(i * 3 + 1));
             var sway = MathF.Sin((float)t * 1.6f + (float)bx * 0.07f) * g * 0.2f;
             var green = (hs % 3) switch { 0 => new Rgb(96, 168, 64), 1 => new Rgb(70, 140, 52), _ => new Rgb(124, 192, 76) };
@@ -238,7 +238,7 @@ sealed partial class SeasonEngine
                 var h = Hash(p.Seed, (uint)(500 + k));
                 var px = p.L + 40 + (h % 1000) / 1000.0 * Math.Max(0, (p.R - p.L) - 120);
                 if (px < sg.A + 12 || px > sg.B - 12) continue;
-                var by = (float)(p.Top - Dip(p, px)) - Math.Max(0, HtAt(p, px) - 1.5f) + 1f;
+                var by = (float)(p.Top + Dip(p, px)) - Math.Max(0, HtAt(p, px) - 1.5f) + 1f;
                 DrawProp(r, Cx(px), Cy(by), (int)((h >> 10) % 3), k);
             }
         }

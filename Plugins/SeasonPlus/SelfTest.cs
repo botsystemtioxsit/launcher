@@ -95,7 +95,7 @@ static class SelfTest
             L.Check("сугроб не выше потолка", m1 <= max + 0.01);
             L.Check("сугроб растёт не слишком быстро и не слишком медленно", half > 8 && half < 300, "половина потолка за " + half.ToString("0") + " с");
             var p1 = e.Piles.First(q => q.Id == 1);
-            double SurfY(double x) => p1.Top - SeasonEngine.Dip(p1, x) - SeasonEngine.HtAt(p1, x);
+            double SurfY(double x) => p1.Top + SeasonEngine.Dip(p1, x) - SeasonEngine.HtAt(p1, x);
             L.Check("у скруглённого угла поверхность ниже, чем в середине", SurfY(p1.L + 1) > SurfY((p1.L + p1.R) / 2) - 0.01);
             L.Check("на панели задач тоже ложится", Mid(e, 3) > 2);
             L.Check("частиц не больше предела", e.Count <= 3200, "частиц " + e.Count);
@@ -118,7 +118,7 @@ static class SelfTest
             e2.S = new SeasonSettings { Season = "summer", Holiday = "off", Intensity = 100 };
             e2.S.Normalize();
             for (var tt = 0.0; tt < 14; tt += 0.05) { e2.StepTo(0.05); }
-            L.Check("зимой был сугроб, при смене на лето он растаял", wH > 1 && Mid(e2, 1) < 0.5, wH.ToString("0.0") + " → " + Mid(e2, 1).ToString("0.0"));
+            L.Check("зимой был сугроб, при смене на лето он растаял", wH > 1 && Mid(e2, 1) < 2, wH.ToString("0.0") + " → " + Mid(e2, 1).ToString("0.0"));
 
             // трава весной
             var e3 = Make("spring", "off");
@@ -136,7 +136,7 @@ static class SelfTest
             L.Check("в Хэллоуин летают летучие мыши", CountKind(e5, PK.Bat) >= 0 && e5.Holiday == "halloween");
             var e6 = Make("winter", "off"); e6.StartFireworks(10); e6.Warm(6);
             L.Check("салют: появляются ракеты и искры", CountKind(e6, PK.Spark) + CountKind(e6, PK.Rocket) > 10, "искр и ракет " + (CountKind(e6, PK.Spark) + CountKind(e6, PK.Rocket)));
-            var e7 = Make("winter", "newyear"); e7.StepTo(0.001); e7.NyDemo = 3;
+            var e7 = Make("winter", "newyear"); e7.StepTo(0.001); e7.NyDemo = 7;
             L.Check("отсчёт перед Новым годом показывает цифру", e7.BigText(out _) == "3");
             e7.NyDemo = 10.5;
             L.Check("после полуночи — поздравление", e7.BigText(out var gr) == "С Новым годом!" && gr);

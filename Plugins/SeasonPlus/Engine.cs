@@ -116,7 +116,7 @@ sealed partial class SeasonEngine
             if (n >= ps.Length - 20) break;
             var x = (float)(p.L + i * Step);
             ref var c = ref ps[n++];
-            c = new Part { K = PK.Clump, X = x, Y = (float)(p.Top - Dip(p, x) - h), VX = F(-35, 35), VY = F(0, 40), S = MathF.Min(h, 10f) * 0.4f + 1.4f, C = p.Kind, Ph = F(0, 6.28f), Life = 4f };
+            c = new Part { K = PK.Clump, X = x, Y = (float)(p.Top + Dip(p, x) - h), VX = F(-35, 35), VY = F(0, 40), S = MathF.Min(h, 10f) * 0.4f + 1.4f, C = p.Kind, Ph = F(0, 6.28f), Life = 4f };
             spawned++;
         }
     }
@@ -345,7 +345,7 @@ sealed partial class SeasonEngine
             var sg = segs[i];
             if (p.X < sg.A || p.X > sg.B) continue;
             var pile = sg.P;
-            var top = (float)(pile.Top - Dip(pile, p.X) - HtAt(pile, p.X));
+            var top = (float)(pile.Top + Dip(pile, p.X) - HtAt(pile, p.X));
             if (!(oy <= top && p.Y > top)) continue;
             var grows = S.Piles && Season >= 0 && (!pile.Taskbar || S.TaskbarPile) && (pile.Kind < 0 || pile.Kind == Season);
             switch (p.K)
