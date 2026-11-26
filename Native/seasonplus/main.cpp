@@ -236,6 +236,7 @@ int runOverlayTest(const std::wstring& dir) {
 int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
     int argc = 0;
     wchar_t** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    gs::installCrashHandler();
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     gs::locInit(gs::kSeasonLoc, argc, argv);
     auto arg = [&](const wchar_t* prefix) -> std::wstring {

@@ -89,6 +89,7 @@ void Overlay::stop() {
 void Overlay::setSettings(const Settings& s) { std::lock_guard<std::mutex> l(mu_); settings_ = s; }
 
 void Overlay::loop() {
+    gs::trace("overlay: поток запущен");
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     timeBeginPeriod(1);
     HINSTANCE inst = GetModuleHandleW(nullptr);
@@ -106,6 +107,7 @@ void Overlay::loop() {
         FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), (IUnknown**)dw.GetAddressOf()))) {
         fail("Direct2D недоступен"); DestroyWindow(hwnd); CoUninitialize(); return;
     }
+    gs::trace("overlay: окно и фабрики готовы");
     Gfx gfx;
     if (!gfx.init(fac.Get(), dw.Get())) { fail("не удалось подготовить рисование"); DestroyWindow(hwnd); CoUninitialize(); return; }
 
@@ -135,7 +137,9 @@ void Overlay::loop() {
                 eng.OX = vx; eng.OY = vy; eng.W = vw; eng.H = vh;
                 SetWindowPos(hwnd, HWND_TOPMOST, vx, vy, vw, vh, SWP_NOACTIVATE);
                 tg = Target();
+                gs::trace("overlay: создаю цель");
                 std::string e = tg.create(hwnd, fac.Get(), vw, vh, true);
+                gs::trace("overlay: цель создана");
                 if (!e.empty()) { fail(e); break; }
                 haveTarget = true;
             }
@@ -156,6 +160,7 @@ void Overlay::loop() {
 
         if (haveTarget) {
             auto f0 = std::chrono::steady_clock::now();
+            gs::trace("overlay: кадр");
             tg.ctx->BeginDraw();
             tg.ctx->Clear(D2D1::ColorF(0, 0, 0, 0));
             gfx.begin(tg.ctx.Get());

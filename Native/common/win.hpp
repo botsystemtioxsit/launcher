@@ -32,5 +32,7 @@ private:
     static DWORD WINAPI Loop(LPVOID p);
 };
 
+void trace(const char* msg);                    // шаг в журнал (если задана переменная GS_TRACE — путь к файлу); нужен, чтобы находить сбои на чужих компьютерах
+void installCrashHandler();                     // при аварии пишет в тот же журнал код, адрес и последний шаг
 bool fullscreenBusy();                          // игра, видео, презентация на весь экран
 }  // namespace gs

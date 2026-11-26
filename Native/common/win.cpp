@@ -3,6 +3,8 @@
 #include <shellapi.h>
 #include <shellscalingapi.h>
 #include <vector>
+#include <cstdio>
+#include <string>
 
 namespace gs {
 
@@ -116,6 +118,38 @@ void SingleInstance::stop() {
     for (HANDLE* h : {&show_, &quit_, &stop_}) if (*h) { CloseHandle(*h); *h = nullptr; }
     if (mutex_) { ReleaseMutex(mutex_); CloseHandle(mutex_); mutex_ = nullptr; }
 }
+
+static std::string gLast;
+static char gTracePath[MAX_PATH * 2] = {};
+
+void trace(const char* msg) {
+    gLast = msg;
+    if (!gTracePath[0]) {
+        DWORD n = GetEnvironmentVariableA("GS_TRACE", gTracePath, (DWORD)sizeof gTracePath);
+        if (!n || n >= sizeof gTracePath) { gTracePath[0] = 0; gTracePath[1] = 1; return; }   // gTracePath[1] = 1 — журнал не нужен
+    }
+    if (!gTracePath[0]) return;
+    HANDLE h = CreateFileA(gTracePath, FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (h == INVALID_HANDLE_VALUE) return;
+    std::string line = std::string(msg) + "\r\n";
+    DWORD put; WriteFile(h, line.data(), (DWORD)line.size(), &put, nullptr);
+    CloseHandle(h);
+}
+
+static LONG WINAPI crashFilter(EXCEPTION_POINTERS* ep) {
+    char buf[400];
+    HMODULE base = GetModuleHandleW(nullptr);
+    std::snprintf(buf, sizeof buf, "СБОЙ код=0x%08lX адрес=0x%llX смещение=0x%llX последний шаг: %s", (unsigned long)ep->ExceptionRecord->ExceptionCode,
+                  (unsigned long long)(uintptr_t)ep->ExceptionRecord->ExceptionAddress, (unsigned long long)((uintptr_t)ep->ExceptionRecord->ExceptionAddress - (uintptr_t)base), gLast.c_str());
+    if (!gTracePath[0] || gTracePath[1] == 1) {
+        char tmp[MAX_PATH * 2]; DWORD n = GetTempPathA((DWORD)sizeof tmp, tmp);
+        if (n) { std::snprintf(gTracePath, sizeof gTracePath, "%snative-crash.log", tmp); }
+    }
+    trace(buf);
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+
+void installCrashHandler() { SetUnhandledExceptionFilter(crashFilter); }
 
 bool fullscreenBusy() {
     typedef int (WINAPI* Fn)(int*);

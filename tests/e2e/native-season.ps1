@@ -6,6 +6,7 @@ $outFull = (Resolve-Path $Out).Path
 $log = Join-Path $outFull 'report.txt'
 function Say($t) { $t | Tee-Object -FilePath $log -Append }
 $exe = (Resolve-Path 'native-dist/SeasonPlus.exe').Path
+$env:GS_TRACE = Join-Path $outFull 'trace.log'
 $len = (Get-Item $exe).Length
 Say "SeasonPlus.exe: $len байт"
 Say ("Windows: " + [Environment]::OSVersion.Version)
@@ -77,4 +78,5 @@ New-Item -ItemType Directory -Force $env:APPDATA | Out-Null
 $a = Start-Process -FilePath $exe -ArgumentList '--background' -PassThru
 Start-Sleep -Seconds 2
 Say ("без включённых эффектов фоновый запуск сразу выходит: " + $a.HasExited)
+if (Test-Path $env:GS_TRACE) { Say '=== журнал шагов ==='; Get-Content $env:GS_TRACE | Select-Object -Last 40 | ForEach-Object { Say $_ } }
 Get-ChildItem $outFull -Recurse -File | ForEach-Object { Say ("  итого файл: " + $_.FullName.Substring($outFull.Length) + " " + $_.Length) }

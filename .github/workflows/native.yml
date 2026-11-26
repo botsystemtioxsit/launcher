@@ -27,8 +27,9 @@ jobs:
         run: |
           cmake -S Native -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=$PWD/Native/cmake/mingw.cmake -DCMAKE_BUILD_TYPE=Release
           ninja -C build SeasonPlus sp_logic_test
-          x86_64-w64-mingw32-strip build/out/SeasonPlus.exe build/out/sp_logic_test.exe
           mkdir -p dist
+          cp build/out/SeasonPlus.exe dist/SeasonPlus.debug.exe
+          x86_64-w64-mingw32-strip build/out/SeasonPlus.exe build/out/sp_logic_test.exe
           cp build/out/SeasonPlus.exe build/out/sp_logic_test.exe dist/
           (cd dist && for f in SeasonPlus.exe; do sha256sum $f | awk '{print $1"  "$2}' > $f.sha256; done)
           ls -la dist

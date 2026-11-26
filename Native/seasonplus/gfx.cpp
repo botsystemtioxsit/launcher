@@ -36,6 +36,7 @@ bool Gfx::init(ID2D1Factory1* factory, IDWriteFactory* dw) {
 }
 
 void Gfx::begin(ID2D1RenderTarget* rt) {
+    if (!rt) { rt_ = nullptr; solid_.Reset(); glowBrush_.clear(); return; }     // отпустить цель (перед закрытием)
     if (rt != rt_) { rt_ = rt; solid_.Reset(); glowBrush_.clear(); }
     if (!solid_) rt_->CreateSolidColorBrush(D2D1::ColorF(1, 1, 1, 1), &solid_);
     rt_->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);

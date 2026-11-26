@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out)
 add_compile_definitions(UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX _WIN32_WINNT=0x0A00 WINVER=0x0A00)
-add_compile_options(-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -O2)
+add_compile_options(-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -O2 -g1)
 add_link_options(-static -static-libgcc -static-libstdc++)
 
 include(FetchContent)

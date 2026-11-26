@@ -74,14 +74,17 @@ bool savePngBgra(const std::wstring& path, int w, int h, const unsigned char* px
 
 int renderScenes(const std::wstring& dir, std::string& log) {
     gs::makeDirs(dir);
+    gs::trace("renderScenes: старт");
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     ComPtr<ID2D1Factory1> fac; ComPtr<IDWriteFactory> dw; ComPtr<IWICImagingFactory> wic;
     D2D1_FACTORY_OPTIONS fo{};
     if (FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory1), &fo, (void**)fac.GetAddressOf()))) { log += "Direct2D недоступен\n"; return 0; }
     DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), (IUnknown**)dw.GetAddressOf());
     if (FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&wic)))) { log += "WIC недоступен\n"; return 0; }
+    gs::trace("renderScenes: фабрики готовы");
     Gfx gfx;
     if (!gfx.init(fac.Get(), dw.Get())) { log += "не удалось подготовить рисование\n"; return 0; }
+    gs::trace("renderScenes: Gfx.init готов");
 
     struct Scene { const char* name; const char* season; const char* holiday; double warm; std::function<void(Engine&)> extra; };
     const int W = 900, H = 420;
@@ -101,6 +104,7 @@ int renderScenes(const std::wstring& dir, std::string& log) {
         e.S.Season = sc.season; e.S.Holiday = sc.holiday; e.S.Intensity = 70; e.S.Wind = 10; e.S.normalize();
         e.setSurfaces(demoSurfaces(W, H));
         if (sc.extra) sc.extra(e);
+        gs::trace((std::string("сцена ") + sc.name + ": движок").c_str());
         e.warm(sc.warm);
         e.setSurfaces(demoSurfaces(W, H));
         ComPtr<IWICBitmap> bmp;
@@ -108,6 +112,7 @@ int renderScenes(const std::wstring& dir, std::string& log) {
         ComPtr<ID2D1RenderTarget> rt;
         D2D1_RENDER_TARGET_PROPERTIES rp = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_SOFTWARE, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED));
         if (FAILED(fac->CreateWicBitmapRenderTarget(bmp.Get(), rp, &rt))) { log += std::string("не вышло: ") + sc.name + "\n"; continue; }
+        gs::trace((std::string("сцена ") + sc.name + ": рисую").c_str());
         rt->BeginDraw();
         gfx.begin(rt.Get());
         drawBackdrop(gfx, W, H, e.season, e.holiday);
