@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Сеть частиц</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{display:block;width:100vw;height:100vh}</style></head><body>
+<canvas id="c"></canvas>
+<script>
+const q=new URLSearchParams(location.search),P=(k,d)=>q.get(k)||d;
+const c1=P('c1','#00F0FF'),bg=P('bg','#06050D'),speed=parseFloat(P('speed','1')),N=Math.min(300,Math.max(10,parseInt(P('count','90')))),fps=parseInt(P('fps','60'));
+const cv=document.getElementById('c'),g=cv.getContext('2d');
+let W,H;function size(){const s=Math.min(1,1920/innerWidth);W=cv.width=Math.round(innerWidth*s);H=cv.height=Math.round(innerHeight*s)}addEventListener('resize',size);size();
+function rgb(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16)||0,parseInt(h.slice(2,4),16)||0,parseInt(h.slice(4,6),16)||0]}
+const [r,gg,b]=rgb(c1),col=a=>'rgba('+r+','+gg+','+b+','+a+')';
+const pts=Array.from({length:N},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*40,vy:(Math.random()-0.5)*40}));
+let last=0;
+function frame(now){requestAnimationFrame(frame);if(now-last<1000/fps-1)return;const dt=Math.min(0.1,(now-last)/1000);last=now;
+ g.fillStyle=bg;g.fillRect(0,0,W,H);
+ const D=Math.max(W,H)*0.11,D2=D*D;
+ for(const p of pts){p.x+=p.vx*dt*speed;p.y+=p.vy*dt*speed;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1}
+ g.lineWidth=Math.max(1,H/700);
+ for(let i=0;i<N;i++){const a=pts[i];
+  for(let j=i+1;j<N;j++){const c=pts[j],dx=a.x-c.x,dy=a.y-c.y,d=dx*dx+dy*dy;
+   if(d<D2){g.strokeStyle=col((1-d/D2)*0.55);g.beginPath();g.moveTo(a.x,a.y);g.lineTo(c.x,c.y);g.stroke()}}
+  g.fillStyle=col(0.9);g.beginPath();g.arc(a.x,a.y,Math.max(1.5,H/420),0,6.283);g.fill()}
+}
+requestAnimationFrame(frame);
+</script></body></html>

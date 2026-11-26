@@ -352,6 +352,7 @@ int runApp(const AppInfo& info, std::vector<std::unique_ptr<Module>>& modules, i
     bool background = has(L"--background");
     bool any = app.anyActive();
     if (background && !any) { single.stop(); return 0; }       // фоновый запуск, а всё выключено — сразу выходим
+    for (auto& m : modules) m->start();
     app.changed();                                              // значок в трее и автозапуск
     if (!background) PostMessageW(app.hwnd, WM_SHOWUI, 0, 0);
 
@@ -371,6 +372,7 @@ int runApp(const AppInfo& info, std::vector<std::unique_ptr<Module>>& modules, i
         }
     }
 done:
+    for (auto& m : modules) m->stop();
     app.shutdownUi();
     app.overlay.stop();
     app.removeTray();

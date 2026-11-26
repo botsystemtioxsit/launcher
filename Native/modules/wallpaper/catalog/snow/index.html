@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Снегопад</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{display:block;width:100vw;height:100vh}</style></head><body>
+<canvas id="c"></canvas>
+<script>
+const q=new URLSearchParams(location.search),P=(k,d)=>q.get(k)||d;
+const c1=P('c1','#FFFFFF'),bg=P('bg','#0A1326'),speed=parseFloat(P('speed','1')),N=Math.min(1000,Math.max(20,parseInt(P('count','250')))),fps=parseInt(P('fps','60'));
+const cv=document.getElementById('c'),g=cv.getContext('2d');
+let W,H;function size(){const s=Math.min(1,1920/innerWidth);W=cv.width=Math.round(innerWidth*s);H=cv.height=Math.round(innerHeight*s)}addEventListener('resize',size);size();
+const flakes=Array.from({length:N},()=>({x:Math.random(),y:Math.random(),r:Math.random()*2.6+0.8,v:Math.random()*0.7+0.3,p:Math.random()*6.28}));
+let last=0,t=0;
+function frame(now){requestAnimationFrame(frame);if(now-last<1000/fps-1)return;const dt=Math.min(0.1,(now-last)/1000);last=now;t+=dt*speed;
+ const sky=g.createLinearGradient(0,0,0,H);sky.addColorStop(0,bg);sky.addColorStop(1,'#16223d');g.fillStyle=sky;g.fillRect(0,0,W,H);
+ g.fillStyle=c1;
+ for(const f of flakes){
+  f.y+=dt*speed*0.06*f.v*(H/360);if(f.y>1.02){f.y=-0.02;f.x=Math.random()}
+  const x=(f.x+Math.sin(t*0.6*f.v+f.p)*0.012)*W,y=f.y*H,r=f.r*H/540;
+  g.globalAlpha=0.35+0.55*f.v;g.beginPath();g.arc(x,y,r,0,6.283);g.fill();
+ }
+ g.globalAlpha=1;
+}
+requestAnimationFrame(frame);
+</script></body></html>

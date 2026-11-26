@@ -1,0 +1,16 @@
+{
+  "Id": "aurora",
+  "Title": "Северное сияние",
+  "Type": "html",
+  "Entry": "index.html",
+  "Description": "Мягкие переливающиеся полосы света над тёмным небом. Два цвета сияния, фон и скорость настраиваются.",
+  "Author": "Ghost Shell",
+  "Version": 1,
+  "Template": true,
+  "Params": [
+    { "Key": "c1", "Label": "Первый цвет сияния", "Type": "color", "Default": "#20E3A0" },
+    { "Key": "c2", "Label": "Второй цвет сияния", "Type": "color", "Default": "#7A4DFF" },
+    { "Key": "bg", "Label": "Цвет неба", "Type": "color", "Default": "#050814" },
+    { "Key": "speed", "Label": "Скорость", "Type": "range", "Min": 0.2, "Max": 3, "Step": 0.1, "Default": "1" }
+  ]
+}

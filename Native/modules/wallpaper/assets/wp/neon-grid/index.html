@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Неоновая сетка</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{display:block;width:100vw;height:100vh}</style></head><body>
+<canvas id="c"></canvas>
+<script>
+const q=new URLSearchParams(location.search),P=(k,d)=>q.get(k)||d;
+const c1=P('c1','#FF2A9D'),c2=P('c2','#00F0FF'),bg=P('bg','#0B0A1A'),speed=parseFloat(P('speed','1')),fps=parseInt(P('fps','60'));
+const cv=document.getElementById('c'),g=cv.getContext('2d');
+let W,H;function size(){const s=Math.min(1,2560/innerWidth);W=cv.width=Math.round(innerWidth*s);H=cv.height=Math.round(innerHeight*s)}addEventListener('resize',size);size();
+let last=0,t=0;
+function frame(now){requestAnimationFrame(frame);if(now-last<1000/fps-1)return;const dt=Math.min(0.1,(now-last)/1000);last=now;t+=dt*speed;
+ const hy=H*0.55;
+ const sky=g.createLinearGradient(0,0,0,hy);sky.addColorStop(0,bg);sky.addColorStop(1,'#1a0f3a');g.fillStyle=sky;g.fillRect(0,0,W,hy);
+ // солнце
+ const r=H*0.2,cx=W/2,cy=hy-r*0.35;const sg=g.createLinearGradient(0,cy-r,0,cy+r);sg.addColorStop(0,c2);sg.addColorStop(1,c1);
+ g.save();g.beginPath();g.arc(cx,cy,r,0,Math.PI*2);g.clip();g.fillStyle=sg;g.fillRect(cx-r,cy-r,2*r,2*r);
+ g.fillStyle=bg;for(let i=0;i<7;i++){const y=cy+r*(0.05+i*0.14),h=r*0.02+i*r*0.018;g.fillRect(cx-r,y,2*r,h)}g.restore();
+ // земля
+ const gr=g.createLinearGradient(0,hy,0,H);gr.addColorStop(0,'#1a0f3a');gr.addColorStop(1,bg);g.fillStyle=gr;g.fillRect(0,hy,W,H-hy);
+ g.strokeStyle=c1;g.lineWidth=Math.max(1,H/540);g.shadowColor=c1;g.shadowBlur=H/90;
+ // линии к горизонту
+ for(let i=-24;i<=24;i++){g.beginPath();g.moveTo(cx+i*W*0.02,hy);g.lineTo(cx+i*W*0.2,H);g.stroke()}
+ // поперечные линии бегут к зрителю
+ const n=14;for(let i=0;i<n;i++){let p=((i+(t%1))/n);p=p*p;const y=hy+(H-hy)*p;g.globalAlpha=0.25+0.75*p;g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke()}
+ g.globalAlpha=1;g.shadowBlur=0;
+}
+requestAnimationFrame(frame);
+</script></body></html>

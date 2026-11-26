@@ -1,0 +1,16 @@
+{
+  "Id": "starfield",
+  "Title": "Звёздное поле",
+  "Type": "html",
+  "Entry": "index.html",
+  "Description": "Полёт сквозь звёзды. Можно выбрать цвет звёзд, фон, скорость и количество звёзд.",
+  "Author": "Ghost Shell",
+  "Version": 1,
+  "Template": true,
+  "Params": [
+    { "Key": "c1", "Label": "Цвет звёзд", "Type": "color", "Default": "#BFE8FF" },
+    { "Key": "bg", "Label": "Цвет космоса", "Type": "color", "Default": "#04050F" },
+    { "Key": "speed", "Label": "Скорость полёта", "Type": "range", "Min": 0.1, "Max": 4, "Step": 0.1, "Default": "1" },
+    { "Key": "count", "Label": "Количество звёзд", "Type": "range", "Min": 100, "Max": 2000, "Step": 100, "Default": "800" }
+  ]
+}

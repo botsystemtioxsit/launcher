@@ -1,0 +1,16 @@
+{
+  "Id": "digital-rain",
+  "Title": "Цифровой дождь",
+  "Type": "html",
+  "Entry": "index.html",
+  "Description": "Падающие цепочки символов, как в кино про хакеров. Цвет, скорость и размер знаков настраиваются.",
+  "Author": "Ghost Shell",
+  "Version": 1,
+  "Template": true,
+  "Params": [
+    { "Key": "c1", "Label": "Цвет знаков", "Type": "color", "Default": "#00FF88" },
+    { "Key": "bg", "Label": "Цвет фона", "Type": "color", "Default": "#02060A" },
+    { "Key": "speed", "Label": "Скорость", "Type": "range", "Min": 0.3, "Max": 3, "Step": 0.1, "Default": "1" },
+    { "Key": "size", "Label": "Размер знаков", "Type": "range", "Min": 12, "Max": 40, "Step": 2, "Default": "20" }
+  ]
+}
