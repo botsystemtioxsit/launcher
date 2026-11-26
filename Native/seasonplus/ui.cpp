@@ -54,8 +54,17 @@ static ImFont* gMono = nullptr;
 bool UiApp::loadFonts(float scale) {
     ImGuiIO& io = ImGui::GetIO();
     io.Fonts->Clear();
-    ImFont* f = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 17.f * scale, nullptr, io.Fonts->GetGlyphRangesCyrillic());
-    gMono = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\consolab.ttf", 22.f * scale, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+    // латиница + кириллица + знаки препинания (кавычки “ ”, многоточие, тире) + стрелки
+    static ImVector<ImWchar> ranges;
+    if (ranges.empty()) {
+        ImFontGlyphRangesBuilder b;
+        b.AddRanges(io.Fonts->GetGlyphRangesCyrillic());
+        static const ImWchar extra[] = {0x2000, 0x206F, 0x2190, 0x21FF, 0};
+        b.AddRanges(extra);
+        b.BuildRanges(&ranges);
+    }
+    ImFont* f = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 17.f * scale, nullptr, ranges.Data);
+    gMono = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\consolab.ttf", 22.f * scale, nullptr, ranges.Data);
     if (!f) { io.Fonts->AddFontDefault(); }
     if (!gMono) gMono = io.Fonts->Fonts[0];
     return f != nullptr;

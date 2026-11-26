@@ -205,7 +205,7 @@ int runScreenshot(const std::wstring& dir) {
 int runOverlayTest(const std::wstring& dir) {
     gs::makeDirs(dir);
     std::string out;
-    Settings s; s.Season = "winter"; s.Holiday = "off"; s.Intensity = 80; s.Active = true; s.normalize();
+    Settings s; s.Season = "winter"; s.Holiday = "off"; s.Intensity = 100; s.Speed = 200; s.Active = true; s.normalize();
     FILETIME c0, e0, k0, u0;
     GetProcessTimes(GetCurrentProcess(), &c0, &e0, &k0, &u0);
     auto t0 = std::chrono::steady_clock::now();

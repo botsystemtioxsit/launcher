@@ -31,6 +31,7 @@ $ov = Join-Path $outFull 'overlay'
 New-Item -ItemType Directory -Force $ov | Out-Null
 $notes = @(); 1..2 | ForEach-Object { $notes += Start-Process notepad -PassThru }
 Start-Sleep -Seconds 3
+$env:GS_DUMP = Join-Path $ov 'overlay-frame.png'
 $p = Start-Process -FilePath $exe -ArgumentList "--overlay-test=$ov" -PassThru
 Start-Sleep -Seconds 6
 Add-Type -TypeDefinition @'

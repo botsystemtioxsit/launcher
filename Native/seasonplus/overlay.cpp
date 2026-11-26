@@ -9,6 +9,7 @@
 #include <mmsystem.h>
 #include "draw.hpp"
 #include "scanner.hpp"
+#include "scenes.hpp"
 #include "win.hpp"
 
 using Microsoft::WRL::ComPtr;
@@ -71,6 +72,27 @@ struct Target {
         return "";
     }
 };
+
+// Для проверки: записать то, что нарисовано в окне поверх экрана (с прозрачностью), в PNG.
+void dumpFrame(Target& tg, const std::wstring& path) {
+    ComPtr<ID3D11Texture2D> back;
+    if (FAILED(tg.swap->GetBuffer(0, IID_PPV_ARGS(&back)))) return;
+    D3D11_TEXTURE2D_DESC d{}; back->GetDesc(&d);
+    d.Usage = D3D11_USAGE_STAGING; d.BindFlags = 0; d.CPUAccessFlags = D3D11_CPU_ACCESS_READ; d.MiscFlags = 0;
+    ComPtr<ID3D11Texture2D> stage;
+    if (FAILED(tg.d3d->CreateTexture2D(&d, nullptr, &stage))) return;
+    ComPtr<ID3D11DeviceContext> ic; tg.d3d->GetImmediateContext(&ic);
+    ic->CopyResource(stage.Get(), back.Get());
+    D3D11_MAPPED_SUBRESOURCE mp{};
+    if (FAILED(ic->Map(stage.Get(), 0, D3D11_MAP_READ, 0, &mp))) return;
+    std::vector<unsigned char> px((size_t)d.Width * d.Height * 4);
+    for (UINT y = 0; y < d.Height; y++) memcpy(&px[(size_t)y * d.Width * 4], (unsigned char*)mp.pData + (size_t)y * mp.RowPitch, (size_t)d.Width * 4);
+    ic->Unmap(stage.Get(), 0);
+    // сколько пикселей что-то рисует (прозрачность > 0)
+    size_t lit = 0; for (size_t i = 3; i < px.size(); i += 4) if (px[i] > 0) lit++;
+    gs::trace(("overlay: в кадре закрашено пикселей: " + std::to_string(lit) + " из " + std::to_string((size_t)d.Width * d.Height)).c_str());
+    savePngBgra(path, (int)d.Width, (int)d.Height, px.data(), (int)d.Width * 4);
+}
 
 }  // namespace
 
@@ -167,6 +189,7 @@ void Overlay::loop() {
             drawScene(gfx, eng);
             HRESULT r = tg.ctx->EndDraw();
             if (r == (HRESULT)D2DERR_RECREATE_TARGET) { haveTarget = false; nextMetrics = 0; vw = 0; Sleep(200); continue; }
+            if (framesDrawn == 240) { char dp[MAX_PATH * 2]; DWORD n = GetEnvironmentVariableA("GS_DUMP", dp, (DWORD)sizeof dp); if (n && n < sizeof dp) dumpFrame(tg, gs::widen(dp)); }
             r = tg.swap->Present(1, 0);
             if (r == DXGI_ERROR_DEVICE_REMOVED || r == DXGI_ERROR_DEVICE_RESET) { haveTarget = false; nextMetrics = 0; vw = 0; Sleep(200); continue; }
             tg.dcomp->Commit();
