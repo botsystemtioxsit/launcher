@@ -15,7 +15,8 @@ $apps = @(
     @{ n = 'SkinLoader'; exe = 'out-test/SkinLoader.exe' },
     @{ n = 'CursorPlus'; exe = 'out-test/CursorPlus.exe' },
     @{ n = 'ColorPlus'; exe = 'out-test/ColorPlus.exe' },
-    @{ n = 'DnsPlus'; exe = 'out-test/DnsPlus.exe' }
+    @{ n = 'DnsPlus'; exe = 'out-test/DnsPlus.exe' },
+    @{ n = 'SeasonPlus'; exe = 'out-test/SeasonPlus.exe' }
 )
 
 Say '=== самопроверка модуля перевода (лаунчер) ==='
