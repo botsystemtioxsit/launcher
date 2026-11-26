@@ -32,7 +32,7 @@ bool loadFonts(float scale) {
 void setupStyle(float scale) {
     ImGuiStyle& s = ImGui::GetStyle();
     s = ImGuiStyle();
-    s.WindowRounding = 0; s.ChildRounding = 4; s.FrameRounding = 3; s.GrabRounding = 3;
+    s.WindowRounding = 0; s.ChildRounding = 10; s.FrameRounding = 8; s.GrabRounding = 8; s.PopupRounding = 10; s.ScrollbarRounding = 8;
     s.FrameBorderSize = 1; s.ChildBorderSize = 1; s.WindowBorderSize = 0;
     s.ItemSpacing = ImVec2(8, 8); s.FramePadding = ImVec2(12, 6); s.WindowPadding = ImVec2(26, 22);
     s.ScaleAllSizes(scale);

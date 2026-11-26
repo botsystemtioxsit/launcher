@@ -1,6 +1,7 @@
 #include "app.hpp"
 #include <windows.h>
 #include <shellapi.h>
+#include <dwmapi.h>
 #include <d3d11.h>
 #include <dxgi.h>
 #include <wrl/client.h>
@@ -11,6 +12,7 @@
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
+#include "json.hpp"
 #include "loc.hpp"
 #include "overlay_host.hpp"
 #include "scanner.hpp"
@@ -39,6 +41,7 @@ struct App {
     OverlayHost overlay;
     AppCtx ctx;
     HWND hwnd = nullptr;
+    HWND app_hwnd = nullptr;
     bool quitting = false;
     int selected = 0;
     float scale = 1.f;
@@ -49,6 +52,94 @@ struct App {
     ComPtr<IDXGISwapChain> sc;
     ComPtr<ID3D11RenderTargetView> rtv;
     bool uiReady = false;
+
+    // ---------- свои рамка и верхняя полоса (как на макете): аккаунт справа, рядом — свернуть / развернуть / закрыть ----------
+    std::vector<RECT> hot;                      // участки полосы, где нужны нажатия (не перетаскивание окна), в пикселях окна
+    std::string acctName, acctRole; bool acctLoaded = false;
+    bool acctOpen = false;
+    float titleH() const { return 44.f * scale; }
+    void loadAccount() {
+        if (acctLoaded) return; acctLoaded = true;
+        std::string t; gs::Json j;
+        if (!gs::readFile(gs::appDataDir() + L"\\launcher.json", t) || !gs::jsonParse(t, j) || j.t != gs::Json::Obj) return;
+        std::string active = j.str("ActiveId");
+        if (auto* a = j.get("Accounts")) if (a->t == gs::Json::Arr) for (auto& x : a->a) if (x.str("Id") == active) {
+            acctName = x.str("Name"); if (acctName.empty()) acctName = x.str("PlayerId"); if (acctName.empty()) acctName = "Аккаунт";
+            acctRole = x.str("Role");
+        }
+    }
+    static std::string initials(const std::string& n) {
+        std::string o; size_t i = 0; int cnt = 0;
+        while (i < n.size() && cnt < 2) { unsigned char c = n[i]; size_t len = c < 0x80 ? 1 : c < 0xE0 ? 2 : c < 0xF0 ? 3 : 4; if (c != ' ') { o += n.substr(i, len); cnt++; } i += len; }
+        return o;
+    }
+    void openLauncher() {
+        wchar_t lp[MAX_PATH] = {}; GetEnvironmentVariableW(L"LOCALAPPDATA", lp, MAX_PATH);
+        std::wstring exe = std::wstring(lp) + L"\\Programs\\BattleLauncher\\BattleLauncher.exe";
+        if (GetFileAttributesW(exe.c_str()) != INVALID_FILE_ATTRIBUTES) ShellExecuteW(nullptr, L"open", exe.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+        else ShellExecuteW(nullptr, L"open", L"https://github.com/botsystemtioxsit/launcher/releases/latest", nullptr, nullptr, SW_SHOWNORMAL);
+    }
+    void addHot(ImVec2 a, ImVec2 b) { hot.push_back(RECT{(LONG)a.x, (LONG)a.y, (LONG)b.x, (LONG)b.y}); }
+
+    void drawTitleBar() {
+        ImGuiIO& io = ImGui::GetIO(); ImDrawList* dl = ImGui::GetWindowDrawList();
+        float H = titleH(), W = io.DisplaySize.x; hot.clear();
+        dl->AddRectFilled(ImVec2(0, 0), ImVec2(W, H), IM_COL32(9, 6, 28, 255));
+        dl->AddLine(ImVec2(0, H), ImVec2(W, H), IM_COL32(74, 34, 160, 255));
+        // справа: кнопки окна (плашка) и левее — аккаунт
+        float bw = 38 * scale, bh = 26 * scale, pad = 10 * scale, y0 = (H - bh) / 2;
+        float groupW = bw * 3, gx = W - pad - groupW;
+        dl->AddRectFilled(ImVec2(gx, y0), ImVec2(gx + groupW, y0 + bh), IM_COL32(26, 16, 74, 255), bh / 2);
+        bool zoomed = app_hwnd && IsZoomed(app_hwnd);
+        const char* ids[3] = {"##min", "##max", "##close"};
+        for (int i = 0; i < 3; i++) {
+            ImVec2 a(gx + i * bw, y0), b(gx + (i + 1) * bw, y0 + bh);
+            ImGui::SetCursorScreenPos(a);
+            bool clicked = ImGui::InvisibleButton(ids[i], ImVec2(bw, bh));
+            bool hov = ImGui::IsItemHovered();
+            if (hov) dl->AddRectFilled(a, b, i == 2 ? IM_COL32(255, 46, 90, 255) : IM_COL32(50, 30, 120, 255), bh / 2);
+            ImVec2 c((a.x + b.x) / 2, (a.y + b.y) / 2); float r = 5 * scale; ImU32 col = IM_COL32(234, 248, 255, 255);
+            if (i == 0) dl->AddLine(ImVec2(c.x - r, c.y + r * 0.6f), ImVec2(c.x + r, c.y + r * 0.6f), col, 1.5f * scale);
+            else if (i == 1) {
+                if (zoomed) { dl->AddRect(ImVec2(c.x - r + 2 * scale, c.y - r), ImVec2(c.x + r, c.y + r - 2 * scale), col, 0, 0, 1.4f * scale); dl->AddRect(ImVec2(c.x - r, c.y - r + 2 * scale), ImVec2(c.x + r - 2 * scale, c.y + r), col, 0, 0, 1.4f * scale); }
+                else dl->AddRect(ImVec2(c.x - r, c.y - r), ImVec2(c.x + r, c.y + r), col, 0, 0, 1.4f * scale);
+            } else { dl->AddLine(ImVec2(c.x - r, c.y - r), ImVec2(c.x + r, c.y + r), col, 1.5f * scale); dl->AddLine(ImVec2(c.x - r, c.y + r), ImVec2(c.x + r, c.y - r), col, 1.5f * scale); }
+            if (clicked && app_hwnd) { if (i == 0) ShowWindow(app_hwnd, SW_MINIMIZE); else if (i == 1) ShowWindow(app_hwnd, zoomed ? SW_RESTORE : SW_MAXIMIZE); else PostMessageW(app_hwnd, WM_CLOSE, 0, 0); }
+        }
+        addHot(ImVec2(gx, y0), ImVec2(gx + groupW, y0 + bh));
+        // аккаунт
+        loadAccount();
+        std::string label = acctName.empty() ? std::string(L("Войти")) : acctName;
+        float aw = std::min(220.f * scale, ImGui::CalcTextSize(label.c_str()).x + 54 * scale), ax = gx - 12 * scale - aw;
+        ImVec2 a(ax, y0), b(ax + aw, y0 + bh);
+        ImGui::SetCursorScreenPos(a);
+        bool clicked = ImGui::InvisibleButton("##acct", ImVec2(aw, bh));
+        bool hov = ImGui::IsItemHovered();
+        dl->AddRectFilled(a, b, hov ? IM_COL32(50, 30, 120, 255) : IM_COL32(26, 16, 74, 255), bh / 2);
+        ImVec2 cc(a.x + bh / 2, a.y + bh / 2);
+        dl->AddCircleFilled(cc, bh / 2 - 3 * scale, acctName.empty() ? IM_COL32(74, 34, 160, 255) : IM_COL32(0, 240, 255, 255));
+        std::string ini = acctName.empty() ? "?" : initials(acctName);
+        ImVec2 ts = ImGui::CalcTextSize(ini.c_str());
+        dl->AddText(ImVec2(cc.x - ts.x / 2, cc.y - ts.y / 2), IM_COL32(6, 5, 13, 255), ini.c_str());
+        dl->PushClipRect(ImVec2(a.x + bh, a.y), ImVec2(b.x - 6 * scale, b.y), true);
+        dl->AddText(ImVec2(a.x + bh + 4 * scale, a.y + (bh - ImGui::GetTextLineHeight()) / 2), IM_COL32(234, 248, 255, 255), label.c_str());
+        dl->PopClipRect();
+        addHot(a, b);
+        if (clicked) { acctOpen = true; ImGui::OpenPopup("##acctpop"); }
+        ImGui::SetNextWindowPos(ImVec2(b.x - 240 * scale, b.y + 6 * scale));
+        if (ImGui::BeginPopup("##acctpop")) {
+            ImGui::PushFont(ui::mono()); ImGui::TextUnformatted(acctName.empty() ? L("Вы не вошли") : acctName.c_str()); ImGui::PopFont();
+            if (!acctRole.empty()) { ImGui::PushStyleColor(ImGuiCol_Text, ui::muted()); ImGui::TextUnformatted(acctRole.c_str()); ImGui::PopStyleColor(); }
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::muted()); ImGui::PushTextWrapPos(260 * scale);
+            ImGui::TextUnformatted(L("Аккаунт общий для всех приложений Ghost Shell: вход и выход — в Ghost Shell Launcher."));
+            ImGui::PopTextWrapPos(); ImGui::PopStyleColor();
+            if (ImGui::Button(L("Открыть Ghost Shell Launcher"))) { openLauncher(); ImGui::CloseCurrentPopup(); }
+            ImGui::EndPopup();
+        }
+        // название слева
+        ImGui::SetCursorScreenPos(ImVec2(18 * scale, (H - ImGui::GetTextLineHeight()) / 2));
+        ImGui::PushFont(ui::mono()); ImGui::PushStyleColor(ImGuiCol_Text, ui::rgb(0, 240, 255)); ImGui::TextUnformatted("GHOST STYLE"); ImGui::PopStyleColor(); ImGui::PopFont();
+    }
 
     bool anyActive() const { for (auto& m : *modules) if (m->needsBackground()) return true; return false; }
     void changed() {
@@ -132,16 +223,15 @@ struct App {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::Begin("##shell", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoScrollbar);
         ImGui::PopStyleVar();
+        app_hwnd = hwnd;
+        drawTitleBar();
+        ImGui::SetCursorPos(ImVec2(0, titleH() + 1));
         float side = 220.f * scale;
         ImGui::PushStyleColor(ImGuiCol_ChildBg, ui::rgb(11, 7, 32));
         ImGui::BeginChild("##side", ImVec2(side, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
-        ImGui::SetCursorPos(ImVec2(18 * scale, 18 * scale));
-        ImGui::PushFont(ui::mono()); ImGui::PushStyleColor(ImGuiCol_Text, ui::rgb(0, 240, 255));
-        ImGui::TextUnformatted("GHOST STYLE");
-        ImGui::PopStyleColor(); ImGui::PopFont();
-        ImGui::SetCursorPosX(18 * scale);
+        ImGui::SetCursorPos(ImVec2(18 * scale, 12 * scale));
         ImGui::PushStyleColor(ImGuiCol_Text, ui::muted()); ImGui::TextUnformatted("made by AI"); ImGui::PopStyleColor();
-        ImGui::Dummy(ImVec2(0, 10 * scale));
+        ImGui::Dummy(ImVec2(0, 8 * scale));
         for (int i = 0; i < (int)modules->size(); i++) {
             Module& m = *(*modules)[i];
             ImGui::SetCursorPosX(10 * scale);
@@ -149,7 +239,7 @@ struct App {
             bool on = selected == i;
             if (on) { ImGui::PushStyleColor(ImGuiCol_Button, ui::rgb(0, 240, 255)); ImGui::PushStyleColor(ImGuiCol_Text, ui::rgb(6, 5, 13)); }
             std::string label = std::string(m.active() ? "\xE2\x97\x8F " : "\xE2\x97\x8B ") + L(m.title());
-            if (ImGui::Button(label.c_str(), ImVec2(side - 20 * scale, 0))) selected = i;
+            if (ImGui::Button(label.c_str(), ImVec2(side - 20 * scale, 34 * scale))) selected = i;
             if (on) ImGui::PopStyleColor(2);
             ImGui::PopID();
         }
@@ -192,6 +282,25 @@ LRESULT CALLBACK mainProc(HWND h, UINT m, WPARAM w, LPARAM l) {
     App* a = gApp;
     if (a && a->uiReady && ImGui_ImplWin32_WndProcHandler(h, m, w, l)) return true;
     switch (m) {
+        case WM_NCCALCSIZE:   // своя рамка: вся площадь — наша; в развёрнутом виде не вылезаем за край монитора
+            if (w) {
+                if (IsZoomed(h)) { MONITORINFO mi{sizeof mi}; if (GetMonitorInfoW(MonitorFromWindow(h, MONITOR_DEFAULTTONEAREST), &mi)) ((NCCALCSIZE_PARAMS*)l)->rgrc[0] = mi.rcWork; }
+                return 0;
+            }
+            break;
+        case WM_NCHITTEST: {
+            if (!a) break;
+            POINT pt{(short)LOWORD(l), (short)HIWORD(l)}; RECT wr; GetWindowRect(h, &wr);
+            int x = pt.x - wr.left, y = pt.y - wr.top, W = wr.right - wr.left, H = wr.bottom - wr.top, b = (int)(6 * a->scale);
+            if (!IsZoomed(h)) {
+                bool L_ = x < b, R_ = x >= W - b, T_ = y < b, B_ = y >= H - b;
+                if (T_ && L_) return HTTOPLEFT; if (T_ && R_) return HTTOPRIGHT; if (B_ && L_) return HTBOTTOMLEFT; if (B_ && R_) return HTBOTTOMRIGHT;
+                if (L_) return HTLEFT; if (R_) return HTRIGHT; if (T_) return HTTOP; if (B_) return HTBOTTOM;
+            }
+            if (y < a->titleH()) { for (auto& r : a->hot) if (x >= r.left && x < r.right && y >= r.top && y < r.bottom) return HTCLIENT; return HTCAPTION; }
+            return HTCLIENT;
+        }
+        case WM_GETMINMAXINFO: { auto* mm = (MINMAXINFO*)l; mm->ptMinTrackSize.x = 720; mm->ptMinTrackSize.y = 480; return 0; }
         case WM_SIZE: if (a && w != SIZE_MINIMIZED) a->resize(LOWORD(l), HIWORD(l)); return 0;
         case WM_CLOSE: ShowWindow(h, SW_HIDE); return 0;                            // закрыли окно — приложение остаётся в трее
         case WM_SHOWUI: ShowWindow(h, SW_SHOW); if (IsIconic(h)) ShowWindow(h, SW_RESTORE); SetForegroundWindow(h); return 0;
@@ -345,7 +454,8 @@ int runApp(const AppInfo& info, std::vector<std::unique_ptr<Module>>& modules, i
     float sc = dpiScale();
     RECT wa{}; SystemParametersInfoW(SPI_GETWORKAREA, 0, &wa, 0);
     int w = std::min((int)(1180 * sc), (int)(wa.right - wa.left) - 40), h = std::min((int)(900 * sc), (int)(wa.bottom - wa.top) - 40);
-    app.hwnd = CreateWindowExW(0, wc.lpszClassName, info.name, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, w, h, nullptr, nullptr, inst, nullptr);
+    app.hwnd = CreateWindowExW(0, wc.lpszClassName, info.name, WS_POPUP | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_CLIPCHILDREN, (wa.left + wa.right - w) / 2, (wa.top + wa.bottom - h) / 2, w, h, nullptr, nullptr, inst, nullptr);
+    { int pref = 2; DwmSetWindowAttribute(app.hwnd, 33 /* DWMWA_WINDOW_CORNER_PREFERENCE: скруглённые углы Windows 11 */, &pref, sizeof pref); }
 
     for (auto& m : modules) if (auto* l = m->layer()) app.overlay.addLayer(l);
     app.overlay.start();
