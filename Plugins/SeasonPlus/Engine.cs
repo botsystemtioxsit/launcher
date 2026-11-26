@@ -36,7 +36,7 @@ sealed partial class SeasonEngine
     public SeasonSettings S = new();
     public DateTime? Clock;                    // для проверки: подменить «сегодня»
     public int W = 1920, H = 1080, OX, OY;     // размер и начало экрана (виртуальный рабочий стол)
-    public float PileGain = 6f;              // насколько быстро растёт сугроб (проверено в самопроверке)
+    public float PileGain = 1.2f;              // насколько быстро растёт сугроб (проверено в самопроверке)
     public int Season = 0;
     public string Holiday = "";
     public double Time => t;
@@ -215,7 +215,7 @@ sealed partial class SeasonEngine
         }
         switch (Season)
         {
-            case 0: Rate(ref sn, 10f * area * k * sp, () => Emit(PK.Snow, xr(), OY - 10)); break;
+            case 0: Rate(ref sn, 16f * area * k * sp, () => Emit(PK.Snow, xr(), OY - 10)); break;
             case 1:
                 Rate(ref sn, 5f * area * k * sp, () => Emit(PK.Petal, xr(), OY - 10));
                 break;
@@ -372,6 +372,27 @@ sealed partial class SeasonEngine
         relaxAcc += dt;
         var relax = relaxAcc >= 0.1; if (relax) relaxAcc = 0;
         var growGrass = (Season == 1 || Season == 2) && S.Piles;
+        // ровный «осадок»: пока идёт снег, листопад или цветение, край окна понемногу обрастает по всей видимой длине
+        var rate = Season switch { 0 => 0.2f, 3 => 0.18f, 1 => 0.1f, 2 => 0.06f, _ => 0f };
+        if (S.Piles && rate > 0)
+        {
+            foreach (var sg in segs)
+            {
+                var p = sg.P;
+                if (p.Taskbar && !S.TaskbarPile) continue;
+                if (p.Kind >= 0 && p.Kind != Season) continue;
+                var max = MaxH(p);
+                var i0 = Math.Max(0, (int)((sg.A - p.L) / Step)); var i1 = Math.Min(p.N - 1, (int)((sg.B - p.L) / Step));
+                var any = false;
+                for (var i = i0; i <= i1; i++)
+                {
+                    var noise = 0.7f + 0.6f * (Hash(p.Seed, (uint)(i / 3)) % 100) / 100f;
+                    var nv = Math.Min(max, p.H[i] + rate * K * (S.Speed / 100f) * noise * f);
+                    p.Total += nv - p.H[i]; p.H[i] = nv; any = true;
+                }
+                if (any) p.Kind = Season;
+            }
+        }
         foreach (var p in piles.Values)
         {
             var melting = !S.Piles || (p.Kind >= 0 && p.Kind != Season);

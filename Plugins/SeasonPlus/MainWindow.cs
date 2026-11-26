@@ -164,7 +164,7 @@ sealed class MainWindow : Window
             Switch("Отсчёт до Нового года", "в последние 10 секунд года — большие цифры, потом поздравление", () => draft.Countdown, v => { draft.Countdown = v; Changed(); }),
             Switch("Салют в полночь", "в Новый год ровно в 00:00", () => draft.NyFireworks, v => { draft.NyFireworks = v; Changed(); }),
             Row("Салют сейчас", "запустить на пробу (в предпросмотре и на экране, если включено)", Btn("Запустить салют", null, () => { eng.StartFireworks(10); App.Fireworks(); }, true)),
-            Row("Проверить новогоднюю полночь", "отсчёт 10…1, поздравление и салют — как будет в Новый год", Btn("Проверить", null, () => { draft.Holiday = "newyear"; Changed(); eng.NyDemo = 0; })),
+            Row("Проверить новогоднюю полночь", "отсчёт 10…1, поздравление и салют — как будет в Новый год", Btn("Проверить", null, () => { draft.Holiday = "newyear"; Changed(); eng.NyDemo = 0; BuildPage(); })),
         };
         if (draft.Holiday == "custom")
         {

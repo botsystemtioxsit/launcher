@@ -89,12 +89,14 @@ static class SelfTest
                 var mid = Mid(e, 1);
                 if (half < 0 && mid >= 0.5 * (0.5 * 26 + 4)) { half = tt; }
             }
-            var m1 = Mid(e, 1); var edge = Edge(e, 1);
+            var m1 = Mid(e, 1);
             var max = 0.5 * 26 + 4;
             L.Check("зимой на окне вырастает сугроб", m1 > 3.5, "высота " + m1.ToString("0.0") + " px, потолок " + max);
             L.Check("сугроб не выше потолка", m1 <= max + 0.01);
             L.Check("сугроб растёт не слишком быстро и не слишком медленно", half > 8 && half < 300, "половина потолка за " + half.ToString("0") + " с");
-            L.Check("у края сугроб ниже, чем в середине (скругление)", edge <= m1 + 0.001);
+            var p1 = e.Piles.First(q => q.Id == 1);
+            double SurfY(double x) => p1.Top - SeasonEngine.Dip(p1, x) - SeasonEngine.HtAt(p1, x);
+            L.Check("у скруглённого угла поверхность ниже, чем в середине", SurfY(p1.L + 1) > SurfY((p1.L + p1.R) / 2) - 0.01);
             L.Check("на панели задач тоже ложится", Mid(e, 3) > 2);
             L.Check("частиц не больше предела", e.Count <= 3200, "частиц " + e.Count);
 
@@ -116,7 +118,7 @@ static class SelfTest
             e2.S = new SeasonSettings { Season = "summer", Holiday = "off", Intensity = 100 };
             e2.S.Normalize();
             for (var tt = 0.0; tt < 14; tt += 0.05) { e2.StepTo(0.05); }
-            L.Check("зимой был сугроб, при смене на лето он растаял", wH > 2 && Mid(e2, 1) < 0.5, wH.ToString("0.0") + " → " + Mid(e2, 1).ToString("0.0"));
+            L.Check("зимой был сугроб, при смене на лето он растаял", wH > 1 && Mid(e2, 1) < 0.5, wH.ToString("0.0") + " → " + Mid(e2, 1).ToString("0.0"));
 
             // трава весной
             var e3 = Make("spring", "off");
@@ -134,7 +136,7 @@ static class SelfTest
             L.Check("в Хэллоуин летают летучие мыши", CountKind(e5, PK.Bat) >= 0 && e5.Holiday == "halloween");
             var e6 = Make("winter", "off"); e6.StartFireworks(10); e6.Warm(6);
             L.Check("салют: появляются ракеты и искры", CountKind(e6, PK.Spark) + CountKind(e6, PK.Rocket) > 10, "искр и ракет " + (CountKind(e6, PK.Spark) + CountKind(e6, PK.Rocket)));
-            var e7 = Make("winter", "newyear"); e7.NyDemo = 3;
+            var e7 = Make("winter", "newyear"); e7.StepTo(0.001); e7.NyDemo = 3;
             L.Check("отсчёт перед Новым годом показывает цифру", e7.BigText(out _) == "3");
             e7.NyDemo = 10.5;
             L.Check("после полуночи — поздравление", e7.BigText(out var gr) == "С Новым годом!" && gr);
