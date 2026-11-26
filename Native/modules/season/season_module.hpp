@@ -16,6 +16,9 @@ public:
     void tick(double dt) override { if (preview_.ready()) preview_.tick(dt); }
     void drawPanel() override;
     bool active() const override { return saved_.Active; }
+    const char* skinPart() const override { return "season"; }
+    bool skinCapture(gs::Json& out) override { if (!saved_.Active) return false; out = saved_.toJson(); return true; }
+    std::string skinApply(const gs::Json& part) override { Settings s = Settings::fromJson(part); s.Active = true; applyNow(s); return ""; }
     void revert() override;
     int snapshots(const std::wstring& dir, std::string& log) override;
     void prepareOverlayTest() override;

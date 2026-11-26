@@ -88,6 +88,26 @@ void WallpaperModule::start() {
 }
 void WallpaperModule::stop() { editor_.reset(); ctl_.stopAll(); }
 
+// Скин: только встроенные («b-…») и каталожные («c-…») обои — свои файлы человека на другом компьютере не существуют
+static bool skinWallpaperId(const std::string& id) {
+    if (id.size() < 3 || id.size() > 43 || (id[0] != 'b' && id[0] != 'c') || id[1] != '-') return false;
+    for (size_t i = 2; i < id.size(); i++) { char c = id[i]; if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-')) return false; }
+    return true;
+}
+bool WallpaperModule::skinCapture(gs::Json& out) {
+    if (!skinWallpaperId(saved_.Active)) return false;
+    out = gs::Json::Object(); out.set("id", gs::Json::String(saved_.Active)); out.set("fit", gs::Json::String(saved_.Fit)); out.set("fps", gs::Json::Number(saved_.Fps));
+    return true;
+}
+std::string WallpaperModule::skinApply(const gs::Json& p) {
+    std::string id = p.str("id");
+    if (!skinWallpaperId(id)) return "обои: нужны встроенные или каталожные";
+    Wallpaper w; if (!getWallpaper(id, w)) return "этих обоев нет в библиотеке (установите их из каталога)";
+    saved_.Active = id; saved_.Paused = false; saved_.Fit = p.str("fit", "cover"); saved_.Fps = p.num("fps", 60); listDirty_ = true;
+    applySettings();
+    return "";
+}
+
 void WallpaperModule::revert() {
     saved_.Active.clear(); saved_.save();
     ctl_.apply(saved_);

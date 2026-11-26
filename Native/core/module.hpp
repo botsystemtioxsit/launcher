@@ -3,16 +3,22 @@
 #include <d3d11.h>
 #include <functional>
 #include <string>
+#include "json.hpp"
+#include <vector>
 #include "layer.hpp"
 
 namespace sp {
 
 class OverlayHost;
+class Module;
 
 // Что приложение даёт модулю.
 struct AppCtx {
     OverlayHost* overlay = nullptr;
+    std::vector<Module*>* all = nullptr;                 // все модули приложения (скины собирают и применяют их настройки)
     std::function<void()> changed;       // модуль включён/выключен — пересчитать автозапуск и разбудить слои
+    std::function<void()> revertAll;     // «Выключить всё»
+    std::function<void(bool)> showWindow;// спрятать/показать окно приложения (для снимка экрана)
 };
 
 class Module {
@@ -29,6 +35,10 @@ public:
     virtual bool needsBackground() const { return active(); }   // нужна ли работа приложения в фоне (слой поверх экрана и т. п.)
     virtual void revert() = 0;                             // «Выключить всё»
     virtual Layer* layer() { return nullptr; }
+    // скины: модуль отдаёт и принимает свою часть (набор настроек из белого списка, без путей и кода)
+    virtual const char* skinPart() const { return nullptr; }                       // «season», «taskbar», «color», «icons», «wallpaper», «cursor»
+    virtual bool skinCapture(gs::Json& out) { return false; }                      // текущие настройки → часть скина (false — нечего отдать)
+    virtual std::string skinApply(const gs::Json& part) { return "не поддерживается"; }   // применить; пусто — готово, иначе причина
     virtual void start() {}                                // приложение запущено по-настоящему (есть цикл сообщений): можно поднимать окна
     virtual void stop() {}                                 // приложение закрывается
     // служебное для проверок в CI

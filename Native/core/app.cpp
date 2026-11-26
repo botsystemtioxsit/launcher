@@ -417,7 +417,9 @@ int runApp(const AppInfo& info, std::vector<std::unique_ptr<Module>>& modules, i
     gs::locInit(info.locText, argc, argv);
     App app; gApp = &app;
     app.info = info; app.modules = &modules;
-    app.ctx.overlay = &app.overlay; app.ctx.changed = [&app] { app.changed(); };
+    std::vector<Module*> raw; for (auto& m : modules) raw.push_back(m.get());
+    app.ctx.overlay = &app.overlay; app.ctx.changed = [&app] { app.changed(); }; app.ctx.all = &raw; app.ctx.revertAll = [&app] { app.revertAll(); };
+    app.ctx.showWindow = [&app](bool show) { if (!app.hwnd) return; if (show) PostMessageW(app.hwnd, WM_SHOWUI, 0, 0); else ShowWindow(app.hwnd, SW_MINIMIZE); };
     for (auto& m : modules) m->attach(&app.ctx);
 
     auto arg = [&](const wchar_t* prefix) -> std::wstring {

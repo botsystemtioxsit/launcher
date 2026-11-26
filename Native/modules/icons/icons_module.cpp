@@ -4,6 +4,7 @@
 #include <shlobj.h>
 #include <shobjidl.h>
 #include <d3d11.h>
+#include <algorithm>
 #include <cstdio>
 #include <filesystem>
 #include <set>
@@ -22,6 +23,19 @@ using namespace sp::ui;
 
 IconsModule::IconsModule() { draft_ = Settings::load(); }
 IconsModule::~IconsModule() { if (job_.joinable()) job_.join(); if (previewJob_.joinable()) previewJob_.join(); }
+
+bool IconsModule::skinCapture(gs::Json& o) {
+    if (!engine_.applied()) return false;
+    Settings s = Settings::load(); o = gs::Json::Object();
+    o.set("color", gs::Json::String(s.Color)); o.set("style", gs::Json::String(s.Style)); o.set("strength", gs::Json::Number(s.Strength));
+    return true;
+}
+std::string IconsModule::skinApply(const gs::Json& p) {
+    if (busy_) return "значки сейчас обновляются — повторите чуть позже";
+    draft_.Color = p.str("color", draft_.Color); draft_.Style = p.str("style", draft_.Style); draft_.Strength = p.num("strength", draft_.Strength); draft_.normalize();
+    startApply();
+    return "";
+}
 
 void IconsModule::revert() { if (busy_) return; engine_.restoreAll(true); status_ = L("Все значки возвращены как были."); haveLast_ = false; }
 

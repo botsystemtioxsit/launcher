@@ -22,6 +22,9 @@ public:
     void stop() override;
     void drawPanel() override;
     bool active() const override { return !saved_.Active.empty(); }
+    const char* skinPart() const override { return "wallpaper"; }
+    bool skinCapture(gs::Json& out) override;
+    std::string skinApply(const gs::Json& part) override;
     void revert() override;
     int selfTest(const std::wstring& dir, std::string& log) override;
     Controller& controller() { return ctl_; }

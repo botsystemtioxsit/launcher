@@ -80,6 +80,23 @@ void TaskbarModule::apply() {
     status_ = saved_.Shape == "none" ? L("Панель возвращена как в Windows.") : L("Применено. Панель подключается — это занимает несколько секунд.");
 }
 
+bool TaskbarModule::skinCapture(gs::Json& o) {
+    if (saved_.Shape == "none") return false;
+    using gs::Json; o = Json::Object();
+    o.set("shape", Json::String(saved_.Shape)); o.set("radius", Json::Number(saved_.Radius)); o.set("sideMargin", Json::Number(saved_.SideMargin)); o.set("bottomGap", Json::Number(saved_.BottomGap));
+    o.set("islandStyle", Json::String(saved_.IslandStyle)); o.set("islandPadding", Json::Number(saved_.IslandPadding)); o.set("islandMode", Json::String(saved_.IslandMode)); o.set("islandGap", Json::Number(saved_.IslandGap)); o.set("keepEdges", Json::Boolean(saved_.KeepEdges));
+    return true;
+}
+std::string TaskbarModule::skinApply(const gs::Json& p) {
+    Appearance a = saved_;
+    a.Shape = p.str("shape", "none"); a.Radius = p.num("radius", a.Radius); a.SideMargin = p.num("sideMargin", a.SideMargin); a.BottomGap = p.num("bottomGap", a.BottomGap);
+    a.IslandStyle = p.str("islandStyle", a.IslandStyle); a.IslandPadding = p.num("islandPadding", a.IslandPadding); a.IslandMode = p.str("islandMode", a.IslandMode); a.IslandGap = p.num("islandGap", a.IslandGap); a.KeepEdges = p.boolean("keepEdges", a.KeepEdges);
+    a.normalize();
+    if (a.Shape != "none" && !Engine::unavailableReason().empty()) return Engine::unavailableReason();
+    draft_ = a; shapeSel_ = selFrom(draft_); apply();
+    return "";
+}
+
 void TaskbarModule::init(ID3D11Device* dev) { canvas_.init(dev, 640, 190); }
 void TaskbarModule::tick(double) { if (canvas_.ready()) canvas_.draw([this](sp::Gfx& g) { drawPreview(g); }); }
 

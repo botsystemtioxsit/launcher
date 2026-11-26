@@ -23,6 +23,9 @@ public:
     void tick(double dt) override;
     void drawPanel() override;
     bool active() const override { return saved_.Shape != "none"; }
+    const char* skinPart() const override { return "taskbar"; }
+    bool skinCapture(gs::Json& out) override;
+    std::string skinApply(const gs::Json& part) override;
     void start() override;
     void stop() override;
     void revert() override;
