@@ -17,6 +17,14 @@ $lt = Join-Path (Split-Path $exe) 'sp_logic_test.exe'
 & $lt 2>$null | Tee-Object -FilePath (Join-Path $outFull 'logic-test.txt') | ForEach-Object { Say $_ }
 
 Say ''
+Say '=== проверки модулей на настоящей Windows ==='
+$st = Join-Path $outFull 'selftest'
+New-Item -ItemType Directory -Force $st | Out-Null
+$p = Start-Process -FilePath $exe -ArgumentList "--selftest=$st" -PassThru
+if (-not $p.WaitForExit(300000)) { $p.Kill(); Say 'selftest: не завершился за 5 минут' } else { Say "selftest: код $($p.ExitCode)" }
+if (Test-Path (Join-Path $st 'selftest.txt')) { Get-Content (Join-Path $st 'selftest.txt') | ForEach-Object { Say $_ } } else { Say 'selftest.txt не появился' }
+
+Say ''
 Say '=== снимки сцен и окна ==='
 $ui = Join-Path $outFull 'ui'
 New-Item -ItemType Directory -Force $ui | Out-Null

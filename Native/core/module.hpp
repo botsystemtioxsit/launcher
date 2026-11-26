@@ -25,11 +25,13 @@ public:
     virtual void shutdownUi() {}                           // окно спрятано — отпустить ресурсы предпросмотра
     virtual void tick(double dt) {}                        // кадр окна (предпросмотр)
     virtual void drawPanel() = 0;                          // содержимое вкладки (между NewFrame и Render)
-    virtual bool active() const = 0;                       // включён ли (работает в фоне)
+    virtual bool active() const = 0;                       // включён ли (применён)
+    virtual bool needsBackground() const { return active(); }   // нужна ли работа приложения в фоне (слой поверх экрана и т. п.)
     virtual void revert() = 0;                             // «Выключить всё»
     virtual Layer* layer() { return nullptr; }
     // служебное для проверок в CI
     virtual int snapshots(const std::wstring& dir, std::string& log) { return 0; }   // снимки сцен модуля в PNG; число записанных
+    virtual int selfTest(const std::wstring& dir, std::string& log) { return 0; }  // проверка на настоящей Windows; возвращает число провалов
     virtual void prepareOverlayTest() {}                                           // включить себя «напоказ» для пробы на экране
 protected:
     AppCtx* app_ = nullptr;

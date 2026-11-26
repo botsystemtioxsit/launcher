@@ -50,7 +50,7 @@ struct App {
     ComPtr<ID3D11RenderTargetView> rtv;
     bool uiReady = false;
 
-    bool anyActive() const { for (auto& m : *modules) if (m->active()) return true; return false; }
+    bool anyActive() const { for (auto& m : *modules) if (m->needsBackground()) return true; return false; }
     void changed() {
         gs::setAutostart(info.autostartName, L"--background", anyActive());
         overlay.wake();
@@ -323,6 +323,14 @@ int runApp(const AppInfo& info, std::vector<std::unique_ptr<Module>>& modules, i
         for (auto& m : modules) m->revert();
         gs::setAutostart(info.autostartName, L"--background", false);
         return 0;
+    }
+    if (auto d = arg(L"--selftest="); !d.empty()) {
+        gs::makeDirs(d);
+        std::string log; int fails = 0;
+        for (auto& m : modules) { log += std::string("== ") + m->id() + " ==\n"; fails += m->selfTest(d, log); }
+        log += fails == 0 ? "ВСЁ В ПОРЯДКЕ\n" : "ЕСТЬ ОШИБКИ: " + std::to_string(fails) + "\n";
+        gs::writeFileAtomic(d + L"\\selftest.txt", log);
+        return fails == 0 ? 0 : 1;
     }
     if (auto d = arg(L"--screenshot="); !d.empty()) return runScreenshot(app, d);
     if (auto d = arg(L"--overlay-test="); !d.empty()) return runOverlayTest(app, d);

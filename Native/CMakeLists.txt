@@ -37,7 +37,7 @@ add_library(gscommon STATIC common/win.cpp common/loc.cpp ${CMAKE_BINARY_DIR}/co
 target_include_directories(gscommon PUBLIC common)
 
 # ядро: рисование, слои поверх экрана, оболочка с вкладками
-add_library(gscore STATIC core/gfx.cpp core/scanner.cpp core/surface.cpp core/overlay_host.cpp core/ui_common.cpp core/app.cpp core/snapshots.cpp)
+add_library(gscore STATIC core/gfx.cpp core/scanner.cpp core/surface.cpp core/overlay_host.cpp core/ui_common.cpp core/app.cpp core/snapshots.cpp core/gpu_canvas.cpp)
 target_include_directories(gscore PUBLIC core)
 target_link_libraries(gscore PUBLIC gscommon imgui d3d11 d3dcompiler dxgi d2d1 dwrite dcomp windowscodecs dwmapi ole32 uuid winmm shell32 user32 gdi32 advapi32)
 
@@ -47,12 +47,17 @@ add_library(mod_season STATIC modules/season/model.cpp modules/season/engine.cpp
 target_include_directories(mod_season PUBLIC modules/season)
 target_link_libraries(mod_season PUBLIC gscore)
 
+add_library(mod_cursor STATIC modules/cursor/cursor_settings.cpp modules/cursor/cursor_shapes.cpp modules/cursor/cursor_files.cpp modules/cursor/cursor_apply.cpp
+  modules/cursor/trail_layer.cpp modules/cursor/cursor_module.cpp)
+target_include_directories(mod_cursor PUBLIC modules/cursor)
+target_link_libraries(mod_cursor PUBLIC gscore)
+
 # проверка логики Season без экрана
 add_executable(sp_logic_test modules/season/logic_test.cpp)
 target_link_libraries(sp_logic_test PRIVATE mod_season)
 
 # приложение
-gs_embed_text(${CMAKE_BINARY_DIR}/style_loc.cpp kStyleLoc ${CMAKE_SOURCE_DIR}/apps/style/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/season/Loc/app.loc)
+gs_embed_text(${CMAKE_BINARY_DIR}/style_loc.cpp kStyleLoc ${CMAKE_SOURCE_DIR}/apps/style/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/season/Loc/app.loc ${CMAKE_SOURCE_DIR}/modules/cursor/Loc/app.loc)
 add_executable(GhostStyle WIN32 apps/style/main.cpp apps/style/app.rc ${CMAKE_BINARY_DIR}/style_loc.cpp)
-target_link_libraries(GhostStyle PRIVATE mod_season gscore)
+target_link_libraries(GhostStyle PRIVATE mod_season mod_cursor gscore)
 target_link_options(GhostStyle PRIVATE -mwindows -municode)

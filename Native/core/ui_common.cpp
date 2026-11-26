@@ -18,7 +18,7 @@ bool loadFonts(float scale) {
     if (ranges.empty()) {
         ImFontGlyphRangesBuilder b;
         b.AddRanges(io.Fonts->GetGlyphRangesCyrillic());
-        static const ImWchar extra[] = {0x2000, 0x206F, 0x2190, 0x21FF, 0};
+        static const ImWchar extra[] = {0x2000, 0x206F, 0x2190, 0x21FF, 0x25A0, 0x25FF, 0};
         b.AddRanges(extra);
         b.BuildRanges(&ranges);
     }

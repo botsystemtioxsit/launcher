@@ -34,6 +34,11 @@ public:
     void roundRect(float x0, float y0, float x1, float y1, float r, Rgb c, float a);
     void tri(float x1, float y1, float x2, float y2, float x3, float y3, Rgb c, float a);
     void heart(float cx, float cy, float s, Rgb c, float a);
+    struct Pt { float x, y; };
+    void polyFill(const std::vector<Pt>& p, Rgb c, float a);
+    void polyStroke(const std::vector<Pt>& p, bool closed, float w, Rgb c, float a, bool roundJoin = true);
+    void ringXY(float cx, float cy, float rx, float ry, float w, Rgb c, float a);     // овальное кольцо
+    void setTransform(const D2D1_MATRIX_3X2_F& m) { if (rt_) rt_->SetTransform(m); }
     // Заливка «горки» (сугроб): верхняя кромка по высотам, внизу ровная линия baseY(i). Цвет плавно меняется сверху вниз.
     void hill(float x0, float step, const std::vector<float>& top, const std::vector<float>& base, Rgb cTop, Rgb cBot, float a);
     void text(const std::string& utf8, float size, Rgb c, float a, float cx, float cy);   // по центру точки

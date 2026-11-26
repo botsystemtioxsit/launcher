@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include "app.hpp"
+#include "cursor_module.hpp"
 #include "season_module.hpp"
 
 namespace gs { extern const char* kStyleLoc; }
@@ -13,6 +14,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     wchar_t** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
     std::vector<std::unique_ptr<sp::Module>> modules;
     modules.push_back(std::make_unique<sp::SeasonModule>());
+    modules.push_back(std::make_unique<sp::CursorModule>());
     sp::AppInfo info;
     info.locText = gs::kStyleLoc;
     return sp::runApp(info, modules, argc, argv);
