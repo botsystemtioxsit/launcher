@@ -1,4 +1,4 @@
-name: Native plugins (C++)
+name: Native apps (C++)
 
 # Нативные (C++) версии плагинов: собираются на Linux (mingw-w64, один статический exe без .NET), логика проверяется там же,
 # а рисование и поведение на экране — на настоящей Windows-машине GitHub. Результат — ветка ci-e2e-native и артефакт native-windows.
@@ -20,18 +20,18 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mingw-w64 cmake ninja-build g++
       - name: Logic tests (native Linux build of the engine)
         run: |
-          g++ -std=c++20 -O2 -Wall -Wextra -Wno-unused-parameter -INative/common -INative/seasonplus Native/seasonplus/engine.cpp Native/seasonplus/model.cpp Native/seasonplus/logic_test.cpp -o logic_test
+          g++ -std=c++20 -O2 -Wall -Wextra -Wno-unused-parameter -INative/common -INative/core -INative/modules/season Native/modules/season/engine.cpp Native/modules/season/model.cpp Native/core/surface.cpp Native/modules/season/logic_test.cpp -o logic_test
           ./logic_test 2>/dev/null | tee logic-test.txt
           grep -q "ВСЁ В ПОРЯДКЕ" logic-test.txt
       - name: Build Windows executables
         run: |
           cmake -S Native -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=$PWD/Native/cmake/mingw.cmake -DCMAKE_BUILD_TYPE=Release
-          ninja -C build SeasonPlus sp_logic_test
+          ninja -C build GhostStyle sp_logic_test
           mkdir -p dist
-          cp build/out/SeasonPlus.exe dist/SeasonPlus.debug.exe
-          x86_64-w64-mingw32-strip build/out/SeasonPlus.exe build/out/sp_logic_test.exe
-          cp build/out/SeasonPlus.exe build/out/sp_logic_test.exe dist/
-          (cd dist && for f in SeasonPlus.exe; do sha256sum $f | awk '{print $1"  "$2}' > $f.sha256; done)
+          cp build/out/GhostStyle.exe dist/GhostStyle.debug.exe
+          x86_64-w64-mingw32-strip build/out/GhostStyle.exe build/out/sp_logic_test.exe
+          cp build/out/GhostStyle.exe build/out/sp_logic_test.exe dist/
+          (cd dist && for f in GhostStyle.exe; do sha256sum $f | awk '{print $1"  "$2}' > $f.sha256; done)
           ls -la dist
       - uses: actions/upload-artifact@v4
         with:
@@ -50,7 +50,7 @@ jobs:
           path: native-dist
       - name: Run native checks
         shell: pwsh
-        run: ./tests/e2e/native-season.ps1 -Out results
+        run: ./tests/e2e/native-style.ps1 -Out results
         continue-on-error: true
       - uses: actions/upload-artifact@v4
         if: always()

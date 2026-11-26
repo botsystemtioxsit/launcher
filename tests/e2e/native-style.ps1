@@ -5,10 +5,10 @@ New-Item -ItemType Directory -Force $Out | Out-Null
 $outFull = (Resolve-Path $Out).Path
 $log = Join-Path $outFull 'report.txt'
 function Say($t) { $t | Tee-Object -FilePath $log -Append }
-$exe = (Resolve-Path 'native-dist/SeasonPlus.exe').Path
+$exe = (Resolve-Path 'native-dist/GhostStyle.exe').Path
 $env:GS_TRACE = Join-Path $outFull 'trace.log'
 $len = (Get-Item $exe).Length
-Say "SeasonPlus.exe: $len байт"
+Say "GhostStyle.exe: $len байт"
 Say ("Windows: " + [Environment]::OSVersion.Version)
 
 Say ''
