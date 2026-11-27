@@ -1,9 +1,17 @@
 #include "scanner.hpp"
 #include <dwmapi.h>
+#include <mutex>
 #include <set>
 #include <string>
 
 namespace sp {
+
+static std::mutex gPlatesMu;
+static std::vector<Surf> gPlates;
+static ULONGLONG gPlatesAt = 0;
+void setTaskbarPlates(const std::vector<Surf>& plates) { std::lock_guard<std::mutex> g(gPlatesMu); gPlates = plates; gPlatesAt = GetTickCount64(); }
+std::vector<Surf> taskbarPlates() { std::lock_guard<std::mutex> g(gPlatesMu); if (GetTickCount64() - gPlatesAt > 2000) return {}; return gPlates; }
+
 namespace {
 
 bool isWin11() {
@@ -36,7 +44,6 @@ BOOL CALLBACK enumProc(HWND h, LPARAM lp) {
     int cloaked = 0;
     if (SUCCEEDED(DwmGetWindowAttribute(h, DWMWA_CLOAKED, &cloaked, sizeof cloaked)) && cloaked) return TRUE;
     DWORD pid = 0; GetWindowThreadProcessId(h, &pid);
-    if (pid == c->pid) return TRUE;
     wchar_t cls[64] = {}; GetClassNameW(h, cls, 64);
     std::wstring cn = cls;
     bool tray = cn == L"Shell_TrayWnd" || cn == L"Shell_SecondaryTrayWnd";
@@ -56,7 +63,15 @@ BOOL CALLBACK enumProc(HWND h, LPARAM lp) {
         if (mon && GetMonitorInfoW(mon, &mi)) {
             bool atBottom = w > hg && r.top > (mi.rcMonitor.top + mi.rcMonitor.bottom) / 2;
             bool hidden = r.top >= mi.rcMonitor.bottom - 3;
-            if (atBottom && !hidden) {
+            auto plates = taskbarPlates();
+            if (atBottom && !hidden && !plates.empty()) {            // «Панель» рисует плашки — снег ложится на них, а не на невидимый край панели
+                for (auto& pl : plates) {
+                    if (pl.top < r.top - 4 || pl.top > r.bottom) continue;   // плашка другой панели (другой монитор)
+                    Surf s = pl; s.taskbar = true;
+                    s.vis = subtract(s.left, s.right, coveredAt(c->covers, s.top));
+                    if (!s.vis.empty()) c->out->push_back(std::move(s));
+                }
+            } else if (atBottom && !hidden) {
                 Surf s; s.id = (long long)(intptr_t)h; s.left = r.left; s.right = r.right; s.top = r.top; s.radius = 0; s.taskbar = true;
                 s.vis = subtract(s.left, s.right, coveredAt(c->covers, s.top));
                 if (!s.vis.empty()) c->out->push_back(std::move(s));
