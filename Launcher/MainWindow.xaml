@@ -1,17 +1,34 @@
 <Window x:Class="BattleLauncher.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="Ghost Shell Launcher" Width="980" Height="680" MinWidth="760" MinHeight="520"
         Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}"
         FontFamily="Segoe UI" FontSize="14" WindowStartupLocation="CenterScreen">
+  <shell:WindowChrome.WindowChrome>
+    <shell:WindowChrome CaptionHeight="44" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="10" UseAeroCaptionButtons="False"/>
+  </shell:WindowChrome.WindowChrome>
+  <Border x:Name="WinRoot" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="10" ClipToBounds="True">
   <Grid>
     <Grid.RowDefinitions>
+      <RowDefinition Height="44"/>
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
 
+    <!-- Верхняя полоса: название, аккаунт, свернуть / развернуть / закрыть -->
+    <Grid Grid.Row="0" Background="{DynamicResource Panel}">
+      <TextBlock Text="GHOST SHELL LAUNCHER" Margin="16,0,0,0" VerticalAlignment="Center" FontFamily="{DynamicResource Mono}" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource Accent}"/>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+        <Button x:Name="TopAccount" Style="{StaticResource Pill}" Margin="0,8,10,8" Padding="12,0" Click="TopAccount_Click"/>
+        <Button Content="—" Style="{StaticResource CapBtn}" Click="CapMin_Click" ToolTip="Свернуть"/>
+        <Button x:Name="CapMaxBtn" Content="☐" Style="{StaticResource CapBtn}" Click="CapMax_Click" ToolTip="Развернуть"/>
+        <Button Content="✕" Style="{StaticResource CapBtn}" Tag="close" Click="CapClose_Click" ToolTip="Закрыть"/>
+      </StackPanel>
+    </Grid>
+
     <!-- Плашка «вышла новая версия лаунчера» -->
-    <Border x:Name="UpdateBar" Grid.Row="0" Visibility="Collapsed" Background="#17130A" BorderBrush="{DynamicResource Yellow}" BorderThickness="0,0,0,1" Padding="14,8">
+    <Border x:Name="UpdateBar" Grid.Row="1" Visibility="Collapsed" Background="#17130A" BorderBrush="{DynamicResource Yellow}" BorderThickness="0,0,0,1" Padding="14,8">
       <Border.Effect><DropShadowEffect Color="#FCEE0A" BlurRadius="14" ShadowDepth="0" Opacity="0.25"/></Border.Effect>
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
         <TextBlock Text="▲" Foreground="{DynamicResource Yellow}" FontFamily="{DynamicResource Mono}" FontWeight="Bold" Margin="0,0,10,0" VerticalAlignment="Center"/>
@@ -20,7 +37,7 @@
       </StackPanel>
     </Border>
 
-    <Grid Grid.Row="1">
+    <Grid Grid.Row="2">
       <!-- Основное окно -->
       <Grid x:Name="MainView">
         <Grid.ColumnDefinitions>
@@ -220,4 +237,5 @@
       </Border>
     </Grid>
   </Grid>
+  </Border>
 </Window>

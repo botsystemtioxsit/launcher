@@ -31,6 +31,8 @@ public:
     virtual void shutdownUi() {}                           // окно спрятано — отпустить ресурсы предпросмотра
     virtual void tick(double dt) {}                        // кадр окна (предпросмотр)
     virtual void drawPanel() = 0;                          // содержимое вкладки (между NewFrame и Render)
+    virtual bool hasPreview() const { return false; }      // есть ли предпросмотр: тогда он показывается справа, а настройки — слева
+    virtual void drawPreview() {}                          // содержимое правой части (предпросмотр)
     virtual bool active() const = 0;                       // включён ли (применён)
     virtual bool needsBackground() const { return active(); }   // нужна ли работа приложения в фоне (слой поверх экрана и т. п.)
     virtual void revert() = 0;                             // «Выключить всё»

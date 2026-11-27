@@ -401,6 +401,8 @@ void ColorModule::drawPreview(Gfx& g) {
 
 void ColorModule::tick(double dt) { if (canvas_.ready()) canvas_.draw([this](Gfx& g) { drawPreview(g); }); }
 
+void ColorModule::drawPreview() { if (canvas_.ready()) imageFit((ImTextureID)(intptr_t)canvas_.srv(), 640, 250); }
+
 void ColorModule::drawPanel() {
     ImGui::PushFont(mono());
     ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255));
@@ -408,11 +410,7 @@ void ColorModule::drawPanel() {
     ImGui::PopStyleColor(); ImGui::PopFont();
     note("Один цвет для всего: окна и выделение (акцент Windows) и панель задач. Выберите цвет, посмотрите на предпросмотре и нажмите «Применить». Пока не нажали, в Windows ничего не меняется.");
     ImGui::Spacing();
-    if (beginCard("1. Так будет выглядеть")) {
-        if (canvas_.ready()) ImGui::Image((ImTextureID)(intptr_t)canvas_.srv(), ImVec2(640, 250));
-    }
-    endCard();
-    if (beginCard("2. Выберите цвет")) {
+    if (beginCard("1. Выберите цвет")) {
         Rgb c = parseHex(draft_.Color);
         float col[3] = {c.r / 255.f, c.g / 255.f, c.b / 255.f};
         if (ImGui::ColorPicker3("##c", col, ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_PickerHueWheel)) draft_.Color = toHex({col[0] * 255, col[1] * 255, col[2] * 255});

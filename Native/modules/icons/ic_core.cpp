@@ -90,7 +90,7 @@ Settings Settings::load() {
         s.Color = j.str("Color", s.Color); s.Style = j.str("Style", s.Style); s.Strength = j.num("Strength", 100); s.AutoRestart = j.boolean("AutoRestart", true);
         if (auto* e = j.get("Enabled")) if (e->t == Json::Arr) for (auto& x : e->a) if (x.t == Json::Str) s.Enabled.push_back(x.s);
     }
-    if (!have) for (auto& t2 : targets()) s.Enabled.push_back(t2.id);
+    if (!have) for (auto& t2 : targets()) { std::string i2 = t2.id; if (i2 == "ft-all" || i2 == "folder" || i2 == "lnk-desktop-all" || i2 == "lnk-start-all") continue; s.Enabled.push_back(t2.id); }   // рискованные цели (все типы файлов, общие ярлыки, папки) включает человек сам
     s.normalize();
     return s;
 }
@@ -645,6 +645,10 @@ static std::string generatedIcon(const Pick& pick, const Settings& s) {
     std::vector<Img> out; for (auto& im : pick.sizes) { Img c = im; tintColor(c, s.Color, s.Style, s.Strength); out.push_back(c); }
     if (isBlankSet(out)) return "";
     gs::writeFileAtomic(path, buildIco(out));
+    { HICON h = nullptr; UINT id = 0;   // проверка: Windows должна уметь прочитать только что записанный значок, иначе вместо него будет «листок»
+      bool okLoad = PrivateExtractIconsW(path.c_str(), 0, 32, 32, &h, &id, 1, LR_DEFAULTCOLOR) == 1 && h;
+      if (h) DestroyIcon(h);
+      if (!okLoad) { std::error_code ec; fs::remove(path, ec); return ""; } }
     return narrow(path);
 }
 

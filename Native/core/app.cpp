@@ -258,7 +258,21 @@ struct App {
         ImGui::PopStyleColor();
         ImGui::SameLine(0, 0);
         ImGui::BeginChild("##content", ImVec2(0, 0), ImGuiChildFlags_AlwaysUseWindowPadding);
-        if (!modules->empty()) (*modules)[std::clamp(selected, 0, (int)modules->size() - 1)]->drawPanel();
+        if (!modules->empty()) {
+            Module& cur = *(*modules)[std::clamp(selected, 0, (int)modules->size() - 1)];
+            if (cur.hasPreview()) {
+                float avail = ImGui::GetContentRegionAvail().x, pw = std::clamp(avail * 0.44f, 340.f * scale, 640.f * scale);
+                ImGui::BeginChild("##left", ImVec2(avail - pw - 10 * scale, 0), ImGuiChildFlags_None);
+                cur.drawPanel();
+                ImGui::EndChild();
+                ImGui::SameLine();
+                ImGui::BeginChild("##right", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
+                ImGui::PushFont(ui::mono()); ImGui::TextUnformatted(L("Так будет выглядеть")); ImGui::PopFont();
+                ImGui::Spacing();
+                cur.drawPreview();
+                ImGui::EndChild();
+            } else cur.drawPanel();
+        }
         ImGui::EndChild();
         ImGui::End();
     }

@@ -105,6 +105,7 @@ bool beginCard(const char* title) {
     ImGui::Spacing();
     return ok;
 }
+void imageFit(ImTextureID tex, float w, float h) { float aw = ImGui::GetContentRegionAvail().x; float k = aw / w; ImGui::Image(tex, ImVec2(aw, h * k)); }
 void endCard() { ImGui::EndChild(); ImGui::Spacing(); }
 
 }  // namespace sp::ui

@@ -18,6 +18,8 @@ public:
     void init(ID3D11Device* dev) override { dev_ = dev; }
     void shutdownUi() override { texBefore_.clear(); texAfter_.clear(); dev_ = nullptr; }
     void drawPanel() override;
+    bool hasPreview() const override { return true; }
+    void drawPreview() override;
     bool active() const override { return engine_.applied(); }
     const char* skinPart() const override { return "icons"; }
     bool skinCapture(gs::Json& out) override;

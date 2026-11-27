@@ -4,6 +4,7 @@
 #include "imgui.h"
 #include "loc.hpp"
 #include "tb_registry.hpp"
+#include "cursor_settings.hpp"
 #include "tb_settings.hpp"
 #include "ui_common.hpp"
 #include "win.hpp"
@@ -15,7 +16,10 @@ using namespace sp::ui;
 
 int runLogicChecks(std::string& log);
 
-TaskbarModule::TaskbarModule() : overlay_(&engine_) { saved_ = loadAppearance(); draft_ = saved_; shapeSel_ = selFrom(draft_); }
+TaskbarModule::TaskbarModule() : overlay_(&engine_) {
+    saved_ = loadAppearance(); draft_ = saved_; shapeSel_ = selFrom(draft_);
+    ColorLink l = colorLinkCurrent(); cOn_ = l.active && l.mode == "solid"; cColor_ = l.color; cOp_ = l.opacity;
+}
 TaskbarModule::~TaskbarModule() { if (job_.joinable()) job_.join(); if (timerWin_) { KillTimer(timerWin_, 1); DestroyWindow(timerWin_); } }
 
 int TaskbarModule::selFrom(const Appearance& a) const {
@@ -76,6 +80,12 @@ void TaskbarModule::apply() {
     saved_.UseXaml = saved_.Shape != "none" && Engine::unavailableReason().empty();
     saved_.XamlConsentShown = true;
     saveAppearance(saved_);
+    {   // цвет плашек — в общий файл, который читает окно плашек
+        using gs::Json; Json j = Json::Object();
+        j.set("Active", Json::Boolean(cOn_)); j.set("BgMode", Json::String(cOn_ ? "solid" : "default")); j.set("BgColor", Json::String(cColor_));
+        j.set("BgOpacity", Json::Number(cOp_)); j.set("HideStroke", Json::Boolean(false));
+        std::string out; gs::jsonDump(j, out); gs::makeDirs(gs::appDataDir()); gs::writeFileAtomic(gs::appDataDir() + L"\\color-plus-taskbar.json", out);
+    }
     if (started_) applyEngine();
     status_ = saved_.Shape == "none" ? L("Панель возвращена как в Windows.") : L("Применено. Панель подключается — это занимает несколько секунд.");
 }
@@ -119,6 +129,7 @@ void TaskbarModule::drawPreview(sp::Gfx& g) {
     Fill f = resolveFill();
     ColorLink cl = colorLinkCurrent();
     sp::Rgb col{(float)(f.r * 255), (float)(f.g * 255), (float)(f.b * 255)};
+    if (cOn_) { sp::Rgb c = sp::parseHex(cColor_); col = c; f.a = std::clamp(cOp_ / 100.0, 0.05, 1.0); f.has = true; }
     float alpha = a.Shape == "none" ? 0.f : (float)std::max(0.35, f.a);
     if (!f.has) alpha = 0.f;
     (void)cl;
@@ -129,15 +140,15 @@ void TaskbarModule::drawPreview(sp::Gfx& g) {
     g.rect(12, y0 + 14, 90, y0 + 30, sp::Rgb{200, 200, 220}, 0.45f);
 }
 
+void TaskbarModule::drawPreview() { if (canvas_.ready()) imageFit((ImTextureID)(intptr_t)canvas_.srv(), 640, 190); }
+
 void TaskbarModule::drawPanel() {
     ImGui::PushFont(mono()); ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255)); ImGui::TextUnformatted(L("Панель")); ImGui::PopStyleColor(); ImGui::PopFont();
     note("Панель задач Windows 11 по-своему: плавающая, «вкладка» или острова под значками. Выберите форму, посмотрите на предпросмотре и нажмите «Применить». Пока не нажали, с панелью ничего не происходит.");
     std::string un = Engine::unavailableReason();
     if (!un.empty()) { ImGui::PushStyleColor(ImGuiCol_Text, rgb(255, 176, 32)); ImGui::TextWrapped("%s", L(un.c_str())); ImGui::PopStyleColor(); }
     ImGui::Spacing();
-    if (beginCard("1. Так будет выглядеть")) { if (canvas_.ready()) ImGui::Image((ImTextureID)(intptr_t)canvas_.srv(), ImVec2(640, 190)); }
-    endCard();
-    if (beginCard("2. Форма панели")) {
+    if (beginCard("1. Форма панели")) {
         static const char* shapes[] = {"Обычная", "Плавающая", "Острова", "Вкладка", "Вкладки-острова"};
         if (seg("shape", shapes, 5, shapeSel_)) presetFrom(shapeSel_);
         ImGui::Spacing();
@@ -153,6 +164,15 @@ void TaskbarModule::drawPanel() {
             }
             if (draft_.Shape == "pill" || draft_.Shape == "tab") toggle("Часы и трей отдельно", "часы, сеть и трей остаются отдельными островами (выкл. — одна общая плашка)", draft_.KeepEdges);
             toggle("Остров под виджетами", "плашка под кнопкой виджетов слева (у части компьютеров там пусто)", draft_.WidgetsIsland);
+        }
+    }
+    endCard();
+    if (beginCard("2. Цвет плашек")) {
+        toggle("Свой цвет", "выключено — цвет под тему Windows (тёмный или светлый)", cOn_);
+        if (cOn_) {
+            sp::Rgb c = sp::parseHex(cColor_); float col[3] = {c.r / 255.f, c.g / 255.f, c.b / 255.f};
+            if (ImGui::ColorPicker3("##tbc", col, ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_PickerHueWheel)) cColor_ = sp::toHex({col[0] * 255, col[1] * 255, col[2] * 255});
+            slider("Непрозрачность", "100 — сплошной цвет, меньше — просвечивает", cOp_, 10, 100);
         }
     }
     endCard();

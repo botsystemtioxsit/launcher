@@ -17,6 +17,8 @@ public:
     void shutdownUi() override;
     void tick(double dt) override;
     void drawPanel() override;
+    bool hasPreview() const override { return true; }
+    void drawPreview() override;
     bool active() const override { return saved_.Applied; }
     const char* skinPart() const override { return "cursor"; }
     bool skinCapture(gs::Json& out) override;
