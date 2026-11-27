@@ -1,0 +1,95 @@
+# Taskbar: русский ⇒ English ⇒ Deutsch
+Панель ⇒ Taskbar ⇒ Leiste
+Панель задач Windows 11 по-своему: плавающая, «вкладка» или острова под значками. Выберите форму, посмотрите на предпросмотре и нажмите «Применить». Пока не нажали, с панелью ничего не происходит. ⇒ The Windows 11 taskbar your way: floating, “tab” or islands under the icons. Pick a shape, check the preview and press “Apply”. Until then nothing happens to the taskbar. ⇒ Die Windows-11-Taskleiste nach deinem Geschmack: schwebend, „Reiter“ oder Inseln unter den Symbolen. Form wählen, Vorschau ansehen und „Anwenden“ drücken. Bis dahin passiert mit der Leiste nichts.
+Панель задач с формами работает только в Windows 11 (64-бит). ⇒ The shaped taskbar works only on Windows 11 (64-bit). ⇒ Die Leiste mit Formen funktioniert nur unter Windows 11 (64-Bit).
+В этой сборке нет файла движка. ⇒ This build has no engine file. ⇒ Dieser Build enthält keine Engine-Datei.
+2. Форма панели ⇒ 2. Taskbar shape ⇒ 2. Form der Leiste
+Обычная ⇒ Normal ⇒ Normal
+Плавающая ⇒ Floating ⇒ Schwebend
+Острова ⇒ Islands ⇒ Inseln
+Вкладка ⇒ Tab ⇒ Reiter
+Вкладки-острова ⇒ Tab islands ⇒ Reiter-Inseln
+Скругление ⇒ Corner radius ⇒ Rundung
+насколько круглые углы плашек ⇒ how round the corners are ⇒ wie rund die Ecken sind
+Зазор снизу ⇒ Bottom gap ⇒ Abstand unten
+расстояние от плашки до нижнего края экрана ⇒ distance from the plate to the bottom of the screen ⇒ Abstand der Fläche zum unteren Bildschirmrand
+Поля вокруг значков ⇒ Padding around icons ⇒ Rand um die Symbole
+насколько плашка шире значков ⇒ how much wider the plate is than the icons ⇒ wie viel breiter die Fläche als die Symbole ist
+Каждый значок ⇒ Each icon ⇒ Jedes Symbol
+Группы значков ⇒ Icon groups ⇒ Symbolgruppen
+остров вокруг каждого значка или вокруг соседних групп ⇒ an island around each icon or around neighbouring groups ⇒ eine Insel um jedes Symbol oder um benachbarte Gruppen
+Зазор между островами ⇒ Gap between islands ⇒ Abstand zwischen Inseln
+расстояние между соседними значками ⇒ distance between neighbouring icons ⇒ Abstand zwischen benachbarten Symbolen
+Часы и трей отдельно ⇒ Clock and tray separate ⇒ Uhr und Tray getrennt
+часы, сеть и трей остаются отдельными островами (выкл. — одна общая плашка) ⇒ clock, network and tray stay separate islands (off — one common plate) ⇒ Uhr, Netzwerk und Tray bleiben getrennte Inseln (aus — eine gemeinsame Fläche)
+Остров под виджетами ⇒ Island under widgets ⇒ Insel unter den Widgets
+плашка под кнопкой виджетов слева (у части компьютеров там пусто) ⇒ a plate under the widgets button on the left (empty on some computers) ⇒ eine Fläche unter der Widgets-Schaltfläche links (bei manchen Rechnern leer)
+Применить ⇒ Apply ⇒ Anwenden
+Вернуть как было ⇒ Restore ⇒ Zurücksetzen
+Панель возвращена как в Windows. ⇒ The taskbar is back to the Windows default. ⇒ Die Leiste ist wieder wie in Windows.
+Применено. Панель подключается — это занимает несколько секунд. ⇒ Applied. The taskbar is connecting — this takes a few seconds. ⇒ Angewendet. Die Leiste wird verbunden — das dauert einige Sekunden.
+Перезапустить панель задач ⇒ Restart the taskbar ⇒ Taskleiste neu starten
+Попробовать снова ⇒ Try again ⇒ Erneut versuchen
+Ещё настройки ⇒ More settings ⇒ Weitere Einstellungen
+Изменено. ⇒ Changed. ⇒ Geändert.
+Изменено. Чтобы увидеть результат, перезапустите панель задач. ⇒ Changed. Restart the taskbar to see the result. ⇒ Geändert. Taskleiste neu starten, um das Ergebnis zu sehen.
+Значки ⇒ Icons ⇒ Symbole
+Где стоят значки: слева, как в Windows 10, или по центру. Справа Windows не умеет. ⇒ Where the icons sit: left, like Windows 10, or centered. Windows cannot do right. ⇒ Wo die Symbole stehen: links wie in Windows 10 oder zentriert. Rechts kann Windows nicht.
+Слева ⇒ Left ⇒ Links
+По центру ⇒ Centered ⇒ Zentriert
+Поиск ⇒ Search ⇒ Suche
+Что показывать вместо строки поиска ⇒ What to show instead of the search box ⇒ Was statt des Suchfelds angezeigt wird
+Скрыть ⇒ Hide ⇒ Ausblenden
+Значок ⇒ Icon ⇒ Symbol
+Строка ⇒ Box ⇒ Feld
+Представление задач ⇒ Task view ⇒ Aufgabenansicht
+Кнопка обзора всех открытых окон ⇒ The button that shows all open windows ⇒ Schaltfläche, die alle offenen Fenster zeigt
+Показать ⇒ Show ⇒ Anzeigen
+Виджеты ⇒ Widgets ⇒ Widgets
+Кнопка с погодой и новостями слева на панели. Новые сборки Windows 11 защищают её от программ — тогда её можно скрыть только вручную. ⇒ The weather and news button on the left. New Windows 11 builds protect it from programs — then it can only be hidden by hand. ⇒ Die Wetter- und News-Schaltfläche links. Neue Windows-11-Builds schützen sie vor Programmen — dann nur manuell ausblendbar.
+Чат ⇒ Chat ⇒ Chat
+Кнопка «Чат» (Teams); в новых сборках Windows 11 её уже нет ⇒ The “Chat” (Teams) button; new Windows 11 builds no longer have it ⇒ Die „Chat“-Schaltfläche (Teams); in neuen Windows-11-Builds gibt es sie nicht mehr
+Размер панели ⇒ Taskbar size ⇒ Leistengröße
+Высота панели и значков. Появляется после перезапуска панели; в самых новых сборках Windows 11 может не работать. ⇒ Height of the taskbar and icons. Shows after restarting the taskbar; may not work in the newest Windows 11 builds. ⇒ Höhe von Leiste und Symbolen. Wirkt nach Neustart der Leiste; in den neuesten Windows-11-Builds evtl. wirkungslos.
+Малая ⇒ Small ⇒ Klein
+Средняя ⇒ Medium ⇒ Mittel
+Большая ⇒ Large ⇒ Groß
+Размер значков ⇒ Icon size ⇒ Symbolgröße
+Мелкие значки на панели ⇒ Small icons on the taskbar ⇒ Kleine Symbole in der Leiste
+Обычные ⇒ Normal ⇒ Normal
+Мелкие ⇒ Small ⇒ Klein
+Группировка кнопок ⇒ Button grouping ⇒ Schaltflächen gruppieren
+Когда объединять окна одной программы в одну кнопку ⇒ When to merge windows of one program into one button ⇒ Wann Fenster eines Programms zu einer Schaltfläche zusammengefasst werden
+Всегда ⇒ Always ⇒ Immer
+При нехватке места ⇒ When space runs out ⇒ Wenn der Platz knapp wird
+Никогда ⇒ Never ⇒ Nie
+Секунды в часах ⇒ Seconds in the clock ⇒ Sekunden in der Uhr
+Показывать секунды в часах на панели ⇒ Show seconds in the taskbar clock ⇒ Sekunden in der Uhr der Leiste anzeigen
+Нет ⇒ No ⇒ Nein
+Да ⇒ Yes ⇒ Ja
+Анимации панели ⇒ Taskbar animations ⇒ Leistenanimationen
+Движение панели, когда она появляется и прячется. Нужны ещё анимации самой Windows (ниже). ⇒ Motion when the taskbar appears and hides. Windows animations (below) are needed too. ⇒ Bewegung beim Ein- und Ausblenden der Leiste. Auch Windows-Animationen (unten) sind nötig.
+Включены ⇒ On ⇒ An
+Выключены ⇒ Off ⇒ Aus
+Автоскрытие панели ⇒ Auto-hide the taskbar ⇒ Leiste automatisch ausblenden
+панель прячется и выезжает, когда курсор у края экрана ⇒ the taskbar hides and slides out when the cursor is at the screen edge ⇒ die Leiste verschwindet und fährt aus, wenn der Cursor am Rand ist
+«Эффекты анимации» в Windows выключены — панель при автоскрытии появляется мгновенно. ⇒ Windows “animation effects” are off — the auto-hidden taskbar appears instantly. ⇒ Die Windows-„Animationseffekte“ sind aus — die Leiste erscheint sofort.
+Включить анимации Windows ⇒ Turn on Windows animations ⇒ Windows-Animationen einschalten
+Тонкая линия по краю панели ⇒ Thin line on the taskbar edge ⇒ Dünne Linie am Leistenrand
+по умолчанию скрыта ⇒ hidden by default ⇒ standardmäßig ausgeblendet
+Отправлять отчёт разработчику сам ⇒ Send the report to the developer automatically ⇒ Bericht automatisch an den Entwickler senden
+один раз после подключения: версии, настройки и названия элементов панели (без имени пользователя и компьютера) ⇒ once after connecting: versions, settings and taskbar element names (no user or computer name) ⇒ einmal nach dem Verbinden: Versionen, Einstellungen und Elementnamen der Leiste (ohne Benutzer- und Computername)
+Собираю отчёт… ⇒ Building the report… ⇒ Bericht wird erstellt…
+Сохранить отчёт на рабочий стол ⇒ Save the report to the desktop ⇒ Bericht auf dem Desktop speichern
+Отправить отчёт разработчику ⇒ Send the report to the developer ⇒ Bericht an den Entwickler senden
+Отчёт сохранён: TaskbarPlus-report.txt на рабочем столе. ⇒ Report saved: TaskbarPlus-report.txt on the desktop. ⇒ Bericht gespeichert: TaskbarPlus-report.txt auf dem Desktop.
+Не получилось сохранить отчёт. ⇒ Could not save the report. ⇒ Bericht konnte nicht gespeichert werden.
+Отчёт отправлен. ⇒ Report sent. ⇒ Bericht gesendet.
+Не отправилось:  ⇒ Not sent:  ⇒ Nicht gesendet: 
+Подключаюсь к панели задач… ⇒ Connecting to the taskbar… ⇒ Verbinde mit der Taskleiste…
+Подключился, ищу элементы панели… ⇒ Connected, looking for taskbar elements… ⇒ Verbunden, suche Elemente der Leiste…
+Движок работает. Значков на панели: {}. ⇒ The engine is running. Icons on the taskbar: {0}. ⇒ Die Engine läuft. Symbole in der Leiste: {0}.
+Движок работает. Элементов панели: {}. ⇒ The engine is running. Taskbar elements: {0}. ⇒ Die Engine läuft. Elemente der Leiste: {0}.
+Проводник перезапустился, подключаюсь заново… ⇒ Explorer restarted, connecting again… ⇒ Explorer wurde neu gestartet, verbinde erneut…
+Панель ещё не стала прозрачной — плашки появятся, когда движок её подготовит. ⇒ The taskbar is not transparent yet — the plates will appear when the engine prepares it. ⇒ Die Leiste ist noch nicht transparent — die Flächen erscheinen, sobald die Engine sie vorbereitet hat.
+Обновился движок. Чтобы подключить новую версию, нужно перезапустить панель задач (кнопка внизу окна). ⇒ The engine was updated. Restart the taskbar to connect the new version (button below). ⇒ Die Engine wurde aktualisiert. Zum Verbinden der neuen Version die Taskleiste neu starten (Schaltfläche unten).

@@ -47,6 +47,9 @@ public:
     void tick(double dt) override;
     void drawPanel() override;
     bool active() const override { return saved_.Applied; }
+    const char* skinPart() const override { return "color"; }
+    bool skinCapture(gs::Json& out) override { if (!saved_.Applied) return false; out = gs::Json::Object(); out.set("color", gs::Json::String(saved_.Color)); out.set("windows", gs::Json::Boolean(saved_.Windows)); out.set("taskbar", gs::Json::Boolean(saved_.Taskbar)); return true; }
+    std::string skinApply(const gs::Json& p) override { ColorSettings s; s.Color = p.str("color", s.Color); s.Windows = p.boolean("windows", true); s.Taskbar = p.boolean("taskbar", true); return applyNow(s); }
     bool needsBackground() const override { return saved_.Applied && saved_.Windows && TitleEngine::supported(); }
     void revert() override;
     int selfTest(const std::wstring& dir, std::string& log) override;

@@ -1,0 +1,59 @@
+# Icons: русский ⇒ English ⇒ Deutsch
+Значки ⇒ Icons ⇒ Symbole
+Один цвет для значков Windows: диски, «Этот компьютер», корзина, типы файлов, папки пользователя и ярлыки. Форма и свет значков сохраняются, меняется цвет. Всё запоминается — «Вернуть как было» возвращает как было. ⇒ One color for Windows icons: drives, “This PC”, recycle bin, file types, user folders and shortcuts. The shape and light of the icons stay, only the color changes. Everything is remembered — “Restore” brings it all back. ⇒ Eine Farbe für Windows-Symbole: Laufwerke, „Dieser PC“, Papierkorb, Dateitypen, Benutzerordner und Verknüpfungen. Form und Licht bleiben, nur die Farbe ändert sich. Alles wird gemerkt — „Zurücksetzen“ stellt alles wieder her.
+Загружаю значки… ⇒ Loading icons… ⇒ Lade Symbole…
+Предпросмотр появится через секунду. ⇒ The preview will appear in a second. ⇒ Die Vorschau erscheint gleich.
+Способ ⇒ Method ⇒ Methode
+один цвет — все значки в оттенках выбранного; сменить оттенок — краски значка остаются, сдвигается оттенок ⇒ one color — all icons in shades of the chosen one; change hue — icon colors stay, only the hue shifts ⇒ eine Farbe — alle Symbole in Tönen der gewählten; Farbton ändern — Farben bleiben, nur der Ton verschiebt sich
+Один цвет ⇒ One color ⇒ Eine Farbe
+Сменить оттенок ⇒ Change hue ⇒ Farbton ändern
+Сила ⇒ Strength ⇒ Stärke
+сколько от нового цвета (остальное — исходный значок) ⇒ how much of the new color (the rest is the original icon) ⇒ wie viel von der neuen Farbe (der Rest ist das Originalsymbol)
+3. Что перекрашивать ⇒ 3. What to recolor ⇒ 3. Was umgefärbt wird
+Папки и диски ⇒ Folders and drives ⇒ Ordner und Laufwerke
+Рабочий стол и система ⇒ Desktop and system ⇒ Desktop und System
+Типы файлов ⇒ File types ⇒ Dateitypen
+Ярлыки ⇒ Shortcuts ⇒ Verknüpfungen
+Папка (спросит разрешение администратора) ⇒ Folder (will ask for administrator permission) ⇒ Ordner (fragt nach Administratorrechten)
+Жёсткий диск ⇒ Hard drive ⇒ Festplatte
+Флешка (USB) ⇒ USB drive ⇒ USB-Stick
+DVD / CD ⇒ DVD / CD ⇒ DVD / CD
+Сетевой диск ⇒ Network drive ⇒ Netzlaufwerk
+Папки пользователя: Документы, Загрузки, Рабочий стол… ⇒ User folders: Documents, Downloads, Desktop… ⇒ Benutzerordner: Dokumente, Downloads, Desktop…
+Этот компьютер ⇒ This PC ⇒ Dieser PC
+Корзина (пустая) ⇒ Recycle bin (empty) ⇒ Papierkorb (leer)
+Корзина (полная) ⇒ Recycle bin (full) ⇒ Papierkorb (voll)
+Сеть ⇒ Network ⇒ Netzwerk
+Папка пользователя ⇒ User folder ⇒ Benutzerordner
+Текст (txt, log, ini, md) ⇒ Text (txt, log, ini, md) ⇒ Text (txt, log, ini, md)
+Документ (doc, docx, rtf) ⇒ Document (doc, docx, rtf) ⇒ Dokument (doc, docx, rtf)
+Таблица (xls, xlsx, csv) ⇒ Spreadsheet (xls, xlsx, csv) ⇒ Tabelle (xls, xlsx, csv)
+Презентация (ppt, pptx) ⇒ Presentation (ppt, pptx) ⇒ Präsentation (ppt, pptx)
+Архив (zip, rar, 7z) ⇒ Archive (zip, rar, 7z) ⇒ Archiv (zip, rar, 7z)
+Картинка (png, jpg, gif) ⇒ Picture (png, jpg, gif) ⇒ Bild (png, jpg, gif)
+Музыка (mp3, wav) ⇒ Music (mp3, wav) ⇒ Musik (mp3, wav)
+Видео (mp4, mkv, avi) ⇒ Video (mp4, mkv, avi) ⇒ Video (mp4, mkv, avi)
+Страница (html) ⇒ Page (html) ⇒ Seite (html)
+Код (js, json, xml, py) ⇒ Code (js, json, xml, py) ⇒ Code (js, json, xml, py)
+Сценарий (bat, cmd, ps1) ⇒ Script (bat, cmd, ps1) ⇒ Skript (bat, cmd, ps1)
+Все остальные типы файлов (по списку Windows) ⇒ All other file types (from the Windows list) ⇒ Alle übrigen Dateitypen (laut Windows-Liste)
+Ярлыки на рабочем столе (и ярлыки-ссылки Steam) ⇒ Desktop shortcuts (and Steam link shortcuts) ⇒ Desktop-Verknüpfungen (und Steam-Link-Verknüpfungen)
+Ярлыки на общем рабочем столе (для всех; спросит разрешение администратора) ⇒ Shortcuts on the shared desktop (for everyone; asks for administrator permission) ⇒ Verknüpfungen auf dem gemeinsamen Desktop (für alle; fragt nach Administratorrechten)
+Ярлыки в меню «Пуск» (мои программы) ⇒ Start menu shortcuts (my programs) ⇒ Startmenü-Verknüpfungen (meine Programme)
+Ярлыки в меню «Пуск» (общие; спросит разрешение администратора) ⇒ Start menu shortcuts (shared; asks for administrator permission) ⇒ Startmenü-Verknüpfungen (gemeinsam; fragt nach Administratorrechten)
+Закреплённые на панели задач ⇒ Pinned to the taskbar ⇒ An die Taskleiste angeheftet
+Перезапускать Проводник сам ⇒ Restart Explorer automatically ⇒ Explorer automatisch neu starten
+после применения — чтобы значки сразу везде были новыми (панель задач и окна на пару секунд пропадут) ⇒ after applying — so the icons are new everywhere at once (the taskbar and windows disappear for a few seconds) ⇒ nach dem Anwenden — damit die Symbole sofort überall neu sind (Taskleiste und Fenster verschwinden kurz)
+Применить цвет ⇒ Apply the color ⇒ Farbe anwenden
+Работаю… ⇒ Working… ⇒ Arbeite…
+Работаю: ⇒ Working: ⇒ Arbeite: 
+Применено. ⇒ Applied. ⇒ Angewendet.
+Не применено. ⇒ Not applied. ⇒ Nicht angewendet.
+Все значки возвращены как были. ⇒ All icons are back as they were. ⇒ Alle Symbole sind wieder wie vorher.
+Готово: перекрашено {}, не вышло {}. ⇒ Done: recolored {0}, failed {1}. ⇒ Fertig: umgefärbt {0}, fehlgeschlagen {1}.
+Что не перекрасилось и почему ⇒ What was not recolored and why ⇒ Was nicht umgefärbt wurde und warum
+значок пустой (плитка без рисунка) — красить нечего ⇒ the icon is empty (a tile without a picture) — nothing to recolor ⇒ das Symbol ist leer (Kachel ohne Bild) — nichts zum Umfärben
+значок не найден ⇒ icon not found ⇒ Symbol nicht gefunden
+значок не читается ⇒ the icon cannot be read ⇒ Symbol nicht lesbar
+после перекраски значок стал сплошным пятном — оставлен как был ⇒ after recoloring the icon became a flat blob — left as it was ⇒ nach dem Umfärben wurde das Symbol ein Fleck — blieb unverändert
+разрешение администратора не дано ⇒ administrator permission was not given ⇒ Administratorrechte wurden nicht erteilt

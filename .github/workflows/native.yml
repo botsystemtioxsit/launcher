@@ -26,11 +26,21 @@ jobs:
           cmake --version | Select-Object -First 1
           ninja --version
 
+      # Движок панели задач (DLL для Проводника) собирает Visual Studio; MinGW вкладывает её в GhostStyle.exe
+      - name: Build taskbar engine
+        shell: pwsh
+        run: |
+          cmake -S Native/modules/taskbar/engine -B Native/modules/taskbar/engine/build -A x64
+          if ($LASTEXITCODE -ne 0) { throw 'cmake: настройка движка не удалась' }
+          cmake --build Native/modules/taskbar/engine/build --config Release
+          if ($LASTEXITCODE -ne 0) { throw 'cmake: сборка движка не удалась' }
+          if (-not (Test-Path Native/modules/taskbar/engine/out/GhostShellTap.dll)) { throw 'GhostShellTap.dll не появился' }
+
       - name: Build (MinGW-w64)
         shell: pwsh
         run: |
           $env:PATH = 'C:\mingw64\bin;' + $env:PATH
-          cmake -S Native -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+          cmake -S Native -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ "-DGS_TAP_DLL=$($PWD.Path -replace '\\','/')/Native/modules/taskbar/engine/out/GhostShellTap.dll"
           if ($LASTEXITCODE -ne 0) { throw 'cmake не вышел' }
           cmake --build build --target GhostStyle sp_logic_test
           if ($LASTEXITCODE -ne 0) { throw 'сборка не вышла' }

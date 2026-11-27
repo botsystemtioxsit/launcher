@@ -6,7 +6,8 @@ Android/**/build/
 Android/.gradle/
 Android/local.properties
 *.apk
-Plugins/TaskbarPlus/Engine/build/
+Native/modules/taskbar/engine/build/
+Native/modules/taskbar/engine/out/
 Plugins/GatewayPlus/Resources/bin/
 
 AndroidGateway/**/build/

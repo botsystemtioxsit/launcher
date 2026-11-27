@@ -9,12 +9,6 @@ $outFull = (Resolve-Path $Out).Path
 $apps = @(
     @{ n = 'BattleLauncher'; exe = 'out-test/BattleLauncher.exe' },
     @{ n = 'GatewayPlus'; exe = 'out-test/GatewayPlus.exe' },
-    @{ n = 'IconPlus'; exe = 'out-test/IconPlus.exe' },
-    @{ n = 'WallpaperPlus'; exe = 'out-test/WallpaperPlus.exe' },
-    @{ n = 'TaskbarPlus'; exe = 'out-test/TaskbarPlus.exe' },
-    @{ n = 'SkinLoader'; exe = 'out-test/SkinLoader.exe' },
-    @{ n = 'CursorPlus'; exe = 'out-test/CursorPlus.exe' },
-    @{ n = 'ColorPlus'; exe = 'out-test/ColorPlus.exe' },
     @{ n = 'DnsPlus'; exe = 'out-test/DnsPlus.exe' }
 )
 

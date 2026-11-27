@@ -1,0 +1,11 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Wallpaper</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}video,img{position:fixed;left:0;top:0;width:100vw;height:100vh;object-fit:var(--fit,cover)}</style></head><body>
+<script>
+const q=new URLSearchParams(location.search);const f=q.get('f')||'';const t=q.get('t')||'video';
+document.documentElement.style.setProperty('--fit',q.get('fit')==='fill'?'fill':q.get('fit')==='contain'?'contain':'cover');
+let el;
+if(t==='video'){el=document.createElement('video');el.loop=true;el.autoplay=true;el.muted=q.get('muted')!=='0';el.playsInline=true;
+ el.addEventListener('canplay',()=>el.play().catch(()=>{}));el.src=f;}
+else{el=document.createElement('img');el.src=f;}
+document.body.appendChild(el);
+</script></body></html>

@@ -206,13 +206,7 @@ def skinloader():
 JOBS = {
     "Launcher/app.ico": ghost,
     "Terminal/app.ico": terminal,
-    "Plugins/TaskbarPlus/app.ico": taskbar,
-    "Plugins/ColorPlus/app.ico": color,
-    "Plugins/IconPlus/app.ico": icons,
-    "Plugins/WallpaperPlus/app.ico": wallpaper,
-    "Plugins/CursorPlus/app.ico": cursor,
     "Plugins/GatewayPlus/app.ico": gateway,
-    "Plugins/SkinLoader/app.ico": skinloader,
     "Native/apps/style/app.ico": seasonplus,
 }
 
