@@ -228,6 +228,11 @@ void CursorModule::prepareOverlayTest() {
     trail_.setSettings(s);
 }
 
+void CursorModule::drawPreview() {
+    note("Курсор движется сам: так будет выглядеть шлейф. Раз в несколько секунд — клик с эффектом.");
+    if (canvas_.ready()) imageFit((ImTextureID)(intptr_t)canvas_.srv(), 640, 240);
+}
+
 void CursorModule::drawPanel() {
     ImGui::PushFont(mono());
     ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255));
@@ -235,12 +240,6 @@ void CursorModule::drawPanel() {
     ImGui::PopStyleColor(); ImGui::PopFont();
     note("Свой курсор: цвет, форма, шлейф за мышью и эффекты при клике. Выберите — ниже сразу видно, как будет. Понравилось — «Применить». Пока не нажали, в Windows ничего не меняется.");
     ImGui::Spacing();
-
-    if (beginCard("1. Так будет выглядеть")) {
-        note("Курсор движется сам: так будет выглядеть шлейф. Раз в несколько секунд — клик с эффектом.");
-        if (canvas_.ready()) ImGui::Image((ImTextureID)(intptr_t)canvas_.srv(), ImVec2(640, 240));
-    }
-    endCard();
 
     if (beginCard("2. Курсор")) {
         rowTitle("Форма", "");

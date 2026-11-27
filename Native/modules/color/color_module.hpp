@@ -46,6 +46,8 @@ public:
     void shutdownUi() override { canvas_.release(); }
     void tick(double dt) override;
     void drawPanel() override;
+    bool hasPreview() const override { return true; }
+    void drawPreview() override;
     bool active() const override { return saved_.Applied; }
     const char* skinPart() const override { return "color"; }
     bool skinCapture(gs::Json& out) override { if (!saved_.Applied) return false; out = gs::Json::Object(); out.set("color", gs::Json::String(saved_.Color)); out.set("windows", gs::Json::Boolean(saved_.Windows)); out.set("taskbar", gs::Json::Boolean(saved_.Taskbar)); return true; }

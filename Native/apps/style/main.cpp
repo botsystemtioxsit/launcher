@@ -8,7 +8,6 @@
 #include "cursor_module.hpp"
 #include "icons_module.hpp"
 #include "season_module.hpp"
-#include "skins_module.hpp"
 #include "taskbar_module.hpp"
 #include "wallpaper_module.hpp"
 
@@ -28,7 +27,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     modules.push_back(std::make_unique<ic::IconsModule>());
     modules.push_back(std::make_unique<sp::CursorModule>());
     modules.push_back(std::make_unique<sp::ColorModule>());
-    modules.push_back(std::make_unique<sk::SkinsModule>());
     sp::AppInfo info;
     info.locText = gs::kStyleLoc;
     return sp::runApp(info, modules, argc, argv);

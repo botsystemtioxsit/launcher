@@ -22,6 +22,8 @@ public:
     void shutdownUi() override { canvas_.release(); }
     void tick(double dt) override;
     void drawPanel() override;
+    bool hasPreview() const override { return true; }
+    void drawPreview() override;
     bool active() const override { return saved_.Shape != "none"; }
     const char* skinPart() const override { return "taskbar"; }
     bool skinCapture(gs::Json& out) override;
@@ -32,6 +34,7 @@ public:
     int selfTest(const std::wstring& dir, std::string& log) override;
 private:
     Appearance draft_, saved_;
+    bool cOn_ = false; std::string cColor_ = "#FF2A9D"; int cOp_ = 85;   // свой цвет плашек (тот же файл, что пишет «Цвет»)
     Engine engine_;
     OverlayManager overlay_;
     sp::GpuCanvas canvas_;

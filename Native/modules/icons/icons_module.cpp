@@ -80,10 +80,7 @@ void IconsModule::startPreview() {
     });
 }
 
-void IconsModule::drawPanel() {
-    ImGui::PushFont(mono()); ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255)); ImGui::TextUnformatted(L("Значки")); ImGui::PopStyleColor(); ImGui::PopFont();
-    note("Один цвет для значков Windows: диски, «Этот компьютер», корзина, типы файлов, папки пользователя и ярлыки. Форма и свет значков сохраняются, меняется цвет. Всё запоминается — «Вернуть как было» возвращает как было.");
-    ImGui::Spacing();
+void IconsModule::drawPreview() {
     // превью: пересчитываем через 0,5 с после смены цвета
     std::string key = draft_.Color + "|" + draft_.Style + "|" + std::to_string(draft_.Strength);
     double now = ImGui::GetTime();
@@ -93,7 +90,7 @@ void IconsModule::drawPanel() {
         std::lock_guard<std::mutex> g(mu_);
         if (previewsFresh_ && dev_) { texBefore_.clear(); texAfter_.clear(); for (auto& p : previews_) { texBefore_.push_back(p.hasBefore ? makeTex(p.before) : nullptr); texAfter_.push_back(p.hasAfter ? makeTex(p.after) : nullptr); } previewsFresh_ = false; }
     }
-    if (beginCard("1. Так будет выглядеть")) {
+    {
         std::vector<Preview> pv; { std::lock_guard<std::mutex> g(mu_); pv = previews_; }
         if (pv.empty()) { ImGui::PushStyleColor(ImGuiCol_Text, muted()); ImGui::TextUnformatted(L(previewBusy_ ? "Загружаю значки…" : "Предпросмотр появится через секунду.")); ImGui::PopStyleColor(); }
         for (size_t i = 0; i < pv.size() && i < texBefore_.size(); i++) {
@@ -106,8 +103,16 @@ void IconsModule::drawPanel() {
             if ((i + 1) % 4 != 0 && i + 1 < pv.size()) { ImGui::SameLine(0, 24); }
         }
     }
-    endCard();
-    if (beginCard("2. Выберите цвет")) {
+}
+
+void IconsModule::drawPanel() {
+    ImGui::PushFont(mono()); ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255)); ImGui::TextUnformatted(L("Значки")); ImGui::PopStyleColor(); ImGui::PopFont();
+    note("Один цвет для значков Windows: диски, «Этот компьютер», корзина, типы файлов, папки пользователя и ярлыки. Форма и свет значков сохраняются, меняется цвет. Всё запоминается — «Вернуть как было» возвращает как было.");
+    ImGui::PushStyleColor(ImGuiCol_Button, rgb(255, 42, 157));
+    if (ImGui::Button(L(busy_ ? "Работаю…" : "Вернуть обычные значки Windows"))) startRevert();
+    ImGui::PopStyleColor();
+    ImGui::Spacing();
+    if (beginCard("1. Выберите цвет")) {
         sp::Rgb c = sp::parseHex(draft_.Color);
         float col[3] = {c.r / 255.f, c.g / 255.f, c.b / 255.f};
         if (ImGui::ColorPicker3("##c", col, ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_PickerHueWheel)) draft_.Color = sp::toHex({col[0] * 255, col[1] * 255, col[2] * 255});
@@ -120,7 +125,7 @@ void IconsModule::drawPanel() {
         slider("Сила", "сколько от нового цвета (остальное — исходный значок)", draft_.Strength, 0, 100);
     }
     endCard();
-    if (beginCard("3. Что перекрашивать")) {
+    if (beginCard("2. Что перекрашивать")) {
         std::string group;
         for (auto& t : targets()) {
             if (group != t.group) { group = t.group; ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255)); ImGui::TextUnformatted(L(t.group)); ImGui::PopStyleColor(); }
@@ -137,7 +142,6 @@ void IconsModule::drawPanel() {
     if (ImGui::Button(L(busy_ ? "Работаю…" : "Применить цвет"))) startApply();
     ImGui::PopStyleColor(2);
     ImGui::SameLine();
-    if (ImGui::Button(L("Вернуть как было"))) startRevert();
     std::string st, pr; ApplyResult last; bool have;
     { std::lock_guard<std::mutex> g(mu_); st = status_; pr = progress_; last = last_; have = haveLast_; }
     ImGui::PushStyleColor(ImGuiCol_Text, muted());

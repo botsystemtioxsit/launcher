@@ -16,6 +16,7 @@ bool slider(const char* title, const char* hint, int& v, int lo, int hi);
 bool toggle(const char* title, const char* hint, bool& v);
 bool beginCard(const char* title);
 void endCard();
-void note(const char* ru);                                                      // приглушённый абзац
+void note(const char* ru);
+void imageFit(ImTextureID tex, float w, float h);                               // картинка по ширине доступного места                                                      // приглушённый абзац
 
 }  // namespace sp::ui
