@@ -718,6 +718,50 @@ int Engine::restoreAll(bool refresh) {
     return n;
 }
 
+
+// «Починить значки»: убирает всё, что указывает на значки этой программы или на несуществующие файлы (даже если запись об изменениях потерялась),
+// сбрасывает кэш значков и перезапускает Проводник. Решает «белый листок» вместо значков.
+int Engine::repairAll() {
+    int n = restoreAll(false);
+    auto low = [](std::string t) { for (auto& c : t) c = (char)tolower((unsigned char)c); return t; };
+    const std::string gen = low(narrow(generatedDir()));
+    auto ours = [&](const std::string& p) { std::string l = low(p); return l.find("icon-plus\\generated") != std::string::npos || (!gen.empty() && l.find(gen) != std::string::npos); };
+    // ярлыки
+    for (const char* id : {"lnk-desktop", "lnk-desktop-all", "lnk-start", "lnk-start-all", "lnk-taskbar"}) {
+        for (auto& f : shortcutFiles(id)) {
+            std::string path; int idx = 0; if (!lnkReadIcon(f, path, idx) || path.empty()) continue;
+            bool bad = ours(path);
+            if (!bad && path.find("shell:") != 0) { std::wstring full = expandEnv(widen(path)); std::error_code ec; bad = !fs::exists(full, ec); }
+            if (bad && lnkWriteIcon(f, "", 0)) n++;
+        }
+    }
+    // реестр: значки типов файлов, дисков и системных папок, записанные нами
+    auto sweep = [&](const std::string& base, const std::string& tail) {
+        HKEY k; if (RegOpenKeyExW(HKEY_CURRENT_USER, widen(base).c_str(), 0, KEY_READ, &k) != ERROR_SUCCESS) return;
+        std::vector<std::string> names; wchar_t nm[512]; DWORD i = 0, len;
+        for (;; i++) { len = 512; if (RegEnumKeyExW(k, i, nm, &len, nullptr, nullptr, nullptr, nullptr) != ERROR_SUCCESS) break; names.push_back(narrow(std::wstring(nm, len))); }
+        RegCloseKey(k);
+        for (auto& name : names) {
+            std::string sub = base + "\\" + name + tail; bool ex = false; std::string v = regReadStr(HKEY_CURRENT_USER, sub, "", ex);
+            if (ex && ours(v) && RegDeleteTreeW(HKEY_CURRENT_USER, widen(sub).c_str()) == ERROR_SUCCESS) n++;
+        }
+    };
+    sweep("Software\\Classes", "\\DefaultIcon");
+    sweep("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CLSID", "\\DefaultIcon");
+    sweep("Software\\Classes\\Applications\\Explorer.exe\\Drives", "\\DefaultIcon");
+    // значки папок пользователя (desktop.ini)
+    for (REFKNOWNFOLDERID id : {FOLDERID_Desktop, FOLDERID_Documents, FOLDERID_Pictures, FOLDERID_Music, FOLDERID_Videos, FOLDERID_Downloads}) {
+        std::wstring dir = knownFolder(id); if (dir.empty()) continue;
+        std::wstring f = dir + L"\\desktop.ini"; std::string v;
+        if (fs::exists(f) && iniRead(f, "IconResource", v) && ours(v)) { iniWrite(f, "IconResource", nullptr); n++; }
+    }
+    st_->reg.clear(); st_->lnk.clear(); st_->ini.clear(); st_->created.clear(); st_->sources.clear(); st_->applied.clear();
+    saveState(*st_);
+    notifyChanged();
+    fullRefresh();
+    return n;
+}
+
 // ---------- превью ----------
 std::vector<Preview> Engine::previews(const Settings& sIn) {
     Settings s = sIn; s.normalize(); std::vector<Preview> out; Job job;

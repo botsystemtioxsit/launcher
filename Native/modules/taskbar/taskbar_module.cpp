@@ -75,6 +75,7 @@ void TaskbarModule::revert() {
 }
 
 void TaskbarModule::apply() {
+    if (cOn_ && draft_.Shape == "none") { draft_.Shape = "pill"; shapeSel_ = selFrom(draft_); }   // цвет красит плашки: без формы красить нечего
     saved_ = draft_;
     saved_.normalize();
     saved_.UseXaml = saved_.Shape != "none" && Engine::unavailableReason().empty();
@@ -82,9 +83,8 @@ void TaskbarModule::apply() {
     saveAppearance(saved_);
     {   // цвет плашек — в общий файл, который читает окно плашек
         using gs::Json; Json j = Json::Object();
-        j.set("Active", Json::Boolean(cOn_)); j.set("BgMode", Json::String(cOn_ ? "solid" : "default")); j.set("BgColor", Json::String(cColor_));
-        j.set("BgOpacity", Json::Number(cOp_)); j.set("HideStroke", Json::Boolean(false));
-        std::string out; gs::jsonDump(j, out); gs::makeDirs(gs::appDataDir()); gs::writeFileAtomic(gs::appDataDir() + L"\\color-plus-taskbar.json", out);
+        j.set("On", Json::Boolean(cOn_)); j.set("Color", Json::String(cColor_)); j.set("Opacity", Json::Number(cOp_));
+        std::string out; gs::jsonDump(j, out); gs::makeDirs(gs::appDataDir()); gs::writeFileAtomic(gs::appDataDir() + L"\\taskbar-own-color.json", out);
     }
     if (started_) applyEngine();
     status_ = saved_.Shape == "none" ? L("Панель возвращена как в Windows.") : L("Применено. Панель подключается — это занимает несколько секунд.");

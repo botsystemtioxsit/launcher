@@ -14,6 +14,10 @@ struct Surf {
     std::vector<Seg> vis;            // видимые куски края (не закрытые окнами выше)
 };
 
+// Плашки панели задач (экранные пиксели): их рисует модуль «Панель», а сезоны кладут снег на их верхний край, а не на невидимое окно панели.
+void setTaskbarPlates(const std::vector<Surf>& plates);
+std::vector<Surf> taskbarPlates();           // пусто, если плашки не показываются (данные свежее 2 секунд)
+
 // Куски отрезка [a, b], не попавшие в закрытые промежутки.
 std::vector<Seg> subtract(double a, double b, const std::vector<Seg>& cut);
 

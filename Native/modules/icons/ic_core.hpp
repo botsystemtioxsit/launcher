@@ -49,6 +49,7 @@ public:
     Engine();
     ApplyResult applyColor(const Settings& s, const std::function<void(const std::string&)>& progress = nullptr, bool refresh = true);
     int restoreAll(bool refresh = true);
+    int repairAll();                       // вернуть всё + убрать наши значки даже без записи об изменениях + сбросить кэш
     bool applied() const;
     int changesCount() const;
     std::vector<Preview> previews(const Settings& s);

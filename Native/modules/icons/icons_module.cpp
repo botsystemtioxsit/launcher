@@ -37,7 +37,7 @@ std::string IconsModule::skinApply(const gs::Json& p) {
     return "";
 }
 
-void IconsModule::revert() { if (busy_) return; engine_.restoreAll(true); status_ = L("Все значки возвращены как были."); haveLast_ = false; }
+void IconsModule::revert() { if (busy_) return; engine_.repairAll(); status_ = L("Значки Windows возвращены, кэш сброшен, Проводник перезапущен."); haveLast_ = false; }
 
 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> IconsModule::makeTex(const Img& im) {
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
@@ -64,7 +64,7 @@ void IconsModule::startApply() {
 void IconsModule::startRevert() {
     if (busy_) return;
     busy_ = true; if (job_.joinable()) job_.join();
-    job_ = std::thread([this] { CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED); engine_.restoreAll(true); { std::lock_guard<std::mutex> g(mu_); status_ = "Все значки возвращены как были."; haveLast_ = false; } busy_ = false; CoUninitialize(); });
+    job_ = std::thread([this] { CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED); engine_.repairAll(); { std::lock_guard<std::mutex> g(mu_); status_ = "Значки Windows возвращены, кэш сброшен, Проводник перезапущен."; haveLast_ = false; } busy_ = false; CoUninitialize(); });
 }
 
 void IconsModule::startPreview() {
@@ -109,7 +109,7 @@ void IconsModule::drawPanel() {
     ImGui::PushFont(mono()); ImGui::PushStyleColor(ImGuiCol_Text, rgb(200, 208, 218)); ImGui::TextUnformatted(L("Значки")); ImGui::PopStyleColor(); ImGui::PopFont();
     note("Один цвет для значков Windows: диски, «Этот компьютер», корзина, типы файлов, папки пользователя и ярлыки. Форма и свет значков сохраняются, меняется цвет. Всё запоминается — «Вернуть как было» возвращает как было.");
     ImGui::PushStyleColor(ImGuiCol_Button, rgb(255, 42, 157));
-    if (ImGui::Button(L(busy_ ? "Работаю…" : "Вернуть обычные значки Windows"))) startRevert();
+    if (ImGui::Button(L(busy_ ? "Работаю…" : "Починить и вернуть обычные значки Windows"))) startRevert();
     ImGui::PopStyleColor();
     ImGui::Spacing();
     if (beginCard("1. Выберите цвет")) {

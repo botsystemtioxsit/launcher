@@ -303,7 +303,8 @@ void TitleEngine::loop() {
             auto* c = (Ctx*)lp;
             if (!IsWindowVisible(h)) return TRUE;
             LONG_PTR st = GetWindowLongPtrW(h, GWL_STYLE), ex = GetWindowLongPtrW(h, GWL_EXSTYLE);
-            if ((st & 0xC00000) != 0xC00000) return TRUE;                 // нет строки заголовка
+            bool hasCap = (st & 0xC00000) == 0xC00000;                      // без строки заголовка (Chrome, Electron, Telegram, Terminal…) красим хотя бы рамку
+            if (!hasCap && !(st & (WS_THICKFRAME | WS_BORDER | WS_POPUP | WS_SYSMENU))) return TRUE;
             if (ex & WS_EX_TOOLWINDOW) return TRUE;
             int cloaked = 0;
             if (SUCCEEDED(DwmGetWindowAttribute(h, DWMWA_CLOAKED, &cloaked, sizeof cloaked)) && cloaked) return TRUE;
@@ -322,8 +323,7 @@ void TitleEngine::loop() {
             auto it = c->done->find(h);
             if (it != c->done->end() && it->second == *c->hex) return TRUE;
             DWORD cap = colorRef(*c->hex), tx = colorRef(readableOn(*c->hex));
-            DwmSetWindowAttribute(h, DWMWA_CAPTION_COLOR, &cap, sizeof cap);
-            DwmSetWindowAttribute(h, DWMWA_TEXT_COLOR, &tx, sizeof tx);
+            if (hasCap) { DwmSetWindowAttribute(h, DWMWA_CAPTION_COLOR, &cap, sizeof cap); DwmSetWindowAttribute(h, DWMWA_TEXT_COLOR, &tx, sizeof tx); }
             DwmSetWindowAttribute(h, DWMWA_BORDER_COLOR, &cap, sizeof cap);
             SetPropW(h, kProp, (HANDLE)1);
             (*c->done)[h] = *c->hex;

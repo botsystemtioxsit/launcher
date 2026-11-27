@@ -57,14 +57,26 @@ static std::string getv(const std::vector<std::pair<std::string, std::string>>& 
 
 // ---------- связь с цветом ----------
 static std::wstring colorLinkPath() { return dataDir() + L"\\color-plus-taskbar.json"; }
-static std::mutex gLinkMu; static FILETIME gLinkStamp{}; static ColorLink gLink;
+// Свой цвет плашек, выбранный прямо в «Панели» (важнее цвета из вкладки «Цвет», чтобы одно не стирало другое)
+static std::wstring ownColorPath() { return dataDir() + L"\\taskbar-own-color.json"; }
+static std::mutex gLinkMu; static FILETIME gLinkStamp{}, gOwnStamp{}; static ColorLink gLink;
+static bool readOwnColor(ColorLink& out) {
+    std::string t; gs::Json j;
+    if (!gs::readFile(ownColorPath(), t) || !gs::jsonParse(t, j) || j.t != gs::Json::Obj || !j.boolean("On")) return false;
+    std::string c = j.str("Color", "#FF2A9D");
+    if (c.size() != 7 || c[0] != '#') return false;
+    out.active = true; out.mode = "solid"; out.color = c; out.opacity = std::clamp(j.num("Opacity", 85), 5, 100);
+    return true;
+}
 bool colorLinkRefresh() {
-    WIN32_FILE_ATTRIBUTE_DATA fa{}; FILETIME stamp{};
+    WIN32_FILE_ATTRIBUTE_DATA fa{}, fo{}; FILETIME stamp{}, ostamp{};
     bool exists = GetFileAttributesExW(colorLinkPath().c_str(), GetFileExInfoStandard, &fa) != 0;
     if (exists) stamp = fa.ftLastWriteTime;
+    if (GetFileAttributesExW(ownColorPath().c_str(), GetFileExInfoStandard, &fo) != 0) ostamp = fo.ftLastWriteTime;
     std::lock_guard<std::mutex> g(gLinkMu);
-    if (CompareFileTime(&stamp, &gLinkStamp) == 0) return false;
-    gLinkStamp = stamp;
+    if (CompareFileTime(&stamp, &gLinkStamp) == 0 && CompareFileTime(&ostamp, &gOwnStamp) == 0) return false;
+    gLinkStamp = stamp; gOwnStamp = ostamp;
+    { ColorLink own; if (readOwnColor(own)) { gLink = own; return true; } }
     if (!exists) { gLink = ColorLink{}; return true; }
     std::string t; gs::Json j;
     if (!gs::readFile(colorLinkPath(), t) || !gs::jsonParse(t, j) || j.t != gs::Json::Obj) { gLinkStamp = FILETIME{}; return false; }

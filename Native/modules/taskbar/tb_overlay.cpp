@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdio>
 #include "json.hpp"
+#include "surface.hpp"
 #include "tb_settings.hpp"
 #include "win.hpp"
 
@@ -194,6 +195,7 @@ void OverlayManager::tick() {
         refreshGeometry();
         Fill fill = resolveFill();
         std::vector<HWND> seen; auto wins = taskbarWindows();
+        std::vector<sp::Surf> platesOut;
         std::vector<std::string> issues;
         for (size_t n = 0; n < wins.size(); n++) {
             HWND hwnd = wins[n]; RECT rc{};
@@ -220,6 +222,7 @@ void OverlayManager::tick() {
             auto& plan = plans_[hwnd];
             ow->setShapes(plan, fill);
             ow->place(hwnd, rc);
+            for (auto& q : plan) { sp::Surf sf; sf.id = (long long)(intptr_t)hwnd + (long long)platesOut.size() + 1; sf.left = rc.left + q.x; sf.right = rc.left + q.x + q.w; sf.top = rc.top + q.y; sf.radius = 0; sf.taskbar = true; platesOut.push_back(sf); }
             notes_[hwnd] = plan.empty() ? "плашек нет: значки не найдены" : "плашек: " + std::to_string(plan.size());
             if (plan.empty()) issues.push_back("значки панели не найдены");
             seen.push_back(hwnd);
@@ -227,6 +230,7 @@ void OverlayManager::tick() {
         for (auto it = windows_.begin(); it != windows_.end();) {   // панели, которых больше нет (перезапуск Проводника, отключён монитор)
             if (std::find(seen.begin(), seen.end(), it->first) == seen.end()) { notes_.erase(it->first); plans_.erase(it->first); planKeys_.erase(it->first); it = windows_.erase(it); } else ++it;
         }
+        sp::setTaskbarPlates(fill.has ? platesOut : std::vector<sp::Surf>{});   // сезоны кладут снег на плашки
         std::string note;
         for (auto& i : issues) if (note.find(i) == std::string::npos) note += (note.empty() ? "" : "; ") + i;
         note_ = note;
