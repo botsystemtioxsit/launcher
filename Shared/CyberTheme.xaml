@@ -10,8 +10,8 @@
   <FontFamily x:Key="Mono">Cascadia Mono, Consolas, Courier New</FontFamily>
 
   <!-- Скины лаунчера подменяют эти значения на лету; по умолчанию вид прежний (острые кнопки, угловые скобки, без теней) -->
-  <CornerRadius x:Key="BtnRadius">0</CornerRadius>
-  <CornerRadius x:Key="CardRadius">4</CornerRadius>
+  <CornerRadius x:Key="BtnRadius">8</CornerRadius>
+  <CornerRadius x:Key="CardRadius">12</CornerRadius>
   <Visibility x:Key="BracketVis">Visible</Visibility>
   <DropShadowEffect x:Key="CardEffect" Opacity="0" ShadowDepth="0" BlurRadius="0"/>
 
@@ -127,7 +127,7 @@
       <Setter.Value>
         <ControlTemplate TargetType="Button">
           <Grid SnapsToDevicePixels="True">
-            <Border x:Name="bd" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+            <Border x:Name="bd" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="8">
               <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
             </Border>
             <Rectangle x:Name="bar" Width="2" HorizontalAlignment="Left" Fill="{DynamicResource Accent}" Opacity="0" IsHitTestVisible="False"/>
@@ -439,5 +439,26 @@
     <Setter Property="Padding" Value="9,6"/>
     <Setter Property="FontFamily" Value="{StaticResource Mono}"/>
     <Setter Property="FontSize" Value="12"/>
+  </Style>
+
+  <Style x:Key="CapBtn" TargetType="Button">
+    <Setter Property="Width" Value="46"/><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="{DynamicResource Text}"/>
+    <Setter Property="BorderThickness" Value="0"/><Setter Property="FontSize" Value="13"/><Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+      <Border x:Name="bd" Background="{TemplateBinding Background}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+      <ControlTemplate.Triggers>
+        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="bd" Property="Background" Value="#33FFFFFF"/></Trigger>
+        <Trigger Property="Tag" Value="close"><Setter Property="Foreground" Value="{DynamicResource Red}"/></Trigger>
+      </ControlTemplate.Triggers>
+    </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style x:Key="Pill" TargetType="Button">
+    <Setter Property="Background" Value="{DynamicResource Panel2}"/><Setter Property="Foreground" Value="{DynamicResource Text}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Line}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Cursor" Value="Hand"/><Setter Property="FontSize" Value="12"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+      <Border x:Name="bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="14" Padding="{TemplateBinding Padding}">
+        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+      <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger></ControlTemplate.Triggers>
+    </ControlTemplate></Setter.Value></Setter>
   </Style>
 </ResourceDictionary>

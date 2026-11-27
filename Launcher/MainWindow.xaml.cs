@@ -42,6 +42,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         FontFamily = Skins.MainFont;   // шрифт выбранного скина
         InitOps();
+        StateChanged += (_, _) => { WinRoot.Margin = WindowState == WindowState.Maximized ? new Thickness(7) : new Thickness(0); CapMaxBtn.Content = WindowState == WindowState.Maximized ? "❐" : "☐"; };
         SetNavIcons();
         loginTimer.Tick += (_, _) => LoginTick();
         toastTimer.Tick += (_, _) => { toastTimer.Stop(); ToastBox.Visibility = Visibility.Collapsed; };
@@ -111,6 +112,11 @@ public partial class MainWindow : Window
         catch { /* нет сети — остаются сохранённые данные */ }
     }
 
+    void CapMin_Click(object s, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    void CapMax_Click(object s, RoutedEventArgs e) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    void CapClose_Click(object s, RoutedEventArgs e) => Close();
+    void TopAccount_Click(object s, RoutedEventArgs e) => NavAccount_Click(s, e);
+
     string? sessionNote; // почему нас выбросило на экран входа — показываем один раз
 
     void Render()
@@ -118,6 +124,7 @@ public partial class MainWindow : Window
         var me = store.Active;
         // Вход не обязателен: приложения и плагины открыты всем, вход живёт во вкладке «Аккаунт» и нужен только для приложений с ролью (админ-панель).
         NavAccount.Content = me == null ? "Войти" : "Аккаунт";
+        TopAccount.Content = me == null ? "Войти" : "● " + me.Display;
         AppsSub.Text = me == null
             ? "Приложения доступны без входа. Облегчённая версия — приложение в отдельном окне (Electron). Админ-панель появится после входа администратора (вкладка «Войти»)."
             : $"Ты вошёл как {me.Display} · {me.RoleName}\nОблегчённая версия — приложение в отдельном окне (Electron). Desktop-версия (EXE) — настоящая программа; кнопка включится сама, как только версия выйдет.";
