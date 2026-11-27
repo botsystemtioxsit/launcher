@@ -18,9 +18,9 @@
   <!-- Фон окна: тёмный цвет + тонкие горизонтальные линии через каждые 6 px (видны в промежутках между карточками) -->
   <SolidColorBrush x:Key="Bg" Color="#3A3C41"/>
   <SolidColorBrush x:Key="BgSolid" Color="#3A3C41"/>
-  <SolidColorBrush x:Key="Panel" Color="#2B2C30"/>
-  <SolidColorBrush x:Key="Panel2" Color="#4A4D55"/>
-  <SolidColorBrush x:Key="Line" Color="#5E626C"/>
+  <SolidColorBrush x:Key="Panel" Color="#4A4D55"/>
+  <SolidColorBrush x:Key="Panel2" Color="#5A5E68"/>
+  <SolidColorBrush x:Key="Line" Color="#6A6E79"/>
   <SolidColorBrush x:Key="Text" Color="#EEF1F6"/>
   <SolidColorBrush x:Key="Muted" Color="#B4BBC8"/>
   <SolidColorBrush x:Key="Accent" Color="#C8D0DA"/>
@@ -62,7 +62,7 @@
               <Setter TargetName="tl" Property="Opacity" Value="1"/>
               <Setter TargetName="br" Property="Opacity" Value="1"/>
               <Setter TargetName="root" Property="Effect">
-                <Setter.Value><DropShadowEffect Color="#00F0FF" BlurRadius="12" ShadowDepth="0" Opacity="0.45"/></Setter.Value>
+                <Setter.Value><DropShadowEffect Color="#00000000" BlurRadius="12" ShadowDepth="0" Opacity="0.45"/></Setter.Value>
               </Setter>
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
@@ -84,7 +84,7 @@
     <Setter Property="FontWeight" Value="Bold"/>
     <Setter Property="FontFamily" Value="{StaticResource Mono}"/>
     <Setter Property="Effect">
-      <Setter.Value><DropShadowEffect Color="#00F0FF" BlurRadius="16" ShadowDepth="0" Opacity="0.6"/></Setter.Value>
+      <Setter.Value><DropShadowEffect Color="#00000000" BlurRadius="16" ShadowDepth="0" Opacity="0.6"/></Setter.Value>
     </Setter>
   </Style>
   <!-- Жёлтая кнопка: «Обновить сейчас» и другие заметные предупреждающие действия -->
@@ -113,7 +113,7 @@
     <Setter Property="BorderThickness" Value="0"/>
     <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
     <Setter Property="HorizontalContentAlignment" Value="Left"/>
-    <Setter Property="Padding" Value="16,11"/><Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Padding" Value="14,10"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="FontSize" Value="13"/>
     <Setter Property="Cursor" Value="Hand"/>
     <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
     <Setter Property="Template">
@@ -163,7 +163,7 @@
               <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
               <Setter TargetName="fl" Property="Visibility" Value="Visible"/>
               <Setter TargetName="root" Property="Effect">
-                <Setter.Value><DropShadowEffect Color="#00F0FF" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/></Setter.Value>
+                <Setter.Value><DropShadowEffect Color="#00000000" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/></Setter.Value>
               </Setter>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
@@ -198,7 +198,7 @@
               <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
               <Setter TargetName="fl" Property="Visibility" Value="Visible"/>
               <Setter TargetName="root" Property="Effect">
-                <Setter.Value><DropShadowEffect Color="#00F0FF" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/></Setter.Value>
+                <Setter.Value><DropShadowEffect Color="#00000000" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/></Setter.Value>
               </Setter>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
@@ -231,7 +231,7 @@
               <Setter TargetName="mark" Property="Visibility" Value="Visible"/>
               <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource Accent}"/>
               <Setter TargetName="box" Property="Effect">
-                <Setter.Value><DropShadowEffect Color="#00F0FF" BlurRadius="8" ShadowDepth="0" Opacity="0.5"/></Setter.Value>
+                <Setter.Value><DropShadowEffect Color="#00000000" BlurRadius="8" ShadowDepth="0" Opacity="0.5"/></Setter.Value>
               </Setter>
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
@@ -269,7 +269,7 @@
               <Setter TargetName="dot" Property="Visibility" Value="Visible"/>
               <Setter TargetName="dia" Property="BorderBrush" Value="{DynamicResource Accent}"/>
               <Setter TargetName="dia" Property="Effect">
-                <Setter.Value><DropShadowEffect Color="#00F0FF" BlurRadius="8" ShadowDepth="0" Opacity="0.5"/></Setter.Value>
+                <Setter.Value><DropShadowEffect Color="#00000000" BlurRadius="8" ShadowDepth="0" Opacity="0.5"/></Setter.Value>
               </Setter>
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
@@ -298,7 +298,7 @@
             <Border Background="{TemplateBinding Background}" BorderBrush="{DynamicResource Line}" BorderThickness="1"/>
             <Rectangle x:Name="PART_Track"/>
             <Border x:Name="PART_Indicator" HorizontalAlignment="Left" Background="{TemplateBinding Foreground}" Margin="1">
-              <Border.Effect><DropShadowEffect Color="#00F0FF" BlurRadius="8" ShadowDepth="0" Opacity="0.7"/></Border.Effect>
+              <Border.Effect><DropShadowEffect Color="#00000000" BlurRadius="8" ShadowDepth="0" Opacity="0.7"/></Border.Effect>
             </Border>
           </Grid>
         </ControlTemplate>
@@ -409,7 +409,7 @@
             <Popup x:Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
               <Border MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="{TemplateBinding MaxDropDownHeight}"
                       Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Accent}" BorderThickness="1" Margin="0,2,8,8">
-                <Border.Effect><DropShadowEffect Color="#00F0FF" BlurRadius="14" ShadowDepth="0" Opacity="0.35"/></Border.Effect>
+                <Border.Effect><DropShadowEffect Color="#00000000" BlurRadius="14" ShadowDepth="0" Opacity="0.35"/></Border.Effect>
                 <ScrollViewer><ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/></ScrollViewer>
               </Border>
             </Popup>
