@@ -1,0 +1,40 @@
+renderScenes: старт
+renderScenes: фабрики готовы
+renderScenes: Gfx.init готов
+сцена winter: движок
+сцена winter: рисую
+сцена spring: движок
+сцена spring: рисую
+сцена summer: движок
+сцена summer: рисую
+сцена autumn: движок
+сцена autumn: рисую
+сцена halloween: движок
+сцена halloween: рисую
+сцена newyear: движок
+сцена newyear: рисую
+сцена valentine: движок
+сцена valentine: рисую
+сцена women: движок
+сцена women: рисую
+сцена easter: движок
+сцена easter: рисую
+сцена tet: движок
+сцена tet: рисую
+сцена maslenitsa: движок
+сцена maslenitsa: рисую
+сцена fireworks: движок
+сцена fireworks: рисую
+сцена countdown: движок
+сцена countdown: рисую
+сцена greeting: движок
+сцена greeting: рисую
+сцена rain: движок
+сцена rain: рисую
+overlay: поток запущен
+overlay: окно и фабрики готовы
+overlay: создаю цель
+overlay: цель создана
+overlay: в кадре закрашено пикселей: 15656 из 786432
+overlay: поток запущен
+overlay: окно и фабрики готовы
