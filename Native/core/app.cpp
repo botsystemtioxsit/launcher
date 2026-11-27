@@ -84,12 +84,12 @@ struct App {
     void drawTitleBar() {
         ImGuiIO& io = ImGui::GetIO(); ImDrawList* dl = ImGui::GetWindowDrawList();
         float H = titleH(), W = io.DisplaySize.x; hot.clear();
-        dl->AddRectFilled(ImVec2(0, 0), ImVec2(W, H), IM_COL32(9, 6, 28, 255));
+        dl->AddRectFilled(ImVec2(0, 0), ImVec2(W, H), IM_COL32(43, 44, 48, 255));
         dl->AddLine(ImVec2(0, H), ImVec2(W, H), IM_COL32(74, 34, 160, 255));
         // справа: кнопки окна (плашка) и левее — аккаунт
         float bw = 38 * scale, bh = 26 * scale, pad = 10 * scale, y0 = (H - bh) / 2;
         float groupW = bw * 3, gx = W - pad - groupW;
-        dl->AddRectFilled(ImVec2(gx, y0), ImVec2(gx + groupW, y0 + bh), IM_COL32(26, 16, 74, 255), bh / 2);
+        dl->AddRectFilled(ImVec2(gx, y0), ImVec2(gx + groupW, y0 + bh), IM_COL32(112, 116, 128, 255), bh / 2);
         bool zoomed = app_hwnd && IsZoomed(app_hwnd);
         const char* ids[3] = {"##min", "##max", "##close"};
         for (int i = 0; i < 3; i++) {
@@ -97,7 +97,7 @@ struct App {
             ImGui::SetCursorScreenPos(a);
             bool clicked = ImGui::InvisibleButton(ids[i], ImVec2(bw, bh));
             bool hov = ImGui::IsItemHovered();
-            if (hov) dl->AddRectFilled(a, b, i == 2 ? IM_COL32(255, 46, 90, 255) : IM_COL32(50, 30, 120, 255), bh / 2);
+            if (hov) dl->AddRectFilled(a, b, i == 2 ? IM_COL32(255, 46, 90, 255) : IM_COL32(138, 143, 156, 255), bh / 2);
             ImVec2 c((a.x + b.x) / 2, (a.y + b.y) / 2); float r = 5 * scale; ImU32 col = IM_COL32(234, 248, 255, 255);
             if (i == 0) dl->AddLine(ImVec2(c.x - r, c.y + r * 0.6f), ImVec2(c.x + r, c.y + r * 0.6f), col, 1.5f * scale);
             else if (i == 1) {
@@ -115,7 +115,7 @@ struct App {
         ImGui::SetCursorScreenPos(a);
         bool clicked = ImGui::InvisibleButton("##acct", ImVec2(aw, bh));
         bool hov = ImGui::IsItemHovered();
-        dl->AddRectFilled(a, b, hov ? IM_COL32(50, 30, 120, 255) : IM_COL32(26, 16, 74, 255), bh / 2);
+        dl->AddRectFilled(a, b, hov ? IM_COL32(138, 143, 156, 255) : IM_COL32(112, 116, 128, 255), bh / 2);
         ImVec2 cc(a.x + bh / 2, a.y + bh / 2);
         dl->AddCircleFilled(cc, bh / 2 - 3 * scale, acctName.empty() ? IM_COL32(74, 34, 160, 255) : IM_COL32(0, 240, 255, 255));
         std::string ini = acctName.empty() ? "?" : initials(acctName);
@@ -138,7 +138,7 @@ struct App {
         }
         // название слева
         ImGui::SetCursorScreenPos(ImVec2(18 * scale, (H - ImGui::GetTextLineHeight()) / 2));
-        ImGui::PushFont(ui::mono()); ImGui::PushStyleColor(ImGuiCol_Text, ui::rgb(0, 240, 255)); ImGui::TextUnformatted("GHOST STYLE"); ImGui::PopStyleColor(); ImGui::PopFont();
+        ImGui::PushFont(ui::mono()); ImGui::PushStyleColor(ImGuiCol_Text, ui::rgb(200, 208, 218)); ImGui::TextUnformatted("GHOST STYLE"); ImGui::PopStyleColor(); ImGui::PopFont();
     }
 
     bool anyActive() const { for (auto& m : *modules) if (m->needsBackground()) return true; return false; }
@@ -227,7 +227,7 @@ struct App {
         drawTitleBar();
         ImGui::SetCursorPos(ImVec2(0, titleH() + 1));
         float side = 220.f * scale;
-        ImGui::PushStyleColor(ImGuiCol_ChildBg, ui::rgb(11, 7, 32));
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ui::rgb(58, 60, 65));
         ImGui::BeginChild("##side", ImVec2(side, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
         ImGui::SetCursorPos(ImVec2(18 * scale, 12 * scale));
         ImGui::PushStyleColor(ImGuiCol_Text, ui::muted()); ImGui::TextUnformatted("made by AI"); ImGui::PopStyleColor();
@@ -237,11 +237,13 @@ struct App {
             ImGui::SetCursorPosX(10 * scale);
             ImGui::PushID(i);
             bool on = selected == i;
-            if (on) { ImGui::PushStyleColor(ImGuiCol_Button, ui::rgb(0, 240, 255)); ImGui::PushStyleColor(ImGuiCol_Text, ui::rgb(6, 5, 13)); }
+            ImGui::PushStyleColor(ImGuiCol_Button, on ? ui::rgb(141, 184, 255) : ui::rgb(200, 208, 218)); ImGui::PushStyleColor(ImGuiCol_ButtonHovered, on ? ui::rgb(160, 198, 255) : ui::rgb(220, 226, 234)); ImGui::PushStyleColor(ImGuiCol_Text, ui::rgb(30, 36, 48));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 17 * scale);
             std::string label = std::string(m.active() ? "\xE2\x97\x8F " : "\xE2\x97\x8B ") + L(m.title());
-            if (ImGui::Button(label.c_str(), ImVec2(side - 20 * scale, 34 * scale))) selected = i;
-            if (on) ImGui::PopStyleColor(2);
+            if (ImGui::Button(label.c_str(), ImVec2(side - 20 * scale, 36 * scale))) selected = i;
+            ImGui::PopStyleVar(); ImGui::PopStyleColor(3);
             ImGui::PopID();
+            ImGui::Dummy(ImVec2(0, 2 * scale));
         }
         // низ: язык и «выключить всё»
         ImGui::SetCursorPos(ImVec2(10 * scale, ImGui::GetWindowHeight() - 112 * scale));
@@ -283,7 +285,7 @@ struct App {
         ImGui_ImplDX11_NewFrame(); ImGui_ImplWin32_NewFrame(); ImGui::NewFrame();
         drawShell();
         ImGui::Render();
-        float clear[4] = {7 / 255.f, 3 / 255.f, 20 / 255.f, 1.f};
+        float clear[4] = {58 / 255.f, 60 / 255.f, 65 / 255.f, 1.f};
         ID3D11RenderTargetView* r = rtv.Get();
         dctx->OMSetRenderTargets(1, &r, nullptr);
         dctx->ClearRenderTargetView(r, clear);
@@ -360,7 +362,7 @@ bool renderUiPng(App& app, int moduleIndex, const std::wstring& path, int w, int
         ImGui::NewFrame();
         app.drawShell();
         ImGui::Render();
-        float clear[4] = {7 / 255.f, 3 / 255.f, 20 / 255.f, 1.f};
+        float clear[4] = {58 / 255.f, 60 / 255.f, 65 / 255.f, 1.f};
         ID3D11RenderTargetView* rr = rtv.Get();
         ctx->OMSetRenderTargets(1, &rr, nullptr);
         ctx->ClearRenderTargetView(rr, clear);

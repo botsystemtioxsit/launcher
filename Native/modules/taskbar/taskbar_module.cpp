@@ -143,7 +143,7 @@ void TaskbarModule::drawPreview(sp::Gfx& g) {
 void TaskbarModule::drawPreview() { if (canvas_.ready()) imageFit((ImTextureID)(intptr_t)canvas_.srv(), 640, 190); }
 
 void TaskbarModule::drawPanel() {
-    ImGui::PushFont(mono()); ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255)); ImGui::TextUnformatted(L("Панель")); ImGui::PopStyleColor(); ImGui::PopFont();
+    ImGui::PushFont(mono()); ImGui::PushStyleColor(ImGuiCol_Text, rgb(200, 208, 218)); ImGui::TextUnformatted(L("Панель")); ImGui::PopStyleColor(); ImGui::PopFont();
     note("Панель задач Windows 11 по-своему: плавающая, «вкладка» или острова под значками. Выберите форму, посмотрите на предпросмотре и нажмите «Применить». Пока не нажали, с панелью ничего не происходит.");
     std::string un = Engine::unavailableReason();
     if (!un.empty()) { ImGui::PushStyleColor(ImGuiCol_Text, rgb(255, 176, 32)); ImGui::TextWrapped("%s", L(un.c_str())); ImGui::PopStyleColor(); }
@@ -176,7 +176,7 @@ void TaskbarModule::drawPanel() {
         }
     }
     endCard();
-    ImGui::PushStyleColor(ImGuiCol_Button, rgb(0, 240, 255)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
+    ImGui::PushStyleColor(ImGuiCol_Button, rgb(200, 208, 218)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
     if (ImGui::Button(L("Применить"))) apply();
     ImGui::PopStyleColor(2);
     ImGui::SameLine();

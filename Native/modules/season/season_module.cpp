@@ -60,12 +60,12 @@ void SeasonModule::drawPreview() {
 
 void SeasonModule::drawPanel() {
     ImGui::PushFont(mono());
-    ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255));
+    ImGui::PushStyleColor(ImGuiCol_Text, rgb(200, 208, 218));
     ImGui::TextUnformatted(L("Сезоны и праздники"));
     ImGui::PopStyleColor(); ImGui::PopFont();
     note("Снег, листья, лепестки и пух падают поверх окон и копятся на их верхнем краю; весной и летом на окнах растёт трава с цветами. Есть праздники с гирляндами, украшениями и салютом. Клики проходят сквозь эффекты, окна не мешают работе.");
     ImGui::Spacing();
-    ImGui::PushStyleColor(ImGuiCol_Button, rgb(0, 240, 255)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
+    ImGui::PushStyleColor(ImGuiCol_Button, rgb(200, 208, 218)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
     if (ImGui::Button(L(saved_.Active ? "Применить изменения" : "Включить"))) {
         draft_.Active = true; draft_.normalize();
         applyNow(draft_);

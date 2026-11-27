@@ -40,7 +40,6 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        FontFamily = Skins.MainFont;   // шрифт выбранного скина
         InitOps();
         StateChanged += (_, _) => { WinRoot.Margin = WindowState == WindowState.Maximized ? new Thickness(7) : new Thickness(0); CapMaxBtn.Content = WindowState == WindowState.Maximized ? "❐" : "☐"; };
         SetNavIcons();
@@ -124,7 +123,12 @@ public partial class MainWindow : Window
         var me = store.Active;
         // Вход не обязателен: приложения и плагины открыты всем, вход живёт во вкладке «Аккаунт» и нужен только для приложений с ролью (админ-панель).
         NavAccount.Content = me == null ? "Войти" : "Аккаунт";
-        TopAccount.Content = me == null ? "Войти" : "● " + me.Display;
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            row.Children.Add(new System.Windows.Shapes.Ellipse { Width = 20, Height = 20, Fill = Res("Accent"), Margin = new Thickness(0, 0, 8, 0) });
+            row.Children.Add(new TextBlock { Text = me == null ? "Войти" : me.Display, VerticalAlignment = VerticalAlignment.Center, MaxWidth = 160, TextTrimming = TextTrimming.CharacterEllipsis });
+            TopAccount.Content = row;
+        }
         AppsSub.Text = me == null
             ? "Приложения доступны без входа. Облегчённая версия — приложение в отдельном окне (Electron). Админ-панель появится после входа администратора (вкладка «Войти»)."
             : $"Ты вошёл как {me.Display} · {me.RoleName}\nОблегчённая версия — приложение в отдельном окне (Electron). Desktop-версия (EXE) — настоящая программа; кнопка включится сама, как только версия выйдет.";
@@ -429,20 +433,18 @@ public partial class MainWindow : Window
         FeedbackView.Visibility = name == "feedback" ? Visibility.Visible : Visibility.Collapsed;
         EnvView.Visibility = name == "env" ? Visibility.Visible : Visibility.Collapsed;
         PhoneView.Visibility = name == "phone" ? Visibility.Visible : Visibility.Collapsed;
-        SkinsView.Visibility = name == "skins" ? Visibility.Visible : Visibility.Collapsed;
-        NavSkins.Foreground = name == "skins" ? Res("Text") : Res("Muted");
-        NavPhone.Foreground = name == "phone" ? Res("Text") : Res("Muted");
-        NavEnv.Foreground = name == "env" ? Res("Text") : Res("Muted");
-        NavFeedback.Foreground = name == "feedback" ? Res("Text") : Res("Muted");
+        NavPhone.Background = name == "phone" ? Res("Accent2") : Res("Accent");
+        NavEnv.Background = name == "env" ? Res("Accent2") : Res("Accent");
+        NavFeedback.Background = name == "feedback" ? Res("Accent2") : Res("Accent");
         // «Аккаунт»: без входа показываем форму входа, со входом — сведения об аккаунте
         var signedIn = store.Active != null;
         LoginView.Visibility = name == "account" && !signedIn ? Visibility.Visible : Visibility.Collapsed;
         AccountView.Visibility = name == "account" && signedIn ? Visibility.Visible : Visibility.Collapsed;
-        NavApps.Foreground = name == "apps" ? Res("Text") : Res("Muted");
-        NavStyle.Foreground = name == "style" ? Res("Text") : Res("Muted");
-        NavNet.Foreground = name == "net" ? Res("Text") : Res("Muted");
-        NavExt.Foreground = name == "ext" ? Res("Text") : Res("Muted");
-        NavAccount.Foreground = name == "account" ? Res("Text") : Res("Muted");
+        NavApps.Background = name == "apps" ? Res("Accent2") : Res("Accent");
+        NavStyle.Background = name == "style" ? Res("Accent2") : Res("Accent");
+        NavNet.Background = name == "net" ? Res("Accent2") : Res("Accent");
+        NavExt.Background = name == "ext" ? Res("Accent2") : Res("Accent");
+        NavAccount.Background = name == "account" ? Res("Accent2") : Res("Accent");
         if (name == "apps") _ = LoadApps(false);
         if (isPlug) SetPluginsView(name);
         if (name is "style" or "net") _ = LoadPlugins(false);
@@ -450,7 +452,6 @@ public partial class MainWindow : Window
         if (name == "feedback") OpenFeedback();
         if (name == "env") OpenEnv();
         if (name == "phone") OpenPhone();
-        if (name == "skins") BuildSkins();
     }
 
     // ---------- плагины ----------
@@ -802,7 +803,6 @@ public partial class MainWindow : Window
     void NavAccount_Click(object sender, RoutedEventArgs e) => ShowView("account");
     void NavEnv_Click(object sender, RoutedEventArgs e) => ShowView("env");
     void NavPhone_Click(object sender, RoutedEventArgs e) => ShowView("phone");
-    void NavSkins_Click(object sender, RoutedEventArgs e) => ShowView("skins");
     void NavFeedback_Click(object sender, RoutedEventArgs e) => ShowView("feedback");
 
     void AddAccount_Click(object sender, RoutedEventArgs e) { store.ActiveId = null; store.Save(); Render(); }
@@ -1178,19 +1178,6 @@ public partial class MainWindow : Window
             NativeLatest = new NativeRelease("latest", "", i == 1 ? "bb" : "aa"),
             NativeUpdate = i == 1,
         }).ToList();
-        // все скины: экран «Приложения» в каждом (проверка, что ни один не ломает окно)
-        var skinSaved = Skins.Current;
-        foreach (var sk in Skins.All)
-        {
-            Skins.Apply(sk, false);
-            SetNavIcons();
-            await Capture(Path.Combine(dir, "skin-" + sk.Id + ".png"), () => { ShowView("apps"); RenderApps(); });
-        }
-        Skins.Apply(Skins.ById(Skins.DefaultId), false);
-        SetNavIcons();
-        await Capture(Path.Combine(dir, "launcher-10-skins.png"), () => { ShowView("skins"); });
-        Skins.Apply(skinSaved, false);
-        SetNavIcons();
         await Capture(Path.Combine(dir, "launcher-7-style.png"), () => { ShowView("style"); RenderPlugins(); });
         await Capture(Path.Combine(dir, "launcher-8-net.png"), () => { ShowView("net"); RenderPlugins(); });
         await Capture(Path.Combine(dir, "launcher-3-plugins-browser.png"), () =>

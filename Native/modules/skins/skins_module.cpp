@@ -246,7 +246,7 @@ static bool captureScreen(std::vector<unsigned char>& jpeg) {
 // ---------- окно ----------
 void SkinsModule::drawPanel() {
     if (reload_) load();
-    ImGui::PushFont(mono()); ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255)); ImGui::TextUnformatted(L("Скины")); ImGui::PopStyleColor(); ImGui::PopFont();
+    ImGui::PushFont(mono()); ImGui::PushStyleColor(ImGuiCol_Text, rgb(200, 208, 218)); ImGui::TextUnformatted(L("Скины")); ImGui::PopStyleColor(); ImGui::PopFont();
     note("Скин — это набор настроек всех модулей (сезоны, панель, цвет, значки, обои, курсор) под одним названием. Соберите свой из того, что включено сейчас, или примените чужой файл .ghostskin. Скин — это данные, а не программа: в нём нет ни путей, ни команд.");
     if (!status_.empty()) { ImGui::PushStyleColor(ImGuiCol_Text, muted()); ImGui::TextWrapped("%s", L(status_.c_str())); ImGui::PopStyleColor(); }
     ImGui::Spacing();
@@ -275,7 +275,7 @@ void SkinsModule::drawPanel() {
                         if (ImGui::Button(L("Да, применить"))) { std::string r = applySkin(s); status_ = r.empty() ? "Скин применён: " + s.name : "Скин применён не полностью — " + r; confirmId_.clear(); }
                         ImGui::SameLine(); if (ImGui::Button(L("Отмена"))) confirmId_.clear();
                     } else {
-                        ImGui::PushStyleColor(ImGuiCol_Button, rgb(0, 240, 255)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
+                        ImGui::PushStyleColor(ImGuiCol_Button, rgb(200, 208, 218)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
                         if (ImGui::Button(L("Применить"))) confirmId_ = s.id;
                         ImGui::PopStyleColor(2);
                         ImGui::SameLine();
@@ -308,7 +308,7 @@ void SkinsModule::drawPanel() {
                 if (ok) { pendingPreview_ = jp; status_ = "Картинка снята."; } else status_ = "Не удалось снять экран.";
             }
             if (!pendingPreview_.empty()) { ImGui::SameLine(); ImGui::TextUnformatted(L("картинка есть")); }
-            ImGui::PushStyleColor(ImGuiCol_Button, rgb(0, 240, 255)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
+            ImGui::PushStyleColor(ImGuiCol_Button, rgb(200, 208, 218)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
             if (ImGui::Button(L("Сохранить скин"))) {
                 Skin s = build();
                 if (s.parts.empty()) status_ = "Нечего собирать: отметьте хотя бы одну часть, у которой есть настройки.";

@@ -405,7 +405,7 @@ void ColorModule::drawPreview() { if (canvas_.ready()) imageFit((ImTextureID)(in
 
 void ColorModule::drawPanel() {
     ImGui::PushFont(mono());
-    ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255));
+    ImGui::PushStyleColor(ImGuiCol_Text, rgb(200, 208, 218));
     ImGui::TextUnformatted(L("Цвет"));
     ImGui::PopStyleColor(); ImGui::PopFont();
     note("Один цвет для всего: окна и выделение (акцент Windows) и панель задач. Выберите цвет, посмотрите на предпросмотре и нажмите «Применить». Пока не нажали, в Windows ничего не меняется.");
@@ -427,7 +427,7 @@ void ColorModule::drawPanel() {
         toggle("Панель задач", "цвет получают острова панели (модуль «Панель»)", draft_.Taskbar);
     }
     endCard();
-    ImGui::PushStyleColor(ImGuiCol_Button, rgb(0, 240, 255)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
+    ImGui::PushStyleColor(ImGuiCol_Button, rgb(200, 208, 218)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
     if (ImGui::Button(L("Применить"))) { std::string e = applyNow(draft_); status_ = e.empty() ? L("Применено. Приложение остаётся в фоне, чтобы окрашивать новые окна.") : e; }
     ImGui::PopStyleColor(2);
     ImGui::SameLine();

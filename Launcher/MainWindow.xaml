@@ -6,9 +6,9 @@
         Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}"
         FontFamily="Segoe UI" FontSize="14" WindowStartupLocation="CenterScreen">
   <shell:WindowChrome.WindowChrome>
-    <shell:WindowChrome CaptionHeight="44" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="10" UseAeroCaptionButtons="False"/>
+    <shell:WindowChrome CaptionHeight="44" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="16" UseAeroCaptionButtons="False"/>
   </shell:WindowChrome.WindowChrome>
-  <Border x:Name="WinRoot" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="10" ClipToBounds="True">
+  <Border x:Name="WinRoot" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="16" ClipToBounds="True">
   <Grid>
     <Grid.RowDefinitions>
       <RowDefinition Height="44"/>
@@ -21,9 +21,13 @@
       <TextBlock Text="GHOST SHELL LAUNCHER" Margin="16,0,0,0" VerticalAlignment="Center" FontFamily="{DynamicResource Mono}" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource Accent}"/>
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" shell:WindowChrome.IsHitTestVisibleInChrome="True">
         <Button x:Name="TopAccount" Style="{StaticResource Pill}" Margin="0,8,10,8" Padding="12,0" Click="TopAccount_Click"/>
-        <Button Content="—" Style="{StaticResource CapBtn}" Click="CapMin_Click" ToolTip="Свернуть"/>
-        <Button x:Name="CapMaxBtn" Content="☐" Style="{StaticResource CapBtn}" Click="CapMax_Click" ToolTip="Развернуть"/>
-        <Button Content="✕" Style="{StaticResource CapBtn}" Tag="close" Click="CapClose_Click" ToolTip="Закрыть"/>
+        <Border Background="{DynamicResource Line}" CornerRadius="14" Margin="0,8,12,8" Padding="2,0">
+          <StackPanel Orientation="Horizontal">
+            <Button Content="—" Style="{StaticResource CapBtn}" Click="CapMin_Click" ToolTip="Свернуть"/>
+            <Button x:Name="CapMaxBtn" Content="☐" Style="{StaticResource CapBtn}" Click="CapMax_Click" ToolTip="Развернуть"/>
+            <Button Content="✕" Style="{StaticResource CapBtn}" Tag="close" Click="CapClose_Click" ToolTip="Закрыть"/>
+          </StackPanel>
+        </Border>
       </StackPanel>
     </Grid>
 
@@ -63,14 +67,13 @@
                 </StackPanel>
               </StackPanel>
               <Button x:Name="NavApps" Content="Приложения" Style="{StaticResource Nav}" Click="NavApps_Click"/>
-              <Button x:Name="NavStyle" Content="Оформление" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavStyle_Click"/>
-              <Button x:Name="NavNet" Content="Сеть и защита" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavNet_Click"/>
-              <Button x:Name="NavExt" Content="Расширения" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavExt_Click"/>
-              <Button x:Name="NavEnv" Content="Окружение" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavEnv_Click"/>
-              <Button x:Name="NavSkins" Content="Скины" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavSkins_Click"/>
-              <Button x:Name="NavPhone" Content="Телефон" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavPhone_Click"/>
-              <Button x:Name="NavFeedback" Content="Написать нам" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavFeedback_Click"/>
-              <Button x:Name="NavAccount" Content="Аккаунт" Style="{StaticResource Nav}" Margin="0,2,0,0" Click="NavAccount_Click"/>
+              <Button x:Name="NavStyle" Content="Оформление" Style="{StaticResource Nav}" Margin="0,8,0,0" Click="NavStyle_Click"/>
+              <Button x:Name="NavNet" Content="Сеть и защита" Style="{StaticResource Nav}" Margin="0,8,0,0" Click="NavNet_Click"/>
+              <Button x:Name="NavExt" Content="Расширения" Style="{StaticResource Nav}" Margin="0,8,0,0" Click="NavExt_Click"/>
+              <Button x:Name="NavEnv" Content="Окружение" Style="{StaticResource Nav}" Margin="0,8,0,0" Click="NavEnv_Click"/>
+              <Button x:Name="NavPhone" Content="Телефон" Style="{StaticResource Nav}" Margin="0,8,0,0" Click="NavPhone_Click"/>
+              <Button x:Name="NavFeedback" Content="Написать нам" Style="{StaticResource Nav}" Margin="0,8,0,0" Click="NavFeedback_Click"/>
+              <Button x:Name="NavAccount" Content="Аккаунт" Style="{StaticResource Nav}" Margin="0,8,0,0" Click="NavAccount_Click"/>
             </StackPanel>
           </DockPanel>
         </Border>
@@ -173,10 +176,6 @@
             <StackPanel x:Name="EnvBody"/>
           </ScrollViewer>
 
-          <!-- Скины: выбор оформления лаунчера (содержимое строится в MainWindow.Skins.cs) -->
-          <ScrollViewer x:Name="SkinsView" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="SkinsBody"/>
-          </ScrollViewer>
 
           <!-- Телефон: установка и обновление Android-приложений по кабелю (содержимое строится в MainWindow.Phone.cs) -->
           <ScrollViewer x:Name="PhoneView" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
