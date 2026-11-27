@@ -32,20 +32,20 @@ bool loadFonts(float scale) {
 void setupStyle(float scale) {
     ImGuiStyle& s = ImGui::GetStyle();
     s = ImGuiStyle();
-    s.WindowRounding = 0; s.ChildRounding = 10; s.FrameRounding = 8; s.GrabRounding = 8; s.PopupRounding = 10; s.ScrollbarRounding = 8;
+    s.WindowRounding = 0; s.ChildRounding = 20; s.FrameRounding = 12; s.GrabRounding = 8; s.PopupRounding = 14; s.ScrollbarRounding = 8;
     s.FrameBorderSize = 1; s.ChildBorderSize = 1; s.WindowBorderSize = 0;
     s.ItemSpacing = ImVec2(8, 8); s.FramePadding = ImVec2(12, 6); s.WindowPadding = ImVec2(26, 22);
     s.ScaleAllSizes(scale);
     ImVec4* c = s.Colors;
-    c[ImGuiCol_Text] = rgb(234, 248, 255); c[ImGuiCol_TextDisabled] = rgb(160, 143, 224);
-    c[ImGuiCol_WindowBg] = rgb(7, 3, 20); c[ImGuiCol_ChildBg] = rgb(12, 8, 38);
-    c[ImGuiCol_Border] = rgb(74, 34, 160);
-    c[ImGuiCol_Button] = rgb(26, 16, 74); c[ImGuiCol_ButtonHovered] = rgb(50, 30, 120); c[ImGuiCol_ButtonActive] = rgb(0, 240, 255);
-    c[ImGuiCol_FrameBg] = rgb(20, 12, 56); c[ImGuiCol_FrameBgHovered] = rgb(36, 22, 90); c[ImGuiCol_FrameBgActive] = rgb(50, 30, 120);
-    c[ImGuiCol_SliderGrab] = rgb(0, 240, 255); c[ImGuiCol_SliderGrabActive] = rgb(255, 46, 151);
-    c[ImGuiCol_CheckMark] = rgb(0, 240, 255);
-    c[ImGuiCol_ScrollbarBg] = rgb(7, 3, 20); c[ImGuiCol_ScrollbarGrab] = rgb(74, 34, 160);
-    c[ImGuiCol_Header] = rgb(26, 16, 74); c[ImGuiCol_HeaderHovered] = rgb(50, 30, 120); c[ImGuiCol_HeaderActive] = rgb(0, 240, 255);
+    c[ImGuiCol_Text] = rgb(238, 241, 246); c[ImGuiCol_TextDisabled] = rgb(180, 187, 200);
+    c[ImGuiCol_WindowBg] = rgb(58, 60, 65); c[ImGuiCol_ChildBg] = rgb(74, 77, 85);
+    c[ImGuiCol_Border] = rgb(94, 98, 108);
+    c[ImGuiCol_Button] = rgb(112, 116, 128); c[ImGuiCol_ButtonHovered] = rgb(132, 137, 150); c[ImGuiCol_ButtonActive] = rgb(141, 184, 255);
+    c[ImGuiCol_FrameBg] = rgb(92, 96, 106); c[ImGuiCol_FrameBgHovered] = rgb(110, 114, 126); c[ImGuiCol_FrameBgActive] = rgb(130, 136, 150);
+    c[ImGuiCol_SliderGrab] = rgb(200, 208, 218); c[ImGuiCol_SliderGrabActive] = rgb(141, 184, 255);
+    c[ImGuiCol_CheckMark] = rgb(141, 184, 255);
+    c[ImGuiCol_ScrollbarBg] = rgb(58, 60, 65); c[ImGuiCol_ScrollbarGrab] = rgb(110, 114, 126);
+    c[ImGuiCol_Header] = rgb(92, 96, 106); c[ImGuiCol_HeaderHovered] = rgb(110, 114, 126); c[ImGuiCol_HeaderActive] = rgb(141, 184, 255);
 }
 
 void rowTitle(const char* title, const char* hint) {
@@ -65,7 +65,7 @@ bool seg(const char* id, const char* const* labels, int n, int& sel) {
         if (i > 0) { if (x + w + 8 > avail) x = 0; else ImGui::SameLine(); }
         x += w + 8;
         bool on = sel == i;
-        if (on) { ImGui::PushStyleColor(ImGuiCol_Button, rgb(0, 240, 255)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13)); }
+        if (on) { ImGui::PushStyleColor(ImGuiCol_Button, rgb(200, 208, 218)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13)); }
         ImGui::PushID(i);
         if (ImGui::Button(t) && !on) { sel = i; ch = true; }
         ImGui::PopID();

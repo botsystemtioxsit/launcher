@@ -106,7 +106,7 @@ void IconsModule::drawPreview() {
 }
 
 void IconsModule::drawPanel() {
-    ImGui::PushFont(mono()); ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255)); ImGui::TextUnformatted(L("Значки")); ImGui::PopStyleColor(); ImGui::PopFont();
+    ImGui::PushFont(mono()); ImGui::PushStyleColor(ImGuiCol_Text, rgb(200, 208, 218)); ImGui::TextUnformatted(L("Значки")); ImGui::PopStyleColor(); ImGui::PopFont();
     note("Один цвет для значков Windows: диски, «Этот компьютер», корзина, типы файлов, папки пользователя и ярлыки. Форма и свет значков сохраняются, меняется цвет. Всё запоминается — «Вернуть как было» возвращает как было.");
     ImGui::PushStyleColor(ImGuiCol_Button, rgb(255, 42, 157));
     if (ImGui::Button(L(busy_ ? "Работаю…" : "Вернуть обычные значки Windows"))) startRevert();
@@ -128,7 +128,7 @@ void IconsModule::drawPanel() {
     if (beginCard("2. Что перекрашивать")) {
         std::string group;
         for (auto& t : targets()) {
-            if (group != t.group) { group = t.group; ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255)); ImGui::TextUnformatted(L(t.group)); ImGui::PopStyleColor(); }
+            if (group != t.group) { group = t.group; ImGui::PushStyleColor(ImGuiCol_Text, rgb(200, 208, 218)); ImGui::TextUnformatted(L(t.group)); ImGui::PopStyleColor(); }
             bool on = std::find(draft_.Enabled.begin(), draft_.Enabled.end(), t.id) != draft_.Enabled.end();
             ImGui::PushID(t.id);
             if (ImGui::Checkbox(L(t.title), &on)) { if (on) draft_.Enabled.push_back(t.id); else draft_.Enabled.erase(std::find(draft_.Enabled.begin(), draft_.Enabled.end(), std::string(t.id))); }
@@ -138,7 +138,7 @@ void IconsModule::drawPanel() {
     endCard();
     bool ar = draft_.AutoRestart;
     if (toggle("Перезапускать Проводник сам", "после применения — чтобы значки сразу везде были новыми (панель задач и окна на пару секунд пропадут)", ar)) draft_.AutoRestart = ar;
-    ImGui::PushStyleColor(ImGuiCol_Button, rgb(0, 240, 255)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
+    ImGui::PushStyleColor(ImGuiCol_Button, rgb(200, 208, 218)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
     if (ImGui::Button(L(busy_ ? "Работаю…" : "Применить цвет"))) startApply();
     ImGui::PopStyleColor(2);
     ImGui::SameLine();

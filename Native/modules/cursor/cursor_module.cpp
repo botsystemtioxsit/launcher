@@ -235,7 +235,7 @@ void CursorModule::drawPreview() {
 
 void CursorModule::drawPanel() {
     ImGui::PushFont(mono());
-    ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255));
+    ImGui::PushStyleColor(ImGuiCol_Text, rgb(200, 208, 218));
     ImGui::TextUnformatted(L("Курсор"));
     ImGui::PopStyleColor(); ImGui::PopFont();
     note("Свой курсор: цвет, форма, шлейф за мышью и эффекты при клике. Выберите — ниже сразу видно, как будет. Понравилось — «Применить». Пока не нажали, в Windows ничего не меняется.");
@@ -246,7 +246,7 @@ void CursorModule::drawPanel() {
         for (size_t i = 0; i < kShapes.size(); i++) {
             ImGui::PushID((int)i);
             bool on = draft_.Shape == kShapes[i].id;
-            if (on) ImGui::PushStyleColor(ImGuiCol_Button, rgb(0, 240, 255));
+            if (on) ImGui::PushStyleColor(ImGuiCol_Button, rgb(200, 208, 218));
             ImVec2 sz(64, 64);
             ImGui::BeginGroup();
             bool clicked = thumbs_[i].ready()
@@ -312,7 +312,7 @@ void CursorModule::drawPanel() {
     }
     endCard();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, rgb(0, 240, 255)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
+    ImGui::PushStyleColor(ImGuiCol_Button, rgb(200, 208, 218)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
     if (ImGui::Button(L("Применить"))) {
         std::string err = applyNow(draft_);
         status_ = err.empty() ? std::string(L("Применено. Если какая-то программа показывает старый курсор — перезапустите её.")) : std::string(L("Применилось не всё: ")) + err;

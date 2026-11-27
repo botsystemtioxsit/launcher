@@ -167,7 +167,7 @@ void WallpaperModule::drawPanel() {
     }
     if (editor_ && editor_->closed()) { editor_.reset(); }
     ImGui::PushFont(mono());
-    ImGui::PushStyleColor(ImGuiCol_Text, rgb(0, 240, 255));
+    ImGui::PushStyleColor(ImGuiCol_Text, rgb(200, 208, 218));
     ImGui::TextUnformatted(L("Обои"));
     ImGui::PopStyleColor(); ImGui::PopFont();
     note("Живые обои рабочего стола: видео, GIF, картинки, страницы и «Терминал». Системные обои Windows не меняются: «Выключить» возвращает рабочий стол как был.");
@@ -208,7 +208,7 @@ void WallpaperModule::tabLibrary() {
             char info[160]; std::snprintf(info, sizeof info, "  %s · %s · %.1f %s%s", L(w.typeLabel()), L(w.builtin() ? "встроенные" : w.source.empty() ? "мои" : w.source.c_str()), w.sizeBytes / 1048576.0, L("МБ"), w.overlay ? L(" · слой") : "");
             ImGui::TextUnformatted(info); ImGui::PopStyleColor();
             if (!w.description.empty() && w.type == "html") { ImGui::PushStyleColor(ImGuiCol_Text, muted()); ImGui::TextWrapped("%s", L(w.description.c_str())); ImGui::PopStyleColor(); }
-            if (on) { ImGui::PushStyleColor(ImGuiCol_Button, rgb(0, 240, 255)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13)); }
+            if (on) { ImGui::PushStyleColor(ImGuiCol_Button, rgb(200, 208, 218)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13)); }
             if (ImGui::Button(L(on ? "Включено ✓" : "Включить"))) activate(w.id);
             if (on) ImGui::PopStyleColor(2);
             if (!w.params.empty()) { ImGui::SameLine(); if (ImGui::Button(L("Настроить"))) { startEdit(w.id); } }
@@ -335,7 +335,7 @@ void WallpaperModule::tabCreate() {
     ImGui::SetNextItemWidth(360);
     ImGui::InputText(L("Название"), editTitle_, sizeof editTitle_);
     ImGui::Spacing();
-    ImGui::PushStyleColor(ImGuiCol_Button, rgb(0, 240, 255)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
+    ImGui::PushStyleColor(ImGuiCol_Button, rgb(200, 208, 218)); ImGui::PushStyleColor(ImGuiCol_Text, rgb(6, 5, 13));
     if (ImGui::Button(L(own ? "Сохранить и показать" : "Сохранить как мои обои и включить"))) {
         if (own) { Wallpaper w = *cur; updateValues(w, edit_, editBg_); if (editTitle_[0]) { w.title = editTitle_; saveWallpaper(w); } listDirty_ = true; activate(w.id); status_ = L("Сохранено."); }
         else { Result r = createFrom(*cur, editTitle_, edit_, editBg_); status_ = r.message; listDirty_ = true; if (r.ok) { refreshList(); activate(r.id); startEdit(r.id); } }
