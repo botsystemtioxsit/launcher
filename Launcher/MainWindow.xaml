@@ -17,7 +17,7 @@
     </Grid.RowDefinitions>
 
     <!-- Верхняя полоса: название, аккаунт, свернуть / развернуть / закрыть -->
-    <Grid Grid.Row="0" Background="{DynamicResource Panel}">
+    <Grid Grid.Row="0" Background="#2B2C30">
       <TextBlock Text="GHOST SHELL LAUNCHER" Margin="16,0,0,0" VerticalAlignment="Center" FontFamily="{DynamicResource Mono}" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource Accent}"/>
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" shell:WindowChrome.IsHitTestVisibleInChrome="True">
         <Button x:Name="TopAccount" Style="{StaticResource Pill}" Margin="0,8,10,8" Padding="12,0" Click="TopAccount_Click"/>
@@ -49,7 +49,7 @@
           <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0" Padding="12,18">
+        <Border Grid.Column="0" Background="{DynamicResource Bg}" BorderThickness="0" Padding="12,18">
           <DockPanel>
             <TextBlock x:Name="VersionText" DockPanel.Dock="Bottom" Foreground="{DynamicResource Muted}" FontSize="12" Margin="6,0,0,0"/>
             <StackPanel x:Name="LangRow" DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,0,0,12"/>
